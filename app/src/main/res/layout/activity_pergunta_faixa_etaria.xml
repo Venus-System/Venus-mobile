@@ -74,7 +74,6 @@
         app:layout_constraintVertical_bias="1.0"
         app:layout_constraintWidth_percent="0.8" />
 
-
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollOpcoes"
         android:layout_width="329dp"

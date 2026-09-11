@@ -24,17 +24,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Pergunta de multipla escolha por busca: o usuario digita, escolhe da
- * sugestao, e o item vira um chip removivel.
- *
- * Diferente da PerguntaBaseActivity, aqui responder nada e uma resposta
- * valida — "nenhuma alergia" e uma informacao legitima.
- */
 public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
 
     private final List<String> selecionados = new ArrayList<>();
     private LinearLayout lista;
+    private PerfilRepository perfil;
 
     @LayoutRes
     protected abstract int getLayout();
@@ -44,6 +38,9 @@ public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
 
     @Nullable
     protected abstract Class<?> getProximaTela();
+
+    /** Onde a lista desta tela e guardada. Ver PerfilRepository. */
+    protected abstract String getChave();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +54,12 @@ public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
         });
 
         lista = findViewById(R.id.listaSelecionados);
+        perfil = new PerfilRepository(this);
+
+        // Se ja havia algo salvo para esta pergunta, os chips vem pre-montados.
+        for (String salvo : perfil.getLista(getChave())) {
+            adicionar(salvo);
+        }
 
         findViewById(R.id.btnVoltar).setOnClickListener(v -> finish());
         findViewById(R.id.btnAvancar).setOnClickListener(v -> avancar());
@@ -93,13 +96,15 @@ public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
     }
 
     private void avancar() {
+        perfil.salvarLista(getChave(), selecionados);
+
         Class<?> proxima = getProximaTela();
         if (proxima != null) {
             startActivity(new Intent(this, proxima));
             return;
         }
 
-        new PerfilRepository(this).marcarQuestionarioRespondido();
+        perfil.marcarQuestionarioRespondido();
         NavegacaoPosLogin.irParaMenu(this);
     }
 

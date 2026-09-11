@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoViewHolder> {
-
     public interface AoClicar {
         void noProduto(Produto produto);
     }
@@ -60,7 +59,6 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
     }
 
     static class ProdutoViewHolder extends RecyclerView.ViewHolder {
-
         private final ImageView imagem;
         private final TextView marca;
         private final TextView nome;
@@ -83,19 +81,19 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
             carregador.enqueue(new ImageRequest.Builder(itemView.getContext())
                     .data(produto.getImageUrl())
                     .target(imagem)
-                    // Enquanto baixa mostra o placeholder; se falhar, fica nele.
+
                     .placeholder(R.drawable.bg_card_produto)
                     .error(R.drawable.bg_card_produto)
+                    // A API ainda nao manda imagem, entao data() vem null - e para
+                    // esse caso o Coil usa o fallback, nao o error. Sem esta linha
+                    // o card fica com o espaco da foto vazio.
+                    .fallback(R.drawable.bg_card_produto)
                     .build());
 
             itemView.setOnClickListener(v -> aoClicar.noProduto(produto));
             verNota.setOnClickListener(v -> aoClicar.noProduto(produto));
         }
 
-        /**
-         * A cor comunica a nota antes do usuario ler o numero.
-         * A regra fica aqui para as outras telas com nota usarem a mesma.
-         */
         private void mostrarNota(Integer valor) {
             if (valor == null) {
                 verNota.setText(R.string.nota_indisponivel);
@@ -116,6 +114,5 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
             verNota.setText(String.valueOf(valor));
             verNota.setTextColor(ContextCompat.getColor(itemView.getContext(), cor));
         }
-
     }
 }

@@ -1,20 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white">
 
+    <ImageView
+        android:id="@+id/imgLogoListas"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_logo_venus"
+        app:layout_constraintBottom_toBottomOf="@+id/textTituloListas"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/textTituloListas" />
+
     <TextView
+        android:id="@+id/textTituloListas"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:layout_marginTop="@dimen/espaco_medio"
         android:text="@string/nav_listas"
-        android:textColor="@color/preto_texto"
+        android:textColor="@color/roxo_venus"
         android:textSize="20sp"
         android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@+id/imgLogoListas"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/abasListas"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:background="@color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textTituloListas"
+        app:tabIndicatorColor="@color/roxo_venus"
+        app:tabIndicatorHeight="3dp"
+        app:tabSelectedTextColor="@color/roxo_venus"
+        app:tabTextColor="@color/preto_texto" />
+
+    <ImageButton
+        android:id="@+id/btnNovaLista"
+        android:layout_width="31dp"
+        android:layout_height="30dp"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:layout_marginEnd="@dimen/espaco_medio"
+        android:background="@drawable/bg_botao_adicionar"
+        android:contentDescription="@string/lista_nova"
+        android:scaleType="center"
+        android:src="@drawable/ic_mais"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/abasListas" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/listaColecoes"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:layout_marginEnd="@dimen/espaco_medio"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/espaco_secao"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/btnNovaLista"
+        tools:itemCount="3"
+        tools:listitem="@layout/item_colecao" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

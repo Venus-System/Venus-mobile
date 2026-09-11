@@ -6,9 +6,9 @@
     android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground"
     android:paddingStart="@dimen/espaco_medio"
-    android:paddingTop="@dimen/espaco_pequeno"
+    android:paddingTop="6dp"
     android:paddingEnd="@dimen/espaco_medio"
-    android:paddingBottom="@dimen/espaco_pequeno">
+    android:paddingBottom="6dp">
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/imgProduto"
@@ -30,7 +30,7 @@
         android:layout_marginStart="@dimen/espaco_medio"
         android:maxLines="2"
         android:textColor="@color/preto_texto"
-        android:textSize="16sp"
+        android:textSize="17sp"
         app:layout_constraintEnd_toStartOf="@+id/imgSeta"
         app:layout_constraintStart_toEndOf="@+id/imgProduto"
         app:layout_constraintTop_toTopOf="@+id/imgProduto"
@@ -43,25 +43,23 @@
         android:layout_marginTop="2dp"
         android:maxLines="1"
         android:textColor="@color/cinza_descricao"
-        android:textSize="@dimen/texto_corpo"
+        android:textSize="15sp"
         app:layout_constraintEnd_toEndOf="@+id/textNome"
         app:layout_constraintStart_toStartOf="@+id/textNome"
         app:layout_constraintTop_toBottomOf="@+id/textNome"
         tools:text="Wickbold" />
 
-    <!-- Mesma caixa do design, mostrando a nota. A cor do texto e da borda
-         vem da faixa do valor, definida em codigo. -->
     <TextView
         android:id="@+id/btnVerNota"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/espaco_pequeno"
         android:background="@drawable/bg_botao_ver_nota"
-        android:minWidth="58dp"
+        android:minWidth="62dp"
         android:paddingStart="@dimen/espaco_medio"
-        android:paddingTop="6dp"
+        android:paddingTop="7dp"
         android:paddingEnd="@dimen/espaco_medio"
-        android:paddingBottom="6dp"
+        android:paddingBottom="7dp"
         android:textSize="15sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="@+id/textNome"
@@ -77,15 +75,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <View
-        android:id="@+id/divisor"
-        android:layout_width="0dp"
-        android:layout_height="1dp"
-        android:layout_marginTop="@dimen/espaco_pequeno"
-        android:background="@color/borda_campo"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnVerNota" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

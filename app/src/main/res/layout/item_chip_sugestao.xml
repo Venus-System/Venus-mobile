@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="@dimen/espaco_pequeno"
+    android:background="@drawable/bg_chip_sugestao"
+    android:paddingStart="@dimen/espaco_medio"
+    android:paddingTop="8dp"
+    android:paddingEnd="@dimen/espaco_medio"
+    android:paddingBottom="8dp"
+    android:textColor="@color/magenta_venus"
+    android:textSize="13sp"
+    tools:text="É vegano?" />

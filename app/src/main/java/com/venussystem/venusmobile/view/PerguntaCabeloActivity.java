@@ -1,18 +1,19 @@
 package com.venussystem.venusmobile.view;
 
-import android.os.Bundle;
-import android.view.View;
-
 import androidx.annotation.Nullable;
 
-import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.venussystem.venusmobile.R;
+import com.venussystem.venusmobile.repository.PerfilRepository;
 
 public class PerguntaCabeloActivity extends PerguntaBaseActivity {
-
     @Override
     protected int getLayout() {
         return R.layout.activity_pergunta_cabelo;
+    }
+
+    @Override
+    protected int getLayoutAjuda() {
+        return R.layout.sheet_tipo_cabelo;
     }
 
     @Override
@@ -22,19 +23,7 @@ public class PerguntaCabeloActivity extends PerguntaBaseActivity {
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        findViewById(R.id.textAjudaCabelo).setOnClickListener(v -> abrirAjudaTipoCabelo());
-    }
-
-    private void abrirAjudaTipoCabelo() {
-        BottomSheetDialog sheet = new BottomSheetDialog(this);
-        View conteudo = getLayoutInflater().inflate(R.layout.sheet_tipo_cabelo, null);
-        sheet.setContentView(conteudo);
-
-        conteudo.findViewById(R.id.btnFecharSheet).setOnClickListener(v -> sheet.dismiss());
-        conteudo.findViewById(R.id.btnEntendi).setOnClickListener(v -> sheet.dismiss());
-
-        sheet.show();
+    protected String getChave() {
+        return PerfilRepository.TIPO_CABELO;
     }
 }

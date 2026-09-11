@@ -17,8 +17,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- PROVISORIO: atalho de teste para voltar ao login com o questionario
-         liberado. Sai quando o fluxo estiver fechado. -->
     <TextView
         android:id="@+id/btnReiniciarTeste"
         android:layout_width="wrap_content"
@@ -37,8 +35,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- FrameLayout para o indicador poder ficar por cima da linha de itens.
-         Num LinearLayout eles seriam empilhados lado a lado. -->
     <FrameLayout
         android:id="@+id/barraNavegacao"
         android:layout_width="0dp"
@@ -62,7 +58,6 @@
                 android:id="@+id/navBusca"
                 layout="@layout/item_nav" />
 
-            <!-- Espaco vazio: o botao de scan flutua por cima daqui -->
             <Space
                 android:layout_width="0dp"
                 android:layout_height="@dimen/altura_barra_nav"
@@ -78,7 +73,6 @@
 
         </LinearLayout>
 
-        <!-- Peca unica: em vez de acender e apagar por item, ela desliza -->
         <View
             android:id="@+id/indicadorAtivo"
             android:layout_width="@dimen/largura_indicador"
@@ -95,13 +89,17 @@
         android:layout_height="@dimen/botao_scan"
         android:background="@drawable/bg_botao_scan"
         android:contentDescription="@string/nav_scan"
+        android:elevation="@dimen/elevacao_scan"
+        android:outlineAmbientShadowColor="@color/sombra_scan"
+        android:outlineProvider="background"
+        android:outlineSpotShadowColor="@color/sombra_scan"
         android:scaleType="center"
         android:src="@drawable/ic_scan"
+        android:translationY="@dimen/descida_scan"
         app:layout_constraintBottom_toTopOf="@+id/barraNavegacao"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/barraNavegacao"
-        app:layout_constraintVertical_bias="0.6" />
+        app:layout_constraintTop_toTopOf="@+id/barraNavegacao" />
 
     <ImageButton
         android:id="@+id/btnAssistente"

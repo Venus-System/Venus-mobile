@@ -43,6 +43,143 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textTituloBusca" />
 
+    <!-- Estado inicial: sem termo e sem categoria, e isto que aparece no lugar
+         da lista de produtos. -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/painelLanding"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingStart="@dimen/espaco_medio"
+        android:paddingTop="@dimen/espaco_medio"
+        android:paddingEnd="@dimen/espaco_medio"
+        android:paddingBottom="@dimen/espaco_secao"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/campoBuscaProduto">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/secaoRecentes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/busca_secao_recentes"
+                    android:textColor="@color/preto_texto"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/listaRecentes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_pequeno"
+                    android:orientation="vertical" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/secaoCategorias"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_grande"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/busca_secao_categorias"
+                    android:textColor="@color/preto_texto"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/grupoCategorias"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_pequeno"
+                    app:chipSpacingHorizontal="8dp"
+                    app:chipSpacingVertical="8dp"
+                    app:selectionRequired="false"
+                    app:singleLine="false"
+                    app:singleSelection="true" />
+
+                <TextView
+                    android:id="@+id/btnVerTodasCategorias"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_pequeno"
+                    android:background="?attr/selectableItemBackground"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:textColor="@color/magenta_venus"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:text="Ver todas (13)"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Mostra qual categoria esta filtrando, com o X para voltar ao inicio. -->
+    <LinearLayout
+        android:id="@+id/blocoFiltroAtivo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:layout_marginEnd="@dimen/espaco_medio"
+        android:background="@drawable/bg_chip"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/espaco_medio"
+        android:paddingEnd="@dimen/espaco_pequeno"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/campoBuscaProduto"
+        tools:visibility="visible">
+
+        <TextView
+            android:id="@+id/textFiltroAtivo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:textColor="@color/roxo_secao"
+            android:textSize="@dimen/texto_corpo"
+            android:textStyle="bold"
+            tools:text="Hidratante" />
+
+        <ImageButton
+            android:id="@+id/btnLimparFiltro"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/busca_limpar_filtro"
+            android:scaleType="center"
+            android:src="@drawable/ic_fechar" />
+
+    </LinearLayout>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/listaProdutos"
         android:layout_width="0dp"
@@ -52,12 +189,14 @@
         android:layout_marginEnd="@dimen/espaco_pequeno"
         android:clipToPadding="false"
         android:paddingBottom="@dimen/espaco_secao"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/campoBuscaProduto"
+        app:layout_constraintTop_toBottomOf="@+id/blocoFiltroAtivo"
         tools:itemCount="6"
-        tools:listitem="@layout/item_produto" />
+        tools:listitem="@layout/item_produto"
+        tools:visibility="visible" />
 
     <TextView
         android:id="@+id/textVazio"
@@ -71,5 +210,70 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/listaProdutos" />
+
+    <ProgressBar
+        android:id="@+id/carregando"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminateTint="@color/roxo_venus"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/listaProdutos"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/listaProdutos" />
+
+    <TextView
+        android:id="@+id/textAcordando"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_secao"
+        android:layout_marginTop="@dimen/espaco_medio"
+        android:layout_marginEnd="@dimen/espaco_secao"
+        android:gravity="center"
+        android:text="@string/busca_acordando"
+        android:textColor="@color/cinza_descricao"
+        android:textSize="@dimen/texto_corpo"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/carregando" />
+
+    <LinearLayout
+        android:id="@+id/blocoErro"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_secao"
+        android:layout_marginEnd="@dimen/espaco_secao"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/listaProdutos"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/listaProdutos">
+
+        <TextView
+            android:id="@+id/textErro"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/cinza_descricao"
+            android:textSize="@dimen/texto_corpo"
+            tools:text="@string/erro_sem_conexao" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnTentarDeNovo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaco_medio"
+            android:background="@drawable/bg_botao_gradiente"
+            android:paddingStart="@dimen/espaco_grande"
+            android:paddingEnd="@dimen/espaco_grande"
+            android:text="@string/acao_tentar_de_novo"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="@dimen/texto_campo" />
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

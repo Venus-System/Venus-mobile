@@ -1,20 +1,138 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white">
 
     <TextView
+        android:id="@+id/textTituloPerfil"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:layout_marginTop="@dimen/espaco_medio"
         android:text="@string/nav_perfil"
-        android:textColor="@color/preto_texto"
+        android:textColor="@color/roxo_venus"
         android:textSize="20sp"
         android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/rolagemPerfil"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/espaco_secao"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/textTituloPerfil">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/espaco_medio"
+            android:paddingEnd="@dimen/espaco_medio">
+
+            <FrameLayout
+                android:layout_width="@dimen/avatar_perfil"
+                android:layout_height="@dimen/avatar_perfil"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/espaco_medio"
+                android:background="@drawable/bg_avatar_perfil">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/imgAvatar"
+                    android:layout_width="@dimen/foto_avatar_perfil"
+                    android:layout_height="@dimen/foto_avatar_perfil"
+                    android:layout_gravity="center"
+                    android:background="@color/lilas_claro"
+                    android:importantForAccessibility="no"
+                    android:scaleType="centerCrop"
+                    app:shapeAppearanceOverlay="@style/AvatarRedondo"
+                    tools:src="@drawable/ic_launcher_foreground" />
+
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/textNome"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:textColor="@color/preto_texto"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                tools:text="Arthur maravilha" />
+
+            <TextView
+                android:id="@+id/textEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:textColor="@color/cinza_descricao"
+                android:textSize="12sp"
+                tools:text="arthur@maravilhoso.com" />
+
+            <TextView
+                style="@style/TituloSecaoPerfil"
+                android:text="@string/perfil_secao_pele" />
+
+            <TextView
+                style="@style/SubtituloSecaoPerfil"
+                android:text="@string/perfil_secao_pele_sub" />
+
+            <LinearLayout
+                android:id="@+id/listaAtributos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical" />
+
+            <TextView
+                style="@style/TituloSecaoPerfil"
+                android:text="@string/perfil_secao_alergias" />
+
+            <TextView
+                style="@style/SubtituloSecaoPerfil"
+                android:text="@string/perfil_secao_alergias_sub" />
+
+            <androidx.appcompat.widget.AppCompatAutoCompleteTextView
+                android:id="@+id/campoAlergia"
+                style="@style/CampoBuscaPerfil"
+                android:hint="@string/perfil_hint_alergia" />
+
+            <LinearLayout
+                android:id="@+id/chipsAlergias"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <TextView
+                style="@style/TituloSecaoPerfil"
+                android:text="@string/perfil_secao_valores" />
+
+            <TextView
+                style="@style/SubtituloSecaoPerfil"
+                android:text="@string/perfil_secao_valores_sub" />
+
+            <androidx.appcompat.widget.AppCompatAutoCompleteTextView
+                android:id="@+id/campoPreferencia"
+                style="@style/CampoBuscaPerfil"
+                android:hint="@string/perfil_hint_preferencia" />
+
+            <LinearLayout
+                android:id="@+id/chipsPreferencias"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
