@@ -41,6 +41,38 @@
         <item name="android:src">@drawable/ic_google</item>
     </style>
 
+    <style name="EscolhaModalChip" parent="Widget.Material3.Chip.Filter">
+        <item name="chipBackgroundColor">@color/chip_fundo_escolha</item>
+        <item name="chipStrokeColor">@color/chip_borda_escolha</item>
+        <item name="chipStrokeWidth">1.2dp</item>
+        <item name="android:textColor">@color/chip_texto_escolha</item>
+        <item name="android:textSize">13sp</item>
+        <item name="checkedIconVisible">false</item>
+        <item name="chipIconVisible">false</item>
+        <item name="closeIconVisible">false</item>
+        <item name="chipCornerRadius">18dp</item>
+        <item name="chipMinHeight">36dp</item>
+        <item name="rippleColor">@color/chip_fundo_escolha</item>
+    </style>
+
+    <!-- Chip das categorias da Busca: fundo lilas cheio em vez de branco com
+         borda, para nao parecer apagado; selecionado vira roxo solido, para o
+         filtro ativo ficar obvio. -->
+    <style name="CategoriaBuscaChip" parent="Widget.Material3.Chip.Filter">
+        <item name="chipBackgroundColor">@color/chip_categoria_fundo</item>
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="android:textColor">@color/chip_categoria_texto</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="checkedIconVisible">false</item>
+        <item name="chipIconVisible">false</item>
+        <item name="closeIconVisible">false</item>
+        <item name="chipCornerRadius">18dp</item>
+        <item name="chipMinHeight">38dp</item>
+        <item name="chipStartPadding">14dp</item>
+        <item name="chipEndPadding">14dp</item>
+    </style>
+
     <style name="BotaoGradiente">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">@dimen/altura_campo</item>
@@ -159,12 +191,60 @@
         <item name="android:src">@drawable/ic_seta_voltar</item>
     </style>
 
-
-    <!-- ShapeableImageView recorta a imagem de verdade; background
-         arredondado sozinho nao corta o src. -->
     <style name="FotoProdutoArredondada">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">10dp</item>
+    </style>
+
+    <style name="CapaListaTopo">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">14dp</item>
+        <item name="cornerSizeTopRight">14dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
+    <style name="FotoHistoricoArredondada">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
+
+    <style name="AvatarRedondo">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="TituloSecaoPerfil">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/espaco_grande</item>
+        <item name="android:textColor">@color/preto_texto</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="SubtituloSecaoPerfil">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:textColor">@color/roxo_marca</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <style name="CampoBuscaPerfil">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/altura_opcao</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:background">@drawable/bg_busca_topo</item>
+        <item name="android:drawableStart">@drawable/ic_lupa</item>
+        <item name="android:drawablePadding">@dimen/espaco_pequeno</item>
+        <item name="android:inputType">text</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:paddingStart">@dimen/espaco_medio</item>
+        <item name="android:paddingEnd">@dimen/espaco_medio</item>
+        <item name="android:textColor">@color/preto_texto</item>
+        <item name="android:textColorHint">@color/cinza_hint</item>
+        <item name="android:textSize">@dimen/texto_corpo</item>
     </style>
 
 </resources>

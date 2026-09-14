@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:name=".VenusApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -37,6 +38,22 @@
         <activity
             android:name=".view.PerfilProntoActivity"
             android:exported="false" />
+        <activity
+            android:name=".view.CriarListaActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".view.DetalheListaActivity"
+            android:exported="false" />
+        <activity
+            android:name=".view.DetalheProdutoActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".view.AssistenteActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <activity
             android:name=".view.PrincipalActivity"
             android:exported="false" />

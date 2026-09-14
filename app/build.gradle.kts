@@ -32,6 +32,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    // Libera o BuildConfig.DEBUG, usado para so ligar o log de rede em debug.
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
@@ -57,6 +62,12 @@ dependencies {
     implementation(libs.recyclerview)
     // Carrega imagem de URL: o ImageView sozinho nao busca da rede.
     implementation(libs.coil)
+
+    // Retrofit fala com a API do Venus-CRUD; o converter-gson transforma
+    // o JSON nas classes de repository/api/dto.
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp.logging)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

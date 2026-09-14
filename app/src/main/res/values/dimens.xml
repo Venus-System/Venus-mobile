@@ -33,7 +33,23 @@
     <dimen name="botao_scan">62dp</dimen>
     <dimen name="selo_nota">34dp</dimen>
     <dimen name="altura_barra_nav">72dp</dimen>
-    <dimen name="foto_produto">86dp</dimen>
+    <dimen name="foto_produto">94dp</dimen>
     <dimen name="icone_nav">32dp</dimen>
     <dimen name="largura_indicador">32dp</dimen>
+    <dimen name="altura_capa_lista">150dp</dimen>
+    <dimen name="miniatura_lista">44dp</dimen>
+    <dimen name="largura_botao_seguir">76dp</dimen>
+    <dimen name="altura_botao_seguir">30dp</dimen>
+    <dimen name="avatar_lista">140dp</dimen>
+    <dimen name="elevacao_scan">10dp</dimen>
+    <dimen name="descida_scan">10dp</dimen>
+    <dimen name="foto_historico">52dp</dimen>
+    <dimen name="largura_nota_historico">44dp</dimen>
+    <dimen name="altura_nota_historico">30dp</dimen>
+    <dimen name="avatar_perfil">128dp</dimen>
+    <dimen name="foto_avatar_perfil">96dp</dimen>
+    <dimen name="botao_editar">34dp</dimen>
+    <dimen name="miniatura_chat">44dp</dimen>
+    <dimen name="nota_circular">44dp</dimen>
+    <dimen name="nota_circular_cabecalho">52dp</dimen>
 </resources>

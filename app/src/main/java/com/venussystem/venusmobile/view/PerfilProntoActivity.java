@@ -11,12 +11,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.repository.PerfilRepository;
 
-/**
- * Fecha o questionario. So aqui o perfil e marcado como respondido —
- * antes disso o usuario ainda pode voltar e refazer as perguntas.
- */
 public class PerfilProntoActivity extends AppCompatActivity {
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/espaco_pequeno"
+    android:background="@drawable/bg_item_historico"
+    android:padding="10dp">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/imgProduto"
+        android:layout_width="@dimen/foto_historico"
+        android:layout_height="@dimen/foto_historico"
+        android:background="@drawable/bg_foto_historico"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/FotoHistoricoArredondada"
+        tools:src="@drawable/ic_launcher_foreground" />
+
+    <TextView
+        android:id="@+id/textNome"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textColor="@color/preto_texto"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@+id/textNota"
+        app:layout_constraintStart_toEndOf="@+id/imgProduto"
+        app:layout_constraintTop_toTopOf="@+id/imgProduto"
+        tools:text="Creme de cabelo" />
+
+    <TextView
+        android:id="@+id/textMarca"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/roxo_marca"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="@+id/textNome"
+        app:layout_constraintStart_toStartOf="@+id/textNome"
+        app:layout_constraintTop_toBottomOf="@+id/textNome"
+        tools:text="Deo" />
+
+    <TextView
+        android:id="@+id/textNota"
+        android:layout_width="@dimen/largura_nota_historico"
+        android:layout_height="@dimen/altura_nota_historico"
+        android:background="@drawable/bg_nota_historico"
+        android:gravity="center"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:background="@drawable/bg_nota_historico"
+        tools:text="90" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

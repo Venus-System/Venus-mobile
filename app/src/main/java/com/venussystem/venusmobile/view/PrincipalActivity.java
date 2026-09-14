@@ -27,13 +27,7 @@ import com.venussystem.venusmobile.view.fragment.PerfilFragment;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Hospeda as abas. A barra e montada a mao em vez de BottomNavigationView
- * porque o design pede um traco que desliza ate o item escolhido — o
- * componente do Material so oferece uma pilula estatica atras do icone.
- */
 public class PrincipalActivity extends AppCompatActivity {
-
     private static final long DURACAO_ANIMACAO = 260L;
     private static final float ESCALA_ATIVO = 1.18f;
 
@@ -47,8 +41,7 @@ public class PrincipalActivity extends AppCompatActivity {
         setContentView(R.layout.activity_principal);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            // Sem padding embaixo na raiz: a barra precisa encostar na borda
-            // da tela. O respiro da barra do sistema vai dentro dela.
+
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
             findViewById(R.id.barraNavegacao).setPadding(0, 0, 0, systemBars.bottom);
             return insets;
@@ -62,12 +55,10 @@ public class PrincipalActivity extends AppCompatActivity {
         montarItem(R.id.navPerfil, R.drawable.ic_nav_perfil, PerfilFragment.class);
 
         findViewById(R.id.btnAssistente).setOnClickListener(v ->
-                Toast.makeText(this, R.string.em_breve, Toast.LENGTH_SHORT).show());
+                startActivity(new Intent(this, AssistenteActivity.class)));
 
         findViewById(R.id.btnReiniciarTeste).setOnClickListener(v -> reiniciarTeste());
 
-        // Nulo = primeira abertura. Sem a checagem, o Fragment seria criado
-        // por cima do que o sistema ja restaurou ao girar a tela.
         if (savedInstanceState == null) {
             selecionar(findViewById(R.id.navBusca), new BuscaFragment(), false);
         }
@@ -93,7 +84,7 @@ public class PrincipalActivity extends AppCompatActivity {
             ImageView icone = item.findViewById(R.id.iconeNav);
 
             icone.setColorFilter(ContextCompat.getColor(
-                    this, ativo ? R.color.magenta_nav : R.color.preto_texto));
+                    this, ativo ? R.color.magenta_nav : R.color.cinza_nav));
 
             float escala = ativo ? ESCALA_ATIVO : 1f;
             if (animar) {
@@ -117,27 +108,16 @@ public class PrincipalActivity extends AppCompatActivity {
                 .commit();
     }
 
-    /**
-     * PROVISORIO: encerra a sessao e libera o questionario, para testar o
-     * fluxo desde o login sem precisar limpar os dados do app.
-     */
     private void reiniciarTeste() {
         new PerfilRepository(this).limpar();
         new AutenticacaoRepository().sair();
 
         Intent intent = new Intent(this, LoginActivity.class);
-        // CLEAR_TASK limpa a pilha: o botao voltar nao deve trazer de volta
-        // o app ja deslogado.
+
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
     }
 
-    /**
-     * Desliza o traco ate o centro do item escolhido.
-     *
-     * O post() e necessario na primeira chamada: antes do layout terminar,
-     * getX() e getWidth() ainda valem zero e o traco iria para o canto.
-     */
     private void moverIndicador(View item, boolean animar) {
         indicador.post(() -> {
             float destino = item.getX() + (item.getWidth() - indicador.getWidth()) / 2f;

@@ -32,6 +32,14 @@ public class PesquisaInicialActivity extends AppCompatActivity {
     }
 
     private void irParaMenu() {
-        finish();
+        // NavegacaoPosLogin.seguir() ja deu finish() na tela de login antes de
+        // abrir esta aqui, entao um simples finish() nao volta para o app - cai
+        // fora da pilha de telas. Precisa abrir a Principal de verdade, do
+        // mesmo jeito que o fim do questionario faz.
+        //
+        // De propósito NAO chama marcarQuestionarioRespondido(): "mais tarde" e
+        // so um adiamento, entao da proxima vez que a sessao for retomada o
+        // BemVindoActivity vai cair aqui de novo ate o usuario responder.
+        NavegacaoPosLogin.irParaMenu(this);
     }
 }

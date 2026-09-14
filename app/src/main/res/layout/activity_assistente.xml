@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context=".view.AssistenteActivity">
+
+    <ImageButton
+        android:id="@+id/btnVoltar"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:layout_marginStart="@dimen/espaco_pequeno"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/desc_voltar"
+        android:scaleType="center"
+        android:src="@drawable/ic_seta_voltar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textTituloAssistente"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_pequeno"
+        android:text="@string/assistente_titulo"
+        android:textColor="@color/roxo_venus"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/btnVoltar"
+        app:layout_constraintStart_toEndOf="@+id/btnVoltar"
+        app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
+
+    <!-- So aparece quando a conversa foi aberta a partir de um produto. -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cardProduto"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:layout_marginEnd="@dimen/espaco_medio"
+        android:background="@drawable/bg_card_perfil"
+        android:padding="10dp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnVoltar"
+        tools:visibility="visible">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/imgProduto"
+            android:layout_width="@dimen/miniatura_chat"
+            android:layout_height="@dimen/miniatura_chat"
+            android:background="@drawable/bg_foto_historico"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:shapeAppearanceOverlay="@style/FotoHistoricoArredondada" />
+
+        <TextView
+            android:id="@+id/textNomeProduto"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/preto_texto"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@+id/textNotaProduto"
+            app:layout_constraintStart_toEndOf="@+id/imgProduto"
+            app:layout_constraintTop_toTopOf="@+id/imgProduto"
+            tools:text="Hidratante Firmador" />
+
+        <TextView
+            android:id="@+id/textMarcaProduto"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/roxo_marca"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="@+id/textNomeProduto"
+            app:layout_constraintStart_toStartOf="@+id/textNomeProduto"
+            app:layout_constraintTop_toBottomOf="@+id/textNomeProduto"
+            tools:text="Nivea" />
+
+        <TextView
+            android:id="@+id/textNotaProduto"
+            android:layout_width="@dimen/largura_nota_historico"
+            android:layout_height="@dimen/altura_nota_historico"
+            android:background="@drawable/bg_nota_historico"
+            android:gravity="center"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="90" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/listaMensagens"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:layout_marginTop="@dimen/espaco_medio"
+        android:layout_marginEnd="@dimen/espaco_medio"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toTopOf="@+id/rolagemSugestoes"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/cardProduto"
+        tools:itemCount="3"
+        tools:listitem="@layout/item_mensagem_assistente" />
+
+    <HorizontalScrollView
+        android:id="@+id/rolagemSugestoes"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/espaco_medio"
+        android:paddingEnd="@dimen/espaco_medio"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toTopOf="@+id/linhaEntrada"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <LinearLayout
+            android:id="@+id/linhaSugestoes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="@dimen/espaco_pequeno" />
+
+    </HorizontalScrollView>
+
+    <LinearLayout
+        android:id="@+id/linhaEntrada"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/espaco_medio"
+        android:paddingTop="@dimen/espaco_pequeno"
+        android:paddingEnd="@dimen/espaco_medio"
+        android:paddingBottom="@dimen/espaco_pequeno"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <EditText
+            android:id="@+id/campoMensagem"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/altura_opcao"
+            android:layout_weight="1"
+            android:autofillHints="name"
+            android:background="@drawable/bg_busca_topo"
+            android:hint="@string/assistente_hint"
+            android:imeOptions="actionSend"
+            android:inputType="textCapSentences"
+            android:maxLines="1"
+            android:paddingStart="@dimen/espaco_medio"
+            android:paddingEnd="@dimen/espaco_medio"
+            android:textColor="@color/preto_texto"
+            android:textColorHint="@color/cinza_hint"
+            android:textSize="@dimen/texto_corpo" />
+
+        <ImageButton
+            android:id="@+id/btnEnviar"
+            android:layout_width="@dimen/altura_opcao"
+            android:layout_height="@dimen/altura_opcao"
+            android:layout_marginStart="@dimen/espaco_pequeno"
+            android:background="@drawable/bg_botao_editar"
+            android:contentDescription="@string/assistente_enviar"
+            android:padding="13dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_enviar" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
