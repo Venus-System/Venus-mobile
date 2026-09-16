@@ -1,5 +1,6 @@
 package com.venussystem.venusmobile.view;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -11,6 +12,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.venussystem.venusmobile.R;
+import com.venussystem.venusmobile.view.ScanCameraBackActivity;
+import com.venussystem.venusmobile.view.ScanTutorial1Activity;
 import com.venussystem.venusmobile.model.Usuario;
 import com.venussystem.venusmobile.repository.AutenticacaoRepository;
 
@@ -40,6 +43,14 @@ public class DetalheListaActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btnVoltar).setOnClickListener(v -> finish());
+
+        findViewById(R.id.btnEscanearVazio).setOnClickListener(v -> {
+            boolean onboardingCompleto = ScanTutorialState.isCompleted(this);
+            startActivity(new Intent(
+                    this,
+                    onboardingCompleto ? ScanCameraBackActivity.class : ScanTutorial1Activity.class
+            ));
+        });
 
         preencher();
     }

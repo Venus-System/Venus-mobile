@@ -221,8 +221,7 @@
     <string name="historico_titulo">Histórico</string>
     <string name="historico_hoje">Hoje</string>
     <string name="historico_vazio">Você ainda não escaneou nenhum produto.</string>
-    <string name="busca_acordando">Acordando o servidor…
-A primeira busca pode levar até um minuto.</string>
+    <string name="busca_acordando">Acordando o servidor…\nA primeira busca pode levar até um minuto.</string>
     <string name="perfil_secao_pele">Pele &amp; cabelo</string>
     <string name="perfil_secao_pele_sub">A base de toda análise personalizada.</string>
     <string name="perfil_secao_alergias">Alergias</string>
@@ -262,4 +261,22 @@ A primeira busca pode levar até um minuto.</string>
     <string name="produto_relatar_erro">Encontrou algo errado no cadastro deste produto? Clique aqui e informe a gente. Obrigado.</string>
     <string name="produto_match_indisponivel">Ainda não conseguimos calcular como este produto combina com o seu perfil. Assim que esse cálculo existir, ele aparece aqui.</string>
     <string name="produto_sem_alternativas">Não encontramos outros produtos desta categoria ainda.</string>
+    <string name="scan_passo_1_titulo">Passo 1:</string>
+    <string name="scan_passo_1_descricao"><b>Capture uma foto</b> do seu produto.</string>
+    <string name="scan_passo_1_ajuda">Em um fundo neutro, registre a parte frontal da embalagem.</string>
+
+    <string name="scan_foto_1_instrucao">Aproxime um pouco mais ;)</string>
+    <string name="scan_foto_1_sucesso">Perfeito! :D</string>
+
+    <string name="scan_passo_2_titulo">Passo 2:</string>
+    <string name="scan_passo_2_descricao"><b>Escaneie</b> o rótulo do seu produto.</string>
+    <string name="scan_passo_2_ajuda">Você encontrará as informações na parte de trás da embalagem.</string>
+
+    <string name="scan_foto_2_instrucao">Encontre um lugar mais claro!</string>
+    <string name="scan_foto_2_sucesso">Ótimo! :)</string>
+
+    <string name="scan_passo_3_titulo">Passo 3:</string>
+    <string name="scan_passo_3_descricao"><b>Aguarde</b> a análise do seu produto.</string>
+    <string name="scan_passo_3_ajuda">Vamos verificar suas informações, quando estiver tudo pronto te enviaremos uma notificação.</string>
+
 </resources>

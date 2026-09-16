@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools" >
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:name=".VenusApplication"
@@ -14,6 +16,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.VenusMobile" >
+        <activity android:name=".view.ScanTutorial1Activity" android:exported="false" />
+        <activity android:name=".view.ScanCameraBackActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".view.ScanSuccessBackActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".view.ScanTutorial2Activity" android:exported="false" />
+        <activity android:name=".view.ScanCameraFrontActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".view.ScanSuccessFrontActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".view.ScanTutorial3Activity" android:exported="false" />
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
         <activity
             android:name=".view.PerguntaCouroCabeludoActivity"
             android:exported="false" />
