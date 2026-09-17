@@ -23,8 +23,6 @@ public class PesquisaInicialActivity extends AppCompatActivity {
             return insets;
         });
 
-        findViewById(R.id.btnVoltar).setOnClickListener(v -> finish());
-
         findViewById(R.id.btnAvancar).setOnClickListener(v ->
                 startActivity(new Intent(this, PerguntaCabeloActivity.class)));
 
