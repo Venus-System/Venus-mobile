@@ -143,7 +143,7 @@
                 android:background="@drawable/bg_privacidade_esquerda"
                 android:gravity="center"
                 android:text="@string/lista_publica"
-                android:textColor="@color/preto_texto"
+                android:textColor="@color/texto_privacidade"
                 android:textSize="@dimen/texto_corpo" />
 
             <TextView
@@ -154,7 +154,7 @@
                 android:background="@drawable/bg_privacidade_direita"
                 android:gravity="center"
                 android:text="@string/lista_privada"
-                android:textColor="@color/preto_texto"
+                android:textColor="@color/texto_privacidade"
                 android:textSize="@dimen/texto_corpo" />
 
         </LinearLayout>
