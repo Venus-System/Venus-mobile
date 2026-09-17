@@ -4,6 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -52,6 +53,26 @@ public class ProdutoRepository {
     private static final MutableLiveData<Boolean> CARREGANDO = new MutableLiveData<>(false);
     private static final MutableLiveData<String> ERRO = new MutableLiveData<>();
     private static final AtomicBoolean EM_ANDAMENTO = new AtomicBoolean(false);
+
+    private final VenusApi api;
+
+    public ProdutoRepository() {
+        this(ClienteApi.get());
+    }
+
+    @VisibleForTesting
+    public ProdutoRepository(VenusApi api) {
+        this.api = api;
+    }
+
+    @VisibleForTesting
+    public static void resetEstadoParaTeste() {
+        CATALOGO.postValue(null);
+        carregado = false;
+        CARREGANDO.postValue(false);
+        ERRO.postValue(null);
+        EM_ANDAMENTO.set(false);
+    }
 
     public interface AoObterTexto {
         void aoConcluir(@Nullable String texto);
@@ -131,8 +152,6 @@ public class ProdutoRepository {
     @Nullable
     private String obterTextoDoRotulo(long produtoId) {
         try {
-            VenusApi api = ClienteApi.get();
-
             Response<ProductVersionResponse> respostaVersao =
                     api.versaoAtual(produtoId).execute();
             if (!respostaVersao.isSuccessful() || respostaVersao.body() == null) {
@@ -164,8 +183,6 @@ public class ProdutoRepository {
      * uma vez: o custo passa a ser o da chamada mais lenta, e nao a soma delas.
      */
     private List<Produto> montarCatalogo() throws IOException, FalhaApi {
-        VenusApi api = ClienteApi.get();
-
         Future<List<ProductResponse>> pedidoProdutos =
                 REDE.submit(() -> exigir(api.listarProdutos().execute(), "produtos"));
         Future<List<BrandResponse>> pedidoMarcas =
