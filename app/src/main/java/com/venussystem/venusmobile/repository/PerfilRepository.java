@@ -29,14 +29,23 @@ public class PerfilRepository {
     // alergia nem de preferencia, entao nunca colide com o que o usuario digita.
     private static final String SEPARADOR = String.valueOf((char) 31);
 
+    public static final String GENERO = "genero";
     public static final String TIPO_CABELO = "tipo_cabelo";
     public static final String COURO_CABELUDO = "couro_cabeludo";
     public static final String TIPO_PELE = "tipo_pele";
     public static final String SENSIBILIDADE = "sensibilidade";
+    public static final String CONDICOES_PELE = "condicoes_pele";
     public static final String FOTOTIPO = "fototipo";
     public static final String FAIXA_ETARIA = "faixa_etaria";
+    public static final String GESTACAO = "gestacao";
     public static final String ALERGIAS = "alergias";
     public static final String PREFERENCIAS = "preferencias";
+
+    // Respostas de "nenhuma" e "prefiro nao dizer" sao guardadas como item da
+    // lista, e nao como lista vazia: sem isso nao daria para diferenciar quem
+    // respondeu que nao tem nada de quem ainda nao passou pela tela.
+    public static final String NENHUMA = "NENHUMA";
+    public static final String PREFIRO_NAO_DIZER = "PREFIRO_NAO_DIZER";
 
     private final SharedPreferences prefs;
 

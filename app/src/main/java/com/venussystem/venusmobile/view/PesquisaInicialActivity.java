@@ -24,7 +24,7 @@ public class PesquisaInicialActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btnAvancar).setOnClickListener(v ->
-                startActivity(new Intent(this, PerguntaCabeloActivity.class)));
+                startActivity(new Intent(this, PerguntaGeneroActivity.class)));
 
         findViewById(R.id.textResponderDepois).setOnClickListener(v -> irParaMenu());
     }

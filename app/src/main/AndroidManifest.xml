@@ -15,6 +15,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.VenusMobile" >
         <activity
+            android:name=".view.PerguntaGeneroActivity"
+            android:exported="false" />
+        <activity
+            android:name=".view.PerguntaCondicoesPeleActivity"
+            android:exported="false" />
+        <activity
+            android:name=".view.PerguntaGestacaoActivity"
+            android:exported="false" />
+        <activity
             android:name=".view.PerguntaCouroCabeludoActivity"
             android:exported="false" />
         <activity

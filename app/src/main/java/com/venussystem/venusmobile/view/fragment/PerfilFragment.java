@@ -62,6 +62,14 @@ public class PerfilFragment extends Fragment {
     // As mesmas tags/opcoes das telas cheias do questionario (para a resposta
     // continuar compativel), na ordem em que os cartoes aparecem na tela.
     private static final Atributo[] ATRIBUTOS = {
+            new Atributo(R.string.perfil_genero, PerfilRepository.GENERO,
+                    R.string.pergunta_genero, opcoes(
+                    "FEMALE", R.string.genero_feminino,
+                    "MALE", R.string.genero_masculino,
+                    "NON_BINARY", R.string.genero_nao_binario,
+                    "OTHER", R.string.genero_outro,
+                    "PREFER_NOT_SAY", R.string.genero_nao_identificar)),
+
             new Atributo(R.string.perfil_tipo_pele, PerfilRepository.TIPO_PELE,
                     R.string.pergunta_tipo_pele, opcoes(
                     "OILY", R.string.pele_oleoso,
