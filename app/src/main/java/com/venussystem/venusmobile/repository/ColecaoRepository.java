@@ -7,6 +7,7 @@ import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Colecao;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class ColecaoRepository {
@@ -16,16 +17,12 @@ public class ColecaoRepository {
             new Colecao(3L, "Rotina de skincare", R.drawable.capa_skincare)
     );
 
-    private static final List<Colecao> SEGUINDO = Arrays.asList(
-            new Colecao(5L, "Produtos de pele", R.drawable.mini_produtos_pele, "Venus"),
-            new Colecao(6L, "Fragrância Abacate", R.drawable.mini_abacate, "AvocadoLove"),
-            new Colecao(7L, "Cruelty-Free Products", R.drawable.mini_cruelty_free, "Peter"),
-            new Colecao(8L, "Produtos contra ACNE", R.drawable.mini_acne, "Jane132"),
-            new Colecao(9L, "Meus Favoritos!", R.drawable.mini_favoritos, "JamieJohn"),
-            new Colecao(10L, "Laranjas", R.drawable.mini_laranjas, "Oranje"),
-            new Colecao(11L, "HairDoe", R.drawable.mini_cabelo, "Jane132"),
-            new Colecao(12L, "Coco nutnut", R.drawable.mini_coco, "IsAGiantNut")
-    );
+    // "Seguindo" e sobre listas PUBLICAS de outros usuarios - e um conceito que
+    // ainda nao existe no backend (nao ha endpoint que marque uma lista como
+    // publica nem que devolva listas de outras pessoas). Comeca vazia de
+    // proposito, sem exemplo inventado. Quando esse endpoint existir, aqui e
+    // que ele entra.
+    private static final List<Colecao> SEGUINDO = Collections.emptyList();
 
     public LiveData<List<Colecao>> minhasListas() {
         return new MutableLiveData<>(MINHAS);
