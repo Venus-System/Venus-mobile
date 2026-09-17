@@ -19,8 +19,8 @@
 
     <ImageView
         android:id="@+id/imageScanTutorial2"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="354dp"
+        android:layout_height="337dp"
         app:layout_constraintBottom_toTopOf="@+id/textTitulo2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
