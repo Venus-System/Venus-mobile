@@ -203,6 +203,7 @@
     <string name="lista_nova">Nova lista</string>
     <string name="acao_seguir">Seguir</string>
     <string name="seguindo_agora">Seguindo %1$s</string>
+    <string name="seguindo_vazio">Você ainda não segue nenhuma lista.\nQuando alguém criar uma lista pública, ela aparece aqui.</string>
 
     <string name="lista_label_nome">Nome Da Lista</string>
     <string name="lista_hint_nome">Coloque seus produtos em ordem</string>
