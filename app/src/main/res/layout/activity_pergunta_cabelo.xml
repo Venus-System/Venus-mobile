@@ -111,50 +111,71 @@
             <TextView
                 style="@style/OpcaoPergunta"
                 android:layout_width="match_parent"
-                android:tag="1"
+                android:tag="TYPE_1"
                 android:text="@string/cabelo_1" />
 
             <TextView
                 style="@style/OpcaoPergunta"
                 android:layout_width="match_parent"
                 android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="2A"
+                android:tag="TYPE_2A"
                 android:text="@string/cabelo_2a" />
 
             <TextView
                 style="@style/OpcaoPergunta"
                 android:layout_width="match_parent"
                 android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="2B"
+                android:tag="TYPE_2B"
                 android:text="@string/cabelo_2b" />
 
             <TextView
                 style="@style/OpcaoPergunta"
                 android:layout_width="match_parent"
                 android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="2C"
+                android:tag="TYPE_2C"
                 android:text="@string/cabelo_2c" />
 
             <TextView
                 style="@style/OpcaoPergunta"
                 android:layout_width="match_parent"
                 android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="3A"
+                android:tag="TYPE_3A"
                 android:text="@string/cabelo_3a" />
 
             <TextView
                 style="@style/OpcaoPergunta"
                 android:layout_width="match_parent"
                 android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="3B"
+                android:tag="TYPE_3B"
                 android:text="@string/cabelo_3b" />
 
             <TextView
                 style="@style/OpcaoPergunta"
                 android:layout_width="match_parent"
                 android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="3C"
+                android:tag="TYPE_3C"
                 android:text="@string/cabelo_3c" />
+
+            <TextView
+                style="@style/OpcaoPergunta"
+                android:layout_width="match_parent"
+                android:layout_marginTop="@dimen/espaco_entre_opcoes"
+                android:tag="TYPE_4A"
+                android:text="@string/cabelo_4a" />
+
+            <TextView
+                style="@style/OpcaoPergunta"
+                android:layout_width="match_parent"
+                android:layout_marginTop="@dimen/espaco_entre_opcoes"
+                android:tag="TYPE_4B"
+                android:text="@string/cabelo_4b" />
+
+            <TextView
+                style="@style/OpcaoPergunta"
+                android:layout_width="match_parent"
+                android:layout_marginTop="@dimen/espaco_entre_opcoes"
+                android:tag="TYPE_4C"
+                android:text="@string/cabelo_4c" />
 
         </LinearLayout>
 
