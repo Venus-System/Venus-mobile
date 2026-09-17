@@ -15,7 +15,8 @@ import java.util.List;
  * tela ("Mista", "Media"). Guardar os dois evita ter que manter uma tabela de
  * traducao so para escrever a resposta de volta no perfil.
  *
- * Quando existir endpoint de perfil na API, isto vira o cache local dela.
+ * A API ja tem /api/user-profiles, mas o app ainda nao chama: isto e o cache
+ * local ate essa integracao acontecer.
  */
 public class PerfilRepository {
 

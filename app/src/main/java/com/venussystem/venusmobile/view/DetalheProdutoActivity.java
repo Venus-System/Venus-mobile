@@ -35,8 +35,11 @@ import java.util.List;
  * produto (Busca, Historico, Alternativas), entao o catalogo ja esta em
  * memoria e o produto e lido de la, sem nova chamada de rede.
  *
- * A aba "Match com voce" nao tem dado real: a API nao tem nenhum endpoint que
- * receba usuario+produto e devolva compatibilidade, entao mostra um aviso
+ * A aba "Match com voce" nao tem dado real: a API ate tem o modelo
+ * (/api/personalized-scores, com compatibilityPercentage e riskLevel por
+ * usuario+produto), mas cada registro depende de um analysisResultId - so
+ * existe depois que aquele produto passa por um scan. Para um produto
+ * qualquer do catalogo, sem scan, nao ha o que buscar, entao mostra um aviso
  * honesto em vez de inventar percentual ou motivo.
  */
 public class DetalheProdutoActivity extends AppCompatActivity {
