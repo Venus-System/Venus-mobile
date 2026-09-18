@@ -4,6 +4,7 @@ import android.app.Application;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
@@ -31,7 +32,7 @@ public class BuscaViewModel extends AndroidViewModel {
      */
     private static final int MINIMO_PRODUTOS_CATEGORIA = 3;
 
-    private final ProdutoRepository repository = new ProdutoRepository();
+    private final ProdutoRepository repository;
     private final BuscaRecenteRepository recentes;
 
     private final MediatorLiveData<List<Produto>> produtos = new MediatorLiveData<>();
@@ -42,8 +43,15 @@ public class BuscaViewModel extends AndroidViewModel {
     private Long categoriaSelecionada;
 
     public BuscaViewModel(@NonNull Application application) {
+        this(application, new ProdutoRepository(), new BuscaRecenteRepository(application));
+    }
+
+    @VisibleForTesting
+    BuscaViewModel(@NonNull Application application, ProdutoRepository repository,
+                   BuscaRecenteRepository recentes) {
         super(application);
-        recentes = new BuscaRecenteRepository(application);
+        this.repository = repository;
+        this.recentes = recentes;
 
         // O catalogo inteiro ja vem para a memoria uma vez so, entao tanto o
         // filtro de texto quanto o de categoria rodam em RAM. Existe o endpoint
