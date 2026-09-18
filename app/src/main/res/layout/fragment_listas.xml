@@ -30,20 +30,6 @@
         app:layout_constraintStart_toEndOf="@+id/imgLogoListas"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/abasListas"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/espaco_pequeno"
-        android:background="@color/white"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textTituloListas"
-        app:tabIndicatorColor="@color/roxo_venus"
-        app:tabIndicatorHeight="3dp"
-        app:tabSelectedTextColor="@color/roxo_venus"
-        app:tabTextColor="@color/preto_texto" />
-
     <ImageButton
         android:id="@+id/btnNovaLista"
         android:layout_width="31dp"
@@ -55,7 +41,7 @@
         android:scaleType="center"
         android:src="@drawable/ic_mais"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/abasListas" />
+        app:layout_constraintTop_toBottomOf="@+id/textTituloListas" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/listaColecoes"
@@ -72,21 +58,5 @@
         app:layout_constraintTop_toBottomOf="@+id/btnNovaLista"
         tools:itemCount="3"
         tools:listitem="@layout/item_colecao" />
-
-    <TextView
-        android:id="@+id/textListasVazio"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/espaco_secao"
-        android:layout_marginEnd="@dimen/espaco_secao"
-        android:gravity="center"
-        android:text="@string/seguindo_vazio"
-        android:textColor="@color/cinza_descricao"
-        android:textSize="@dimen/texto_corpo"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@+id/listaColecoes"
-        app:layout_constraintEnd_toEndOf="@+id/listaColecoes"
-        app:layout_constraintStart_toStartOf="@+id/listaColecoes"
-        app:layout_constraintTop_toTopOf="@+id/listaColecoes" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

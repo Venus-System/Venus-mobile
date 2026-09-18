@@ -8,12 +8,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -35,8 +31,11 @@ import java.util.List;
  * produto (Busca, Historico, Alternativas), entao o catalogo ja esta em
  * memoria e o produto e lido de la, sem nova chamada de rede.
  *
- * A aba "Match com voce" nao tem dado real: a API nao tem nenhum endpoint que
- * receba usuario+produto e devolva compatibilidade, entao mostra um aviso
+ * A aba "Match com voce" nao tem dado real: a API ate tem o modelo
+ * (/api/personalized-scores, com compatibilityPercentage e riskLevel por
+ * usuario+produto), mas cada registro depende de um analysisResultId - so
+ * existe depois que aquele produto passa por um scan. Para um produto
+ * qualquer do catalogo, sem scan, nao ha o que buscar, entao mostra um aviso
  * honesto em vez de inventar percentual ou motivo.
  */
 public class DetalheProdutoActivity extends AppCompatActivity {
@@ -56,6 +55,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
     private View carregandoIngredientes;
     private TextView textIngredientes;
+    private ImageView imgProduto;
 
     private Produto produto;
     private boolean ingredientesCarregados;
@@ -64,13 +64,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_detalhe_produto);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        InsetsSistema.aplicar(this, R.layout.activity_detalhe_produto);
 
         long id = getIntent().getLongExtra(EXTRA_ID, -1);
         produto = repository.buscarNoCache(id);
@@ -92,6 +86,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         textSemAlternativas = findViewById(R.id.textSemAlternativas);
         carregandoIngredientes = findViewById(R.id.carregandoIngredientes);
         textIngredientes = findViewById(R.id.textIngredientes);
+        imgProduto = findViewById(R.id.imgProduto);
 
         preencherCabecalho();
         prepararAbas();
@@ -117,11 +112,14 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         nota.setBackgroundTintList(ColorStateList.valueOf(
                 ContextCompat.getColor(this, NotaProdutoUtil.fundoPara(valorNota))));
 
-        ImageView imagem = findViewById(R.id.imgProduto);
+        carregarImagem(produto.getImageUrl());
+    }
+
+    private void carregarImagem(String url) {
         ImageLoader carregador = Coil.imageLoader(this);
         carregador.enqueue(new ImageRequest.Builder(this)
-                .data(produto.getImageUrl())
-                .target(imagem)
+                .data(url)
+                .target(imgProduto)
                 .placeholder(R.drawable.bg_foto_produto)
                 .error(R.drawable.bg_foto_produto)
                 .fallback(R.drawable.bg_foto_produto)
@@ -180,12 +178,17 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         carregandoIngredientes.setVisibility(View.VISIBLE);
         textIngredientes.setVisibility(View.GONE);
 
-        repository.buscarIngredientes(produto.getId(), texto -> {
+        repository.buscarDetalheProduto(produto.getId(), (textoRotulo, urlFoto) -> {
             carregandoIngredientes.setVisibility(View.GONE);
             textIngredientes.setVisibility(View.VISIBLE);
 
-            boolean temTexto = texto != null && !texto.trim().isEmpty();
-            textIngredientes.setText(temTexto ? texto : getString(R.string.produto_ingredientes_erro));
+            boolean temTexto = textoRotulo != null && !textoRotulo.trim().isEmpty();
+            textIngredientes.setText(temTexto
+                    ? textoRotulo : getString(R.string.produto_ingredientes_erro));
+
+            if (urlFoto != null) {
+                carregarImagem(urlFoto);
+            }
         });
     }
 

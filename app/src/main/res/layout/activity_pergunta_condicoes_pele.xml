@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_gradiente_venus"
-    tools:context=".view.PerguntaCabeloActivity">
+    tools:context=".view.PerguntaCondicoesPeleActivity">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guidelineCardTopo"
@@ -38,7 +38,7 @@
         android:layout_marginStart="@dimen/espaco_grande"
         android:layout_marginEnd="@dimen/espaco_secao"
         android:lineSpacingMultiplier="0.95"
-        android:text="@string/pergunta_tipo_cabelo"
+        android:text="@string/pergunta_condicoes_pele"
         android:textColor="@color/white"
         android:textSize="34sp"
         android:textStyle="bold"
@@ -74,16 +74,15 @@
         app:layout_constraintWidth_percent="0.8" />
 
     <TextView
-        android:id="@+id/textAjudaCabelo"
+        android:id="@+id/textDica"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="15dp"
         android:gravity="center"
         android:padding="4dp"
-        android:text="@string/pergunta_ajuda_cabelo"
-        android:textColor="@color/preto_texto"
+        android:text="@string/pergunta_pode_marcar_varias"
+        android:textColor="@color/cinza_descricao"
         android:textSize="@dimen/texto_corpo"
-        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@+id/cardOpcoes"
         app:layout_constraintEnd_toEndOf="@+id/cardOpcoes"
         app:layout_constraintStart_toStartOf="@+id/cardOpcoes" />
@@ -95,7 +94,7 @@
         android:layout_marginTop="@dimen/espaco_pequeno"
         android:layout_marginBottom="18dp"
         android:clipToPadding="false"
-        app:layout_constraintBottom_toTopOf="@+id/textAjudaCabelo"
+        app:layout_constraintBottom_toTopOf="@+id/textDica"
         app:layout_constraintEnd_toEndOf="@+id/cardOpcoes"
         app:layout_constraintStart_toStartOf="@+id/cardOpcoes"
         app:layout_constraintTop_toBottomOf="@+id/guidelineFimIlustracao">
@@ -111,71 +110,43 @@
             <TextView
                 style="@style/OpcaoPergunta"
                 android:layout_width="match_parent"
-                android:tag="TYPE_1"
-                android:text="@string/cabelo_1" />
+                android:tag="acneProne"
+                android:text="@string/condicao_acne" />
 
             <TextView
                 style="@style/OpcaoPergunta"
                 android:layout_width="match_parent"
                 android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="TYPE_2A"
-                android:text="@string/cabelo_2a" />
+                android:tag="hasRosacea"
+                android:text="@string/condicao_rosacea" />
 
             <TextView
                 style="@style/OpcaoPergunta"
                 android:layout_width="match_parent"
                 android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="TYPE_2B"
-                android:text="@string/cabelo_2b" />
+                android:tag="hasEczema"
+                android:text="@string/condicao_eczema" />
 
             <TextView
                 style="@style/OpcaoPergunta"
                 android:layout_width="match_parent"
                 android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="TYPE_2C"
-                android:text="@string/cabelo_2c" />
+                android:tag="hasHyperpigmentation"
+                android:text="@string/condicao_hiperpigmentacao" />
 
             <TextView
                 style="@style/OpcaoPergunta"
                 android:layout_width="match_parent"
                 android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="TYPE_3A"
-                android:text="@string/cabelo_3a" />
+                android:tag="hasMelasma"
+                android:text="@string/condicao_melasma" />
 
             <TextView
                 style="@style/OpcaoPergunta"
                 android:layout_width="match_parent"
                 android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="TYPE_3B"
-                android:text="@string/cabelo_3b" />
-
-            <TextView
-                style="@style/OpcaoPergunta"
-                android:layout_width="match_parent"
-                android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="TYPE_3C"
-                android:text="@string/cabelo_3c" />
-
-            <TextView
-                style="@style/OpcaoPergunta"
-                android:layout_width="match_parent"
-                android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="TYPE_4A"
-                android:text="@string/cabelo_4a" />
-
-            <TextView
-                style="@style/OpcaoPergunta"
-                android:layout_width="match_parent"
-                android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="TYPE_4B"
-                android:text="@string/cabelo_4b" />
-
-            <TextView
-                style="@style/OpcaoPergunta"
-                android:layout_width="match_parent"
-                android:layout_marginTop="@dimen/espaco_entre_opcoes"
-                android:tag="TYPE_4C"
-                android:text="@string/cabelo_4c" />
+                android:tag="NENHUMA"
+                android:text="@string/condicao_nenhuma" />
 
         </LinearLayout>
 

@@ -4,6 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -11,11 +12,13 @@ import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.repository.api.ClienteApi;
 import com.venussystem.venusmobile.repository.api.VenusApi;
 import com.venussystem.venusmobile.repository.api.dto.BrandResponse;
+import com.venussystem.venusmobile.repository.api.dto.MediaAssetResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductCategoryResponse;
-import com.venussystem.venusmobile.repository.api.dto.ProductLabelResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductFullResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductVersionResponse;
+import com.venussystem.venusmobile.repository.api.dto.ScoringModelResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,6 +30,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import retrofit2.Response;
@@ -37,7 +42,7 @@ public class ProdutoRepository {
 
     // As chamadas do catalogo sao independentes, entao vao juntas neste pool em
     // vez de uma esperando a outra.
-    private static final ExecutorService REDE = Executors.newFixedThreadPool(5);
+    private static final ExecutorService REDE = Executors.newFixedThreadPool(6);
 
     private static final Handler PRINCIPAL = new Handler(Looper.getMainLooper());
 
@@ -53,8 +58,51 @@ public class ProdutoRepository {
     private static final MutableLiveData<String> ERRO = new MutableLiveData<>();
     private static final AtomicBoolean EM_ANDAMENTO = new AtomicBoolean(false);
 
-    public interface AoObterTexto {
-        void aoConcluir(@Nullable String texto);
+    private final VenusApi api;
+
+    public ProdutoRepository() {
+        this(ClienteApi.get());
+    }
+
+    @VisibleForTesting
+    public ProdutoRepository(VenusApi api) {
+        this.api = api;
+    }
+
+    @VisibleForTesting
+    public static void resetEstadoParaTeste() {
+        aguardarExecutorOcioso();
+        CATALOGO.postValue(null);
+        carregado = false;
+        CARREGANDO.postValue(false);
+        ERRO.postValue(null);
+        EM_ANDAMENTO.set(false);
+    }
+
+    /**
+     * EXECUTOR e REDE sao estaticos e vivem pro processo de teste inteiro, nao
+     * so reiniciados junto com os campos acima. Sem esta barreira, a tarefa em
+     * segundo plano de um teste podia ainda estar rodando (ou na fila) quando
+     * o proximo teste comecava - invisivel numa maquina rapida, mas em uma
+     * mais lenta/carregada (CI) o atraso se acumula teste apos teste ate
+     * estourar o timeout de aguardarValor. Submeter um no-op no EXECUTOR e
+     * esperar ele rodar garante que a fila esvaziou - e como o EXECUTOR so
+     * libera depois que as 6 chamadas do REDE respondem, isso arrasta o REDE
+     * junto.
+     */
+    private static void aguardarExecutorOcioso() {
+        try {
+            EXECUTOR.submit(() -> null).get(20, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException | TimeoutException ignorada) {
+            // Se nem o no-op responder, o proprio teste que chamou isto vai
+            // estourar seu timeout e relatar o problema real.
+        }
+    }
+
+    public interface AoObterDetalhe {
+        void aoConcluir(@Nullable String textoRotulo, @Nullable String urlFoto);
     }
 
     public LiveData<List<Produto>> getCatalogo() {
@@ -116,56 +164,73 @@ public class ProdutoRepository {
     }
 
     /**
-     * Busca o texto de composicao (rotulo) do produto: primeiro acha a versao
-     * atual dele, depois o rotulo daquela versao. E uma tela isolada, nao o
-     * catalogo compartilhado, entao roda em uma chamada avulsa e devolve pelo
-     * callback - null quando a API nao tiver o dado ou estiver fora do ar.
+     * Busca o agregado /full do produto (rotulo e fotos). E uma tela isolada,
+     * nao o catalogo compartilhado, entao roda em uma chamada avulsa e devolve
+     * pelo callback - null quando a API nao tiver o dado ou estiver fora do ar.
      */
-    public void buscarIngredientes(long produtoId, AoObterTexto callback) {
+    public void buscarDetalheProduto(long produtoId, AoObterDetalhe callback) {
         REDE.execute(() -> {
-            String texto = obterTextoDoRotulo(produtoId);
-            PRINCIPAL.post(() -> callback.aoConcluir(texto));
+            DetalheProduto detalhe = obterDetalheCompleto(produtoId);
+            PRINCIPAL.post(() -> callback.aoConcluir(detalhe.textoRotulo, detalhe.urlFoto));
         });
     }
 
-    @Nullable
-    private String obterTextoDoRotulo(long produtoId) {
+    private DetalheProduto obterDetalheCompleto(long produtoId) {
         try {
-            VenusApi api = ClienteApi.get();
-
-            Response<ProductVersionResponse> respostaVersao =
-                    api.versaoAtual(produtoId).execute();
-            if (!respostaVersao.isSuccessful() || respostaVersao.body() == null) {
-                return null;
+            Response<ProductFullResponse> resposta =
+                    api.buscarProdutoCompleto(produtoId).execute();
+            if (!resposta.isSuccessful() || resposta.body() == null) {
+                return new DetalheProduto(null, null);
             }
 
-            Response<ProductLabelResponse> respostaRotulo =
-                    api.buscarRotulo(respostaVersao.body().id).execute();
-            if (!respostaRotulo.isSuccessful() || respostaRotulo.body() == null) {
-                return null;
-            }
-
-            return respostaRotulo.body().normalizedText;
+            ProductFullResponse corpo = resposta.body();
+            String texto = corpo.label == null ? null : corpo.label.normalizedText;
+            String urlFoto = primeiraFotoAtiva(corpo.photos);
+            return new DetalheProduto(texto, urlFoto);
         } catch (IOException e) {
+            return new DetalheProduto(null, null);
+        }
+    }
+
+    /**
+     * A primeira foto ACTIVE do tipo PRODUCT_PHOTO, na ordem de sortOrder.
+     */
+    @Nullable
+    private String primeiraFotoAtiva(List<MediaAssetResponse> fotos) {
+        if (fotos == null) {
             return null;
         }
+        MediaAssetResponse escolhida = null;
+        for (MediaAssetResponse foto : fotos) {
+            boolean valida = "ACTIVE".equals(foto.status) && "PRODUCT_PHOTO".equals(foto.purpose);
+            if (!valida) {
+                continue;
+            }
+            if (escolhida == null || ordemDaFoto(foto) < ordemDaFoto(escolhida)) {
+                escolhida = foto;
+            }
+        }
+        return escolhida == null ? null : escolhida.url;
+    }
+
+    private int ordemDaFoto(MediaAssetResponse foto) {
+        return foto.sortOrder == null ? Integer.MAX_VALUE : foto.sortOrder;
     }
 
     /**
      * A lista de produtos da API traz so o brandId/categoryId e nao traz nota
      * nenhuma. Para montar o card do jeito que a tela precisa (nome, marca,
-     * categoria e nota) juntamos cinco chamadas: produtos, marcas, categorias,
-     * versoes e notas.
+     * categoria e nota) juntamos seis chamadas: produtos, marcas, categorias,
+     * versoes, notas e o modelo de scoring ativo.
      *
-     * A nota mora na versao atual do produto, nao no produto: por isso o
-     * caminho e produto -> versao atual -> nota.
+     * A nota mora na versao atual do produto, nao no produto, e cada versao
+     * pode ter uma nota por modelo de scoring: por isso o caminho e produto ->
+     * versao atual -> nota do modelo ativo.
      *
-     * Nenhuma depende do resultado da outra, entao as cinco sao disparadas de
+     * Nenhuma depende do resultado da outra, entao as seis sao disparadas de
      * uma vez: o custo passa a ser o da chamada mais lenta, e nao a soma delas.
      */
     private List<Produto> montarCatalogo() throws IOException, FalhaApi {
-        VenusApi api = ClienteApi.get();
-
         Future<List<ProductResponse>> pedidoProdutos =
                 REDE.submit(() -> exigir(api.listarProdutos().execute(), "produtos"));
         Future<List<BrandResponse>> pedidoMarcas =
@@ -176,12 +241,14 @@ public class ProdutoRepository {
                 REDE.submit(() -> exigir(api.listarVersoes().execute(), "versoes"));
         Future<List<ProductScoreResponse>> pedidoNotas =
                 REDE.submit(() -> exigir(api.listarNotas().execute(), "notas"));
+        Future<Long> pedidoModeloAtivo = REDE.submit(() -> buscarModeloAtivoId(api));
 
         List<ProductResponse> produtos = esperar(pedidoProdutos);
         List<BrandResponse> marcas = esperar(pedidoMarcas);
         List<ProductCategoryResponse> categorias = esperar(pedidoCategorias);
         List<ProductVersionResponse> versoes = esperar(pedidoVersoes);
         List<ProductScoreResponse> notas = esperar(pedidoNotas);
+        Long modeloAtivoId = esperarModeloAtivo(pedidoModeloAtivo);
 
         Map<Long, String> nomeDaMarca = new HashMap<>();
         for (BrandResponse marca : marcas) {
@@ -202,7 +269,9 @@ public class ProdutoRepository {
 
         Map<Long, Integer> notaDaVersao = new HashMap<>();
         for (ProductScoreResponse nota : notas) {
-            notaDaVersao.put(nota.productVersionId, nota.overallScore);
+            if (modeloAtivoId != null && modeloAtivoId.equals(nota.scoringModelId)) {
+                notaDaVersao.put(nota.productVersionId, nota.overallScore);
+            }
         }
 
         List<Produto> catalogo = new ArrayList<>();
@@ -219,12 +288,44 @@ public class ProdutoRepository {
                 marca = "";
             }
 
-            // A API ainda nao tem campo de imagem, entao o item cai no
-            // placeholder do adapter ate o Cloudinary entrar no contrato.
+            // Esta listagem (ProductResponse/ProductVersionResponse) nao tem campo
+            // de imagem, entao o item cai no placeholder do adapter. As fotos ja
+            // existem na API em /api/products/{id}/full e
+            // /api/product-versions/{id}/photos, so a listagem que nao expoe.
             catalogo.add(new Produto(produto.id, produto.name, marca, nota, null,
                     produto.productCategoryId, nomeDaCategoria.get(produto.productCategoryId)));
         }
         return catalogo;
+    }
+
+    /**
+     * Sem modelo ativo (404) ou com a chamada fora do ar, o catalogo carrega
+     * mesmo assim: melhor mostrar os produtos sem nota do que derrubar a busca
+     * inteira por causa de uma configuracao de scoring.
+     */
+    @Nullable
+    private Long buscarModeloAtivoId(VenusApi api) {
+        try {
+            Response<ScoringModelResponse> resposta = api.modeloAtivo().execute();
+            if (!resposta.isSuccessful() || resposta.body() == null) {
+                return null;
+            }
+            return resposta.body().id;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    @Nullable
+    private Long esperarModeloAtivo(Future<Long> pedido) {
+        try {
+            return pedido.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (ExecutionException e) {
+            return null;
+        }
     }
 
     /**
@@ -262,6 +363,16 @@ public class ProdutoRepository {
     private static class FalhaApi extends Exception {
         FalhaApi(String mensagem) {
             super(mensagem);
+        }
+    }
+
+    private static class DetalheProduto {
+        final String textoRotulo;
+        final String urlFoto;
+
+        DetalheProduto(@Nullable String textoRotulo, @Nullable String urlFoto) {
+            this.textoRotulo = textoRotulo;
+            this.urlFoto = urlFoto;
         }
     }
 }

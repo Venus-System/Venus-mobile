@@ -42,24 +42,25 @@
             app:layout_constraintStart_toEndOf="@+id/btnVoltar"
             app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
 
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/avatarLista"
-            android:layout_width="@dimen/avatar_lista"
-            android:layout_height="@dimen/avatar_lista"
+            android:layout_width="@dimen/avatar_lista_capa"
+            android:layout_height="@dimen/avatar_lista_capa"
             android:layout_marginTop="@dimen/espaco_pequeno"
             android:background="@drawable/bg_avatar_lista"
             android:contentDescription="@string/lista_escolher_capa"
-            android:padding="38dp"
+            android:padding="56dp"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_produtos_lista"
+            app:shapeAppearanceOverlay="@style/AvatarRedondo"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/btnVoltar" />
 
         <ImageButton
             android:id="@+id/btnEscolherCapa"
-            android:layout_width="42dp"
-            android:layout_height="42dp"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
             android:background="@drawable/bg_lupa_avatar"
             android:contentDescription="@string/lista_escolher_capa"
             android:scaleType="center"
@@ -113,61 +114,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/labelDescricao" />
 
-        <TextView
-            android:id="@+id/tituloPrivacidade"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/espaco_grande"
-            android:text="@string/lista_privacidade"
-            android:textColor="@color/preto_texto"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/editDescricaoLista" />
-
-        <LinearLayout
-            android:id="@+id/seletorPrivacidade"
-            android:layout_width="0dp"
-            android:layout_height="@dimen/altura_opcao"
-            android:layout_marginTop="@dimen/espaco_pequeno"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tituloPrivacidade">
-
-            <TextView
-                android:id="@+id/btnPublica"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_privacidade_esquerda"
-                android:gravity="center"
-                android:text="@string/lista_publica"
-                android:textColor="@color/texto_privacidade"
-                android:textSize="@dimen/texto_corpo" />
-
-            <TextView
-                android:id="@+id/btnPrivada"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_privacidade_direita"
-                android:gravity="center"
-                android:text="@string/lista_privada"
-                android:textColor="@color/texto_privacidade"
-                android:textSize="@dimen/texto_corpo" />
-
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/textAjudaPrivacidade"
-            style="@style/TextoAjuda"
-            android:layout_marginTop="@dimen/espaco_pequeno"
-            android:text="@string/lista_ajuda_privacidade"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/seletorPrivacidade" />
-
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnSalvarLista"
             style="@style/BotaoGradiente"
@@ -175,7 +121,7 @@
             android:text="@string/lista_salvar"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textAjudaPrivacidade" />
+            app:layout_constraintTop_toBottomOf="@+id/editDescricaoLista" />
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnCancelarLista"

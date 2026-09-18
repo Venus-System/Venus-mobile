@@ -7,22 +7,22 @@ public class Colecao {
     private final String name;
     private final String imageUrl;
     private final int imagemLocal;
-    private final String autor;
+    private final String descricao;
 
     public Colecao(Long id, String name, @DrawableRes int imagemLocal) {
         this(id, name, null, imagemLocal, null);
     }
 
-    public Colecao(Long id, String name, @DrawableRes int imagemLocal, String autor) {
-        this(id, name, null, imagemLocal, autor);
+    public Colecao(Long id, String name, String descricao) {
+        this(id, name, null, 0, descricao);
     }
 
-    public Colecao(Long id, String name, String imageUrl, int imagemLocal, String autor) {
+    public Colecao(Long id, String name, String imageUrl, int imagemLocal, String descricao) {
         this.id = id;
         this.name = name;
         this.imageUrl = imageUrl;
         this.imagemLocal = imagemLocal;
-        this.autor = autor;
+        this.descricao = descricao;
     }
 
     public Long getId() {
@@ -42,7 +42,7 @@ public class Colecao {
         return imagemLocal;
     }
 
-    public String getAutor() {
-        return autor;
+    public String getDescricao() {
+        return descricao;
     }
 }

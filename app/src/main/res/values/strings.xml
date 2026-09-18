@@ -34,6 +34,13 @@
     <string name="pesquisa_subtitulo">Suas respostas vão nos ajudar a personalizar suas análises de produtos.</string>
     <string name="pesquisa_responder_depois"><u>Responder mais tarde →</u></string>
 
+    <string name="pergunta_genero">Qual é o seu gênero?</string>
+    <string name="genero_feminino">Feminino</string>
+    <string name="genero_masculino">Masculino</string>
+    <string name="genero_nao_binario">Não binário</string>
+    <string name="genero_outro">Outro</string>
+    <string name="genero_nao_identificar">Prefiro não identificar</string>
+
     <string name="pergunta_tipo_cabelo">Qual seu tipo de cabelo?</string>
     <string name="pergunta_ajuda_cabelo"><u>Qual é meu tipo de cabelo?</u></string>
 
@@ -59,6 +66,24 @@
     <string name="sens_baixa">Baixa</string>
     <string name="sens_media">Média</string>
     <string name="sens_alta">Alta</string>
+
+    <string name="pergunta_condicoes_pele">Você tem alguma condição de pele?</string>
+    <string name="condicao_acne">Tendência a acne</string>
+    <string name="condicao_rosacea">Rosácea</string>
+    <string name="condicao_eczema">Eczema</string>
+    <string name="condicao_hiperpigmentacao">Hiperpigmentação</string>
+    <string name="condicao_melasma">Melasma</string>
+    <string name="condicao_nenhuma">Nenhuma delas</string>
+
+    <string name="pergunta_gestacao">Você está grávida ou amamentando?</string>
+    <string name="gestacao_gravida">Estou grávida</string>
+    <string name="gestacao_amamentando">Estou amamentando</string>
+    <string name="gestacao_nenhuma">Nenhuma das duas</string>
+    <string name="gestacao_nao_dizer">Prefiro não dizer</string>
+    <string name="gestacao_dica">Alguns ingredientes mudam de recomendação nesse período.</string>
+
+    <string name="pergunta_pode_marcar_varias">Você pode marcar mais de uma opção.</string>
+    <string name="pergunta_escolha_ao_menos_uma">Escolha ao menos uma opção para continuar</string>
 
     <string name="pergunta_fototipo">Qual o seu fototipo de pele?</string>
     <string name="ajuda_fototipo"><u>Qual é meu fotótipo?</u></string>
@@ -198,24 +223,19 @@
     <string name="sheet_sens_desc_media">Reage de vez em quando. Ácido, perfume, sol ou calor podem causar ardência ou vermelhidão leve, que passa rápido.</string>
     <string name="sheet_sens_desc_alta">Reage com facilidade. Ardência, coceira, vermelhidão ou descamação aparecem com frequência, até com produtos suaves.</string>
 
-    <string name="aba_minhas_listas">Minhas listas</string>
-    <string name="aba_seguindo">Seguindo</string>
     <string name="lista_nova">Nova lista</string>
-    <string name="acao_seguir">Seguir</string>
-    <string name="seguindo_agora">Seguindo %1$s</string>
-    <string name="seguindo_vazio">Você ainda não segue nenhuma lista.\nQuando alguém criar uma lista pública, ela aparece aqui.</string>
 
     <string name="lista_label_nome">Nome Da Lista</string>
     <string name="lista_hint_nome">Coloque seus produtos em ordem</string>
     <string name="lista_label_descricao">Descrição (Opcional)</string>
     <string name="lista_hint_descricao">Adicione notas sobre o propósito dessa lista</string>
-    <string name="lista_privacidade">Configuração de privacidade</string>
-    <string name="lista_publica">Pública</string>
-    <string name="lista_privada">Privada</string>
-    <string name="lista_ajuda_privacidade">Listas públicas podem ser vistas por outros usuários</string>
     <string name="lista_salvar">Salvar</string>
     <string name="lista_cancelar">Cancelar</string>
     <string name="lista_escolher_capa">Escolher capa</string>
+    <string name="lista_adicionar_produto">Adicionar produto</string>
+    <string name="lista_capa_tirar_foto">Tirar foto</string>
+    <string name="lista_capa_galeria">Escolher da galeria</string>
+    <string name="lista_capa_erro">Não foi possível carregar a imagem. Tente de novo.</string>
     <string name="lista_erro_nome">Dê um nome para a lista</string>
     <string name="acao_tentar_de_novo">Tentar de novo</string>
     <string name="erro_sem_conexao">Não foi possível falar com o servidor. Verifique sua conexão e tente de novo.</string>
@@ -243,6 +263,7 @@ A primeira busca pode levar até um minuto.</string>
     <string name="assistente_sugestao_um">Ver as opções</string>
     <string name="assistente_sugestao_dois">Tem álcool?</string>
     <string name="assistente_sugestao_tres">É vegano?</string>
+    <string name="perfil_genero">Gênero</string>
     <string name="perfil_tipo_pele">Tipo de Pele</string>
     <string name="perfil_fototipo">Fototipo de Pele</string>
     <string name="perfil_sensibilidade">Sensibilidade de Pele</string>
@@ -253,8 +274,13 @@ A primeira busca pode levar até um minuto.</string>
     <string name="lista_titulo">Lista</string>
     <string name="lista_vazia">Sua lista está vazia</string>
     <string name="lista_criada_por">Criado por %1$s</string>
-    <string name="lista_acao_escanear">Escanear produtos</string>
-    <string name="lista_acao_buscar">Buscar produtos</string>
+    <string name="desc_mais_opcoes">Mais opções</string>
+    <string name="lista_editar_nome">Editar nome</string>
+    <string name="lista_editar_descricao">Editar descrição</string>
+    <string name="lista_excluir">Excluir lista</string>
+    <string name="lista_excluir_titulo">Excluir esta lista?</string>
+    <string name="lista_excluir_mensagem">Os produtos adicionados nela também serão removidos. Essa ação não pode ser desfeita.</string>
+    <string name="acao_excluir">Excluir</string>
     <string name="produto_aba_avaliacao">Avaliação</string>
     <string name="produto_aba_match">Match com você</string>
     <string name="produto_aba_alternativas">Alternativas</string>

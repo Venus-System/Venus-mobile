@@ -62,6 +62,14 @@ public class PerfilFragment extends Fragment {
     // As mesmas tags/opcoes das telas cheias do questionario (para a resposta
     // continuar compativel), na ordem em que os cartoes aparecem na tela.
     private static final Atributo[] ATRIBUTOS = {
+            new Atributo(R.string.perfil_genero, PerfilRepository.GENERO,
+                    R.string.pergunta_genero, opcoes(
+                    "FEMALE", R.string.genero_feminino,
+                    "MALE", R.string.genero_masculino,
+                    "NON_BINARY", R.string.genero_nao_binario,
+                    "OTHER", R.string.genero_outro,
+                    "PREFER_NOT_SAY", R.string.genero_nao_identificar)),
+
             new Atributo(R.string.perfil_tipo_pele, PerfilRepository.TIPO_PELE,
                     R.string.pergunta_tipo_pele, opcoes(
                     "OILY", R.string.pele_oleoso,
@@ -85,21 +93,18 @@ public class PerfilFragment extends Fragment {
                     "MEDIUM", R.string.sens_media,
                     "HIGH", R.string.sens_alta)),
 
-            // O questionario de primeira resposta ainda so pergunta ate 3C -
-            // falta 4A/4B/4C (cabelo cacheado) la. Aqui no modal ja incluimos
-            // as 10 opcoes, ja que o HairType.java ja sabe mapear todas elas.
             new Atributo(R.string.perfil_tipo_cabelo, PerfilRepository.TIPO_CABELO,
                     R.string.pergunta_tipo_cabelo, opcoes(
-                    "1", R.string.cabelo_1,
-                    "2A", R.string.cabelo_2a,
-                    "2B", R.string.cabelo_2b,
-                    "2C", R.string.cabelo_2c,
-                    "3A", R.string.cabelo_3a,
-                    "3B", R.string.cabelo_3b,
-                    "3C", R.string.cabelo_3c,
-                    "4A", R.string.cabelo_4a,
-                    "4B", R.string.cabelo_4b,
-                    "4C", R.string.cabelo_4c)),
+                    "TYPE_1", R.string.cabelo_1,
+                    "TYPE_2A", R.string.cabelo_2a,
+                    "TYPE_2B", R.string.cabelo_2b,
+                    "TYPE_2C", R.string.cabelo_2c,
+                    "TYPE_3A", R.string.cabelo_3a,
+                    "TYPE_3B", R.string.cabelo_3b,
+                    "TYPE_3C", R.string.cabelo_3c,
+                    "TYPE_4A", R.string.cabelo_4a,
+                    "TYPE_4B", R.string.cabelo_4b,
+                    "TYPE_4C", R.string.cabelo_4c)),
 
             new Atributo(R.string.perfil_couro, PerfilRepository.COURO_CABELUDO,
                     R.string.pergunta_couro, opcoes(

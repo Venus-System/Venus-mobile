@@ -38,9 +38,8 @@
     <dimen name="largura_indicador">32dp</dimen>
     <dimen name="altura_capa_lista">150dp</dimen>
     <dimen name="miniatura_lista">44dp</dimen>
-    <dimen name="largura_botao_seguir">76dp</dimen>
-    <dimen name="altura_botao_seguir">30dp</dimen>
     <dimen name="avatar_lista">140dp</dimen>
+    <dimen name="avatar_lista_capa">220dp</dimen>
     <dimen name="elevacao_scan">10dp</dimen>
     <dimen name="descida_scan">10dp</dimen>
     <dimen name="foto_historico">52dp</dimen>

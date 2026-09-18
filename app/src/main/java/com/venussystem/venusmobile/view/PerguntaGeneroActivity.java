@@ -5,20 +5,20 @@ import androidx.annotation.Nullable;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.repository.PerfilRepository;
 
-public class PerguntaFaixaEtariaActivity extends PerguntaBaseActivity {
+public class PerguntaGeneroActivity extends PerguntaBaseActivity {
     @Override
     protected int getLayout() {
-        return R.layout.activity_pergunta_faixa_etaria;
+        return R.layout.activity_pergunta_genero;
     }
 
     @Override
     @Nullable
     protected Class<?> getProximaTela() {
-        return PerguntaGestacaoActivity.class;
+        return PerguntaCabeloActivity.class;
     }
 
     @Override
     protected String getChave() {
-        return PerfilRepository.FAIXA_ETARIA;
+        return PerfilRepository.GENERO;
     }
 }
