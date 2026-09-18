@@ -73,4 +73,20 @@
         tools:itemCount="3"
         tools:listitem="@layout/item_colecao" />
 
+    <TextView
+        android:id="@+id/textListasVazio"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_secao"
+        android:layout_marginEnd="@dimen/espaco_secao"
+        android:gravity="center"
+        android:text="@string/seguindo_vazio"
+        android:textColor="@color/cinza_descricao"
+        android:textSize="@dimen/texto_corpo"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/listaColecoes"
+        app:layout_constraintEnd_toEndOf="@+id/listaColecoes"
+        app:layout_constraintStart_toStartOf="@+id/listaColecoes"
+        app:layout_constraintTop_toTopOf="@+id/listaColecoes" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

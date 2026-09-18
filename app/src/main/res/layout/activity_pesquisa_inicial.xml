@@ -8,26 +8,18 @@
     android:background="@drawable/bg_gradiente_venus"
     tools:context=".view.PesquisaInicialActivity">
 
-    <ImageButton
-        android:id="@+id/btnVoltar"
-        style="@style/BotaoVoltar"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="12dp"
-        android:contentDescription="@string/desc_voltar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <ImageView
         android:id="@+id/imgPesquisa"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginTop="@dimen/espaco_grande"
         android:importantForAccessibility="no"
         android:scaleType="fitCenter"
         android:src="@drawable/pesquisadeusario"
         app:layout_constraintBottom_toTopOf="@+id/textTitulo"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnVoltar"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintWidth_percent="0.9" />
 
     <TextView

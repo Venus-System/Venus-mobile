@@ -29,6 +29,7 @@ public class ListasFragment extends Fragment {
     private SeguindoAdapter adapterSeguindo;
     private RecyclerView lista;
     private View btnNovaLista;
+    private View textVazio;
 
     @Nullable
     @Override
@@ -51,6 +52,8 @@ public class ListasFragment extends Fragment {
 
         lista = view.findViewById(R.id.listaColecoes);
         lista.setLayoutManager(new LinearLayoutManager(requireContext()));
+
+        textVazio = view.findViewById(R.id.textListasVazio);
 
         btnNovaLista = view.findViewById(R.id.btnNovaLista);
         btnNovaLista.setOnClickListener(v ->
@@ -83,11 +86,19 @@ public class ListasFragment extends Fragment {
 
         lista.setAdapter(minhas ? adapterMinhas : adapterSeguindo);
         btnNovaLista.setVisibility(minhas ? View.VISIBLE : View.GONE);
+        textVazio.setVisibility(View.GONE);
 
         if (minhas) {
             repository.minhasListas().observe(getViewLifecycleOwner(), adapterMinhas::atualizar);
         } else {
-            repository.seguindo().observe(getViewLifecycleOwner(), adapterSeguindo::atualizar);
+            // "Seguindo" ainda nao tem nenhum dado real por tras (ver
+            // ColecaoRepository), entao aqui e onde o aviso de vazio importa -
+            // sem ele a aba pareceria quebrada, e nao "ainda sem conteudo".
+            repository.seguindo().observe(getViewLifecycleOwner(), colecoes -> {
+                adapterSeguindo.atualizar(colecoes);
+                textVazio.setVisibility(
+                        adapterSeguindo.getItemCount() == 0 ? View.VISIBLE : View.GONE);
+            });
         }
     }
 
