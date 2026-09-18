@@ -1,212 +1,195 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
-    android:fillViewport="true"
     tools:context=".view.DetalheListaActivity">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="@dimen/espaco_grande"
-        android:paddingEnd="@dimen/espaco_grande"
-        android:paddingBottom="@dimen/espaco_grande">
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollDetalheLista"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toTopOf="@+id/btnAdicionarProduto"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <ImageButton
-            android:id="@+id/btnVoltar"
-            android:layout_width="@dimen/area_toque_minima"
-            android:layout_height="@dimen/area_toque_minima"
-            android:layout_marginStart="-12dp"
-            android:layout_marginTop="@dimen/espaco_pequeno"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/desc_voltar"
-            android:rotation="180"
-            android:scaleType="center"
-            android:src="@drawable/ic_chevron"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/textTituloLista"
-            android:layout_width="wrap_content"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/lista_titulo"
-            android:textColor="@color/roxo_venus"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="@+id/btnVoltar"
-            app:layout_constraintStart_toEndOf="@+id/btnVoltar"
-            app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
+            android:paddingStart="@dimen/espaco_grande"
+            android:paddingEnd="@dimen/espaco_grande"
+            android:paddingBottom="@dimen/espaco_grande">
+
+            <ImageButton
+                android:id="@+id/btnVoltar"
+                android:layout_width="@dimen/area_toque_minima"
+                android:layout_height="@dimen/area_toque_minima"
+                android:layout_marginStart="-12dp"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/desc_voltar"
+                android:rotation="180"
+                android:scaleType="center"
+                android:src="@drawable/ic_chevron"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/textTituloLista"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/lista_titulo"
+                android:textColor="@color/roxo_venus"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="@+id/btnVoltar"
+                app:layout_constraintStart_toEndOf="@+id/btnVoltar"
+                app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
+
+            <ImageButton
+                android:id="@+id/btnMaisOpcoes"
+                android:layout_width="@dimen/area_toque_minima"
+                android:layout_height="@dimen/area_toque_minima"
+                android:layout_marginEnd="-12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/desc_mais_opcoes"
+                android:scaleType="center"
+                android:src="@drawable/ic_mais_opcoes"
+                app:layout_constraintBottom_toBottomOf="@+id/btnVoltar"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/avatarLista"
+                android:layout_width="@dimen/avatar_lista_capa"
+                android:layout_height="@dimen/avatar_lista_capa"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:background="@drawable/bg_avatar_lista"
+                android:contentDescription="@string/lista_escolher_capa"
+                android:padding="56dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_produtos_lista"
+                app:shapeAppearanceOverlay="@style/AvatarRedondo"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/btnVoltar" />
+
+            <ImageButton
+                android:id="@+id/btnEscolherCapa"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:background="@drawable/bg_lupa_avatar"
+                android:contentDescription="@string/lista_escolher_capa"
+                android:scaleType="center"
+                android:src="@drawable/ic_lupa"
+                app:layout_constraintBottom_toBottomOf="@+id/avatarLista"
+                app:layout_constraintEnd_toEndOf="@+id/avatarLista"
+                app:layout_constraintHorizontal_bias="0.86"
+                app:layout_constraintStart_toStartOf="@+id/avatarLista"
+                app:layout_constraintTop_toTopOf="@+id/avatarLista"
+                app:layout_constraintVertical_bias="0.86" />
+
+            <TextView
+                android:id="@+id/textNomeLista"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_grande"
+                android:textColor="@color/preto_texto"
+                android:textSize="22sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/avatarLista"
+                tools:text="Produtos favoritos" />
+
+            <TextView
+                android:id="@+id/textAutorLista"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/roxo_marca"
+                android:textSize="13sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textNomeLista"
+                tools:text="Criado por Rafael Lopes" />
+
+            <TextView
+                android:id="@+id/textDescricaoLista"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:textColor="@color/cinza_descricao"
+                android:textSize="@dimen/texto_corpo"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textAutorLista"
+                tools:text="Notas sobre o propósito dessa lista"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/blocoVazio"
+                android:layout_width="0dp"
+                android:layout_height="140dp"
+                android:layout_marginTop="@dimen/espaco_medio"
+                android:background="@drawable/bg_lista_vazia"
+                android:gravity="center"
+                android:text="@string/lista_vazia"
+                android:textColor="@color/preto_texto"
+                android:textSize="@dimen/texto_corpo"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textDescricaoLista" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/listaProdutosDaLista"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/blocoVazio"
+                tools:listitem="@layout/item_produto_lista" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <LinearLayout
+        android:id="@+id/btnAdicionarProduto"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/altura_campo"
+        android:layout_marginStart="@dimen/espaco_grande"
+        android:layout_marginEnd="@dimen/espaco_grande"
+        android:layout_marginBottom="@dimen/espaco_medio"
+        android:background="@drawable/bg_botao_gradiente"
+        android:elevation="6dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
         <ImageView
-            android:id="@+id/avatarLista"
-            android:layout_width="@dimen/avatar_lista"
-            android:layout_height="@dimen/avatar_lista"
-            android:layout_marginTop="@dimen/espaco_pequeno"
-            android:background="@drawable/bg_avatar_lista"
-            android:contentDescription="@string/lista_escolher_capa"
-            android:padding="38dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_produtos_lista"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/btnVoltar" />
-
-        <ImageButton
-            android:id="@+id/btnEscolherCapa"
-            android:layout_width="42dp"
-            android:layout_height="42dp"
-            android:background="@drawable/bg_lupa_avatar"
-            android:contentDescription="@string/lista_escolher_capa"
-            android:scaleType="center"
-            android:src="@drawable/ic_lupa"
-            app:layout_constraintBottom_toBottomOf="@+id/avatarLista"
-            app:layout_constraintEnd_toEndOf="@+id/avatarLista"
-            app:layout_constraintHorizontal_bias="0.86"
-            app:layout_constraintStart_toStartOf="@+id/avatarLista"
-            app:layout_constraintTop_toTopOf="@+id/avatarLista"
-            app:layout_constraintVertical_bias="0.86" />
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="@dimen/espaco_pequeno"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_mais" />
 
         <TextView
-            android:id="@+id/chipPrivacidade"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/espaco_grande"
-            android:background="@drawable/bg_chip_privacidade"
-            android:paddingStart="10dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="10dp"
-            android:paddingBottom="4dp"
-            android:textColor="@color/roxo_secao"
-            android:textSize="11sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/avatarLista"
-            tools:text="@string/lista_privada" />
+            android:text="@string/lista_adicionar_produto"
+            android:textColor="@color/white"
+            android:textSize="@dimen/texto_botao" />
 
-        <TextView
-            android:id="@+id/textNomeLista"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:textColor="@color/preto_texto"
-            android:textSize="22sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/chipPrivacidade"
-            tools:text="Produtos favoritos" />
+    </LinearLayout>
 
-        <TextView
-            android:id="@+id/textAutorLista"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textColor="@color/roxo_marca"
-            android:textSize="13sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textNomeLista"
-            tools:text="Criado por Rafael Lopes" />
-
-        <TextView
-            android:id="@+id/textDescricaoLista"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/espaco_pequeno"
-            android:textColor="@color/cinza_descricao"
-            android:textSize="@dimen/texto_corpo"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textAutorLista"
-            tools:text="Notas sobre o propósito dessa lista"
-            tools:visibility="visible" />
-
-        <TextView
-            android:id="@+id/blocoVazio"
-            android:layout_width="0dp"
-            android:layout_height="140dp"
-            android:layout_marginTop="@dimen/espaco_medio"
-            android:background="@drawable/bg_lista_vazia"
-            android:gravity="center"
-            android:text="@string/lista_vazia"
-            android:textColor="@color/preto_texto"
-            android:textSize="@dimen/texto_corpo"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textDescricaoLista" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/listaProdutosDaLista"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/espaco_pequeno"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/blocoVazio"
-            tools:listitem="@layout/item_historico_produto" />
-
-        <LinearLayout
-            android:id="@+id/btnEscanearVazio"
-            android:layout_width="0dp"
-            android:layout_height="@dimen/altura_campo"
-            android:layout_marginTop="@dimen/espaco_medio"
-            android:background="@drawable/bg_botao_gradiente"
-            android:gravity="center"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/listaProdutosDaLista">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_marginEnd="@dimen/espaco_pequeno"
-                android:importantForAccessibility="no"
-                android:src="@drawable/ic_scan" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/lista_acao_escanear"
-                android:textColor="@color/white"
-                android:textSize="@dimen/texto_botao" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/btnBuscarVazio"
-            android:layout_width="0dp"
-            android:layout_height="@dimen/altura_campo"
-            android:layout_marginTop="@dimen/espaco_pequeno"
-            android:background="@drawable/bg_botao_outline_magenta"
-            android:gravity="center"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/btnEscanearVazio">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_marginEnd="@dimen/espaco_pequeno"
-                android:importantForAccessibility="no"
-                android:src="@drawable/ic_lupa"
-                app:tint="@color/magenta_venus" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/lista_acao_buscar"
-                android:textColor="@color/magenta_venus"
-                android:textSize="@dimen/texto_botao" />
-
-        </LinearLayout>
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-</androidx.core.widget.NestedScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -35,8 +35,28 @@ import java.util.List;
 
 public class BuscaFragment extends Fragment {
 
+    private static final String ARG_MODO_ESCOLHA = "modo_escolha";
+
+    /** Chave do FragmentResult devolvido quando o fragment esta em modo escolha. */
+    public static final String RESULTADO_ESCOLHA_PRODUTO = "escolha_produto";
+    public static final String EXTRA_PRODUTO_ID = "produto_id";
+
+    /**
+     * Mesma tela de busca, mas ao inves de abrir o produto ela devolve a
+     * escolha pelo FragmentResult - usada para escolher um produto pra
+     * adicionar numa lista (ver EscolherProdutoActivity).
+     */
+    public static BuscaFragment paraEscolherProduto() {
+        BuscaFragment fragment = new BuscaFragment();
+        Bundle args = new Bundle();
+        args.putBoolean(ARG_MODO_ESCOLHA, true);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
     private BuscaViewModel viewModel;
     private ProdutoAdapter adapter;
+    private boolean modoEscolha;
 
     // O servidor gratuito hiberna, e acordar ele foi medido em ~100s. Sem aviso,
     // esse tempo parado passa impressao de travamento - entao depois de alguns
@@ -77,6 +97,7 @@ public class BuscaFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        modoEscolha = getArguments() != null && getArguments().getBoolean(ARG_MODO_ESCOLHA, false);
         viewModel = new ViewModelProvider(this).get(BuscaViewModel.class);
 
         campo = view.findViewById(R.id.campoBuscaProduto);
@@ -99,6 +120,13 @@ public class BuscaFragment extends Fragment {
             // entao o termo entra nos recentes aqui tambem - nao so quando o
             // usuario aperta "buscar" no teclado.
             viewModel.registrarTermoAtual();
+
+            if (modoEscolha) {
+                Bundle resultado = new Bundle();
+                resultado.putLong(EXTRA_PRODUTO_ID, produto.getId());
+                getParentFragmentManager().setFragmentResult(RESULTADO_ESCOLHA_PRODUTO, resultado);
+                return;
+            }
 
             Intent intent = new Intent(requireContext(), DetalheProdutoActivity.class);
             intent.putExtra(DetalheProdutoActivity.EXTRA_ID, produto.getId());

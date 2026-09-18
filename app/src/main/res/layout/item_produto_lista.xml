@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:paddingStart="@dimen/espaco_medio"
+    android:paddingTop="6dp"
+    android:paddingEnd="@dimen/espaco_medio"
+    android:paddingBottom="6dp">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/imgProduto"
+        android:layout_width="@dimen/foto_produto"
+        android:layout_height="@dimen/foto_produto"
+        android:background="@drawable/bg_foto_produto"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/FotoProdutoArredondada"
+        tools:src="@drawable/ic_launcher_foreground" />
+
+    <TextView
+        android:id="@+id/textNome"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:maxLines="2"
+        android:textColor="@color/preto_texto"
+        android:textSize="17sp"
+        app:layout_constraintEnd_toStartOf="@+id/btnRemoverProduto"
+        app:layout_constraintStart_toEndOf="@+id/imgProduto"
+        app:layout_constraintTop_toTopOf="@+id/imgProduto"
+        tools:text="Pão de Forma Integral Do Forno" />
+
+    <TextView
+        android:id="@+id/textMarca"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:maxLines="1"
+        android:textColor="@color/cinza_descricao"
+        android:textSize="15sp"
+        app:layout_constraintEnd_toEndOf="@+id/textNome"
+        app:layout_constraintStart_toStartOf="@+id/textNome"
+        app:layout_constraintTop_toBottomOf="@+id/textNome"
+        tools:text="Wickbold" />
+
+    <TextView
+        android:id="@+id/btnVerNota"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:background="@drawable/bg_botao_ver_nota"
+        android:minWidth="62dp"
+        android:paddingStart="@dimen/espaco_medio"
+        android:paddingTop="7dp"
+        android:paddingEnd="@dimen/espaco_medio"
+        android:paddingBottom="7dp"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@+id/textNome"
+        app:layout_constraintTop_toBottomOf="@+id/textMarca"
+        tools:text="87" />
+
+    <ImageButton
+        android:id="@+id/btnRemoverProduto"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/desc_remover"
+        android:scaleType="center"
+        android:src="@drawable/ic_fechar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
