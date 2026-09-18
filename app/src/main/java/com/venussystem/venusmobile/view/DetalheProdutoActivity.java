@@ -56,6 +56,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
     private View carregandoIngredientes;
     private TextView textIngredientes;
+    private ImageView imgProduto;
 
     private Produto produto;
     private boolean ingredientesCarregados;
@@ -92,6 +93,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         textSemAlternativas = findViewById(R.id.textSemAlternativas);
         carregandoIngredientes = findViewById(R.id.carregandoIngredientes);
         textIngredientes = findViewById(R.id.textIngredientes);
+        imgProduto = findViewById(R.id.imgProduto);
 
         preencherCabecalho();
         prepararAbas();
@@ -117,11 +119,14 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         nota.setBackgroundTintList(ColorStateList.valueOf(
                 ContextCompat.getColor(this, NotaProdutoUtil.fundoPara(valorNota))));
 
-        ImageView imagem = findViewById(R.id.imgProduto);
+        carregarImagem(produto.getImageUrl());
+    }
+
+    private void carregarImagem(String url) {
         ImageLoader carregador = Coil.imageLoader(this);
         carregador.enqueue(new ImageRequest.Builder(this)
-                .data(produto.getImageUrl())
-                .target(imagem)
+                .data(url)
+                .target(imgProduto)
                 .placeholder(R.drawable.bg_foto_produto)
                 .error(R.drawable.bg_foto_produto)
                 .fallback(R.drawable.bg_foto_produto)
@@ -180,12 +185,17 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         carregandoIngredientes.setVisibility(View.VISIBLE);
         textIngredientes.setVisibility(View.GONE);
 
-        repository.buscarIngredientes(produto.getId(), texto -> {
+        repository.buscarDetalheProduto(produto.getId(), (textoRotulo, urlFoto) -> {
             carregandoIngredientes.setVisibility(View.GONE);
             textIngredientes.setVisibility(View.VISIBLE);
 
-            boolean temTexto = texto != null && !texto.trim().isEmpty();
-            textIngredientes.setText(temTexto ? texto : getString(R.string.produto_ingredientes_erro));
+            boolean temTexto = textoRotulo != null && !textoRotulo.trim().isEmpty();
+            textIngredientes.setText(temTexto
+                    ? textoRotulo : getString(R.string.produto_ingredientes_erro));
+
+            if (urlFoto != null) {
+                carregarImagem(urlFoto);
+            }
         });
     }
 
