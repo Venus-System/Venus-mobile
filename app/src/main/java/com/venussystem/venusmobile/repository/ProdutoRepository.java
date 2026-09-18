@@ -33,25 +33,29 @@ import retrofit2.Response;
 
 public class ProdutoRepository {
 
-    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
+    private static final ExecutorService EXECUTOR =
+            Executors.newSingleThreadExecutor();
 
-    // As chamadas do catalogo sao independentes, entao vao juntas neste pool em
-    // vez de uma esperando a outra.
-    private static final ExecutorService REDE = Executors.newFixedThreadPool(5);
+    private static final ExecutorService REDE =
+            Executors.newFixedThreadPool(5);
 
-    private static final Handler PRINCIPAL = new Handler(Looper.getMainLooper());
+    private static final Handler PRINCIPAL =
+            new Handler(Looper.getMainLooper());
 
-    // O catalogo e o mesmo para o app inteiro, entao guardamos em memoria: sair
-    // da aba de busca e voltar nao pode disparar tudo de novo.
-    private static final MutableLiveData<List<Produto>> CATALOGO = new MutableLiveData<>();
-    private static boolean carregado = false;
+    private static final MutableLiveData<List<Produto>> CATALOGO =
+            new MutableLiveData<>();
 
-    // Estado compartilhado: o app aquece o catalogo ainda na tela de boas-vindas,
-    // e quando a busca abre ela precisa enxergar essa mesma carga - senao dispara
-    // uma segunda igual e a tela mostra "pronto" com a lista ainda vazia.
-    private static final MutableLiveData<Boolean> CARREGANDO = new MutableLiveData<>(false);
-    private static final MutableLiveData<String> ERRO = new MutableLiveData<>();
-    private static final AtomicBoolean EM_ANDAMENTO = new AtomicBoolean(false);
+    private static final AtomicBoolean CARREGADO =
+            new AtomicBoolean(false);
+
+    private static final MutableLiveData<Boolean> CARREGANDO =
+            new MutableLiveData<>(false);
+
+    private static final MutableLiveData<String> ERRO =
+            new MutableLiveData<>();
+
+    private static final AtomicBoolean EM_ANDAMENTO =
+            new AtomicBoolean(false);
 
     public interface AoObterTexto {
         void aoConcluir(@Nullable String texto);
@@ -70,196 +74,381 @@ public class ProdutoRepository {
     }
 
     public void carregar(boolean forcar) {
-        if (carregado && !forcar) {
+
+        if (CARREGADO.get() && !forcar) {
             return;
         }
+
         if (!EM_ANDAMENTO.compareAndSet(false, true)) {
             return;
         }
+
         CARREGANDO.postValue(true);
         ERRO.postValue(null);
 
         EXECUTOR.execute(() -> {
+
             try {
-                List<Produto> lista = montarCatalogo();
-                carregado = true;
+
+                List<Produto> lista =
+                        montarCatalogo();
+
+                if (lista == null) {
+                    lista = new ArrayList<>();
+                }
+
+                CARREGADO.set(true);
                 CATALOGO.postValue(lista);
+
             } catch (FalhaApi falha) {
-                ERRO.postValue(falha.getMessage());
+
+                CARREGADO.set(false);
+                ERRO.postValue(
+                        falha.getMessage()
+                );
+
             } catch (IOException e) {
-                ERRO.postValue("Nao foi possivel falar com o servidor. "
-                        + "Verifique sua conexao e tente de novo.");
+
+                CARREGADO.set(false);
+                ERRO.postValue(
+                        "Nao foi possivel falar com o servidor. "
+                                + "Verifique sua conexao e tente de novo."
+                );
+
             } finally {
+
                 CARREGANDO.postValue(false);
                 EM_ANDAMENTO.set(false);
             }
         });
     }
 
-    /**
-     * Procura um produto no catalogo ja carregado, sem ir na rede. A tela de
-     * detalhe so e aberta a partir de uma lista que ja mostrou o produto na
-     * tela, entao o catalogo sempre ja esta em memoria nesse ponto.
-     */
     @Nullable
-    public Produto buscarNoCache(long produtoId) {
-        List<Produto> lista = CATALOGO.getValue();
+    public Produto buscarNoCache(
+            long produtoId
+    ) {
+
+        List<Produto> lista =
+                CATALOGO.getValue();
+
         if (lista == null) {
             return null;
         }
+
         for (Produto produto : lista) {
-            if (produto.getId() != null && produto.getId() == produtoId) {
+
+            if (produto == null
+                    || produto.getId() == null) {
+                continue;
+            }
+
+            if (produto.getId().longValue()
+                    == produtoId) {
+
                 return produto;
             }
         }
+
         return null;
     }
 
-    /**
-     * Busca o texto de composicao (rotulo) do produto: primeiro acha a versao
-     * atual dele, depois o rotulo daquela versao. E uma tela isolada, nao o
-     * catalogo compartilhado, entao roda em uma chamada avulsa e devolve pelo
-     * callback - null quando a API nao tiver o dado ou estiver fora do ar.
-     */
-    public void buscarIngredientes(long produtoId, AoObterTexto callback) {
+    public void buscarIngredientes(
+            long produtoId,
+            AoObterTexto callback
+    ) {
+
         REDE.execute(() -> {
-            String texto = obterTextoDoRotulo(produtoId);
-            PRINCIPAL.post(() -> callback.aoConcluir(texto));
+
+            String texto =
+                    obterTextoDoRotulo(
+                            produtoId
+                    );
+
+            PRINCIPAL.post(
+                    () -> callback.aoConcluir(texto)
+            );
         });
     }
 
     @Nullable
-    private String obterTextoDoRotulo(long produtoId) {
+    private String obterTextoDoRotulo(
+            long produtoId
+    ) {
+
         try {
-            VenusApi api = ClienteApi.get();
+
+            VenusApi api =
+                    ClienteApi.get();
 
             Response<ProductVersionResponse> respostaVersao =
-                    api.versaoAtual(produtoId).execute();
-            if (!respostaVersao.isSuccessful() || respostaVersao.body() == null) {
+                    api.versaoAtual(produtoId)
+                            .execute();
+
+            if (!respostaVersao.isSuccessful()
+                    || respostaVersao.body() == null) {
+
                 return null;
             }
 
             Response<ProductLabelResponse> respostaRotulo =
-                    api.buscarRotulo(respostaVersao.body().id).execute();
-            if (!respostaRotulo.isSuccessful() || respostaRotulo.body() == null) {
+                    api.buscarRotulo(
+                                    respostaVersao.body().id
+                            )
+                            .execute();
+
+            if (!respostaRotulo.isSuccessful()
+                    || respostaRotulo.body() == null) {
+
                 return null;
             }
 
             return respostaRotulo.body().normalizedText;
+
         } catch (IOException e) {
             return null;
         }
     }
 
-    /**
-     * A lista de produtos da API traz so o brandId/categoryId e nao traz nota
-     * nenhuma. Para montar o card do jeito que a tela precisa (nome, marca,
-     * categoria e nota) juntamos cinco chamadas: produtos, marcas, categorias,
-     * versoes e notas.
-     *
-     * A nota mora na versao atual do produto, nao no produto: por isso o
-     * caminho e produto -> versao atual -> nota.
-     *
-     * Nenhuma depende do resultado da outra, entao as cinco sao disparadas de
-     * uma vez: o custo passa a ser o da chamada mais lenta, e nao a soma delas.
-     */
-    private List<Produto> montarCatalogo() throws IOException, FalhaApi {
-        VenusApi api = ClienteApi.get();
+    private List<Produto> montarCatalogo()
+            throws IOException, FalhaApi {
+
+        VenusApi api =
+                ClienteApi.get();
 
         Future<List<ProductResponse>> pedidoProdutos =
-                REDE.submit(() -> exigir(api.listarProdutos().execute(), "produtos"));
+                REDE.submit(
+                        () -> exigir(
+                                api.listarProdutos().execute(),
+                                "produtos"
+                        )
+                );
+
         Future<List<BrandResponse>> pedidoMarcas =
-                REDE.submit(() -> exigir(api.listarMarcas().execute(), "marcas"));
+                REDE.submit(
+                        () -> exigir(
+                                api.listarMarcas().execute(),
+                                "marcas"
+                        )
+                );
+
         Future<List<ProductCategoryResponse>> pedidoCategorias =
-                REDE.submit(() -> exigir(api.listarCategorias().execute(), "categorias"));
+                REDE.submit(
+                        () -> exigir(
+                                api.listarCategorias().execute(),
+                                "categorias"
+                        )
+                );
+
         Future<List<ProductVersionResponse>> pedidoVersoes =
-                REDE.submit(() -> exigir(api.listarVersoes().execute(), "versoes"));
+                REDE.submit(
+                        () -> exigir(
+                                api.listarVersoes().execute(),
+                                "versoes"
+                        )
+                );
+
         Future<List<ProductScoreResponse>> pedidoNotas =
-                REDE.submit(() -> exigir(api.listarNotas().execute(), "notas"));
+                REDE.submit(
+                        () -> exigir(
+                                api.listarNotas().execute(),
+                                "notas"
+                        )
+                );
 
-        List<ProductResponse> produtos = esperar(pedidoProdutos);
-        List<BrandResponse> marcas = esperar(pedidoMarcas);
-        List<ProductCategoryResponse> categorias = esperar(pedidoCategorias);
-        List<ProductVersionResponse> versoes = esperar(pedidoVersoes);
-        List<ProductScoreResponse> notas = esperar(pedidoNotas);
+        List<ProductResponse> produtos =
+                esperar(pedidoProdutos);
 
-        Map<Long, String> nomeDaMarca = new HashMap<>();
+        List<BrandResponse> marcas =
+                esperar(pedidoMarcas);
+
+        List<ProductCategoryResponse> categorias =
+                esperar(pedidoCategorias);
+
+        List<ProductVersionResponse> versoes =
+                esperar(pedidoVersoes);
+
+        List<ProductScoreResponse> notas =
+                esperar(pedidoNotas);
+
+        Map<Long, String> nomeDaMarca =
+                new HashMap<>();
+
         for (BrandResponse marca : marcas) {
-            nomeDaMarca.put(marca.id, marca.name);
-        }
 
-        Map<Long, String> nomeDaCategoria = new HashMap<>();
-        for (ProductCategoryResponse categoria : categorias) {
-            nomeDaCategoria.put(categoria.id, categoria.name);
-        }
+            if (marca != null
+                    && marca.id != null) {
 
-        Map<Long, Long> versaoAtualDoProduto = new HashMap<>();
-        for (ProductVersionResponse versao : versoes) {
-            if (Boolean.TRUE.equals(versao.isCurrent)) {
-                versaoAtualDoProduto.put(versao.productId, versao.id);
+                nomeDaMarca.put(
+                        marca.id,
+                        marca.name
+                );
             }
         }
 
-        Map<Long, Integer> notaDaVersao = new HashMap<>();
-        for (ProductScoreResponse nota : notas) {
-            notaDaVersao.put(nota.productVersionId, nota.overallScore);
+        Map<Long, String> nomeDaCategoria =
+                new HashMap<>();
+
+        for (ProductCategoryResponse categoria : categorias) {
+
+            if (categoria != null
+                    && categoria.id != null) {
+
+                nomeDaCategoria.put(
+                        categoria.id,
+                        categoria.name
+                );
+            }
         }
 
-        List<Produto> catalogo = new ArrayList<>();
+        Map<Long, Long> versaoAtualDoProduto =
+                new HashMap<>();
+
+        for (ProductVersionResponse versao : versoes) {
+
+            if (versao != null
+                    && Boolean.TRUE.equals(
+                    versao.isCurrent
+            )
+                    && versao.productId != null
+                    && versao.id != null) {
+
+                versaoAtualDoProduto.put(
+                        versao.productId,
+                        versao.id
+                );
+            }
+        }
+
+        Map<Long, Integer> notaDaVersao =
+                new HashMap<>();
+
+        for (ProductScoreResponse nota : notas) {
+
+            if (nota != null
+                    && nota.productVersionId != null) {
+
+                notaDaVersao.put(
+                        nota.productVersionId,
+                        nota.overallScore
+                );
+            }
+        }
+
+        List<Produto> catalogo =
+                new ArrayList<>();
+
         for (ProductResponse produto : produtos) {
-            if (Boolean.FALSE.equals(produto.isActive)) {
+
+            if (produto == null
+                    || produto.id == null) {
                 continue;
             }
 
-            Long versaoAtual = versaoAtualDoProduto.get(produto.id);
-            Integer nota = versaoAtual == null ? null : notaDaVersao.get(versaoAtual);
+            if (Boolean.FALSE.equals(
+                    produto.isActive
+            )) {
+                continue;
+            }
 
-            String marca = nomeDaMarca.get(produto.brandId);
+            Long versaoAtual =
+                    versaoAtualDoProduto.get(
+                            produto.id
+                    );
+
+            Integer nota =
+                    versaoAtual == null
+                            ? null
+                            : notaDaVersao.get(
+                            versaoAtual
+                    );
+
+            String marca =
+                    nomeDaMarca.get(
+                            produto.brandId
+                    );
+
             if (marca == null) {
                 marca = "";
             }
 
-            // A API ainda nao tem campo de imagem, entao o item cai no
-            // placeholder do adapter ate o Cloudinary entrar no contrato.
-            catalogo.add(new Produto(produto.id, produto.name, marca, nota, null,
-                    produto.productCategoryId, nomeDaCategoria.get(produto.productCategoryId)));
+            catalogo.add(
+                    new Produto(
+                            produto.id,
+                            produto.name,
+                            marca,
+                            nota,
+                            null,
+                            produto.productCategoryId,
+                            nomeDaCategoria.get(
+                                    produto.productCategoryId
+                            )
+                    )
+            );
         }
+
         return catalogo;
     }
 
-    /**
-     * Devolve o resultado da chamada preservando o motivo da falha: quem chama
-     * precisa distinguir "a API respondeu erro" de "nao deu para chegar nela".
-     */
-    private <T> List<T> esperar(Future<List<T>> pedido) throws IOException, FalhaApi {
+    private <T> List<T> esperar(
+            Future<List<T>> pedido
+    ) throws IOException, FalhaApi {
+
         try {
             return pedido.get();
+
         } catch (InterruptedException e) {
+
             Thread.currentThread().interrupt();
-            throw new IOException("A busca foi interrompida.", e);
+
+            throw new IOException(
+                    "A busca foi interrompida.",
+                    e
+            );
+
         } catch (ExecutionException e) {
-            Throwable causa = e.getCause();
+
+            Throwable causa =
+                    e.getCause();
+
             if (causa instanceof FalhaApi) {
                 throw (FalhaApi) causa;
             }
+
             if (causa instanceof IOException) {
                 throw (IOException) causa;
             }
+
             throw new IOException(causa);
         }
     }
 
-    private <T> List<T> exigir(Response<List<T>> resposta, String oQue)
-            throws FalhaApi {
+    private <T> List<T> exigir(
+            Response<List<T>> resposta,
+            String oQue
+    ) throws FalhaApi {
+
         if (!resposta.isSuccessful()) {
-            throw new FalhaApi("A API respondeu " + resposta.code()
-                    + " ao buscar " + oQue + ".");
+
+            throw new FalhaApi(
+                    "A API respondeu "
+                            + resposta.code()
+                            + " ao buscar "
+                            + oQue
+                            + "."
+            );
         }
-        List<T> corpo = resposta.body();
-        return corpo == null ? Collections.emptyList() : corpo;
+
+        List<T> corpo =
+                resposta.body();
+
+        return corpo == null
+                ? Collections.emptyList()
+                : corpo;
     }
 
-    private static class FalhaApi extends Exception {
+    private static class FalhaApi
+            extends Exception {
+
         FalhaApi(String mensagem) {
             super(mensagem);
         }

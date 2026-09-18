@@ -15,45 +15,22 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Produto;
-import com.venussystem.venusmobile.model.ScanFrontData;
 import com.venussystem.venusmobile.model.ScanOcrResult;
 import com.venussystem.venusmobile.model.ScanProductMatch;
-import com.venussystem.venusmobile.view.util.ScanFrontExtractor;
+import com.venussystem.venusmobile.model.ScanStatus;
 import com.venussystem.venusmobile.viewmodel.ScanViewModel;
 
 import java.io.File;
 
-/**
- * Tela exibida depois da captura da frente do produto.
- *
- * Fluxo:
- *
- * Foto
- * -> OCR
- * -> extração de marca/produto
- * -> identificação no catálogo
- * -> se encontrar, abre DetalheProdutoActivity automaticamente
- * -> se não encontrar, segue para o próximo fluxo do Scan.
- */
 public class ScanSuccessFrontActivity extends AppCompatActivity {
 
     private static final String TAG_OCR = "VENUS_OCR";
     private static final String TAG_SCAN = "VENUS_SCAN";
 
     private String photoPath;
-
     private ScanViewModel scanViewModel;
 
-    /**
-     * Impede que o mesmo resultado do LiveData abra
-     * a tela de detalhe mais de uma vez.
-     */
     private boolean produtoAberto = false;
-
-    /**
-     * Impede processamento duplicado do mesmo resultado.
-     */
-    private boolean matchProcessado = false;
 
     @Override
     protected void onCreate(
@@ -62,13 +39,14 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         fullscreen();
-
         setContentView(
                 R.layout.activity_scan_success_front
         );
 
         ImageView photo =
-                findViewById(R.id.imgCapturedPhoto);
+                findViewById(
+                        R.id.imgCapturedPhoto
+                );
 
         photoPath =
                 getIntent().getStringExtra(
@@ -81,7 +59,6 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                     new File(photoPath);
 
             if (file.exists()) {
-
                 photo.setImageURI(
                         Uri.fromFile(file)
                 );
@@ -103,37 +80,27 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         iniciarLeitura();
     }
 
-    /**
-     * Observa OCR, loading, erro e resultado do match.
-     */
     private void observarViewModel() {
 
         scanViewModel
                 .getOcrResult()
                 .observe(
                         this,
-                        this::processarOcr
+                        this::registrarOcr
                 );
 
         scanViewModel
-                .getCarregando()
+                .getStatus()
                 .observe(
                         this,
-                        carregando -> {
+                        this::atualizarEstadoInterface
+                );
 
-                            if (carregando == null) {
-                                return;
-                            }
-
-                            View botao =
-                                    findViewById(
-                                            R.id.btnScanNext
-                                    );
-
-                            botao.setEnabled(
-                                    !carregando
-                            );
-                        }
+        scanViewModel
+                .getProductMatch()
+                .observe(
+                        this,
+                        this::processarMatch
                 );
 
         scanViewModel
@@ -147,35 +114,63 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                             }
 
                             Log.e(
-                                    TAG_OCR,
-                                    "Erro no OCR",
+                                    TAG_SCAN,
+                                    "ERRO NO SCAN",
                                     exception
                             );
-
-                            findViewById(
-                                    R.id.btnScanNext
-                            ).setEnabled(true);
                         }
-                );
-
-        scanViewModel
-                .getProductMatch()
-                .observe(
-                        this,
-                        this::processarMatch
                 );
     }
 
-    /**
-     * Inicia leitura OCR da foto capturada.
-     */
+    private void registrarOcr(
+            ScanOcrResult result
+    ) {
+
+        if (result == null) {
+            return;
+        }
+
+        Log.d(
+                TAG_OCR,
+                "OCR RECEBIDO PELA ACTIVITY"
+        );
+
+        Log.d(
+                TAG_OCR,
+                result.getFullText()
+        );
+    }
+
+    private void atualizarEstadoInterface(
+            ScanStatus status
+    ) {
+
+        if (status == null) {
+            return;
+        }
+
+        View botao =
+                findViewById(
+                        R.id.btnScanNext
+                );
+
+        boolean podeContinuar =
+                status == ScanStatus.PRODUTO_NAO_ENCONTRADO
+                        || status == ScanStatus.ERRO;
+
+        botao.setEnabled(
+                podeContinuar
+        );
+    }
+
     private void iniciarLeitura() {
 
-        if (photoPath == null) {
+        if (photoPath == null
+                || photoPath.trim().isEmpty()) {
 
             Log.e(
                     TAG_OCR,
-                    "photoPath nulo"
+                    "photoPath nulo ou vazio"
             );
 
             findViewById(
@@ -188,11 +183,13 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         File photoFile =
                 new File(photoPath);
 
-        if (!photoFile.exists()) {
+        if (!photoFile.exists()
+                || !photoFile.isFile()
+                || photoFile.length() <= 0) {
 
             Log.e(
                     TAG_OCR,
-                    "Foto não existe: "
+                    "Foto inválida: "
                             + photoPath
             );
 
@@ -203,144 +200,16 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
             return;
         }
 
-        findViewById(
-                R.id.btnScanNext
-        ).setEnabled(false);
-
         Log.d(
                 TAG_OCR,
-                "Iniciando OCR..."
+                "INICIANDO PROCESSAMENTO DA FOTO"
         );
 
-        Log.d(
-                TAG_OCR,
-                "Imagem: "
-                        + photoPath
-        );
-
-        scanViewModel.reconhecer(
-                Uri.fromFile(
-                        photoFile
-                )
+        scanViewModel.processarFrente(
+                Uri.fromFile(photoFile)
         );
     }
 
-    /**
-     * Recebe o resultado do OCR e passa para o extractor.
-     */
-    private void processarOcr(
-            ScanOcrResult result
-    ) {
-
-        if (result == null) {
-            return;
-        }
-
-        Log.d(
-                TAG_OCR,
-                "=============================="
-        );
-
-        Log.d(
-                TAG_OCR,
-                "OCR CONCLUÍDO"
-        );
-
-        Log.d(
-                TAG_OCR,
-                "=============================="
-        );
-
-        Log.d(
-                TAG_OCR,
-                "TEXTO BRUTO:"
-        );
-
-        Log.d(
-                TAG_OCR,
-                result.getFullText()
-        );
-
-        Log.d(
-                TAG_OCR,
-                "LINHAS NORMALIZADAS:"
-        );
-
-        if (result.getLines() != null) {
-
-            for (String linha :
-                    result.getLines()) {
-
-                Log.d(
-                        TAG_OCR,
-                        linha
-                );
-            }
-        }
-
-        ScanFrontData frontData =
-                ScanFrontExtractor.extract(
-                        result.getLines()
-                );
-
-        Log.d(
-                TAG_OCR,
-                "------------------------------"
-        );
-
-        Log.d(
-                TAG_OCR,
-                "CANDIDATOS DE MARCA: "
-                        + frontData.getBrandCandidates()
-        );
-
-        Log.d(
-                TAG_OCR,
-                "CANDIDATOS DE PRODUTO: "
-                        + frontData.getProductCandidates()
-        );
-
-        Log.d(
-                TAG_OCR,
-                "APRESENTAÇÕES: "
-                        + frontData.getPresentationCandidates()
-        );
-
-        Log.d(
-                TAG_OCR,
-                "CAPACIDADE: "
-                        + frontData.getCapacity()
-        );
-
-        Log.d(
-                TAG_OCR,
-                "CONCENTRAÇÃO: "
-                        + frontData.getConcentration()
-        );
-
-        Log.d(
-                TAG_OCR,
-                "------------------------------"
-        );
-
-        /*
-         * IMPORTANTE:
-         *
-         * Aqui começa o matching real.
-         * O ViewModel/repository deve devolver o Produto
-         * REAL do catálogo.
-         */
-        scanViewModel.identificarProduto(
-                frontData
-        );
-    }
-
-    /**
-     * Processa resultado do matching.
-     *
-     * Quando o produto é encontrado, a tela de detalhe
-     * é aberta automaticamente.
-     */
     private void processarMatch(
             ScanProductMatch match
     ) {
@@ -349,17 +218,6 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
             return;
         }
 
-        /*
-         * Evita processar o mesmo resultado duas vezes.
-         */
-        if (matchProcessado) {
-            return;
-        }
-
-        /*
-         * Se houve erro no matcher, não abre produto.
-         * O usuário continua podendo seguir pelo botão.
-         */
         if (match.hasError()) {
 
             Log.e(
@@ -368,16 +226,9 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                             + match.getErrorMessage()
             );
 
-            findViewById(
-                    R.id.btnScanNext
-            ).setEnabled(true);
-
             return;
         }
 
-        /*
-         * Nenhum produto encontrado.
-         */
         if (!match.isFound()
                 || match.getProduto() == null) {
 
@@ -386,24 +237,56 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                     "NENHUM PRODUTO ENCONTRADO"
             );
 
-            findViewById(
-                    R.id.btnScanNext
-            ).setEnabled(true);
-
-            /*
-             * Não marcamos matchProcessado aqui,
-             * porque o botão ainda poderá continuar
-             * o fluxo do Scan.
-             */
             return;
         }
 
-        Produto produto =
-                match.getProduto();
+        abrirProduto(
+                match.getProduto(),
+                match
+        );
+    }
 
-        /*
-         * O ID REAL do catálogo é obrigatório.
-         */
+    private void decidirDestino() {
+
+        ScanStatus status =
+                scanViewModel
+                        .getStatus()
+                        .getValue();
+
+        if (status == ScanStatus.PROCESSANDO_OCR
+                || status == ScanStatus.IDENTIFICANDO_PRODUTO) {
+            return;
+        }
+
+        ScanProductMatch match =
+                scanViewModel
+                        .getProductMatch()
+                        .getValue();
+
+        if (match != null
+                && match.isFound()
+                && match.getProduto() != null) {
+
+            abrirProduto(
+                    match.getProduto(),
+                    match
+            );
+
+            return;
+        }
+
+        seguirSemMatch();
+    }
+
+    private void abrirProduto(
+            @NonNull Produto produto,
+            @NonNull ScanProductMatch match
+    ) {
+
+        if (produtoAberto) {
+            return;
+        }
+
         Long produtoId =
                 produto.getId();
 
@@ -412,17 +295,14 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
 
             Log.e(
                     TAG_SCAN,
-                    "Produto encontrado sem ID válido"
+                    "Produto encontrado sem ID válido: "
+                            + produto.getName()
             );
-
-            findViewById(
-                    R.id.btnScanNext
-            ).setEnabled(true);
 
             return;
         }
 
-        matchProcessado = true;
+        produtoAberto = true;
 
         Log.d(
                 TAG_SCAN,
@@ -458,145 +338,29 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                         + match.getScore()
         );
 
-        Log.d(
-                TAG_SCAN,
-                "OCR MARCA: "
-                        + match.getMatchedBrand()
-        );
-
-        Log.d(
-                TAG_SCAN,
-                "OCR PRODUTO: "
-                        + match.getMatchedProduct()
-        );
-
-        /*
-         * ABRE AUTOMATICAMENTE.
-         *
-         * Não espera o usuário apertar o botão.
-         */
-        abrirProduto(produto);
-    }
-
-    /**
-     * Usado pelo botão quando o usuário precisa continuar
-     * depois de um caso sem match.
-     */
-    private void decidirDestino() {
-
-        ScanProductMatch match =
-                scanViewModel
-                        .getProductMatch()
-                        .getValue();
-
-        if (match != null
-                && match.isFound()
-                && match.getProduto() != null) {
-
-            abrirProduto(
-                    match.getProduto()
-            );
-
-            return;
-        }
-
-        seguirSemMatch();
-    }
-
-    /**
-     * Abre a DetalheProdutoActivity usando SOMENTE o ID
-     * real do Produto encontrado no catálogo.
-     */
-    private void abrirProduto(
-            @NonNull Produto produto
-    ) {
-
-        if (produtoAberto) {
-            return;
-        }
-
-        Long produtoId =
-                produto.getId();
-
-        /*
-         * Nunca abrir detalhe sem ID válido.
-         */
-        if (produtoId == null
-                || produtoId <= 0) {
-
-            Log.e(
-                    TAG_SCAN,
-                    "Tentativa de abrir produto sem ID: "
-                            + produto.getName()
-            );
-
-            produtoAberto = false;
-
-            seguirSemMatch();
-
-            return;
-        }
-
-        produtoAberto = true;
-
-        Log.d(
-                TAG_SCAN,
-                "ABRINDO DETALHE DO PRODUTO"
-        );
-
-        Log.d(
-                TAG_SCAN,
-                "ID ENVIADO: "
-                        + produtoId
-        );
-
-        Log.d(
-                TAG_SCAN,
-                "NOME ENVIADO: "
-                        + produto.getName()
-        );
-
         Intent intent =
                 new Intent(
-                        ScanSuccessFrontActivity.this,
+                        this,
                         DetalheProdutoActivity.class
                 );
 
-        /*
-         * Passamos exatamente o ID retornado
-         * pelo catálogo/matcher.
-         */
         intent.putExtra(
                 DetalheProdutoActivity.EXTRA_ID,
                 produtoId.longValue()
         );
 
-        /*
-         * Marca onboarding como concluído
-         * somente porque houve identificação.
-         */
         ScanTutorialState.markCompleted(
                 this
         );
 
         startActivity(intent);
-
-        /*
-         * Não permite voltar para a tela intermediária
-         * de sucesso da foto.
-         */
         finish();
     }
 
-    /**
-     * Fluxo quando nenhum produto foi encontrado.
-     */
     private void seguirSemMatch() {
 
         Class<?> destino =
-                ScanTutorialState.isCompleted(
-                        this
-                )
+                ScanTutorialState.isCompleted(this)
                         ? ScanCameraBackActivity.class
                         : ScanTutorial2Activity.class;
 
@@ -616,9 +380,6 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         finish();
     }
 
-    /**
-     * Mantém a tela em fullscreen.
-     */
     private void fullscreen() {
 
         getWindow().setFlags(

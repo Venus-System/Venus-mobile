@@ -24,18 +24,16 @@ import coil.ImageLoader;
 import coil.request.ImageRequest;
 
 import com.google.android.material.tabs.TabLayout;
-
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.repository.ProdutoRepository;
 import com.venussystem.venusmobile.view.adapter.AlternativaAdapter;
 import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
 
-/**
- * Tela de detalhes do produto.
- *
- * O produto é identificado pelo ID recebido através do Intent.
- */
+import java.util.ArrayList;
+import java.util.List;
+
+
 public class DetalheProdutoActivity extends AppCompatActivity {
 
     public static final String EXTRA_ID =
@@ -60,12 +58,12 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     private TextView textIngredientes;
 
     private Produto produto;
+    private long produtoIdRecebido = -1L;
 
-    private boolean ingredientesCarregados =
-            false;
-
-    private boolean alternativasMontadas =
-            false;
+    private boolean ingredientesCarregados = false;
+    private boolean alternativasMontadas = false;
+    private boolean telaInicializada = false;
+    private boolean mensagemErroMostrada = false;
 
     @Override
     protected void onCreate(
@@ -74,7 +72,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         EdgeToEdge.enable(this);
-
         setContentView(
                 R.layout.activity_detalhe_produto
         );
@@ -105,13 +102,15 @@ public class DetalheProdutoActivity extends AppCompatActivity {
             );
         }
 
-        /*
-         * IMPORTANTE:
-         *
-         * A ScanSuccessFrontActivity envia o ID
-         * com putExtra(EXTRA_ID, produtoId).
-         */
-        long id =
+        prepararReferenciasDeTela();
+
+        findViewById(
+                R.id.btnVoltar
+        ).setOnClickListener(
+                v -> finish()
+        );
+
+        produtoIdRecebido =
                 getIntent().getLongExtra(
                         EXTRA_ID,
                         -1L
@@ -120,96 +119,23 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         Log.d(
                 TAG,
                 "ID RECEBIDO DO SCAN: "
-                        + id
+                        + produtoIdRecebido
         );
 
-        /*
-         * ID inválido.
-         */
-        if (id <= 0) {
+        if (produtoIdRecebido <= 0) {
 
-            Log.e(
-                    TAG,
+            finalizarSemProduto(
                     "ID DO PRODUTO INVÁLIDO: "
-                            + id
+                            + produtoIdRecebido
             );
-
-            Toast.makeText(
-                    this,
-                    R.string.produto_sem_alternativas,
-                    Toast.LENGTH_SHORT
-            ).show();
-
-            finish();
 
             return;
         }
 
-        /*
-         * Busca EXATAMENTE o produto daquele ID
-         * no catálogo já carregado.
-         */
-        produto =
-                repository.buscarNoCache(id);
+        resolverProduto();
+    }
 
-        /*
-         * Produto não está no catálogo.
-         */
-        if (produto == null) {
-
-            Log.e(
-                    TAG,
-                    "PRODUTO NÃO ENCONTRADO NO CACHE"
-            );
-
-            Log.e(
-                    TAG,
-                    "ID PROCURADO: "
-                            + id
-            );
-
-            Toast.makeText(
-                    this,
-                    R.string.produto_sem_alternativas,
-                    Toast.LENGTH_SHORT
-            ).show();
-
-            finish();
-
-            return;
-        }
-
-        /*
-         * Confirma exatamente qual registro foi aberto.
-         */
-        Log.d(
-                TAG,
-                "PRODUTO ABERTO:"
-        );
-
-        Log.d(
-                TAG,
-                "ID: "
-                        + produto.getId()
-        );
-
-        Log.d(
-                TAG,
-                "NOME: "
-                        + produto.getName()
-        );
-
-        Log.d(
-                TAG,
-                "MARCA: "
-                        + produto.getBrandName()
-        );
-
-        findViewById(
-                R.id.btnVoltar
-        ).setOnClickListener(
-                v -> finish()
-        );
+    private void prepararReferenciasDeTela() {
 
         conteudoAvaliacao =
                 findViewById(
@@ -240,15 +166,200 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 findViewById(
                         R.id.textIngredientes
                 );
+    }
+
+    private void resolverProduto() {
+
+        Produto emCache =
+                repository.buscarNoCache(
+                        produtoIdRecebido
+                );
+
+        if (emCache != null) {
+
+            inicializarComProduto(
+                    emCache
+            );
+
+            return;
+        }
+
+        repository
+                .getCatalogo()
+                .observe(
+                        this,
+                        catalogo -> {
+
+                            if (telaInicializada
+                                    || catalogo == null) {
+                                return;
+                            }
+
+                            Produto encontrado =
+                                    encontrarPorId(
+                                            catalogo,
+                                            produtoIdRecebido
+                                    );
+
+                            if (encontrado != null) {
+
+                                inicializarComProduto(
+                                        encontrado
+                                );
+
+                            } else {
+
+                                Boolean carregando =
+                                        repository
+                                                .getCarregando()
+                                                .getValue();
+
+                                if (!Boolean.TRUE.equals(
+                                        carregando
+                                )) {
+
+                                    finalizarSemProduto(
+                                            "ID não encontrado no catálogo: "
+                                                    + produtoIdRecebido
+                                    );
+                                }
+                            }
+                        }
+                );
+
+        repository
+                .getErro()
+                .observe(
+                        this,
+                        erro -> {
+
+                            if (telaInicializada
+                                    || erro == null
+                                    || erro.trim().isEmpty()
+                                    || mensagemErroMostrada) {
+                                return;
+                            }
+
+                            Boolean carregando =
+                                    repository
+                                            .getCarregando()
+                                            .getValue();
+
+                            if (Boolean.TRUE.equals(
+                                    carregando
+                            )) {
+                                return;
+                            }
+
+                            mensagemErroMostrada = true;
+
+                            finalizarSemProduto(
+                                    erro
+                            );
+                        }
+                );
+
+        Boolean carregandoAtual =
+                repository
+                        .getCarregando()
+                        .getValue();
+
+        if (!Boolean.TRUE.equals(
+                carregandoAtual
+        )) {
+
+            repository.carregar(false);
+        }
+    }
+
+    private Produto encontrarPorId(
+            @NonNull List<Produto> catalogo,
+            long id
+    ) {
+
+        for (Produto candidato : catalogo) {
+
+            if (candidato == null
+                    || candidato.getId() == null) {
+                continue;
+            }
+
+            if (candidato.getId().longValue()
+                    == id) {
+
+                return candidato;
+            }
+        }
+
+        return null;
+    }
+
+    private void inicializarComProduto(
+            @NonNull Produto produtoEncontrado
+    ) {
+
+        if (telaInicializada) {
+            return;
+        }
+
+        if (produtoEncontrado.getId() == null
+                || produtoEncontrado.getId() <= 0) {
+
+            finalizarSemProduto(
+                    "Produto encontrado sem ID válido."
+            );
+
+            return;
+        }
+
+        produto = produtoEncontrado;
+        telaInicializada = true;
+
+        Log.d(
+                TAG,
+                "PRODUTO ABERTO"
+        );
+
+        Log.d(
+                TAG,
+                "ID: "
+                        + produto.getId()
+        );
+
+        Log.d(
+                TAG,
+                "NOME: "
+                        + produto.getName()
+        );
+
+        Log.d(
+                TAG,
+                "MARCA: "
+                        + produto.getBrandName()
+        );
 
         preencherCabecalho();
-
         prepararAbas();
     }
 
-    /**
-     * Preenche nome, categoria, nota e imagem.
-     */
+    private void finalizarSemProduto(
+            String logOuMensagem
+    ) {
+
+        Log.e(
+                TAG,
+                logOuMensagem
+        );
+
+        Toast.makeText(
+                this,
+                R.string.produto_sem_alternativas,
+                Toast.LENGTH_SHORT
+        ).show();
+
+        finish();
+    }
+
     private void preencherCabecalho() {
 
         TextView nome =
@@ -352,9 +463,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         );
     }
 
-    /**
-     * Configura as abas.
-     */
     private void prepararAbas() {
 
         TabLayout abas =
@@ -362,10 +470,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                         R.id.abasProduto
                 );
 
-        /*
-         * Evita adicionar as abas duas vezes
-         * caso a Activity seja reconstruída.
-         */
         if (abas.getTabCount() == 0) {
 
             abas.addTab(
@@ -397,7 +501,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                     public void onTabSelected(
                             TabLayout.Tab aba
                     ) {
-
                         mostrarAba(
                                 aba.getPosition()
                         );
@@ -422,9 +525,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         );
     }
 
-    /**
-     * Exibe o conteúdo da aba selecionada.
-     */
     private void mostrarAba(
             int aba
     ) {
@@ -445,15 +545,13 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 aba == ABA_ALTERNATIVAS;
 
         listaAlternativas.setVisibility(
-                naAlternativas
-                        && !listaVazia()
+                naAlternativas && !listaVazia()
                         ? View.VISIBLE
                         : View.GONE
         );
 
         textSemAlternativas.setVisibility(
-                naAlternativas
-                        && listaVazia()
+                naAlternativas && listaVazia()
                         ? View.VISIBLE
                         : View.GONE
         );
@@ -471,9 +569,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Verifica se a lista de alternativas está vazia.
-     */
     private boolean listaVazia() {
 
         return listaAlternativas.getAdapter() == null
@@ -482,9 +577,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 .getItemCount() == 0;
     }
 
-    /**
-     * Carrega ingredientes do produto.
-     */
     private void carregarIngredientes() {
 
         ingredientesCarregados = true;
@@ -511,9 +603,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
                     boolean temTexto =
                             texto != null
-                                    && !texto
-                                    .trim()
-                                    .isEmpty();
+                                    && !texto.trim().isEmpty();
 
                     textIngredientes.setText(
                             temTexto
@@ -526,20 +616,17 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         );
     }
 
-    /**
-     * Monta alternativas da mesma categoria.
-     */
     private void montarAlternativas() {
 
         alternativasMontadas = true;
 
-        java.util.List<Produto> catalogo =
+        List<Produto> catalogo =
                 repository
                         .getCatalogo()
                         .getValue();
 
-        java.util.List<Produto> alternativas =
-                new java.util.ArrayList<>();
+        List<Produto> alternativas =
+                new ArrayList<>();
 
         if (catalogo != null
                 && produto.getCategoryId() != null) {
@@ -547,7 +634,8 @@ public class DetalheProdutoActivity extends AppCompatActivity {
             for (Produto candidato :
                     catalogo) {
 
-                if (candidato == null) {
+                if (candidato == null
+                        || candidato.getId() == null) {
                     continue;
                 }
 
@@ -606,16 +694,12 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         );
     }
 
-    /**
-     * Abre outro produto da lista de alternativas.
-     */
     private void abrirProduto(
             @NonNull Produto outroProduto
     ) {
 
         if (outroProduto.getId() == null
                 || outroProduto.getId() <= 0) {
-
             return;
         }
 
