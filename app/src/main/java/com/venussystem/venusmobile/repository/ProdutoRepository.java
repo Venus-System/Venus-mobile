@@ -263,8 +263,10 @@ public class ProdutoRepository {
                 marca = "";
             }
 
-            // A API ainda nao tem campo de imagem, entao o item cai no
-            // placeholder do adapter ate o Cloudinary entrar no contrato.
+            // Esta listagem (ProductResponse/ProductVersionResponse) nao tem campo
+            // de imagem, entao o item cai no placeholder do adapter. As fotos ja
+            // existem na API em /api/products/{id}/full e
+            // /api/product-versions/{id}/photos, so a listagem que nao expoe.
             catalogo.add(new Produto(produto.id, produto.name, marca, nota, null,
                     produto.productCategoryId, nomeDaCategoria.get(produto.productCategoryId)));
         }

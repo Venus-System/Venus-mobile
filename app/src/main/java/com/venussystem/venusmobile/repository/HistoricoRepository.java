@@ -12,22 +12,17 @@ import java.util.List;
 /**
  * Historico dos produtos escaneados.
  *
- * ATENCAO - CONTEUDO DE EXEMPLO LIGADO. O scan nao existe no app, entao nao ha
- * historico de verdade para mostrar. Para conseguir ver como a tela fica, as
- * entradas abaixo sao montadas a partir do catalogo real (nome, marca e nota
- * sao os que a API devolve) e distribuidas em datas inventadas.
+ * O scan ainda nao existe no app, entao nao ha historico de verdade para
+ * mostrar; por enquanto a tela fica no estado vazio (MOSTRAR_EXEMPLO = false).
  *
- * Para desligar e voltar ao estado honesto (tela vazia), basta trocar
- * MOSTRAR_EXEMPLO para false - nada mais precisa mudar.
- *
- * Quando o scan entrar, cada leitura vira uma entrada aqui. Vale lembrar que a
- * API tambem nao ajuda: nenhuma rota do Venus-CRUD registra "o usuario X
- * escaneou o produto Y na data Z" - entao ou esse endpoint nasce, ou o
- * historico fica salvo no proprio aparelho.
+ * Quando o scan entrar, cada leitura vira uma entrada aqui. A API ja tem onde
+ * registrar isso - /api/scan-sessions e /api/analysis-results/user/{userId}
+ * (combinados via .../analysis-result/{id}/full ja trazem usuario, produto e
+ * data) - falta so o app disparar o scan e consumir essas rotas.
  */
 public class HistoricoRepository {
 
-    private static final boolean MOSTRAR_EXEMPLO = true;
+    private static final boolean MOSTRAR_EXEMPLO = false;
 
     // Quantos produtos aparecem em cada grupo e ha quantos dias esse grupo
     // aconteceu. As duas listas andam juntas, uma posicao para cada grupo.
