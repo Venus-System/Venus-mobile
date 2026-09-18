@@ -7,69 +7,53 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.venussystem.venusmobile.R;
+import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.model.ScanFrontData;
 import com.venussystem.venusmobile.model.ScanOcrResult;
+import com.venussystem.venusmobile.model.ScanProductMatch;
 import com.venussystem.venusmobile.view.util.ScanFrontExtractor;
 import com.venussystem.venusmobile.viewmodel.ScanViewModel;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-
 import java.io.File;
-import java.util.List;
 
 /**
- * Exibe a foto real capturada da FRENTE do produto.
+ * Tela exibida depois da captura da frente do produto.
  *
- * Nesta etapa, o objetivo do OCR do FRONT é identificar
- * somente informações relevantes da face frontal:
+ * Fluxo:
  *
- *      - marca
- *      - nome do produto
- *      - capacidade / volume
- *
- * Fluxo atual:
- *
- *      CameraX FRONT
- *          ↓
- *      foto real
- *          ↓
- *      ML Kit OCR
- *          ↓
- *      linhas reconhecidas
- *          ↓
- *      análise do FRONT
- *          ↓
- *      marca / produto / capacidade
- *
- * O OCR do BACK ainda NÃO é tratado aqui.
- *
- * Ingredientes, composição, precauções, fabricante,
- * lote e demais dados serão tratados posteriormente
- * no fluxo da câmera BACK.
- *
- * Também não fazemos ainda:
- *
- *      - chamada à API
- *      - matching com banco
- *      - fuzzy matching
- *      - identificação definitiva do produto
+ * Foto
+ * -> OCR
+ * -> extração de marca/produto
+ * -> identificação no catálogo
+ * -> se encontrar, abre DetalheProdutoActivity automaticamente
+ * -> se não encontrar, segue para o próximo fluxo do Scan.
  */
 public class ScanSuccessFrontActivity extends AppCompatActivity {
 
     private static final String TAG_OCR = "VENUS_OCR";
+    private static final String TAG_SCAN = "VENUS_SCAN";
 
     private String photoPath;
 
     private ScanViewModel scanViewModel;
 
-    private View btnNext;
+    /**
+     * Impede que o mesmo resultado do LiveData abra
+     * a tela de detalhe mais de uma vez.
+     */
+    private boolean produtoAberto = false;
+
+    /**
+     * Impede processamento duplicado do mesmo resultado.
+     */
+    private boolean matchProcessado = false;
 
     @Override
     protected void onCreate(
@@ -84,152 +68,51 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         );
 
         ImageView photo =
-                findViewById(
-                        R.id.imgCapturedPhoto
-                );
+                findViewById(R.id.imgCapturedPhoto);
 
-        btnNext =
-                findViewById(
-                        R.id.btnScanNext
-                );
-
-        /*
-         * Recupera a fotografia produzida pela CameraX.
-         */
         photoPath =
                 getIntent().getStringExtra(
                         ScanCameraBaseActivity.EXTRA_OUTPUT_KEY
                 );
 
-        carregarFoto(photo);
+        if (photoPath != null) {
 
-        /*
-         * ViewModel responsável pelo OCR.
-         */
+            File file =
+                    new File(photoPath);
+
+            if (file.exists()) {
+
+                photo.setImageURI(
+                        Uri.fromFile(file)
+                );
+            }
+        }
+
         scanViewModel =
                 new ViewModelProvider(this)
                         .get(ScanViewModel.class);
 
-        /*
-         * Observa os resultados antes de iniciar o OCR.
-         */
-        observarOcr();
+        observarViewModel();
 
-        /*
-         * O OCR é executado automaticamente
-         * quando a foto válida chega nesta tela.
-         */
-        executarOcr();
-
-        /*
-         * Mantém o botão do fluxo atual.
-         *
-         * A identificação definitiva do produto ainda
-         * não foi implementada nesta etapa.
-         */
-        btnNext.setOnClickListener(
-                v -> seguirFluxo()
+        findViewById(
+                R.id.btnScanNext
+        ).setOnClickListener(
+                v -> decidirDestino()
         );
+
+        iniciarLeitura();
     }
 
     /**
-     * Exibe a fotografia REAL tirada pela CameraX.
+     * Observa OCR, loading, erro e resultado do match.
      */
-    private void carregarFoto(
-            @Nullable ImageView photoView
-    ) {
-
-        if (photoView == null) {
-            return;
-        }
-
-        if (photoPath == null
-                || photoPath.trim().isEmpty()) {
-
-            Log.w(
-                    TAG_OCR,
-                    "Caminho da foto não recebido."
-            );
-
-            return;
-        }
-
-        File file =
-                new File(photoPath);
-
-        if (!file.exists()) {
-
-            Log.w(
-                    TAG_OCR,
-                    "Arquivo da foto não existe: "
-                            + photoPath
-            );
-
-            return;
-        }
-
-        photoView.setImageURI(
-                Uri.fromFile(file)
-        );
-    }
-
-    /**
-     * Inicia o OCR da fotografia frontal.
-     */
-    private void executarOcr() {
-
-        if (!fotoValida()) {
-
-            Log.w(
-                    TAG_OCR,
-                    "OCR não executado: foto inválida."
-            );
-
-            return;
-        }
-
-        Log.d(
-                TAG_OCR,
-                "Iniciando OCR FRONT..."
-        );
-
-        Log.d(
-                TAG_OCR,
-                "Imagem: " + photoPath
-        );
-
-        setBotaoHabilitado(false);
-
-        scanViewModel.reconhecer(
-                Uri.fromFile(
-                        new File(photoPath)
-                )
-        );
-    }
-
-    /**
-     * Observa o processamento realizado pelo ViewModel.
-     */
-    private void observarOcr() {
+    private void observarViewModel() {
 
         scanViewModel
                 .getOcrResult()
                 .observe(
                         this,
-                        result -> {
-
-                            if (result == null) {
-                                return;
-                            }
-
-                            registrarResultadoOcr(
-                                    result
-                            );
-
-                            setBotaoHabilitado(
-                                    true
-                            );
-                        }
+                        this::processarOcr
                 );
 
         scanViewModel
@@ -242,7 +125,12 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                                 return;
                             }
 
-                            setBotaoHabilitado(
+                            View botao =
+                                    findViewById(
+                                            R.id.btnScanNext
+                                    );
+
+                            botao.setEnabled(
                                     !carregando
                             );
                         }
@@ -260,51 +148,109 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
 
                             Log.e(
                                     TAG_OCR,
-                                    "Erro durante o OCR FRONT.",
+                                    "Erro no OCR",
                                     exception
                             );
 
-                            setBotaoHabilitado(
-                                    true
-                            );
-
-                            Toast.makeText(
-                                    this,
-                                    "Não foi possível ler o texto da foto.",
-                                    Toast.LENGTH_SHORT
-                            ).show();
+                            findViewById(
+                                    R.id.btnScanNext
+                            ).setEnabled(true);
                         }
+                );
+
+        scanViewModel
+                .getProductMatch()
+                .observe(
+                        this,
+                        this::processarMatch
                 );
     }
 
     /**
-     * Registra o OCR bruto e extrai informações
-     * específicas da parte FRONT.
-     *
-     * Neste momento não fazemos consulta à API.
+     * Inicia leitura OCR da foto capturada.
      */
-    private void registrarResultadoOcr(
-            @NonNull ScanOcrResult result
+    private void iniciarLeitura() {
+
+        if (photoPath == null) {
+
+            Log.e(
+                    TAG_OCR,
+                    "photoPath nulo"
+            );
+
+            findViewById(
+                    R.id.btnScanNext
+            ).setEnabled(true);
+
+            return;
+        }
+
+        File photoFile =
+                new File(photoPath);
+
+        if (!photoFile.exists()) {
+
+            Log.e(
+                    TAG_OCR,
+                    "Foto não existe: "
+                            + photoPath
+            );
+
+            findViewById(
+                    R.id.btnScanNext
+            ).setEnabled(true);
+
+            return;
+        }
+
+        findViewById(
+                R.id.btnScanNext
+        ).setEnabled(false);
+
+        Log.d(
+                TAG_OCR,
+                "Iniciando OCR..."
+        );
+
+        Log.d(
+                TAG_OCR,
+                "Imagem: "
+                        + photoPath
+        );
+
+        scanViewModel.reconhecer(
+                Uri.fromFile(
+                        photoFile
+                )
+        );
+    }
+
+    /**
+     * Recebe o resultado do OCR e passa para o extractor.
+     */
+    private void processarOcr(
+            ScanOcrResult result
     ) {
 
-        Log.d(
-                TAG_OCR,
-                "=============================="
-        );
-
-        Log.d(
-                TAG_OCR,
-                "OCR FRONT CONCLUÍDO"
-        );
+        if (result == null) {
+            return;
+        }
 
         Log.d(
                 TAG_OCR,
                 "=============================="
         );
 
-        /*
-         * Texto completo reconhecido pelo ML Kit.
-         */
+        Log.d(
+                TAG_OCR,
+                "OCR CONCLUÍDO"
+        );
+
+        Log.d(
+                TAG_OCR,
+                "=============================="
+        );
+
         Log.d(
                 TAG_OCR,
                 "TEXTO BRUTO:"
@@ -315,34 +261,23 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                 result.getFullText()
         );
 
-        /*
-         * Linhas preservadas pelo ViewModel.
-         */
         Log.d(
                 TAG_OCR,
-                "------------------------------"
+                "LINHAS NORMALIZADAS:"
         );
 
-        Log.d(
-                TAG_OCR,
-                "LINHAS OCR:"
-        );
+        if (result.getLines() != null) {
 
-        for (
-                String linha
-                : result.getLines()
-        ) {
+            for (String linha :
+                    result.getLines()) {
 
-            Log.d(
-                    TAG_OCR,
-                    linha
-            );
+                Log.d(
+                        TAG_OCR,
+                        linha
+                );
+            }
         }
 
-        /*
-         * Analisa somente o conteúdo que poderá
-         * representar dados da frente.
-         */
         ScanFrontData frontData =
                 ScanFrontExtractor.extract(
                         result.getLines()
@@ -355,56 +290,21 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
 
         Log.d(
                 TAG_OCR,
-                "DADOS EXTRAÍDOS DO FRONT"
+                "CANDIDATOS DE MARCA: "
+                        + frontData.getBrandCandidates()
         );
 
         Log.d(
                 TAG_OCR,
-                "CANDIDATOS DE MARCA:"
+                "CANDIDATOS DE PRODUTO: "
+                        + frontData.getProductCandidates()
         );
-
-        for (
-                String marca
-                : frontData.getBrandCandidates()
-        ) {
-
-            Log.d(
-                    TAG_OCR,
-                    marca
-            );
-        }
 
         Log.d(
                 TAG_OCR,
-                "CANDIDATOS DE PRODUTO:"
+                "APRESENTAÇÕES: "
+                        + frontData.getPresentationCandidates()
         );
-
-        for (
-                String produto
-                : frontData.getProductCandidates()
-        ) {
-
-            Log.d(
-                    TAG_OCR,
-                    produto
-            );
-        }
-
-        Log.d(
-                TAG_OCR,
-                "APRESENTAÇÕES:"
-        );
-
-        for (
-                String apresentacao
-                : frontData.getPresentationCandidates()
-        ) {
-
-            Log.d(
-                    TAG_OCR,
-                    apresentacao
-            );
-        }
 
         Log.d(
                 TAG_OCR,
@@ -414,130 +314,291 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
 
         Log.d(
                 TAG_OCR,
-                "CONCENTRACAO: "
+                "CONCENTRAÇÃO: "
                         + frontData.getConcentration()
         );
 
         Log.d(
                 TAG_OCR,
-                "=============================="
+                "------------------------------"
+        );
+
+        /*
+         * IMPORTANTE:
+         *
+         * Aqui começa o matching real.
+         * O ViewModel/repository deve devolver o Produto
+         * REAL do catálogo.
+         */
+        scanViewModel.identificarProduto(
+                frontData
         );
     }
 
     /**
-     * Verifica se a fotografia existe.
+     * Processa resultado do matching.
+     *
+     * Quando o produto é encontrado, a tela de detalhe
+     * é aberta automaticamente.
      */
-    private boolean fotoValida() {
+    private void processarMatch(
+            ScanProductMatch match
+    ) {
 
-        if (photoPath == null) {
-            return false;
+        if (match == null) {
+            return;
         }
 
-        if (photoPath.trim().isEmpty()) {
-            return false;
+        /*
+         * Evita processar o mesmo resultado duas vezes.
+         */
+        if (matchProcessado) {
+            return;
         }
 
-        return new File(photoPath).exists();
+        /*
+         * Se houve erro no matcher, não abre produto.
+         * O usuário continua podendo seguir pelo botão.
+         */
+        if (match.hasError()) {
+
+            Log.e(
+                    TAG_SCAN,
+                    "Erro no matching: "
+                            + match.getErrorMessage()
+            );
+
+            findViewById(
+                    R.id.btnScanNext
+            ).setEnabled(true);
+
+            return;
+        }
+
+        /*
+         * Nenhum produto encontrado.
+         */
+        if (!match.isFound()
+                || match.getProduto() == null) {
+
+            Log.d(
+                    TAG_SCAN,
+                    "NENHUM PRODUTO ENCONTRADO"
+            );
+
+            findViewById(
+                    R.id.btnScanNext
+            ).setEnabled(true);
+
+            /*
+             * Não marcamos matchProcessado aqui,
+             * porque o botão ainda poderá continuar
+             * o fluxo do Scan.
+             */
+            return;
+        }
+
+        Produto produto =
+                match.getProduto();
+
+        /*
+         * O ID REAL do catálogo é obrigatório.
+         */
+        Long produtoId =
+                produto.getId();
+
+        if (produtoId == null
+                || produtoId <= 0) {
+
+            Log.e(
+                    TAG_SCAN,
+                    "Produto encontrado sem ID válido"
+            );
+
+            findViewById(
+                    R.id.btnScanNext
+            ).setEnabled(true);
+
+            return;
+        }
+
+        matchProcessado = true;
+
+        Log.d(
+                TAG_SCAN,
+                "=============================="
+        );
+
+        Log.d(
+                TAG_SCAN,
+                "PRODUTO ENCONTRADO"
+        );
+
+        Log.d(
+                TAG_SCAN,
+                "ID: "
+                        + produtoId
+        );
+
+        Log.d(
+                TAG_SCAN,
+                "NOME: "
+                        + produto.getName()
+        );
+
+        Log.d(
+                TAG_SCAN,
+                "MARCA: "
+                        + produto.getBrandName()
+        );
+
+        Log.d(
+                TAG_SCAN,
+                "SCORE: "
+                        + match.getScore()
+        );
+
+        Log.d(
+                TAG_SCAN,
+                "OCR MARCA: "
+                        + match.getMatchedBrand()
+        );
+
+        Log.d(
+                TAG_SCAN,
+                "OCR PRODUTO: "
+                        + match.getMatchedProduct()
+        );
+
+        /*
+         * ABRE AUTOMATICAMENTE.
+         *
+         * Não espera o usuário apertar o botão.
+         */
+        abrirProduto(produto);
     }
 
     /**
-     * Mantém a navegação atual.
-     *
-     * IMPORTANTE:
-     *
-     * Ainda não usamos os dados extraídos do FRONT
-     * para buscar o produto no banco.
-     *
-     * Isso será feito na próxima etapa.
+     * Usado pelo botão quando o usuário precisa continuar
+     * depois de um caso sem match.
      */
-    private void seguirFluxo() {
+    private void decidirDestino() {
 
-        if (!fotoValida()) {
+        ScanProductMatch match =
+                scanViewModel
+                        .getProductMatch()
+                        .getValue();
+
+        if (match != null
+                && match.isFound()
+                && match.getProduto() != null) {
+
+            abrirProduto(
+                    match.getProduto()
+            );
+
+            return;
+        }
+
+        seguirSemMatch();
+    }
+
+    /**
+     * Abre a DetalheProdutoActivity usando SOMENTE o ID
+     * real do Produto encontrado no catálogo.
+     */
+    private void abrirProduto(
+            @NonNull Produto produto
+    ) {
+
+        if (produtoAberto) {
+            return;
+        }
+
+        Long produtoId =
+                produto.getId();
+
+        /*
+         * Nunca abrir detalhe sem ID válido.
+         */
+        if (produtoId == null
+                || produtoId <= 0) {
+
+            Log.e(
+                    TAG_SCAN,
+                    "Tentativa de abrir produto sem ID: "
+                            + produto.getName()
+            );
+
+            produtoAberto = false;
 
             seguirSemMatch();
 
             return;
         }
 
-        /*
-         * Por enquanto mantemos o resolver existente.
-         *
-         * Ele continua sendo o mock da identificação.
-         */
-        ScanProductResolver.resolver(
-                new File(photoPath),
-                productId -> {
+        produtoAberto = true;
 
-                    if (productId != null
-                            && productId > 0) {
-
-                        abrirProduto(
-                                productId
-                        );
-
-                    } else {
-
-                        seguirSemMatch();
-                    }
-                }
+        Log.d(
+                TAG_SCAN,
+                "ABRINDO DETALHE DO PRODUTO"
         );
-    }
 
-    /**
-     * Abre o produto quando o resolver retornar
-     * um ID válido.
-     */
-    private void abrirProduto(
-            long productId
-    ) {
+        Log.d(
+                TAG_SCAN,
+                "ID ENVIADO: "
+                        + produtoId
+        );
 
-        ScanTutorialState.markCompleted(
-                this
+        Log.d(
+                TAG_SCAN,
+                "NOME ENVIADO: "
+                        + produto.getName()
         );
 
         Intent intent =
                 new Intent(
-                        this,
+                        ScanSuccessFrontActivity.this,
                         DetalheProdutoActivity.class
                 );
 
+        /*
+         * Passamos exatamente o ID retornado
+         * pelo catálogo/matcher.
+         */
         intent.putExtra(
                 DetalheProdutoActivity.EXTRA_ID,
-                productId
+                produtoId.longValue()
+        );
+
+        /*
+         * Marca onboarding como concluído
+         * somente porque houve identificação.
+         */
+        ScanTutorialState.markCompleted(
+                this
         );
 
         startActivity(intent);
 
+        /*
+         * Não permite voltar para a tela intermediária
+         * de sucesso da foto.
+         */
         finish();
     }
 
     /**
-     * Produto ainda não encontrado.
-     *
-     * Primeiro fluxo:
-     *      FRONT → Tutorial 2
-     *
-     * Fluxos posteriores:
-     *      FRONT → BACK
+     * Fluxo quando nenhum produto foi encontrado.
      */
     private void seguirSemMatch() {
 
-        Class<?> destino;
-
-        if (
+        Class<?> destino =
                 ScanTutorialState.isCompleted(
                         this
                 )
-        ) {
-
-            destino =
-                    ScanCameraBackActivity.class;
-
-        } else {
-
-            destino =
-                    ScanTutorial2Activity.class;
-        }
+                        ? ScanCameraBackActivity.class
+                        : ScanTutorial2Activity.class;
 
         startActivity(
                 new Intent(
@@ -549,40 +610,14 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         finish();
     }
 
-    /**
-     * Controla o estado visual do botão.
-     */
-    private void setBotaoHabilitado(
-            boolean habilitado
-    ) {
-
-        if (btnNext == null) {
-            return;
-        }
-
-        btnNext.setEnabled(
-                habilitado
-        );
-
-        btnNext.setAlpha(
-                habilitado
-                        ? 1.0f
-                        : 0.5f
-        );
-    }
-
-    /**
-     * Botão de voltar.
-     */
     public void onScanBackClicked(
             View ignored
     ) {
-
         finish();
     }
 
     /**
-     * Mantém a tela do Scan em fullscreen.
+     * Mantém a tela em fullscreen.
      */
     private void fullscreen() {
 

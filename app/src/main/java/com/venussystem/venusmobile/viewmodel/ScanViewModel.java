@@ -9,52 +9,25 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.mlkit.vision.text.Text;
+import com.venussystem.venusmobile.model.ScanFrontData;
 import com.venussystem.venusmobile.model.ScanOcrResult;
+import com.venussystem.venusmobile.model.ScanProductMatch;
 import com.venussystem.venusmobile.repository.ScanOcrRepository;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.venussystem.venusmobile.repository.ScanProductMatchRepository;
 
 /**
- * ViewModel responsável pelo OCR do fluxo de Scan.
+ * ViewModel responsável pelo fluxo da leitura da frente.
  *
- * Neste momento ele trabalha SOMENTE com a foto da FRENTE
- * do produto.
+ * OCR:
+ * foto -> ML Kit -> ScanOcrResult
  *
- * Fluxo atual:
- *
- * Camera Front
- *      ↓
- * foto
- *      ↓
- * ScanSuccessFrontActivity
- *      ↓
- * ScanViewModel
- *      ↓
- * ScanOcrRepository
- *      ↓
- * ML Kit
- *      ↓
- * texto + linhas
- *
- * Futuramente:
- *
- * FRONT:
- *      marca
- *      nome do produto
- *      capacidade/volume
- *
- * BACK:
- *      ingredientes
- *      composição
- *      advertências
- *      demais informações do rótulo
- *
- * O tratamento específico do BACK será implementado posteriormente.
+ * Identificação:
+ * ScanFrontData -> catálogo -> ScanProductMatch
  */
 public class ScanViewModel extends AndroidViewModel {
 
     private final ScanOcrRepository ocrRepository;
+    private final ScanProductMatchRepository productMatchRepository;
 
     private final MutableLiveData<ScanOcrResult> ocrResult =
             new MutableLiveData<>();
@@ -65,6 +38,9 @@ public class ScanViewModel extends AndroidViewModel {
     private final MutableLiveData<Exception> erro =
             new MutableLiveData<>();
 
+    private final MutableLiveData<ScanProductMatch> productMatch =
+            new MutableLiveData<>();
+
     public ScanViewModel(
             @NonNull Application application
     ) {
@@ -72,35 +48,29 @@ public class ScanViewModel extends AndroidViewModel {
 
         ocrRepository =
                 new ScanOcrRepository();
+
+        productMatchRepository =
+                new ScanProductMatchRepository();
     }
 
-    /**
-     * Resultado estruturado do OCR.
-     */
     public LiveData<ScanOcrResult> getOcrResult() {
         return ocrResult;
     }
 
-    /**
-     * Informa se o OCR está sendo processado.
-     */
     public LiveData<Boolean> getCarregando() {
         return carregando;
     }
 
-    /**
-     * Último erro ocorrido durante o OCR.
-     */
     public LiveData<Exception> getErro() {
         return erro;
     }
 
+    public LiveData<ScanProductMatch> getProductMatch() {
+        return productMatch;
+    }
+
     /**
-     * Executa o OCR da imagem recebida.
-     *
-     * Neste momento essa função é utilizada pelo FRONT.
-     *
-     * @param imageUri URI da foto real capturada pela CameraX
+     * Executa o OCR da imagem.
      */
     public void reconhecer(
             @NonNull Uri imageUri
@@ -108,6 +78,8 @@ public class ScanViewModel extends AndroidViewModel {
 
         carregando.setValue(true);
         erro.setValue(null);
+        ocrResult.setValue(null);
+        productMatch.setValue(null);
 
         ocrRepository.recognize(
                 getApplication(),
@@ -119,13 +91,10 @@ public class ScanViewModel extends AndroidViewModel {
                             @NonNull Text result
                     ) {
 
-                        List<String> lines =
-                                extrairLinhas(result);
-
                         ScanOcrResult resultado =
                                 new ScanOcrResult(
                                         result.getText(),
-                                        lines
+                                        extrairLinhas(result)
                                 );
 
                         ocrResult.postValue(
@@ -151,68 +120,114 @@ public class ScanViewModel extends AndroidViewModel {
     }
 
     /**
-     * Extrai as linhas preservando a estrutura encontrada
-     * pelo ML Kit.
-     *
-     * O texto completo continua disponível através de
-     * Text.getText(), mas também guardamos cada linha
-     * separadamente para as próximas etapas do reconhecimento.
+     * Transforma o objeto Text do ML Kit em uma lista de linhas,
+     * preservando a estrutura básica fornecida pelo OCR.
      */
     @NonNull
-    private List<String> extrairLinhas(
+    private java.util.List<String> extrairLinhas(
             @NonNull Text result
     ) {
 
-        List<String> lines =
-                new ArrayList<>();
+        java.util.List<String> linhas =
+                new java.util.ArrayList<>();
 
-        for (
-                Text.TextBlock block
-                : result.getTextBlocks()
-        ) {
+        for (Text.TextBlock block : result.getTextBlocks()) {
 
-            if (block == null) {
-                continue;
-            }
+            for (Text.Line line : block.getLines()) {
 
-            for (
-                    Text.Line line
-                    : block.getLines()
-            ) {
-
-                if (line == null) {
-                    continue;
-                }
-
-                String lineText =
+                String texto =
                         line.getText();
 
-                if (
-                        lineText != null
-                                && !lineText
-                                .trim()
-                                .isEmpty()
-                ) {
+                if (texto != null
+                        && !texto.trim().isEmpty()) {
 
-                    lines.add(
-                            lineText.trim()
+                    linhas.add(
+                            texto.trim()
                     );
                 }
             }
         }
 
-        return lines;
+        return linhas;
     }
 
     /**
-     * Libera o recognizer do ML Kit quando o ViewModel
-     * deixa de existir.
+     * Tenta localizar o produto no catálogo real.
      */
+    public void identificarProduto(
+            @NonNull ScanFrontData frontData
+    ) {
+
+        android.util.Log.d(
+                "VENUS_MATCH",
+                "================================"
+        );
+
+        android.util.Log.d(
+                "VENUS_MATCH",
+                "INICIANDO IDENTIFICACAO"
+        );
+
+        android.util.Log.d(
+                "VENUS_MATCH",
+                "MARCAS: "
+                        + frontData.getBrandCandidates()
+        );
+
+        android.util.Log.d(
+                "VENUS_MATCH",
+                "PRODUTOS: "
+                        + frontData.getProductCandidates()
+        );
+
+        productMatch.setValue(null);
+
+        productMatchRepository.identificar(
+                frontData,
+                new ScanProductMatchRepository.Callback() {
+
+                    @Override
+                    public void onSuccess(
+                            @NonNull ScanProductMatch resultado
+                    ) {
+
+                        android.util.Log.d(
+                                "VENUS_MATCH",
+                                "CALLBACK RECEBIDO"
+                        );
+
+                        productMatch.postValue(
+                                resultado
+                        );
+                    }
+
+                    @Override
+                    public void onError(
+                            @NonNull Exception exception
+                    ) {
+
+                        android.util.Log.e(
+                                "VENUS_MATCH",
+                                "ERRO NO MATCHING",
+                                exception
+                        );
+
+                        productMatch.postValue(
+                                ScanProductMatch.comErro(
+                                        exception.getMessage()
+                                )
+                        );
+                    }
+                }
+        );
+    }
+
     @Override
     protected void onCleared() {
 
-        super.onCleared();
-
         ocrRepository.close();
+        productMatchRepository.close();
+
+        super.onCleared();
     }
 }
