@@ -34,6 +34,13 @@
     <string name="pesquisa_subtitulo">Suas respostas vão nos ajudar a personalizar suas análises de produtos.</string>
     <string name="pesquisa_responder_depois"><u>Responder mais tarde →</u></string>
 
+    <string name="pergunta_genero">Qual é o seu gênero?</string>
+    <string name="genero_feminino">Feminino</string>
+    <string name="genero_masculino">Masculino</string>
+    <string name="genero_nao_binario">Não binário</string>
+    <string name="genero_outro">Outro</string>
+    <string name="genero_nao_identificar">Prefiro não identificar</string>
+
     <string name="pergunta_tipo_cabelo">Qual seu tipo de cabelo?</string>
     <string name="pergunta_ajuda_cabelo"><u>Qual é meu tipo de cabelo?</u></string>
 
@@ -59,6 +66,24 @@
     <string name="sens_baixa">Baixa</string>
     <string name="sens_media">Média</string>
     <string name="sens_alta">Alta</string>
+
+    <string name="pergunta_condicoes_pele">Você tem alguma condição de pele?</string>
+    <string name="condicao_acne">Tendência a acne</string>
+    <string name="condicao_rosacea">Rosácea</string>
+    <string name="condicao_eczema">Eczema</string>
+    <string name="condicao_hiperpigmentacao">Hiperpigmentação</string>
+    <string name="condicao_melasma">Melasma</string>
+    <string name="condicao_nenhuma">Nenhuma delas</string>
+
+    <string name="pergunta_gestacao">Você está grávida ou amamentando?</string>
+    <string name="gestacao_gravida">Estou grávida</string>
+    <string name="gestacao_amamentando">Estou amamentando</string>
+    <string name="gestacao_nenhuma">Nenhuma das duas</string>
+    <string name="gestacao_nao_dizer">Prefiro não dizer</string>
+    <string name="gestacao_dica">Alguns ingredientes mudam de recomendação nesse período.</string>
+
+    <string name="pergunta_pode_marcar_varias">Você pode marcar mais de uma opção.</string>
+    <string name="pergunta_escolha_ao_menos_uma">Escolha ao menos uma opção para continuar</string>
 
     <string name="pergunta_fototipo">Qual o seu fototipo de pele?</string>
     <string name="ajuda_fototipo"><u>Qual é meu fotótipo?</u></string>
@@ -243,6 +268,7 @@ A primeira busca pode levar até um minuto.</string>
     <string name="assistente_sugestao_um">Ver as opções</string>
     <string name="assistente_sugestao_dois">Tem álcool?</string>
     <string name="assistente_sugestao_tres">É vegano?</string>
+    <string name="perfil_genero">Gênero</string>
     <string name="perfil_tipo_pele">Tipo de Pele</string>
     <string name="perfil_fototipo">Fototipo de Pele</string>
     <string name="perfil_sensibilidade">Sensibilidade de Pele</string>
