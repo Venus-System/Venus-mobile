@@ -30,6 +30,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import retrofit2.Response;
@@ -69,11 +71,34 @@ public class ProdutoRepository {
 
     @VisibleForTesting
     public static void resetEstadoParaTeste() {
+        aguardarExecutorOcioso();
         CATALOGO.postValue(null);
         carregado = false;
         CARREGANDO.postValue(false);
         ERRO.postValue(null);
         EM_ANDAMENTO.set(false);
+    }
+
+    /**
+     * EXECUTOR e REDE sao estaticos e vivem pro processo de teste inteiro, nao
+     * so reiniciados junto com os campos acima. Sem esta barreira, a tarefa em
+     * segundo plano de um teste podia ainda estar rodando (ou na fila) quando
+     * o proximo teste comecava - invisivel numa maquina rapida, mas em uma
+     * mais lenta/carregada (CI) o atraso se acumula teste apos teste ate
+     * estourar o timeout de aguardarValor. Submeter um no-op no EXECUTOR e
+     * esperar ele rodar garante que a fila esvaziou - e como o EXECUTOR so
+     * libera depois que as 6 chamadas do REDE respondem, isso arrasta o REDE
+     * junto.
+     */
+    private static void aguardarExecutorOcioso() {
+        try {
+            EXECUTOR.submit(() -> null).get(20, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException | TimeoutException ignorada) {
+            // Se nem o no-op responder, o proprio teste que chamou isto vai
+            // estourar seu timeout e relatar o problema real.
+        }
     }
 
     public interface AoObterDetalhe {
