@@ -4,11 +4,14 @@ import com.google.gson.Gson;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.repository.api.VenusApi;
 import com.venussystem.venusmobile.repository.api.dto.BrandResponse;
+import com.venussystem.venusmobile.repository.api.dto.MediaAssetResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductCategoryResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductFullResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductLabelResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductVersionResponse;
+import com.venussystem.venusmobile.repository.api.dto.ScoringModelResponse;
 import com.venussystem.venusmobile.testutil.FakeApiDispatcher;
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
@@ -54,6 +57,13 @@ public class ProdutoRepositoryTest {
     private static final String PATH_CATEGORIAS = "/api/product-categories";
     private static final String PATH_VERSOES = "/api/product-versions";
     private static final String PATH_NOTAS = "/api/product-scores";
+    private static final String PATH_MODELO_ATIVO = "/api/scoring-models/active";
+    private static final String PATH_FULL_PRODUTO_1 = "/api/products/1/full";
+
+    private static final long MODELO_ATIVO = 1L;
+
+    /** Produtos, marcas, categorias, versoes, notas e o modelo ativo. */
+    private static final int REQUISICOES_POR_CARGA = 6;
 
     @Rule
     public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
@@ -108,6 +118,35 @@ public class ProdutoRepositoryTest {
         dispatcher.em(PATH_CATEGORIAS, json(categorias));
         dispatcher.em(PATH_VERSOES, json(versoes));
         dispatcher.em(PATH_NOTAS, json(notas));
+        dispatcher.em(PATH_MODELO_ATIVO, json(modelo(MODELO_ATIVO)));
+    }
+
+    private static ScoringModelResponse modelo(long id) {
+        ScoringModelResponse r = new ScoringModelResponse();
+        r.id = id;
+        r.name = "Recomendacao Geral";
+        r.isActive = true;
+        return r;
+    }
+
+    private static MediaAssetResponse foto(String url, Integer ordem, String status) {
+        MediaAssetResponse r = new MediaAssetResponse();
+        r.url = url;
+        r.sortOrder = ordem;
+        r.status = status;
+        r.purpose = "PRODUCT_PHOTO";
+        return r;
+    }
+
+    private static ProductFullResponse full(String textoRotulo, List<MediaAssetResponse> fotos) {
+        ProductFullResponse r = new ProductFullResponse();
+        if (textoRotulo != null) {
+            ProductLabelResponse rotulo = new ProductLabelResponse();
+            rotulo.normalizedText = textoRotulo;
+            r.label = rotulo;
+        }
+        r.photos = fotos;
+        return r;
     }
 
     private static ProductResponse produto(long id, long brandId, Long categoryId, String nome, Boolean ativo) {
@@ -148,6 +187,19 @@ public class ProdutoRepositoryTest {
         r.scoringModelId = modeloId;
         r.overallScore = overall;
         return r;
+    }
+
+    /**
+     * A trava EM_ANDAMENTO pode nao ter sido liberada pela carga anterior quando
+     * o teste pede a proxima, e ai carregar() e no-op. Repetir ate a requisicao
+     * sair tira o teste da dependencia desse tempo.
+     */
+    private void carregarAteRequisitar(boolean forcar) {
+        int antes = server.getRequestCount();
+        aguardarAte(() -> {
+            repository.carregar(forcar);
+            return server.getRequestCount() > antes;
+        });
     }
 
     private List<Produto> carregarEEsperar(FakeApiDispatcher dispatcher) {
@@ -285,7 +337,7 @@ public class ProdutoRepositoryTest {
             dispatcher.em(pathComErro, new MockResponse().setResponseCode(500));
             server.setDispatcher(dispatcher);
 
-            repository.carregar(true);
+            carregarAteRequisitar(true);
             aguardarValor(repository.getErro(), valor -> valor != null);
 
             assertEquals("Falhou para: " + recurso,
@@ -347,10 +399,12 @@ public class ProdutoRepositoryTest {
         carregarEEsperar(dispatcher);
         int requisicoesAposPrimeiraCarga = server.getRequestCount();
 
-        repository.carregar(true);
-        aguardarAte(() -> server.getRequestCount() >= requisicoesAposPrimeiraCarga + 5);
+        carregarAteRequisitar(true);
+        aguardarAte(() -> server.getRequestCount()
+                >= requisicoesAposPrimeiraCarga + REQUISICOES_POR_CARGA);
 
-        assertEquals(requisicoesAposPrimeiraCarga + 5, server.getRequestCount());
+        assertEquals(requisicoesAposPrimeiraCarga + REQUISICOES_POR_CARGA,
+                server.getRequestCount());
     }
 
     @Test
@@ -360,10 +414,10 @@ public class ProdutoRepositoryTest {
                 Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
         dispatcherComErro.em(PATH_PRODUTOS, new MockResponse().setResponseCode(500));
         server.setDispatcher(dispatcherComErro);
-        repository.carregar(false);
+        carregarAteRequisitar(false);
         aguardarValor(repository.getErro(), valor -> valor != null);
         aguardarValor(repository.getCarregando(), Boolean.FALSE::equals);
-        aguardarAte(() -> server.getRequestCount() >= 5);
+        aguardarAte(() -> server.getRequestCount() >= REQUISICOES_POR_CARGA);
         int requisicoesAposErro = server.getRequestCount();
 
         FakeApiDispatcher dispatcherOk = new FakeApiDispatcher();
@@ -371,10 +425,10 @@ public class ProdutoRepositoryTest {
                 Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
         server.setDispatcher(dispatcherOk);
 
-        repository.carregar(false);
+        carregarAteRequisitar(false);
         aguardarValor(repository.getCatalogo(), valor -> valor != null);
 
-        assertEquals(requisicoesAposErro + 5, server.getRequestCount());
+        assertEquals(requisicoesAposErro + REQUISICOES_POR_CARGA, server.getRequestCount());
     }
 
     // ---- buscarNoCache ----
@@ -412,110 +466,145 @@ public class ProdutoRepositoryTest {
         assertNull(repository.buscarNoCache(1L));
     }
 
-    // ---- buscarIngredientes ----
+    // ---- buscarDetalheProduto (/full) ----
 
-    @Test
-    public void buscarIngredientes_sucesso_devolveTextoEChegaNaMainThread() throws InterruptedException {
-        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
-        ProductVersionResponse versaoAtual = new ProductVersionResponse();
-        versaoAtual.id = 555L;
-        versaoAtual.productId = 1L;
-        versaoAtual.isCurrent = true;
-        dispatcher.em("/api/product-versions/product/1/current", json(versaoAtual));
-
-        ProductLabelResponse rotulo = new ProductLabelResponse();
-        rotulo.productVersionId = 555L;
-        rotulo.normalizedText = "Aqua, Glycerin";
-        dispatcher.em("/api/product-labels/product-version/555", json(rotulo));
-        server.setDispatcher(dispatcher);
-
+    private String[] buscarDetalhe() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        String[] resultado = new String[1];
+        String[] resultado = new String[]{"nao-nulo", "nao-nulo"};
         Thread[] threadCallback = new Thread[1];
-        repository.buscarIngredientes(1L, texto -> {
-            resultado[0] = texto;
+        repository.buscarDetalheProduto(1L, (textoRotulo, urlFoto) -> {
+            resultado[0] = textoRotulo;
+            resultado[1] = urlFoto;
             threadCallback[0] = Thread.currentThread();
             latch.countDown();
         });
-
         aguardarLatch(latch, com.venussystem.venusmobile.testutil.LiveDataEspera.TIMEOUT_PADRAO_MS);
+        assertEquals(android.os.Looper.getMainLooper().getThread(), threadCallback[0]);
+        return resultado;
+    }
+
+    @Test
+    public void buscarDetalhe_sucesso_devolveRotuloEPrimeiraFotoPorOrdem() throws InterruptedException {
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        dispatcher.em(PATH_FULL_PRODUTO_1, json(full("Aqua, Glycerin", Arrays.asList(
+                foto("https://cdn/segunda.jpg", 2, "ACTIVE"),
+                foto("https://cdn/primeira.jpg", 1, "ACTIVE")))));
+        server.setDispatcher(dispatcher);
+
+        String[] resultado = buscarDetalhe();
 
         assertEquals("Aqua, Glycerin", resultado[0]);
-        assertEquals(android.os.Looper.getMainLooper().getThread(), threadCallback[0]);
+        assertEquals("https://cdn/primeira.jpg", resultado[1]);
     }
 
     @Test
-    public void buscarIngredientes_versao404_devolveNull() throws InterruptedException {
+    public void buscarDetalhe_ignoraFotoQueNaoEstaAtiva() throws InterruptedException {
         FakeApiDispatcher dispatcher = new FakeApiDispatcher();
-        dispatcher.em("/api/product-versions/product/1/current", new MockResponse().setResponseCode(404));
+        dispatcher.em(PATH_FULL_PRODUTO_1, json(full("Aqua", Arrays.asList(
+                foto("https://cdn/pendente.jpg", 1, "PENDING"),
+                foto("https://cdn/ativa.jpg", 2, "ACTIVE")))));
         server.setDispatcher(dispatcher);
 
-        CountDownLatch latch = new CountDownLatch(1);
-        String[] resultado = new String[]{"nao-nulo"};
-        repository.buscarIngredientes(1L, texto -> {
-            resultado[0] = texto;
-            latch.countDown();
-        });
+        String[] resultado = buscarDetalhe();
 
-        aguardarLatch(latch, com.venussystem.venusmobile.testutil.LiveDataEspera.TIMEOUT_PADRAO_MS);
-
-        assertNull(resultado[0]);
+        assertEquals("https://cdn/ativa.jpg", resultado[1]);
     }
 
     @Test
-    public void buscarIngredientes_rotulo404_devolveNull() throws InterruptedException {
+    public void buscarDetalhe_semFoto_devolveUrlNula() throws InterruptedException {
         FakeApiDispatcher dispatcher = new FakeApiDispatcher();
-        ProductVersionResponse versaoAtual = new ProductVersionResponse();
-        versaoAtual.id = 555L;
-        versaoAtual.productId = 1L;
-        versaoAtual.isCurrent = true;
-        dispatcher.em("/api/product-versions/product/1/current", json(versaoAtual));
-        dispatcher.em("/api/product-labels/product-version/555", new MockResponse().setResponseCode(404));
+        dispatcher.em(PATH_FULL_PRODUTO_1, json(full("Aqua", Collections.emptyList())));
         server.setDispatcher(dispatcher);
 
-        CountDownLatch latch = new CountDownLatch(1);
-        String[] resultado = new String[]{"nao-nulo"};
-        repository.buscarIngredientes(1L, texto -> {
-            resultado[0] = texto;
-            latch.countDown();
-        });
+        String[] resultado = buscarDetalhe();
 
-        aguardarLatch(latch, com.venussystem.venusmobile.testutil.LiveDataEspera.TIMEOUT_PADRAO_MS);
-
-        assertNull(resultado[0]);
+        assertEquals("Aqua", resultado[0]);
+        assertNull(resultado[1]);
     }
 
     @Test
-    public void buscarIngredientes_falhaDeRede_devolveNull() throws InterruptedException, IOException {
+    public void buscarDetalhe_semRotulo_devolveTextoNulo() throws InterruptedException {
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        dispatcher.em(PATH_FULL_PRODUTO_1, json(full(null,
+                Collections.singletonList(foto("https://cdn/foto.jpg", 1, "ACTIVE")))));
+        server.setDispatcher(dispatcher);
+
+        String[] resultado = buscarDetalhe();
+
+        assertNull(resultado[0]);
+        assertEquals("https://cdn/foto.jpg", resultado[1]);
+    }
+
+    @Test
+    public void buscarDetalhe_404_devolveTudoNulo() throws InterruptedException {
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        dispatcher.em(PATH_FULL_PRODUTO_1, new MockResponse().setResponseCode(404));
+        server.setDispatcher(dispatcher);
+
+        String[] resultado = buscarDetalhe();
+
+        assertNull(resultado[0]);
+        assertNull(resultado[1]);
+    }
+
+    @Test
+    public void buscarDetalhe_falhaDeRede_devolveTudoNulo() throws InterruptedException, IOException {
         server.shutdown();
 
-        CountDownLatch latch = new CountDownLatch(1);
-        String[] resultado = new String[]{"nao-nulo"};
-        repository.buscarIngredientes(1L, texto -> {
-            resultado[0] = texto;
-            latch.countDown();
-        });
-
-        aguardarLatch(latch, com.venussystem.venusmobile.testutil.LiveDataEspera.TIMEOUT_PADRAO_MS);
+        String[] resultado = buscarDetalhe();
 
         assertNull(resultado[0]);
+        assertNull(resultado[1]);
     }
 
-    // ---- Duas notas para a mesma versao / cargas simultaneas ----
+    // ---- Modelo de scoring ativo / cargas simultaneas ----
 
     @Test
-    public void duasNotasParaMesmaVersaoComScoringModelDiferente_ultimaDaListaVence() {
+    public void duasNotasParaMesmaVersao_valeADoModeloAtivo() {
         FakeApiDispatcher dispatcher = new FakeApiDispatcher();
         enfileirarPadrao(dispatcher,
                 Collections.singletonList(produto(1L, 10L, 100L, "Produto A", true)),
                 Collections.singletonList(marca(10L, "Marca X")),
                 Collections.singletonList(categoria(100L, "Categoria Y")),
                 Collections.singletonList(versao(1000L, 1L, true)),
-                Arrays.asList(nota(1000L, 1L, 60), nota(1000L, 2L, 90)));
+                Arrays.asList(nota(1000L, MODELO_ATIVO, 60), nota(1000L, 2L, 90)));
 
         List<Produto> catalogo = carregarEEsperar(dispatcher);
 
-        assertEquals((Integer) 90, catalogo.get(0).getOverallScore());
+        assertEquals((Integer) 60, catalogo.get(0).getOverallScore());
+    }
+
+    @Test
+    public void notaDeOutroModelo_naoEntraNoCatalogo() {
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        enfileirarPadrao(dispatcher,
+                Collections.singletonList(produto(1L, 10L, 100L, "Produto A", true)),
+                Collections.singletonList(marca(10L, "Marca X")),
+                Collections.singletonList(categoria(100L, "Categoria Y")),
+                Collections.singletonList(versao(1000L, 1L, true)),
+                Collections.singletonList(nota(1000L, 2L, 90)));
+
+        List<Produto> catalogo = carregarEEsperar(dispatcher);
+
+        assertNull(catalogo.get(0).getOverallScore());
+    }
+
+    @Test
+    public void semModeloAtivo_catalogoCarregaSemNota() {
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        enfileirarPadrao(dispatcher,
+                Collections.singletonList(produto(1L, 10L, 100L, "Produto A", true)),
+                Collections.singletonList(marca(10L, "Marca X")),
+                Collections.singletonList(categoria(100L, "Categoria Y")),
+                Collections.singletonList(versao(1000L, 1L, true)),
+                Collections.singletonList(nota(1000L, MODELO_ATIVO, 87)));
+        dispatcher.em(PATH_MODELO_ATIVO, new MockResponse().setResponseCode(404));
+
+        List<Produto> catalogo = carregarEEsperar(dispatcher);
+
+        assertEquals(1, catalogo.size());
+        assertNull(catalogo.get(0).getOverallScore());
+        assertNull(repository.getErro().getValue());
     }
 
     @Test
@@ -529,6 +618,6 @@ public class ProdutoRepositoryTest {
         repository.carregar(true);
         aguardarValor(repository.getCatalogo(), valor -> valor != null);
 
-        assertEquals(5, server.getRequestCount());
+        assertEquals(6, server.getRequestCount());
     }
 }

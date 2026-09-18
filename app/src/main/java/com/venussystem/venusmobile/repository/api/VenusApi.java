@@ -2,10 +2,12 @@ package com.venussystem.venusmobile.repository.api;
 
 import com.venussystem.venusmobile.repository.api.dto.BrandResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductCategoryResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductFullResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductLabelResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductVersionResponse;
+import com.venussystem.venusmobile.repository.api.dto.ScoringModelResponse;
 
 import java.util.List;
 
@@ -38,4 +40,10 @@ public interface VenusApi {
 
     @GET("api/product-labels/product-version/{productVersionId}")
     Call<ProductLabelResponse> buscarRotulo(@Path("productVersionId") long productVersionId);
+
+    @GET("api/scoring-models/active")
+    Call<ScoringModelResponse> modeloAtivo();
+
+    @GET("api/products/{id}/full")
+    Call<ProductFullResponse> buscarProdutoCompleto(@Path("id") long id);
 }
