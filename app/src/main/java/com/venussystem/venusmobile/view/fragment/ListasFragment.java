@@ -15,8 +15,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.venussystem.venusmobile.R;
@@ -50,7 +50,9 @@ public class ListasFragment extends Fragment {
         adapter = new ColecaoAdapter(this::abrirLista);
 
         lista = view.findViewById(R.id.listaColecoes);
-        lista.setLayoutManager(new LinearLayoutManager(requireContext()));
+        // 1 coluna no celular; vira grade no tablet (values-w600dp/w900dp).
+        int colunas = getResources().getInteger(R.integer.colunas_grade);
+        lista.setLayoutManager(new GridLayoutManager(requireContext(), colunas));
         lista.setAdapter(adapter);
         new ItemTouchHelper(new SwipeParaExcluir()).attachToRecyclerView(lista);
 

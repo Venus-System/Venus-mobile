@@ -20,6 +20,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo"
         app:layout_constraintWidth_percent="0.9" />
 
     <TextView
@@ -35,7 +36,8 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/textSubtitulo"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
     <TextView
         android:id="@+id/textSubtitulo"
@@ -49,7 +51,8 @@
         android:textSize="@dimen/texto_corpo"
         app:layout_constraintBottom_toTopOf="@+id/textResponderDepois"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
     <TextView
         android:id="@+id/textResponderDepois"

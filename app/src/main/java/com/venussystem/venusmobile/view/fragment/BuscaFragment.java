@@ -20,7 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.chip.Chip;
@@ -133,7 +133,9 @@ public class BuscaFragment extends Fragment {
             startActivity(intent);
         });
 
-        listaProdutos.setLayoutManager(new LinearLayoutManager(requireContext()));
+        // 1 coluna no celular; vira grade no tablet (values-w600dp/w900dp).
+        int colunas = getResources().getInteger(R.integer.colunas_grade);
+        listaProdutos.setLayoutManager(new GridLayoutManager(requireContext(), colunas));
         listaProdutos.setAdapter(adapter);
 
         view.findViewById(R.id.btnTentarDeNovo)

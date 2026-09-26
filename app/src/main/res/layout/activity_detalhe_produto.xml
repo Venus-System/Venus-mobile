@@ -44,11 +44,12 @@
         android:layout_marginTop="@dimen/espaco_medio"
         android:layout_marginEnd="@dimen/espaco_grande"
         android:textColor="@color/preto_texto"
-        android:textSize="20sp"
+        android:textSize="@dimen/texto_titulo_aba"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/imgProduto"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista"
         tools:text="CeraVe Loção Facial Hidratante Noite" />
 
     <TextView
@@ -67,13 +68,12 @@
         android:id="@+id/textNotaProduto"
         android:layout_width="@dimen/nota_circular_cabecalho"
         android:layout_height="@dimen/nota_circular_cabecalho"
-        android:layout_marginStart="@dimen/espaco_grande"
         android:layout_marginTop="@dimen/espaco_pequeno"
         android:background="@drawable/bg_nota_circular"
         android:gravity="center"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/textNomeProduto"
         app:layout_constraintTop_toBottomOf="@+id/textCategoriaProduto"
         tools:text="87" />
 
@@ -86,6 +86,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textNotaProduto"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista"
         app:tabIndicatorColor="@color/roxo_venus"
         app:tabIndicatorHeight="3dp"
         app:tabMode="fixed"
@@ -104,7 +105,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/abasProduto">
+        app:layout_constraintTop_toBottomOf="@+id/abasProduto"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -166,7 +168,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/abasProduto">
+        app:layout_constraintTop_toBottomOf="@+id/abasProduto"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista">
 
         <TextView
             android:layout_width="match_parent"
@@ -194,6 +197,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/abasProduto"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista"
         tools:itemCount="4"
         tools:listitem="@layout/item_alternativa_produto"
         tools:visibility="visible" />
@@ -212,6 +216,7 @@
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/abasProduto" />
+        app:layout_constraintTop_toBottomOf="@+id/abasProduto"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

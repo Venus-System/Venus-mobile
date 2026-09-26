@@ -117,7 +117,10 @@ public final class ModalEscolhaUnica {
             return;
         }
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        int largura = (int) (contexto.getResources().getDisplayMetrics().widthPixels * 0.88f);
+        // 88% da tela no celular; no tablet isso ficaria largo demais, entao tem teto.
+        int largura = Math.min(
+                (int) (contexto.getResources().getDisplayMetrics().widthPixels * 0.88f),
+                contexto.getResources().getDimensionPixelSize(R.dimen.largura_max_dialogo));
         dialog.getWindow().setLayout(largura, ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 }

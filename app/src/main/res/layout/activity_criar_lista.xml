@@ -10,7 +10,7 @@
     tools:context=".view.CriarListaActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
+        style="@style/ColunaConteudo"
         android:layout_height="wrap_content"
         android:paddingStart="@dimen/espaco_grande"
         android:paddingEnd="@dimen/espaco_grande"
@@ -36,7 +36,7 @@
             android:layout_height="wrap_content"
             android:text="@string/lista_titulo"
             android:textColor="@color/roxo_venus"
-            android:textSize="20sp"
+            android:textSize="@dimen/texto_titulo_aba"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="@+id/btnVoltar"
             app:layout_constraintStart_toEndOf="@+id/btnVoltar"

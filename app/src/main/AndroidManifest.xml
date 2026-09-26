@@ -95,11 +95,11 @@
         <activity
             android:name=".view.CadastrarActivity"
             android:exported="false"
-            android:windowSoftInputMode="adjustPan" />
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".view.LoginActivity"
             android:exported="false"
-            android:windowSoftInputMode="adjustPan" />
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".view.BemVindoActivity"
             android:exported="true" >

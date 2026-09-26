@@ -25,7 +25,7 @@
         android:layout_marginEnd="@dimen/espaco_medio"
         android:text="@string/lista_adicionar_produto"
         android:textColor="@color/roxo_venus"
-        android:textSize="20sp"
+        android:textSize="@dimen/texto_titulo_aba"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@+id/btnVoltar"
         app:layout_constraintEnd_toEndOf="parent"

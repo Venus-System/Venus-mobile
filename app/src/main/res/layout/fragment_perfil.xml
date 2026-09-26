@@ -14,9 +14,9 @@
         android:layout_marginTop="@dimen/espaco_medio"
         android:text="@string/nav_perfil"
         android:textColor="@color/roxo_venus"
-        android:textSize="20sp"
+        android:textSize="@dimen/texto_titulo_aba"
         android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/rolagemPerfil"
         app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.core.widget.NestedScrollView
@@ -28,7 +28,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textTituloPerfil">
+        app:layout_constraintTop_toBottomOf="@+id/textTituloPerfil"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista">
 
         <LinearLayout
             android:layout_width="match_parent"

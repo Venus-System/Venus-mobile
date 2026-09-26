@@ -120,7 +120,10 @@ public class PrincipalActivity extends AppCompatActivity {
 
     private void moverIndicador(View item, boolean animar) {
         indicador.post(() -> {
-            float destino = item.getX() + (item.getWidth() - indicador.getWidth()) / 2f;
+            // No tablet a linha de itens fica centralizada dentro da barra, entao o
+            // deslocamento dela entra na conta (no celular ele e zero).
+            View linha = (View) item.getParent();
+            float destino = linha.getX() + item.getX() + (item.getWidth() - indicador.getWidth()) / 2f;
             if (animar) {
                 indicador.animate()
                         .translationX(destino)
