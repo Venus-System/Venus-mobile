@@ -46,7 +46,7 @@
 
         <LinearLayout
             android:id="@+id/linhaItens"
-            android:layout_width="match_parent"
+            style="@style/ColunaConteudo"
             android:layout_height="@dimen/altura_barra_nav"
             android:orientation="horizontal">
 

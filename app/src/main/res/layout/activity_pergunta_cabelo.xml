@@ -40,11 +40,12 @@
         android:lineSpacingMultiplier="0.95"
         android:text="@string/pergunta_tipo_cabelo"
         android:textColor="@color/white"
-        android:textSize="34sp"
+        android:textSize="@dimen/texto_pergunta"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnVoltar" />
+        app:layout_constraintTop_toBottomOf="@+id/btnVoltar"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
     <View
         android:id="@+id/cardOpcoes"
@@ -57,7 +58,8 @@
         app:layout_constraintBottom_toTopOf="@+id/btnAvancar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guidelineCardTopo" />
+        app:layout_constraintTop_toTopOf="@+id/guidelineCardTopo"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
     <ImageView
         android:id="@+id/imgPergunta"
@@ -71,6 +73,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textPergunta"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo"
         app:layout_constraintWidth_percent="0.8" />
 
     <TextView
@@ -195,6 +198,7 @@
         android:textSize="@dimen/texto_botao"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

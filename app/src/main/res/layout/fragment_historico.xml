@@ -10,13 +10,12 @@
         android:id="@+id/textTituloHistorico"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/espaco_medio"
         android:layout_marginTop="@dimen/espaco_medio"
         android:text="@string/historico_titulo"
         android:textColor="@color/roxo_venus"
-        android:textSize="20sp"
+        android:textSize="@dimen/texto_titulo_aba"
         android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/listaHistorico"
         app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.recyclerview.widget.RecyclerView
@@ -31,6 +30,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textTituloHistorico"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista"
         tools:itemCount="5"
         tools:listitem="@layout/item_historico_produto" />
 

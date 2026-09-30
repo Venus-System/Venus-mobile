@@ -4,6 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/meio_espaco_grade"
+    android:layout_marginEnd="@dimen/meio_espaco_grade"
     android:layout_marginBottom="@dimen/espaco_medio"
     android:background="@drawable/bg_card_lista">
 

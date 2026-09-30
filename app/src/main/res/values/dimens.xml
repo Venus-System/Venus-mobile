@@ -51,4 +51,20 @@
     <dimen name="miniatura_chat">44dp</dimen>
     <dimen name="nota_circular">44dp</dimen>
     <dimen name="nota_circular_cabecalho">52dp</dimen>
+
+    <!-- Largura maxima das colunas de conteudo. 0dp = sem limite (e assim que o
+         ConstraintLayout trata layout_constraintWidth_max), entao no celular em pe
+         tudo continua ocupando a largura da tela. Os valores de verdade ficam em
+         values-w600dp: tablet e celular deitado. -->
+    <dimen name="largura_max_conteudo">0dp</dimen>
+    <dimen name="largura_max_lista">0dp</dimen>
+    <dimen name="largura_max_ilustracao">0dp</dimen>
+    <!-- Metade do respiro entre colunas quando a lista vira grade. -->
+    <dimen name="meio_espaco_grade">0dp</dimen>
+    <!-- Nenhum celular chega nisso; so segura o modal no tablet. -->
+    <dimen name="largura_max_dialogo">480dp</dimen>
+
+    <dimen name="texto_pergunta">34sp</dimen>
+    <dimen name="texto_titulo_destaque">28sp</dimen>
+    <dimen name="texto_titulo_aba">20sp</dimen>
 </resources>
