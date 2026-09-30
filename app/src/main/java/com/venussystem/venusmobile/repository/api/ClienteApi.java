@@ -25,6 +25,22 @@ public final class ClienteApi {
     private static final long LIMITE_LEITURA = 180L;
 
     private static VenusApi instancia;
+    private static ScanSubmissionApi scanApi;
+
+    public static synchronized ScanSubmissionApi scans() {
+        if (scanApi == null) {
+            // No redirects or logging: signatures and auth must stay on the intended host.
+            OkHttpClient http = new OkHttpClient.Builder()
+                    .connectTimeout(LIMITE_CONEXAO, TimeUnit.SECONDS)
+                    .readTimeout(LIMITE_LEITURA, TimeUnit.SECONDS)
+                    .writeTimeout(60, TimeUnit.SECONDS)
+                    .followRedirects(false).followSslRedirects(false).build();
+            scanApi = new Retrofit.Builder().baseUrl(URL_BASE).client(http)
+                    .addConverterFactory(GsonConverterFactory.create()).build()
+                    .create(ScanSubmissionApi.class);
+        }
+        return scanApi;
+    }
 
     private ClienteApi() {
     }

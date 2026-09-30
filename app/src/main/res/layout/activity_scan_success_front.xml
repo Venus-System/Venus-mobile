@@ -47,17 +47,4 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageButton
-        android:id="@+id/btnScanNext"
-        android:layout_width="42dp"
-        android:layout_height="42dp"
-        android:layout_marginBottom="22dp"
-        android:background="@drawable/bg_scan_success_next"
-        android:contentDescription="Continuar"
-        android:src="@drawable/ic_scan_arrow_right"
-        android:padding="12dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>

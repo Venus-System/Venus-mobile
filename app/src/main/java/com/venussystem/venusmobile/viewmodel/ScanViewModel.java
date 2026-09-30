@@ -2,7 +2,6 @@ package com.venussystem.venusmobile.viewmodel;
 
 import android.app.Application;
 import android.net.Uri;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -12,19 +11,21 @@ import androidx.lifecycle.MutableLiveData;
 import com.google.mlkit.vision.text.Text;
 import com.venussystem.venusmobile.model.ScanFrontData;
 import com.venussystem.venusmobile.model.ScanOcrResult;
+import com.venussystem.venusmobile.model.ScanOcrToken;
 import com.venussystem.venusmobile.model.ScanProductMatch;
-import com.venussystem.venusmobile.model.ScanStatus;
 import com.venussystem.venusmobile.repository.ScanOcrRepository;
 import com.venussystem.venusmobile.repository.ScanProductMatchRepository;
-import com.venussystem.venusmobile.view.util.ScanFrontExtractor;
 
-import java.util.ArrayList;
-import java.util.List;
-
+/**
+ * ViewModel responsável pelo fluxo da leitura da frente.
+ *
+ * OCR:
+ * foto -> ML Kit -> ScanOcrResult
+ *
+ * Identificação:
+ * ScanFrontData -> catálogo -> ScanProductMatch
+ */
 public class ScanViewModel extends AndroidViewModel {
-
-    private static final String TAG_OCR = "VENUS_OCR";
-    private static final String TAG_MATCH = "VENUS_MATCH";
 
     private final ScanOcrRepository ocrRepository;
     private final ScanProductMatchRepository productMatchRepository;
@@ -41,21 +42,16 @@ public class ScanViewModel extends AndroidViewModel {
     private final MutableLiveData<ScanProductMatch> productMatch =
             new MutableLiveData<>();
 
-    private final MutableLiveData<ScanStatus> status =
-            new MutableLiveData<>(ScanStatus.IDLE);
-
-    private boolean identificacaoEmAndamento = false;
-
-
-    private String ultimaImagemProcessada;
-
     public ScanViewModel(
             @NonNull Application application
     ) {
         super(application);
 
-        ocrRepository = new ScanOcrRepository();
-        productMatchRepository = new ScanProductMatchRepository();
+        ocrRepository =
+                new ScanOcrRepository();
+
+        productMatchRepository =
+                new ScanProductMatchRepository();
     }
 
     public LiveData<ScanOcrResult> getOcrResult() {
@@ -74,45 +70,17 @@ public class ScanViewModel extends AndroidViewModel {
         return productMatch;
     }
 
-    public LiveData<ScanStatus> getStatus() {
-        return status;
-    }
-
-    public void processarFrente(
+    /**
+     * Executa o OCR da imagem.
+     */
+    public void reconhecer(
             @NonNull Uri imageUri
     ) {
 
-        String chaveImagem = imageUri.toString();
-        ScanStatus estadoAtual = status.getValue();
-
-        if (chaveImagem.equals(ultimaImagemProcessada)
-                && estadoAtual != null
-                && estadoAtual != ScanStatus.IDLE) {
-            return;
-        }
-
-        if (identificacaoEmAndamento) {
-            return;
-        }
-
-        ultimaImagemProcessada = chaveImagem;
-        identificacaoEmAndamento = true;
-
+        carregando.setValue(true);
+        erro.setValue(null);
         ocrResult.setValue(null);
         productMatch.setValue(null);
-        erro.setValue(null);
-        carregando.setValue(true);
-        status.setValue(ScanStatus.PROCESSANDO_OCR);
-
-        Log.d(
-                TAG_OCR,
-                "INICIANDO FLUXO COMPLETO DA FRENTE"
-        );
-
-        Log.d(
-                TAG_OCR,
-                "IMAGEM: " + imageUri
-        );
 
         ocrRepository.recognize(
                 getApplication(),
@@ -124,7 +92,24 @@ public class ScanViewModel extends AndroidViewModel {
                             @NonNull Text result
                     ) {
 
-                        processarResultadoOcr(result);
+                        java.util.List<String> linhas =
+                                extrairLinhas(result);
+
+                        java.util.List<ScanOcrToken> tokens =
+                                extrairTokens(result);
+
+                        ScanOcrResult resultado =
+                                new ScanOcrResult(
+                                        result.getText(),
+                                        linhas,
+                                        tokens
+                                );
+
+                        ocrResult.postValue(
+                                resultado
+                        );
+
+                        carregando.postValue(false);
                     }
 
                     @Override
@@ -132,228 +117,31 @@ public class ScanViewModel extends AndroidViewModel {
                             @NonNull Exception exception
                     ) {
 
-                        Log.e(
-                                TAG_OCR,
-                                "ERRO NO OCR",
+                        erro.postValue(
                                 exception
                         );
 
-                        erro.postValue(exception);
-                        productMatch.postValue(
-                                ScanProductMatch.comErro(
-                                        exception.getMessage()
-                                )
-                        );
-                        status.postValue(
-                                ScanStatus.ERRO
-                        );
                         carregando.postValue(false);
-                        identificacaoEmAndamento = false;
                     }
                 }
         );
     }
 
-    private void processarResultadoOcr(
-            @NonNull Text result
-    ) {
-
-        List<String> linhas =
-                extrairLinhas(result);
-
-        ScanOcrResult resultado =
-                new ScanOcrResult(
-                        result.getText(),
-                        linhas
-                );
-
-        ocrResult.postValue(resultado);
-
-        Log.d(
-                TAG_OCR,
-                "=============================="
-        );
-
-        Log.d(
-                TAG_OCR,
-                "OCR CONCLUÍDO"
-        );
-
-        Log.d(
-                TAG_OCR,
-                "TEXTO BRUTO:"
-        );
-
-        Log.d(
-                TAG_OCR,
-                result.getText()
-        );
-
-        Log.d(
-                TAG_OCR,
-                "LINHAS: " + linhas
-        );
-
-        if (resultado.isEmpty()) {
-
-            Log.d(
-                    TAG_MATCH,
-                    "OCR SEM TEXTO"
-            );
-
-            productMatch.postValue(
-                    ScanProductMatch.semMatch()
-            );
-            status.postValue(
-                    ScanStatus.PRODUTO_NAO_ENCONTRADO
-            );
-            carregando.postValue(false);
-            identificacaoEmAndamento = false;
-
-            return;
-        }
-
-        try {
-
-            ScanFrontData frontData =
-                    ScanFrontExtractor.extract(
-                            linhas
-                    );
-
-            Log.d(
-                    TAG_OCR,
-                    "------------------------------"
-            );
-
-            Log.d(
-                    TAG_OCR,
-                    "CANDIDATOS DE MARCA: "
-                            + frontData.getBrandCandidates()
-            );
-
-            Log.d(
-                    TAG_OCR,
-                    "CANDIDATOS DE PRODUTO: "
-                            + frontData.getProductCandidates()
-            );
-
-            Log.d(
-                    TAG_OCR,
-                    "APRESENTAÇÕES: "
-                            + frontData.getPresentationCandidates()
-            );
-
-            Log.d(
-                    TAG_OCR,
-                    "CAPACIDADE: "
-                            + frontData.getCapacity()
-            );
-
-            Log.d(
-                    TAG_OCR,
-                    "CONCENTRAÇÃO: "
-                            + frontData.getConcentration()
-            );
-
-            status.postValue(
-                    ScanStatus.IDENTIFICANDO_PRODUTO
-            );
-
-            Log.d(
-                    TAG_MATCH,
-                    "INICIANDO IDENTIFICACAO"
-            );
-
-            productMatchRepository.identificar(
-                    frontData,
-                    new ScanProductMatchRepository.Callback() {
-
-                        @Override
-                        public void onSuccess(
-                                @NonNull ScanProductMatch resultadoMatch
-                        ) {
-
-                            Log.d(
-                                    TAG_MATCH,
-                                    "CALLBACK RECEBIDO"
-                            );
-
-                            productMatch.postValue(
-                                    resultadoMatch
-                            );
-
-                            status.postValue(
-                                    resultadoMatch.isFound()
-                                            && resultadoMatch.getProduto() != null
-                                            ? ScanStatus.PRODUTO_ENCONTRADO
-                                            : ScanStatus.PRODUTO_NAO_ENCONTRADO
-                            );
-
-                            carregando.postValue(false);
-                            identificacaoEmAndamento = false;
-                        }
-
-                        @Override
-                        public void onError(
-                                @NonNull Exception exception
-                        ) {
-
-                            Log.e(
-                                    TAG_MATCH,
-                                    "ERRO NO MATCHING",
-                                    exception
-                            );
-
-                            erro.postValue(exception);
-                            productMatch.postValue(
-                                    ScanProductMatch.comErro(
-                                            exception.getMessage()
-                                    )
-                            );
-                            status.postValue(
-                                    ScanStatus.ERRO
-                            );
-                            carregando.postValue(false);
-                            identificacaoEmAndamento = false;
-                        }
-                    }
-            );
-
-        } catch (Exception exception) {
-
-            Log.e(
-                    TAG_OCR,
-                    "ERRO AO EXTRAIR DADOS DA FRENTE",
-                    exception
-            );
-
-            erro.postValue(exception);
-            productMatch.postValue(
-                    ScanProductMatch.comErro(
-                            exception.getMessage()
-                    )
-            );
-            status.postValue(
-                    ScanStatus.ERRO
-            );
-            carregando.postValue(false);
-            identificacaoEmAndamento = false;
-        }
-    }
-
+    /**
+     * Transforma o objeto Text do ML Kit em uma lista de linhas,
+     * preservando a estrutura básica fornecida pelo OCR.
+     */
     @NonNull
-    private List<String> extrairLinhas(
+    private java.util.List<String> extrairLinhas(
             @NonNull Text result
     ) {
 
-        List<String> linhas =
-                new ArrayList<>();
+        java.util.List<String> linhas =
+                new java.util.ArrayList<>();
 
-        for (Text.TextBlock block :
-                result.getTextBlocks()) {
+        for (Text.TextBlock block : result.getTextBlocks()) {
 
-            for (Text.Line line :
-                    block.getLines()) {
+            for (Text.Line line : block.getLines()) {
 
                 String texto =
                         line.getText();
@@ -371,29 +159,96 @@ public class ScanViewModel extends AndroidViewModel {
         return linhas;
     }
 
-    @Deprecated
-    public void reconhecer(
-            @NonNull Uri imageUri
+    /**
+     * Extrai os elementos espaciais do ML Kit sem alterar a lista de linhas
+     * usada pelo fluxo antigo da frente.
+     */
+    @NonNull
+    private java.util.List<ScanOcrToken> extrairTokens(
+            @NonNull Text result
     ) {
-        processarFrente(imageUri);
+
+        java.util.List<ScanOcrToken> tokens =
+                new java.util.ArrayList<>();
+
+        int blockIndex = 0;
+        int globalLineIndex = 0;
+
+        for (Text.TextBlock block : result.getTextBlocks()) {
+
+            for (Text.Line line : block.getLines()) {
+
+                String lineText = line.getText();
+
+                if (lineText == null || lineText.trim().isEmpty()) {
+                    continue;
+                }
+
+                int elementIndex = 0;
+
+                for (Text.Element element : line.getElements()) {
+
+                    String elementText = element.getText();
+
+                    if (elementText == null || elementText.trim().isEmpty()) {
+                        elementIndex++;
+                        continue;
+                    }
+
+                    tokens.add(
+                            new ScanOcrToken(
+                                    elementText.trim(),
+                                    element.getBoundingBox(),
+                                    element.getConfidence(),
+                                    line.getAngle(),
+                                    blockIndex,
+                                    globalLineIndex,
+                                    elementIndex
+                            )
+                    );
+
+                    elementIndex++;
+                }
+
+                globalLineIndex++;
+            }
+
+            blockIndex++;
+        }
+
+        return tokens;
     }
 
-    @Deprecated
+    /**
+     * Tenta localizar o produto no catálogo real.
+     */
     public void identificarProduto(
             @NonNull ScanFrontData frontData
     ) {
 
-        if (identificacaoEmAndamento) {
-            return;
-        }
-
-        identificacaoEmAndamento = true;
-        carregando.setValue(true);
-        erro.setValue(null);
-        productMatch.setValue(null);
-        status.setValue(
-                ScanStatus.IDENTIFICANDO_PRODUTO
+        android.util.Log.d(
+                "VENUS_MATCH",
+                "================================"
         );
+
+        android.util.Log.d(
+                "VENUS_MATCH",
+                "INICIANDO IDENTIFICACAO"
+        );
+
+        android.util.Log.d(
+                "VENUS_MATCH",
+                "MARCAS: "
+                        + frontData.getBrandCandidates()
+        );
+
+        android.util.Log.d(
+                "VENUS_MATCH",
+                "PRODUTOS: "
+                        + frontData.getProductCandidates()
+        );
+
+        productMatch.setValue(null);
 
         productMatchRepository.identificar(
                 frontData,
@@ -404,15 +259,14 @@ public class ScanViewModel extends AndroidViewModel {
                             @NonNull ScanProductMatch resultado
                     ) {
 
-                        productMatch.postValue(resultado);
-                        status.postValue(
-                                resultado.isFound()
-                                        && resultado.getProduto() != null
-                                        ? ScanStatus.PRODUTO_ENCONTRADO
-                                        : ScanStatus.PRODUTO_NAO_ENCONTRADO
+                        android.util.Log.d(
+                                "VENUS_MATCH",
+                                "CALLBACK RECEBIDO"
                         );
-                        carregando.postValue(false);
-                        identificacaoEmAndamento = false;
+
+                        productMatch.postValue(
+                                resultado
+                        );
                     }
 
                     @Override
@@ -420,17 +274,17 @@ public class ScanViewModel extends AndroidViewModel {
                             @NonNull Exception exception
                     ) {
 
-                        erro.postValue(exception);
+                        android.util.Log.e(
+                                "VENUS_MATCH",
+                                "ERRO NO MATCHING",
+                                exception
+                        );
+
                         productMatch.postValue(
                                 ScanProductMatch.comErro(
                                         exception.getMessage()
                                 )
                         );
-                        status.postValue(
-                                ScanStatus.ERRO
-                        );
-                        carregando.postValue(false);
-                        identificacaoEmAndamento = false;
                     }
                 }
         );
@@ -438,8 +292,10 @@ public class ScanViewModel extends AndroidViewModel {
 
     @Override
     protected void onCleared() {
+
         ocrRepository.close();
         productMatchRepository.close();
+
         super.onCleared();
     }
 }
