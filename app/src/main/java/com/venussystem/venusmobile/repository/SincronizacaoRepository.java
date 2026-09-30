@@ -54,6 +54,7 @@ public class SincronizacaoRepository {
     private static final int TAMANHO_PAGINA = 100;
     private static final int LIMITE_PAGINAS = 20;
 
+    private static final int PROIBIDO = 403;
     private static final int NAO_ENCONTRADO = 404;
     private static final int CONFLITO = 409;
 
@@ -123,6 +124,13 @@ public class SincronizacaoRepository {
      */
     private boolean gravar(Call<Void> atualizar, Supplier<Call<Void>> criar) throws IOException {
         Response<Void> resposta = atualizar.execute();
+        if (resposta.code() == PROIBIDO) {
+            // A API respondeu que o id nao e desta pessoa: com o banco recriado,
+            // o id guardado pode ter ido para outra conta. Sem esquecer, toda
+            // tentativa bateria no mesmo 403 para sempre.
+            usuarios.esquecerId();
+            return false;
+        }
         if (resposta.code() != NAO_ENCONTRADO) {
             return resposta.isSuccessful();
         }
@@ -135,7 +143,8 @@ public class SincronizacaoRepository {
         // provavel e o id guardado nao existir mais na API (banco recriado).
         // Esquecer o id faz a proxima tentativa buscar o cadastro de novo.
         int codigo = resposta.code();
-        if (codigo == NAO_ENCONTRADO || codigo == CONFLITO || codigo == 422) {
+        if (codigo == PROIBIDO || codigo == NAO_ENCONTRADO || codigo == CONFLITO
+                || codigo == 422) {
             usuarios.esquecerId();
         }
         return false;

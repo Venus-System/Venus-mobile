@@ -34,6 +34,7 @@ import okhttp3.mockwebserver.RecordedRequest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(RobolectricTestRunner.class)
@@ -294,6 +295,26 @@ public class SincronizacaoRepositoryTest {
     }
 
     @Test
+    public void refazerQuestionario_aindaApagaAlergiaQueOAppGravou() {
+        responderQuestionarioCompleto();
+        perfil.salvarLista(PerfilRepository.ALERGIAS, Arrays.asList("Látex"));
+        apiComPerfil();
+        assertTrue(sincronizacao.sincronizarAgora());
+
+        // "Refazer questionario" apaga as respostas; a Ana responde de novo
+        // sem Latex, e a API ainda tem o Latex que o app gravou antes.
+        perfil.limpar();
+        assertNull(perfil.getTag(PerfilRepository.GENERO));
+        responderQuestionarioCompleto();
+        api.em(ALERGIAS_DA_ANA, 200, "{\"content\":[{\"allergyId\":9}],\"last\":true}");
+        api.em(DELETE_LATEX, 204, "");
+
+        assertTrue(sincronizacao.sincronizarAgora());
+
+        assertEquals(Collections.singletonList(DELETE_LATEX), pedidosEm(DELETE_LATEX));
+    }
+
+    @Test
     public void falhaAoGravarAlergia_continuaPendente() {
         responderQuestionarioCompleto();
         perfil.salvarLista(PerfilRepository.ALERGIAS, Arrays.asList("Látex"));
@@ -409,5 +430,21 @@ public class SincronizacaoRepositoryTest {
 
         long buscas = api.pedidos.stream().filter(BUSCA::equals).count();
         assertEquals(2, buscas);
+    }
+
+    @Test
+    public void idGuardadoDeOutraPessoa_403_eBuscadoDeNovoNaProxima() {
+        // Banco recriado: o id 42 guardado agora e de outra conta, e a API
+        // recusa o token da Ana nele.
+        responderQuestionarioCompleto();
+        api.em(PUT_PERFIL, 403, "{\"status\":403,\"message\":\"Acesso negado\"}");
+
+        assertFalse(sincronizacao.sincronizarAgora());
+        assertFalse(sincronizacao.sincronizarAgora());
+
+        long buscas = api.pedidos.stream().filter(BUSCA::equals).count();
+        assertEquals(2, buscas);
+        assertTrue("403 nao e 'nao existe': nao tenta criar", pedidosEm(POST_PERFIL).isEmpty());
+        assertTrue(perfil.temAlteracaoParaEnviar());
     }
 }

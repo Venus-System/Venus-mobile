@@ -170,7 +170,23 @@ public class PerfilRepository implements MapeadorPerfilApi.Respostas {
         prefs.edit().putString(chave, String.join(SEPARADOR, textos)).apply();
     }
 
+    /**
+     * Apaga as respostas ("Refazer questionario"), mas mantem o registro do que
+     * o app ja gravou na API: sem ele, quem refaz o questionario e deixa de
+     * marcar uma alergia nunca a veria apagada la (ver SincronizacaoRepository).
+     */
     public void limpar() {
-        prefs.edit().clear().apply();
+        String alergias = prefs.getString(ALERGIAS_NA_API, null);
+        String etiquetas = prefs.getString(ETIQUETAS_NA_API, null);
+
+        // O clear() de um Editor roda antes dos put(), qualquer que seja a ordem.
+        SharedPreferences.Editor editor = prefs.edit().clear();
+        if (alergias != null) {
+            editor.putString(ALERGIAS_NA_API, alergias);
+        }
+        if (etiquetas != null) {
+            editor.putString(ETIQUETAS_NA_API, etiquetas);
+        }
+        editor.apply();
     }
 }
