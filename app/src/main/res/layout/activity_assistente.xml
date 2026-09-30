@@ -28,7 +28,7 @@
         android:layout_marginStart="@dimen/espaco_pequeno"
         android:text="@string/assistente_titulo"
         android:textColor="@color/roxo_venus"
-        android:textSize="20sp"
+        android:textSize="@dimen/texto_titulo_aba"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@+id/btnVoltar"
         app:layout_constraintStart_toEndOf="@+id/btnVoltar"
@@ -48,6 +48,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnVoltar"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista"
         tools:visibility="visible">
 
         <com.google.android.material.imageview.ShapeableImageView
@@ -118,6 +119,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/cardProduto"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista"
         tools:itemCount="3"
         tools:listitem="@layout/item_mensagem_assistente" />
 
@@ -130,7 +132,8 @@
         android:scrollbars="none"
         app:layout_constraintBottom_toTopOf="@+id/linhaEntrada"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista">
 
         <LinearLayout
             android:id="@+id/linhaSugestoes"
@@ -153,7 +156,8 @@
         android:paddingBottom="@dimen/espaco_pequeno"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista">
 
         <EditText
             android:id="@+id/campoMensagem"

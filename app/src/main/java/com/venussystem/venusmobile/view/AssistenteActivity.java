@@ -13,28 +13,33 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.venussystem.venusmobile.R;
-import com.venussystem.venusmobile.model.Mensagem;
 import com.venussystem.venusmobile.view.adapter.ConversaAdapter;
+import com.venussystem.venusmobile.viewmodel.AssistenteViewModel;
 
 /**
- * Conversa com a assistente.
+ * Conversa com a assistente, que responde pela Venus-AI-api.
  *
- * A API de chat ainda nao existe, entao nada e enviado para lugar nenhum: a
- * mensagem do usuario entra na lista e a assistente responde dizendo que ainda
- * nao esta conectada. Preferi isso a inventar uma resposta pronta, que daria a
- * impressao de que ja funciona.
- *
- * Quando a API entrar, o unico ponto a mexer e o responder().
+ * A tela so desenha: a conversa e o envio moram no AssistenteViewModel. Sem a
+ * URL da API configurada no build, a Venus responde que ainda nao esta
+ * conectada, em vez de inventar uma resposta que daria a impressao de que ja
+ * funciona.
  */
 public class AssistenteActivity extends AppCompatActivity {
 
+    // Enquanto a Venus responde, o botao e as sugestoes ficam apagados assim.
+    private static final float ALFA_DESABILITADO = 0.4f;
+
+    private AssistenteViewModel viewModel;
     private ConversaAdapter adapter;
     private RecyclerView lista;
     private EditText campo;
+    private View botaoEnviar;
+    private LinearLayout linhaSugestoes;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,13 +60,15 @@ public class AssistenteActivity extends AppCompatActivity {
 
         campo = findViewById(R.id.campoMensagem);
         lista = findViewById(R.id.listaMensagens);
+        botaoEnviar = findViewById(R.id.btnEnviar);
+        linhaSugestoes = findViewById(R.id.linhaSugestoes);
 
         adapter = new ConversaAdapter();
         lista.setLayoutManager(new LinearLayoutManager(this));
         lista.setAdapter(adapter);
 
         findViewById(R.id.btnVoltar).setOnClickListener(v -> finish());
-        findViewById(R.id.btnEnviar).setOnClickListener(v -> enviar());
+        botaoEnviar.setOnClickListener(v -> enviar());
 
         campo.setOnEditorActionListener((v, acao, evento) -> {
             if (acao == EditorInfo.IME_ACTION_SEND) {
@@ -72,11 +79,18 @@ public class AssistenteActivity extends AppCompatActivity {
         });
 
         montarSugestoes();
-        adapter.adicionar(Mensagem.doAssistente(getString(R.string.assistente_saudacao)));
+
+        viewModel = new ViewModelProvider(this).get(AssistenteViewModel.class);
+        viewModel.getMensagens().observe(this, mensagens -> {
+            adapter.definir(mensagens);
+            if (!mensagens.isEmpty()) {
+                lista.smoothScrollToPosition(mensagens.size() - 1);
+            }
+        });
+        viewModel.getAguardando().observe(this, this::mostrarAguardando);
     }
 
     private void montarSugestoes() {
-        LinearLayout linha = findViewById(R.id.linhaSugestoes);
         int[] sugestoes = {
                 R.string.assistente_sugestao_um,
                 R.string.assistente_sugestao_dois,
@@ -85,29 +99,30 @@ public class AssistenteActivity extends AppCompatActivity {
 
         for (int sugestao : sugestoes) {
             TextView chip = (TextView) LayoutInflater.from(this)
-                    .inflate(R.layout.item_chip_sugestao, linha, false);
+                    .inflate(R.layout.item_chip_sugestao, linhaSugestoes, false);
             chip.setText(sugestao);
-            chip.setOnClickListener(v -> perguntar(chip.getText().toString()));
-            linha.addView(chip);
+            chip.setOnClickListener(v -> viewModel.perguntar(chip.getText().toString()));
+            linhaSugestoes.addView(chip);
         }
     }
 
     private void enviar() {
-        String texto = campo.getText().toString().trim();
-        if (texto.isEmpty()) {
-            return;
+        // So limpa o campo se a pergunta foi aceita: enquanto a Venus responde a
+        // anterior, o texto digitado fica esperando ali.
+        if (viewModel.perguntar(campo.getText().toString())) {
+            campo.setText("");
         }
-        campo.setText("");
-        perguntar(texto);
     }
 
-    private void perguntar(String texto) {
-        adapter.adicionar(Mensagem.doUsuario(texto));
-        responder();
-        lista.smoothScrollToPosition(adapter.getItemCount() - 1);
-    }
+    private void mostrarAguardando(boolean aguardando) {
+        float alfa = aguardando ? ALFA_DESABILITADO : 1f;
 
-    private void responder() {
-        adapter.adicionar(Mensagem.doAssistente(getString(R.string.assistente_offline)));
+        botaoEnviar.setEnabled(!aguardando);
+        botaoEnviar.setAlpha(alfa);
+        for (int i = 0; i < linhaSugestoes.getChildCount(); i++) {
+            View chip = linhaSugestoes.getChildAt(i);
+            chip.setEnabled(!aguardando);
+            chip.setAlpha(alfa);
+        }
     }
 }

@@ -30,10 +30,16 @@ $classpath = $jars -join ';'
 $sources = @("$main\repository\api\FirebaseScanAuthSession.java",
     "$main\repository\api\ScanApiException.java", "$main\repository\api\AuthenticatedScanClient.java",
     "$main\repository\api\dto\ScanUploadSignaturesResponse.java",
+    "$main\repository\SessaoUsuario.java", "$main\repository\SessaoFirebase.java",
+    "$main\repository\api\TokenFirebase.java", "$main\repository\api\VenusApi.java",
+    "$main\repository\ProdutoRepository.java",
     "$main\repository\api\ClienteApi.java", "$main\repository\ScanSubmissionRepository.java",
     "$main\view\util\ScanPhotoQualityAnalyzer.java", "$main\model\ScanPhotoQuality.java",
     "$main\model\ScanSubmissionDraft.java",
     "$main\view\ScanFlowFinisher.java")
+$sources += Get-ChildItem -LiteralPath "$main\repository\api\dto" -Filter '*.java' |
+    Select-Object -ExpandProperty FullName
+$sources = $sources | Select-Object -Unique
 & "$JavaHome\bin\javac.exe" --release 11 -encoding UTF-8 -cp $classpath -d $output @sources
 if ($LASTEXITCODE -ne 0) { throw 'Android integration compilation failed.' }
 Write-Output 'Auth, client, repository and finisher compiled. Full Activities/APK require Gradle.'

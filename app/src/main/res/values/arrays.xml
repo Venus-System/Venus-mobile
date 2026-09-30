@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- A mesma lista do site. As cinco primeiras sao campos de
+         /api/user-preferences; as outras vao como etiqueta
+         (ver MapeadorPerfilApi). -->
     <string-array name="preferencias">
         <item>Vegano</item>
         <item>Cruelty free</item>
-        <item>Sem fragrância</item>
         <item>Sem parabenos</item>
         <item>Sem sulfatos</item>
         <item>Sem silicones</item>
@@ -18,20 +20,18 @@
         <item>Embalagem reciclável</item>
     </string-array>
 
+    <!-- Reserva: as opcoes de verdade vem de GET /api/allergies (ver
+         CatalogoAlergiasRepository). Esta lista so aparece enquanto a API nao
+         respondeu nenhuma vez, e sao as alergias que a analise consegue checar. -->
     <string-array name="alergias">
         <item>Lanolina</item>
         <item>Óleo de amêndoas</item>
-        <item>Níquel</item>
         <item>Parabenos</item>
-        <item>Fragrância</item>
         <item>Formaldeído</item>
         <item>Propilenoglicol</item>
         <item>Ácido salicílico</item>
         <item>Látex</item>
-        <item>Glúten</item>
         <item>Soja</item>
-        <item>Castanhas</item>
-        <item>Corantes</item>
         <item>Sulfatos</item>
         <item>Álcool</item>
     </string-array>

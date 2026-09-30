@@ -9,13 +9,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -56,6 +52,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
     private View carregandoIngredientes;
     private TextView textIngredientes;
+    private ImageView imgProduto;
 
     private Produto produto;
     private long produtoIdRecebido = -1L;
@@ -70,37 +67,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
             Bundle savedInstanceState
     ) {
         super.onCreate(savedInstanceState);
-
-        EdgeToEdge.enable(this);
-        setContentView(
-                R.layout.activity_detalhe_produto
-        );
-
-        View main =
-                findViewById(R.id.main);
-
-        if (main != null) {
-
-            ViewCompat.setOnApplyWindowInsetsListener(
-                    main,
-                    (v, insets) -> {
-
-                        Insets systemBars =
-                                insets.getInsets(
-                                        WindowInsetsCompat.Type.systemBars()
-                                );
-
-                        v.setPadding(
-                                systemBars.left,
-                                systemBars.top,
-                                systemBars.right,
-                                systemBars.bottom
-                        );
-
-                        return insets;
-                    }
-            );
-        }
+        InsetsSistema.aplicar(this, R.layout.activity_detalhe_produto);
 
         prepararReferenciasDeTela();
 
@@ -136,6 +103,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     }
 
     private void prepararReferenciasDeTela() {
+        imgProduto = findViewById(R.id.imgProduto);
 
         conteudoAvaliacao =
                 findViewById(
@@ -438,18 +406,17 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 )
         );
 
-        ImageView imagem =
-                findViewById(
-                        R.id.imgProduto
-                );
+        carregarImagem(produto.getImageUrl());
+    }
 
+    private void carregarImagem(String url) {
         ImageLoader carregador =
                 Coil.imageLoader(this);
 
         carregador.enqueue(
                 new ImageRequest.Builder(this)
-                        .data(produto.getImageUrl())
-                        .target(imagem)
+                        .data(url)
+                        .target(imgProduto)
                         .placeholder(
                                 R.drawable.bg_foto_produto
                         )
@@ -581,39 +548,21 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         ingredientesCarregados = true;
 
-        carregandoIngredientes.setVisibility(
-                View.VISIBLE
-        );
+        carregandoIngredientes.setVisibility(View.VISIBLE);
+        textIngredientes.setVisibility(View.GONE);
+        repository.buscarDetalheProduto(produto.getId(), (textoRotulo, urlFoto) -> {
+            if (isFinishing() || isDestroyed()) return;
+            carregandoIngredientes.setVisibility(View.GONE);
+            textIngredientes.setVisibility(View.VISIBLE);
 
-        textIngredientes.setVisibility(
-                View.GONE
-        );
+            boolean temTexto = textoRotulo != null && !textoRotulo.trim().isEmpty();
+            textIngredientes.setText(temTexto
+                    ? textoRotulo : getString(R.string.produto_ingredientes_erro));
 
-        repository.buscarIngredientes(
-                produto.getId(),
-                texto -> {
-
-                    carregandoIngredientes.setVisibility(
-                            View.GONE
-                    );
-
-                    textIngredientes.setVisibility(
-                            View.VISIBLE
-                    );
-
-                    boolean temTexto =
-                            texto != null
-                                    && !texto.trim().isEmpty();
-
-                    textIngredientes.setText(
-                            temTexto
-                                    ? texto
-                                    : getString(
-                                    R.string.produto_ingredientes_erro
-                            )
-                    );
-                }
-        );
+            if (urlFoto != null) {
+                carregarImagem(urlFoto);
+            }
+        });
     }
 
     private void montarAlternativas() {

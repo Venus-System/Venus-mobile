@@ -30,45 +30,57 @@
 
     <ImageView
         android:id="@+id/imgFormaFundo"
-        android:layout_width="364dp"
-        android:layout_height="295dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:importantForAccessibility="no"
         android:scaleType="fitCenter"
-        app:layout_constraintBottom_toBottomOf="@+id/guidelineCardTopo"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.6"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintWidth_percent="0.75"
+        app:layout_constraintBottom_toTopOf="@+id/cardLogin"
+        app:layout_constraintDimensionRatio="H,317:642"
+        app:layout_constraintEnd_toEndOf="@+id/cardLogin"
+        app:layout_constraintHorizontal_bias="0.52"
+        app:layout_constraintStart_toStartOf="@+id/cardLogin"
+        app:layout_constraintTop_toTopOf="@+id/cardLogin"
+        app:layout_constraintVertical_bias="1.0"
+        app:layout_constraintWidth_max="@dimen/largura_max_ilustracao"
+        app:layout_constraintWidth_percent="0.35"
         app:srcCompat="@drawable/vector_login" />
 
     <ImageView
         android:id="@+id/imgCosmeticos"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="48dp"
-        android:adjustViewBounds="true"
         android:importantForAccessibility="no"
         android:scaleType="fitCenter"
-        app:layout_constraintBottom_toBottomOf="@+id/guidelineCardTopo"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/cardLogin"
+        app:layout_constraintDimensionRatio="H,252:257"
+        app:layout_constraintEnd_toEndOf="@+id/cardLogin"
         app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/cardLogin"
+        app:layout_constraintTop_toTopOf="@+id/cardLogin"
         app:layout_constraintVertical_bias="1.0"
+        app:layout_constraintWidth_max="@dimen/largura_max_ilustracao"
+        app:layout_constraintWidth_percent="0.5"
         app:srcCompat="@drawable/cosmedicos_entrar" />
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <androidx.core.widget.NestedScrollView
         android:id="@+id/cardLogin"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="@drawable/bg_card_branco"
-        android:paddingStart="@dimen/card_padding_lateral"
-        android:paddingEnd="@dimen/card_padding_lateral"
+        android:fillViewport="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guidelineCardTopo">
+        app:layout_constraintTop_toTopOf="@+id/guidelineCardTopo"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/conteudoCardLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/card_padding_lateral"
+        android:paddingEnd="@dimen/card_padding_lateral"
+        android:paddingBottom="@dimen/espaco_grande">
 
         <TextView
             android:id="@+id/textTituloEntrar"
@@ -184,5 +196,7 @@
             app:layout_constraintTop_toBottomOf="@+id/textOuEntreCom" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

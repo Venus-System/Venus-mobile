@@ -247,4 +247,10 @@
         <item name="android:textSize">@dimen/texto_corpo</item>
     </style>
 
+    <!-- Filho unico de um ScrollView/FrameLayout que precisa virar coluna
+         centralizada no tablet (o ConstraintLayout pai nao alcanca ele). No
+         celular ocupa a largura toda; a versao de tablet esta em values-w600dp. -->
+    <style name="ColunaConteudo">
+        <item name="android:layout_width">match_parent</item>
+    </style>
 </resources>

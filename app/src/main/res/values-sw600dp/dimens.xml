@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tablet: titulos um pouco maiores para nao sumirem no espaco da tela. -->
+    <dimen name="texto_titulo_tela">44sp</dimen>
+    <dimen name="texto_titulo_card">36sp</dimen>
+    <dimen name="texto_pergunta">40sp</dimen>
+    <dimen name="texto_titulo_destaque">34sp</dimen>
+    <dimen name="texto_titulo_aba">24sp</dimen>
+
+    <dimen name="altura_capa_lista">180dp</dimen>
+</resources>

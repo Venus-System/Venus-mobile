@@ -28,6 +28,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnVoltar"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo"
         app:layout_constraintWidth_percent="0.92" />
 
     <TextView
@@ -40,11 +41,12 @@
         android:lineSpacingMultiplier="1.05"
         android:text="@string/perfil_pronto_titulo"
         android:textColor="@color/white"
-        android:textSize="28sp"
+        android:textSize="@dimen/texto_titulo_destaque"
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/textResumo"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
     <TextView
         android:id="@+id/textResumo"
@@ -58,7 +60,8 @@
         android:textSize="@dimen/texto_corpo"
         app:layout_constraintBottom_toTopOf="@+id/textDetalhe"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
     <TextView
         android:id="@+id/textDetalhe"
@@ -73,7 +76,8 @@
         android:textSize="@dimen/texto_corpo"
         app:layout_constraintBottom_toTopOf="@+id/btnAvancar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnAvancar"
@@ -89,6 +93,7 @@
         android:textSize="@dimen/texto_botao"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

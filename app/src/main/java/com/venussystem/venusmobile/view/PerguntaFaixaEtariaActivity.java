@@ -14,7 +14,7 @@ public class PerguntaFaixaEtariaActivity extends PerguntaBaseActivity {
     @Override
     @Nullable
     protected Class<?> getProximaTela() {
-        return PerguntaPreferenciaActivity.class;
+        return PerguntaGestacaoActivity.class;
     }
 
     @Override

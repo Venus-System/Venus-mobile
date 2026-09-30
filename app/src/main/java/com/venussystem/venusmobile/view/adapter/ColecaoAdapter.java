@@ -39,6 +39,11 @@ public class ColecaoAdapter extends RecyclerView.Adapter<ColecaoAdapter.ColecaoV
         notifyDataSetChanged();
     }
 
+    /** Usado pelo swipe-to-delete pra saber qual lista foi arrastada. */
+    public Colecao emPosicao(int posicao) {
+        return colecoes.get(posicao);
+    }
+
     @NonNull
     @Override
     public ColecaoViewHolder onCreateViewHolder(@NonNull ViewGroup pai, int tipo) {

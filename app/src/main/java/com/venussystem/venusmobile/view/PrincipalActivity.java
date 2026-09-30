@@ -19,6 +19,7 @@ import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.repository.AutenticacaoRepository;
 import com.venussystem.venusmobile.repository.PerfilRepository;
+import com.venussystem.venusmobile.repository.SincronizacaoRepository;
 import com.venussystem.venusmobile.view.fragment.BuscaFragment;
 import com.venussystem.venusmobile.view.fragment.HistoricoFragment;
 import com.venussystem.venusmobile.view.fragment.ListasFragment;
@@ -63,6 +64,11 @@ public class PrincipalActivity extends AppCompatActivity {
 
         if (savedInstanceState == null) {
             selecionar(findViewById(R.id.navBusca), new BuscaFragment(), false);
+
+            // Toda entrada no app passa por aqui (fim do questionario, login ou
+            // app reaberto): e o ponto para cadastrar a pessoa na API e mandar o
+            // que ficou pendente. Roda em segundo plano, sem segurar a tela.
+            new SincronizacaoRepository(this).sincronizarEmSegundoPlano();
         }
     }
 
@@ -130,7 +136,10 @@ public class PrincipalActivity extends AppCompatActivity {
 
     private void moverIndicador(View item, boolean animar) {
         indicador.post(() -> {
-            float destino = item.getX() + (item.getWidth() - indicador.getWidth()) / 2f;
+            // No tablet a linha de itens fica centralizada dentro da barra, entao o
+            // deslocamento dela entra na conta (no celular ele e zero).
+            View linha = (View) item.getParent();
+            float destino = linha.getX() + item.getX() + (item.getWidth() - indicador.getWidth()) / 2f;
             if (animar) {
                 indicador.animate()
                         .translationX(destino)

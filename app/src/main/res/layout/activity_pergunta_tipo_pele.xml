@@ -40,16 +40,17 @@
         android:lineSpacingMultiplier="0.95"
         android:text="@string/pergunta_tipo_pele"
         android:textColor="@color/white"
-        android:textSize="34sp"
+        android:textSize="@dimen/texto_pergunta"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnVoltar" />
+        app:layout_constraintTop_toBottomOf="@+id/btnVoltar"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
     <View
         android:id="@+id/cardOpcoes"
-        android:layout_width="346dp"
-        android:layout_height="439dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:layout_marginStart="@dimen/espaco_medio"
         android:layout_marginEnd="@dimen/espaco_medio"
         android:layout_marginBottom="8dp"
@@ -57,12 +58,13 @@
         app:layout_constraintBottom_toTopOf="@+id/btnAvancar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guidelineCardTopo" />
+        app:layout_constraintTop_toTopOf="@+id/guidelineCardTopo"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
     <ImageView
         android:id="@+id/imgPergunta"
-        android:layout_width="563dp"
-        android:layout_height="202dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:layout_marginBottom="25dp"
         android:importantForAccessibility="no"
         android:scaleType="fitCenter"
@@ -71,7 +73,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textPergunta"
-        app:layout_constraintVertical_bias="1.0"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo"
         app:layout_constraintWidth_percent="0.8" />
 
     <TextView
@@ -91,8 +93,8 @@
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollOpcoes"
-        android:layout_width="329dp"
-        android:layout_height="267dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:layout_marginTop="@dimen/espaco_pequeno"
         android:layout_marginBottom="18dp"
         android:clipToPadding="false"
@@ -149,7 +151,7 @@
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnAvancar"
-        android:layout_width="348dp"
+        android:layout_width="0dp"
         android:layout_height="57dp"
         android:layout_marginStart="@dimen/espaco_grande"
         android:layout_marginEnd="@dimen/espaco_grande"
@@ -161,6 +163,7 @@
         android:textSize="@dimen/texto_botao"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

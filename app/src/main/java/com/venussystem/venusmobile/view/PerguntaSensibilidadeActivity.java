@@ -19,7 +19,7 @@ public class PerguntaSensibilidadeActivity extends PerguntaBaseActivity {
     @Override
     @Nullable
     protected Class<?> getProximaTela() {
-        return PerguntaFototipoActivity.class;
+        return PerguntaCondicoesPeleActivity.class;
     }
 
     @Override

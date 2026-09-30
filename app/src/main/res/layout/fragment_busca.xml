@@ -14,7 +14,7 @@
         android:layout_marginTop="@dimen/espaco_medio"
         android:text="@string/nav_busca"
         android:textColor="@color/roxo_venus"
-        android:textSize="20sp"
+        android:textSize="@dimen/texto_titulo_aba"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

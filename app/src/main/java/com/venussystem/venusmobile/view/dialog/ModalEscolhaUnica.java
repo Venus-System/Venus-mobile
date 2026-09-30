@@ -66,18 +66,7 @@ public final class ModalEscolhaUnica {
         String rotuloAtual = null;
 
         for (Opcao opcao : opcoes) {
-            Chip chip = new Chip(contexto);
-            chip.setId(View.generateViewId());
-            chip.setText(opcao.rotulo);
-            chip.setCheckable(true);
-            chip.setChipBackgroundColorResource(R.color.chip_fundo_escolha);
-            chip.setChipStrokeColorResource(R.color.chip_borda_escolha);
-            chip.setChipStrokeWidth(1.2f * contexto.getResources().getDisplayMetrics().density);
-            chip.setTextColor(contexto.getResources().getColorStateList(
-                    R.color.chip_texto_escolha, contexto.getTheme()));
-            chip.setCheckedIconVisible(false);
-            chip.setChipCornerRadius(18f * contexto.getResources().getDisplayMetrics().density);
-
+            Chip chip = criarChip(contexto, opcao);
             grupo.addView(chip);
             opcaoPorIdDoChip.put(chip.getId(), opcao);
 
@@ -107,6 +96,24 @@ public final class ModalEscolhaUnica {
         dialog.show();
     }
 
+    /** Chip marcavel com o visual dos modais do perfil (tambem usado no de varias escolhas). */
+    static Chip criarChip(Context contexto, Opcao opcao) {
+        float densidade = contexto.getResources().getDisplayMetrics().density;
+
+        Chip chip = new Chip(contexto);
+        chip.setId(View.generateViewId());
+        chip.setText(opcao.rotulo);
+        chip.setCheckable(true);
+        chip.setChipBackgroundColorResource(R.color.chip_fundo_escolha);
+        chip.setChipStrokeColorResource(R.color.chip_borda_escolha);
+        chip.setChipStrokeWidth(1.2f * densidade);
+        chip.setTextColor(contexto.getResources().getColorStateList(
+                R.color.chip_texto_escolha, contexto.getTheme()));
+        chip.setCheckedIconVisible(false);
+        chip.setChipCornerRadius(18f * densidade);
+        return chip;
+    }
+
     /**
      * O fundo padrao da janela de dialog e um retangulo branco que esconderia
      * os cantos arredondados do nosso layout - por isso fica transparente, e
@@ -117,7 +124,10 @@ public final class ModalEscolhaUnica {
             return;
         }
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        int largura = (int) (contexto.getResources().getDisplayMetrics().widthPixels * 0.88f);
+        // 88% da tela no celular; no tablet isso ficaria largo demais, entao tem teto.
+        int largura = Math.min(
+                (int) (contexto.getResources().getDisplayMetrics().widthPixels * 0.88f),
+                contexto.getResources().getDimensionPixelSize(R.dimen.largura_max_dialogo));
         dialog.getWindow().setLayout(largura, ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 }

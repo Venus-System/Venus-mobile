@@ -30,26 +30,39 @@
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="379dp"
-        android:layout_height="391dp"
-        android:layout_marginBottom="-147dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:importantForAccessibility="no"
         app:layout_constraintBottom_toTopOf="@+id/cardCadastrar"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintDimensionRatio="H,379:391"
+        app:layout_constraintEnd_toEndOf="@+id/cardCadastrar"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/cardCadastrar"
+        app:layout_constraintTop_toTopOf="@+id/cardCadastrar"
+        app:layout_constraintVertical_bias="0.624"
+        app:layout_constraintWidth_max="@dimen/largura_max_ilustracao"
+        app:layout_constraintWidth_percent="0.92"
         app:srcCompat="@drawable/cabelo_cadastro" />
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <androidx.core.widget.NestedScrollView
         android:id="@+id/cardCadastrar"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="@drawable/bg_card_branco"
-        android:paddingStart="@dimen/card_padding_lateral"
-        android:paddingEnd="@dimen/card_padding_lateral"
+        android:fillViewport="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guidelineCardTopo">
+        app:layout_constraintTop_toTopOf="@+id/guidelineCardTopo"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/conteudoCardCadastrar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/card_padding_lateral"
+        android:paddingEnd="@dimen/card_padding_lateral"
+        android:paddingBottom="@dimen/espaco_grande">
 
         <TextView
             android:id="@+id/textTituloCadastrar"
@@ -180,5 +193,7 @@
             app:layout_constraintTop_toBottomOf="@+id/textOuEntreCom" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

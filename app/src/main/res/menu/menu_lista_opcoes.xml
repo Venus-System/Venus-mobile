@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/opcaoEditarNome"
+        android:title="@string/lista_editar_nome" />
+    <item
+        android:id="@+id/opcaoEditarDescricao"
+        android:title="@string/lista_editar_descricao" />
+    <item
+        android:id="@+id/opcaoExcluirLista"
+        android:title="@string/lista_excluir" />
+</menu>
