@@ -5,6 +5,9 @@ import androidx.annotation.Nullable;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.repository.PerfilRepository;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class PerguntaPreferenciaActivity extends PerguntaBuscaBaseActivity {
     @Override
     protected int getLayout() {
@@ -12,8 +15,8 @@ public class PerguntaPreferenciaActivity extends PerguntaBuscaBaseActivity {
     }
 
     @Override
-    protected int getOpcoes() {
-        return R.array.preferencias;
+    protected List<String> getOpcoes() {
+        return Arrays.asList(getResources().getStringArray(R.array.preferencias));
     }
 
     @Override

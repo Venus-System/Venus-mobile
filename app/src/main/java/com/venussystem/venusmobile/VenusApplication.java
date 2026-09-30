@@ -4,8 +4,11 @@ import android.app.Application;
 
 import androidx.appcompat.app.AppCompatDelegate;
 
+import com.venussystem.venusmobile.repository.DadosDaConta;
+
 /**
- * Trava o app no modo claro.
+ * Trava o app no modo claro, e da destino aos dados guardados antes de o app
+ * separar os dados por conta.
  *
  * O app nao tem design escuro: todo layout fixa fundo branco e texto escuro.
  * Como o tema declarado e DayNight, num aparelho com modo escuro ligado o
@@ -23,5 +26,11 @@ public class VenusApplication extends Application {
     public void onCreate() {
         super.onCreate();
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+
+        // Antes de qualquer tela abrir: os dados de antes da separacao por
+        // conta nao podem aparecer para ninguem (ver DadosDaConta). Aqui, e
+        // nao na tela de boas-vindas, porque o Android pode reabrir o app
+        // direto numa tela do meio.
+        DadosDaConta.migrarDadosAntigos(this);
     }
 }

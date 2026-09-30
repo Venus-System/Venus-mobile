@@ -260,6 +260,11 @@ A primeira busca pode levar até um minuto.</string>
     <string name="assistente_enviar">Enviar</string>
     <string name="assistente_saudacao">Oi! Sou a Vênus. Posso explicar os ingredientes e a nota de um produto pra você.</string>
     <string name="assistente_offline">Ainda não estou conectada ao servidor de conversas, então não consigo responder de verdade. Assim que a API do chat entrar no ar, eu respondo aqui mesmo.</string>
+    <string name="assistente_digitando">Digitando…</string>
+    <string name="assistente_erro_conexao">Não consegui falar com o servidor. Confira sua internet e tente de novo.</string>
+    <string name="assistente_erro_demora">Demorei demais pra responder e acabei desistindo. Pode perguntar de novo?</string>
+    <string name="assistente_erro_sessao">Sua sessão expirou. Saia e entre de novo na sua conta pra continuar a conversa.</string>
+    <string name="assistente_erro_servidor">Tive um problema pra responder agora. Tenta de novo em instantes?</string>
     <string name="assistente_sugestao_um">Ver as opções</string>
     <string name="assistente_sugestao_dois">Tem álcool?</string>
     <string name="assistente_sugestao_tres">É vegano?</string>
@@ -267,9 +272,11 @@ A primeira busca pode levar até um minuto.</string>
     <string name="perfil_tipo_pele">Tipo de Pele</string>
     <string name="perfil_fototipo">Fototipo de Pele</string>
     <string name="perfil_sensibilidade">Sensibilidade de Pele</string>
+    <string name="perfil_condicoes_pele">Condições de Pele</string>
     <string name="perfil_tipo_cabelo">Tipo de Cabelo</string>
     <string name="perfil_couro">Couro Cabeludo</string>
     <string name="perfil_faixa_etaria">Faixa Etária</string>
+    <string name="perfil_gestacao">Gestação e Amamentação</string>
     <string name="modal_atual">Atual: %1$s</string>
     <string name="lista_titulo">Lista</string>
     <string name="lista_vazia">Sua lista está vazia</string>

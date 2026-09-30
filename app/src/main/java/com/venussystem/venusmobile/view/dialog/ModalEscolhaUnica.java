@@ -66,18 +66,7 @@ public final class ModalEscolhaUnica {
         String rotuloAtual = null;
 
         for (Opcao opcao : opcoes) {
-            Chip chip = new Chip(contexto);
-            chip.setId(View.generateViewId());
-            chip.setText(opcao.rotulo);
-            chip.setCheckable(true);
-            chip.setChipBackgroundColorResource(R.color.chip_fundo_escolha);
-            chip.setChipStrokeColorResource(R.color.chip_borda_escolha);
-            chip.setChipStrokeWidth(1.2f * contexto.getResources().getDisplayMetrics().density);
-            chip.setTextColor(contexto.getResources().getColorStateList(
-                    R.color.chip_texto_escolha, contexto.getTheme()));
-            chip.setCheckedIconVisible(false);
-            chip.setChipCornerRadius(18f * contexto.getResources().getDisplayMetrics().density);
-
+            Chip chip = criarChip(contexto, opcao);
             grupo.addView(chip);
             opcaoPorIdDoChip.put(chip.getId(), opcao);
 
@@ -105,6 +94,24 @@ public final class ModalEscolhaUnica {
 
         prepararJanela(dialog, contexto);
         dialog.show();
+    }
+
+    /** Chip marcavel com o visual dos modais do perfil (tambem usado no de varias escolhas). */
+    static Chip criarChip(Context contexto, Opcao opcao) {
+        float densidade = contexto.getResources().getDisplayMetrics().density;
+
+        Chip chip = new Chip(contexto);
+        chip.setId(View.generateViewId());
+        chip.setText(opcao.rotulo);
+        chip.setCheckable(true);
+        chip.setChipBackgroundColorResource(R.color.chip_fundo_escolha);
+        chip.setChipStrokeColorResource(R.color.chip_borda_escolha);
+        chip.setChipStrokeWidth(1.2f * densidade);
+        chip.setTextColor(contexto.getResources().getColorStateList(
+                R.color.chip_texto_escolha, contexto.getTheme()));
+        chip.setCheckedIconVisible(false);
+        chip.setChipCornerRadius(18f * densidade);
+        return chip;
     }
 
     /**

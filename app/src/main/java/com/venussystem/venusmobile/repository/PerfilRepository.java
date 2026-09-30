@@ -3,9 +3,16 @@ package com.venussystem.venusmobile.repository;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+
+import com.venussystem.venusmobile.repository.api.MapeadorPerfilApi;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Guarda as respostas do questionario no proprio aparelho.
@@ -15,13 +22,27 @@ import java.util.List;
  * tela ("Mista", "Media"). Guardar os dois evita ter que manter uma tabela de
  * traducao so para escrever a resposta de volta no perfil.
  *
- * A API ja tem /api/user-profiles, mas o app ainda nao chama: isto e o cache
- * local ate essa integracao acontecer.
+ * O aparelho continua sendo a fonte do que a tela mostra; a copia na API
+ * (perfil, preferencias, etiquetas e alergias) e mantida pelo
+ * SincronizacaoRepository, que usa a versao abaixo para saber o que falta enviar.
+ *
+ * Cada conta tem o seu questionario (ver DadosDaConta): sem isso, a resposta
+ * de uma conta iria para o perfil de outra na API.
  */
-public class PerfilRepository {
+public class PerfilRepository implements MapeadorPerfilApi.Respostas {
 
-    private static final String ARQUIVO = "venus_perfil";
+    static final String ARQUIVO = "venus_perfil";
     private static final String CHAVE_RESPONDEU = "respondeu_questionario";
+
+    // Um contador em vez de um "precisa enviar" true/false: se a pessoa editar
+    // enquanto um envio esta no meio do caminho, a versao sobe de novo e o envio
+    // antigo nao consegue marcar como enviada uma resposta que ele nem leu.
+    private static final String CHAVE_VERSAO = "versao_perfil";
+    private static final String CHAVE_VERSAO_ENVIADA = "versao_enviada";
+
+    // Comeca em 1 (e nao em 0, o padrao da enviada) para que quem ja tinha
+    // respondido antes desta versao do app tambem tenha as respostas enviadas.
+    private static final long VERSAO_INICIAL = 1L;
 
     private static final String SUFIXO_TAG = "_tag";
     private static final String SUFIXO_ROTULO = "_rotulo";
@@ -42,6 +63,10 @@ public class PerfilRepository {
     public static final String ALERGIAS = "alergias";
     public static final String PREFERENCIAS = "preferencias";
 
+    // O que o app ja gravou na API, por id do catalogo (ver getIdsNaApi).
+    public static final String ALERGIAS_NA_API = "alergias_na_api";
+    public static final String ETIQUETAS_NA_API = "etiquetas_na_api";
+
     // Respostas de "nenhuma" e "prefiro nao dizer" sao guardadas como item da
     // lista, e nao como lista vazia: sem isso nao daria para diferenciar quem
     // respondeu que nao tem nada de quem ainda nao passou pela tela.
@@ -51,8 +76,12 @@ public class PerfilRepository {
     private final SharedPreferences prefs;
 
     public PerfilRepository(Context context) {
-        this.prefs = context.getApplicationContext()
-                .getSharedPreferences(ARQUIVO, Context.MODE_PRIVATE);
+        this(context, DadosDaConta.uidAtual(context));
+    }
+
+    @VisibleForTesting
+    public PerfilRepository(Context context, @Nullable String uid) {
+        this.prefs = DadosDaConta.prefs(context, ARQUIVO, uid);
     }
 
     public boolean jaRespondeuQuestionario() {
@@ -67,9 +96,11 @@ public class PerfilRepository {
         prefs.edit()
                 .putString(chave + SUFIXO_TAG, tag)
                 .putString(chave + SUFIXO_ROTULO, rotulo)
+                .putLong(CHAVE_VERSAO, versaoAtual() + 1)
                 .apply();
     }
 
+    @Override
     public String getTag(String chave) {
         return prefs.getString(chave + SUFIXO_TAG, null);
     }
@@ -84,15 +115,59 @@ public class PerfilRepository {
      * em que o usuario escolheu importa para os chips voltarem iguais.
      */
     public void salvarLista(String chave, List<String> itens) {
-        prefs.edit().putString(chave, String.join(SEPARADOR, itens)).apply();
+        prefs.edit()
+                .putString(chave, String.join(SEPARADOR, itens))
+                .putLong(CHAVE_VERSAO, versaoAtual() + 1)
+                .apply();
     }
 
+    @Override
     public List<String> getLista(String chave) {
         String salvo = prefs.getString(chave, "");
         if (salvo == null || salvo.isEmpty()) {
             return new ArrayList<>();
         }
         return new ArrayList<>(Arrays.asList(salvo.split(SEPARADOR)));
+    }
+
+    public long versaoAtual() {
+        return prefs.getLong(CHAVE_VERSAO, VERSAO_INICIAL);
+    }
+
+    public boolean temAlteracaoParaEnviar() {
+        return versaoAtual() != prefs.getLong(CHAVE_VERSAO_ENVIADA, 0L);
+    }
+
+    /**
+     * Registra que as respostas ate essa versao ja estao na API. Quem chama
+     * passa a versao lida ANTES de montar o envio, nunca a atual do momento.
+     */
+    public void marcarEnviada(long versao) {
+        prefs.edit().putLong(CHAVE_VERSAO_ENVIADA, versao).apply();
+    }
+
+    /**
+     * Ids do catalogo que o proprio app gravou na API (alergias ou etiquetas).
+     * E so controle do envio: nao muda a versao, porque nao e resposta nova.
+     */
+    public Set<Long> getIdsNaApi(String chave) {
+        Set<Long> ids = new HashSet<>();
+        for (String id : getLista(chave)) {
+            try {
+                ids.add(Long.parseLong(id));
+            } catch (NumberFormatException e) {
+                // Valor corrompido: melhor esquecer do que travar o envio.
+            }
+        }
+        return ids;
+    }
+
+    public void salvarIdsNaApi(String chave, Set<Long> ids) {
+        List<String> textos = new ArrayList<>();
+        for (Long id : ids) {
+            textos.add(String.valueOf(id));
+        }
+        prefs.edit().putString(chave, String.join(SEPARADOR, textos)).apply();
     }
 
     public void limpar() {

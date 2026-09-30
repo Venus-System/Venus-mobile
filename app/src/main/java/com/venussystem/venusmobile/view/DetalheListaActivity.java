@@ -46,8 +46,8 @@ import java.util.List;
  * Uma lista do proprio usuario. Recebe pelo Intent o que ja se sabe dela; os
  * produtos vem do catalogo ja em memoria (ver ProdutoRepository) filtrados
  * pelos ids guardados no aparelho para esta lista (ver ListaItemRepository) -
- * a API tambem teria como fazer isso (/api/user-list-items), mas depende de
- * um userId que o app ainda nao sabe obter.
+ * a API tambem teria como fazer isso (/api/user-list-items), mas as listas
+ * ainda nao foram migradas para ela.
  */
 public class DetalheListaActivity extends AppCompatActivity {
 

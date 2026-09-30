@@ -1,5 +1,6 @@
 package com.venussystem.venusmobile.view.adapter;
 
+import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,9 +19,15 @@ public class ConversaAdapter extends RecyclerView.Adapter<ConversaAdapter.Mensag
 
     private final List<Mensagem> mensagens = new ArrayList<>();
 
-    public void adicionar(Mensagem mensagem) {
-        mensagens.add(mensagem);
-        notifyItemInserted(mensagens.size() - 1);
+    /**
+     * Troca a conversa inteira pela que o ViewModel publicou. Uma conversa tem
+     * poucas dezenas de mensagens, entao redesenhar tudo nao pesa.
+     */
+    @SuppressLint("NotifyDataSetChanged")
+    public void definir(List<Mensagem> novas) {
+        mensagens.clear();
+        mensagens.addAll(novas);
+        notifyDataSetChanged();
     }
 
     @Override

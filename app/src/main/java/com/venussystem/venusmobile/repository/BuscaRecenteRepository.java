@@ -3,6 +3,9 @@ package com.venussystem.venusmobile.repository;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -16,11 +19,12 @@ import java.util.Locale;
  * os dados do app.
  *
  * Mesma forma do PerfilRepository: lista ordenada num unico texto separado por
- * caractere de controle, porque a ordem (mais recente primeiro) importa.
+ * caractere de controle, porque a ordem (mais recente primeiro) importa. E,
+ * como ele, separado por conta (ver DadosDaConta).
  */
 public class BuscaRecenteRepository {
 
-    private static final String ARQUIVO = "venus_busca";
+    static final String ARQUIVO = "venus_busca";
     private static final String CHAVE_RECENTES = "buscas_recentes";
 
     // Caractere de controle "unit separator" (31). Nao aparece em termo
@@ -33,8 +37,12 @@ public class BuscaRecenteRepository {
     private final SharedPreferences prefs;
 
     public BuscaRecenteRepository(Context context) {
-        this.prefs = context.getApplicationContext()
-                .getSharedPreferences(ARQUIVO, Context.MODE_PRIVATE);
+        this(context, DadosDaConta.uidAtual(context));
+    }
+
+    @VisibleForTesting
+    public BuscaRecenteRepository(Context context, @Nullable String uid) {
+        this.prefs = DadosDaConta.prefs(context, ARQUIVO, uid);
     }
 
     public List<String> getRecentes() {

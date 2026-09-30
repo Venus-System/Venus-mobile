@@ -1,7 +1,23 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.google.services)
 }
+
+// Endereco da API de IA (Venus-AI-api). Fica fora do codigo porque muda entre
+// quem testa: a API rodando no PC (http://localhost:8080/ com adb reverse) ou
+// o servidor publicado. Vem de -PVENUS_IA_URL=... ou do local.properties;
+// vazio deixa o chat avisando que ainda nao esta conectado, em vez de quebrar.
+val propriedadesLocais = Properties().apply {
+    val arquivo = rootProject.file("local.properties")
+    if (arquivo.exists()) {
+        arquivo.inputStream().use { load(it) }
+    }
+}
+val urlVenusIa: String = (findProperty("VENUS_IA_URL") as String?)
+    ?: propriedadesLocais.getProperty("VENUS_IA_URL")
+    ?: ""
 
 android {
     namespace = "com.venussystem.venusmobile"
@@ -17,6 +33,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "VENUS_IA_URL", "\"$urlVenusIa\"")
     }
 
     buildTypes {
@@ -33,7 +51,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    // Libera o BuildConfig.DEBUG, usado para so ligar o log de rede em debug.
+    // Libera o BuildConfig: o DEBUG so liga o log de rede em debug, e o
+    // VENUS_IA_URL diz onde esta a API de IA.
     buildFeatures {
         buildConfig = true
     }
