@@ -6,10 +6,12 @@ import android.net.Uri;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Colecao;
@@ -21,18 +23,20 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Listas do proprio usuario, guardadas no aparelho: a API tem /api/user-lists,
- * mas depende de um userId que o app ainda nao sabe obter (ver
- * DetalheListaActivity). Isto e o cache local ate essa integracao existir.
+ * Listas do proprio usuario, guardadas no aparelho, separadas por conta (ver
+ * DadosDaConta): quem entra com outro e-mail no mesmo celular nao ve as listas
+ * da conta anterior.
+ *
+ * A API tem /api/user-lists e o userId que ela pede ja vem do
+ * UsuarioApiRepository, mas as listas ainda nao foram migradas para ela.
  */
 public class ColecaoRepository {
 
-    private static final String ARQUIVO = "venus_listas";
+    static final String ARQUIVO = "venus_listas";
     private static final String CHAVE_LISTAS = "minhas_listas";
 
-    // Uma instalacao nova comeca com estas 3, como ponto de partida. Depois
-    // disso quem manda e o que estiver salvo (criar, editar capa, e no futuro
-    // editar/excluir).
+    // Cada conta comeca com estas 3, como ponto de partida. Depois disso quem
+    // manda e o que estiver salvo (criar, editar capa, renomear, excluir).
     private static final List<ColecaoSalva> EXEMPLO = Arrays.asList(
             new ColecaoSalva(1L, "Produtos favoritados", null, "favoritos", null),
             new ColecaoSalva(2L, "Produtos escaneados", null, "escaneados", null),
@@ -46,8 +50,34 @@ public class ColecaoRepository {
     private final Gson gson = new Gson();
 
     public ColecaoRepository(Context context) {
-        this.prefs = context.getApplicationContext()
-                .getSharedPreferences(ARQUIVO, Context.MODE_PRIVATE);
+        this(context, DadosDaConta.uidAtual(context));
+    }
+
+    @VisibleForTesting
+    public ColecaoRepository(Context context, @Nullable String uid) {
+        this.prefs = DadosDaConta.prefs(context, ARQUIVO, uid);
+    }
+
+    /**
+     * Apaga as listas de antes da separacao por conta, junto com as capas
+     * delas: nao da para saber de qual conta eram. Ver DadosDaConta.
+     */
+    static void descartarListasSemDono(Context app) {
+        SharedPreferences antigas = app.getSharedPreferences(ARQUIVO, Context.MODE_PRIVATE);
+        String salvo = antigas.getString(CHAVE_LISTAS, null);
+        if (salvo != null) {
+            try {
+                List<ColecaoSalva> listas = new Gson().fromJson(salvo, TIPO_LISTA_SALVA);
+                if (listas != null) {
+                    for (ColecaoSalva lista : listas) {
+                        excluirArquivoDaCapa(lista.caminhoImagem);
+                    }
+                }
+            } catch (JsonParseException ignorado) {
+                // Sem conseguir ler, as capas ficam; as listas vao embora igual.
+            }
+        }
+        app.deleteSharedPreferences(ARQUIVO);
     }
 
     public LiveData<List<Colecao>> minhasListas() {
@@ -124,7 +154,7 @@ public class ColecaoRepository {
      * depois que a lista some. As de exemplo usam drawable, entao nao tem
      * arquivo nenhum a apagar.
      */
-    private void excluirArquivoDaCapa(@Nullable String caminhoImagem) {
+    private static void excluirArquivoDaCapa(@Nullable String caminhoImagem) {
         if (caminhoImagem == null) {
             return;
         }

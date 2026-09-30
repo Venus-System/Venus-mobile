@@ -3,6 +3,9 @@ package com.venussystem.venusmobile.repository;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -10,20 +13,24 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Quais produtos do catalogo entraram em cada lista, guardado no aparelho -
- * mesma razao do ColecaoRepository: o /api/user-list-items depende de um
- * userId que o app ainda nao sabe obter.
+ * Quais produtos do catalogo entraram em cada lista, guardado no aparelho e
+ * separado por conta, como o ColecaoRepository: o /api/user-list-items ainda
+ * nao foi ligado ao app.
  */
 public class ListaItemRepository {
 
-    private static final String ARQUIVO = "venus_lista_itens";
+    static final String ARQUIVO = "venus_lista_itens";
 
     private final SharedPreferences prefs;
     private final Gson gson = new Gson();
 
     public ListaItemRepository(Context context) {
-        this.prefs = context.getApplicationContext()
-                .getSharedPreferences(ARQUIVO, Context.MODE_PRIVATE);
+        this(context, DadosDaConta.uidAtual(context));
+    }
+
+    @VisibleForTesting
+    public ListaItemRepository(Context context, @Nullable String uid) {
+        this.prefs = DadosDaConta.prefs(context, ARQUIVO, uid);
     }
 
     public List<Long> getProdutoIds(long listaId) {

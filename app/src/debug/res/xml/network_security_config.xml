@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Para testar a Venus-AI-api rodando no PC antes de ela estar publicada:
+     no celular com "adb reverse tcp:8080 tcp:8080" o endereco e localhost, e no
+     emulador o PC aparece como 10.0.2.2. Fora desses enderecos continua valendo
+     o padrao do Android (so HTTPS). Este arquivo nao existe no build de release. -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

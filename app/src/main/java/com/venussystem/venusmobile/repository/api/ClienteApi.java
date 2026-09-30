@@ -1,6 +1,7 @@
 package com.venussystem.venusmobile.repository.api;
 
 import com.venussystem.venusmobile.BuildConfig;
+import com.venussystem.venusmobile.repository.SessaoFirebase;
 
 import java.util.concurrent.TimeUnit;
 
@@ -38,13 +39,18 @@ public final class ClienteApi {
 
     private static VenusApi criar() {
         HttpLoggingInterceptor log = new HttpLoggingInterceptor();
+        // BASIC nao registra cabecalho, entao o token nao vai pro log.
         log.setLevel(BuildConfig.DEBUG
                 ? HttpLoggingInterceptor.Level.BASIC
                 : HttpLoggingInterceptor.Level.NONE);
 
+        TokenFirebase token = new TokenFirebase(new SessaoFirebase());
+
         OkHttpClient http = new OkHttpClient.Builder()
                 .connectTimeout(LIMITE_CONEXAO, TimeUnit.SECONDS)
                 .readTimeout(LIMITE_LEITURA, TimeUnit.SECONDS)
+                .addInterceptor(token)
+                .authenticator(token)
                 .addInterceptor(log)
                 .build();
 

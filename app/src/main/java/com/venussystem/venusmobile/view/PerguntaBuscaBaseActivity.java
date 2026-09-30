@@ -7,7 +7,6 @@ import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.ArrayRes;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -17,7 +16,6 @@ import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.repository.PerfilRepository;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
@@ -25,12 +23,13 @@ public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
     private final List<String> selecionados = new ArrayList<>();
     private LinearLayout lista;
     private PerfilRepository perfil;
+    private AppCompatAutoCompleteTextView campo;
 
     @LayoutRes
     protected abstract int getLayout();
 
-    @ArrayRes
-    protected abstract int getOpcoes();
+    /** As opcoes do campo de busca quando a tela abre. */
+    protected abstract List<String> getOpcoes();
 
     @Nullable
     protected abstract Class<?> getProximaTela();
@@ -58,16 +57,22 @@ public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
     }
 
     private void prepararBusca() {
-        AppCompatAutoCompleteTextView campo = findViewById(R.id.campoBusca);
-        List<String> opcoes = Arrays.asList(getResources().getStringArray(getOpcoes()));
-
-        campo.setAdapter(new ArrayAdapter<>(
-                this, android.R.layout.simple_list_item_1, opcoes));
+        campo = findViewById(R.id.campoBusca);
+        trocarOpcoes(getOpcoes());
 
         campo.setOnItemClickListener((parent, view, posicao, id) -> {
             adicionar((String) parent.getItemAtPosition(posicao));
             campo.setText("");
         });
+    }
+
+    /**
+     * Para opcoes que chegam depois da tela aberta (as alergias vem da API).
+     * Os chips ja escolhidos ficam como estao.
+     */
+    protected void trocarOpcoes(List<String> opcoes) {
+        campo.setAdapter(new ArrayAdapter<>(
+                this, android.R.layout.simple_list_item_1, opcoes));
     }
 
     private void adicionar(String item) {
