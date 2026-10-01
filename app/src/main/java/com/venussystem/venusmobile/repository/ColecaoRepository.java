@@ -20,20 +20,27 @@ import java.io.File;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Listas do proprio usuario, guardadas no aparelho, separadas por conta (ver
  * DadosDaConta): quem entra com outro e-mail no mesmo celular nao ve as listas
  * da conta anterior.
  *
- * A API tem /api/user-lists e o userId que ela pede ja vem do
- * UsuarioApiRepository, mas as listas ainda nao foram migradas para ela.
+ * O aparelho continua sendo a fonte do que a tela mostra. A copia em
+ * /api/user-lists e mantida pela SincronizacaoListas, que usa o id da API e o
+ * ultimo nome enviado, guardados aqui junto de cada lista. Descricao e capa
+ * ainda ficam so no aparelho: a API nao tem onde guardar.
  */
 public class ColecaoRepository {
 
     static final String ARQUIVO = "venus_listas";
     private static final String CHAVE_LISTAS = "minhas_listas";
+    private static final String CHAVE_PROXIMO_ID = "proximo_id";
+    private static final String CHAVE_APAGAR_NA_API = "apagar_na_api";
 
     // Cada conta comeca com estas 3, como ponto de partida. Depois disso quem
     // manda e o que estiver salvo (criar, editar capa, renomear, excluir).
@@ -45,6 +52,10 @@ public class ColecaoRepository {
 
     private static final Type TIPO_LISTA_SALVA = new TypeToken<List<ColecaoSalva>>() {
     }.getType();
+
+    // A tela e a sincronizacao (em outra thread) leem e regravam a mesma lista
+    // de listas. Sem a trava, uma gravacao de uma apagava a da outra.
+    private static final Object TRAVA = new Object();
 
     private final SharedPreferences prefs;
     private final Gson gson = new Gson();
@@ -81,20 +92,46 @@ public class ColecaoRepository {
     }
 
     public LiveData<List<Colecao>> minhasListas() {
-        return new MutableLiveData<>(paraColecoes(carregar()));
+        synchronized (TRAVA) {
+            return new MutableLiveData<>(paraColecoes(carregar()));
+        }
     }
 
     public Colecao criar(String nome, String descricao, @Nullable String caminhoImagem) {
-        List<ColecaoSalva> atuais = carregar();
-        ColecaoSalva nova = new ColecaoSalva(
-                proximoId(atuais), nome, descricao, null, caminhoImagem);
+        synchronized (TRAVA) {
+            List<ColecaoSalva> atuais = carregar();
+            long id = proximoId(atuais);
+            ColecaoSalva nova = new ColecaoSalva(id, nome, descricao, null, caminhoImagem);
 
-        List<ColecaoSalva> atualizadas = new ArrayList<>();
-        atualizadas.add(nova);
-        atualizadas.addAll(atuais);
-        salvar(atualizadas);
+            List<ColecaoSalva> atualizadas = new ArrayList<>();
+            atualizadas.add(nova);
+            atualizadas.addAll(atuais);
+            prefs.edit()
+                    .putString(CHAVE_LISTAS, gson.toJson(atualizadas))
+                    .putLong(CHAVE_PROXIMO_ID, id + 1)
+                    .apply();
 
-        return nova.paraColecao();
+            return nova.paraColecao();
+        }
+    }
+
+    /**
+     * A API nao aceita duas listas com o mesmo nome para a mesma pessoa. A
+     * tela checa antes de criar ou renomear, ignorando maiusculas e espacos,
+     * para "Rotina" e "rotina " nao virarem duas listas que parecem iguais.
+     *
+     * @param ignorarId a propria lista, quando e uma renomeacao (-1 ao criar).
+     */
+    public boolean nomeEmUso(String nome, long ignorarId) {
+        String procurado = comparavel(nome);
+        synchronized (TRAVA) {
+            for (ColecaoSalva c : carregar()) {
+                if (c.id != ignorarId && comparavel(c.nome).equals(procurado)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -103,49 +140,152 @@ public class ColecaoRepository {
      * chamou ja teria fechado nesse caso.
      */
     public void atualizarImagem(long id, String caminhoImagem) {
-        List<ColecaoSalva> atuais = carregar();
-        List<ColecaoSalva> atualizadas = new ArrayList<>();
-        for (ColecaoSalva c : atuais) {
-            atualizadas.add(c.id == id
-                    ? new ColecaoSalva(c.id, c.nome, c.descricao, c.chaveImagem, caminhoImagem)
-                    : c);
+        synchronized (TRAVA) {
+            List<ColecaoSalva> atualizadas = new ArrayList<>();
+            for (ColecaoSalva c : carregar()) {
+                atualizadas.add(c.id == id ? c.comImagem(caminhoImagem) : c);
+            }
+            salvar(atualizadas);
         }
-        salvar(atualizadas);
     }
 
     public void renomear(long id, String novoNome) {
-        List<ColecaoSalva> atuais = carregar();
-        List<ColecaoSalva> atualizadas = new ArrayList<>();
-        for (ColecaoSalva c : atuais) {
-            atualizadas.add(c.id == id
-                    ? new ColecaoSalva(c.id, novoNome, c.descricao, c.chaveImagem, c.caminhoImagem)
-                    : c);
+        synchronized (TRAVA) {
+            List<ColecaoSalva> atualizadas = new ArrayList<>();
+            for (ColecaoSalva c : carregar()) {
+                atualizadas.add(c.id == id ? c.comNome(novoNome) : c);
+            }
+            salvar(atualizadas);
         }
-        salvar(atualizadas);
     }
 
     public void atualizarDescricao(long id, String novaDescricao) {
-        List<ColecaoSalva> atuais = carregar();
-        List<ColecaoSalva> atualizadas = new ArrayList<>();
-        for (ColecaoSalva c : atuais) {
-            atualizadas.add(c.id == id
-                    ? new ColecaoSalva(c.id, c.nome, novaDescricao, c.chaveImagem, c.caminhoImagem)
-                    : c);
+        synchronized (TRAVA) {
+            List<ColecaoSalva> atualizadas = new ArrayList<>();
+            for (ColecaoSalva c : carregar()) {
+                atualizadas.add(c.id == id ? c.comDescricao(novaDescricao) : c);
+            }
+            salvar(atualizadas);
         }
-        salvar(atualizadas);
     }
 
+    /**
+     * Se a lista ja estava na API, o id dela entra numa fila para a
+     * sincronizacao apagar la tambem.
+     */
     public void excluir(long id) {
-        List<ColecaoSalva> atuais = carregar();
-        List<ColecaoSalva> atualizadas = new ArrayList<>();
-        for (ColecaoSalva c : atuais) {
-            if (c.id == id) {
-                excluirArquivoDaCapa(c.caminhoImagem);
-            } else {
-                atualizadas.add(c);
+        synchronized (TRAVA) {
+            List<ColecaoSalva> atualizadas = new ArrayList<>();
+            for (ColecaoSalva c : carregar()) {
+                if (c.id == id) {
+                    excluirArquivoDaCapa(c.caminhoImagem);
+                    if (c.idApi != null) {
+                        adicionarParaApagar(c.idApi);
+                    }
+                } else {
+                    atualizadas.add(c);
+                }
             }
+            salvar(atualizadas);
         }
-        salvar(atualizadas);
+    }
+
+    // ---- O que a SincronizacaoListas usa ----
+
+    /** Como cada lista esta agora, para decidir o que mandar para a API. */
+    List<ListaLocal> paraSincronizar() {
+        synchronized (TRAVA) {
+            List<ListaLocal> listas = new ArrayList<>();
+            for (ColecaoSalva c : carregar()) {
+                listas.add(new ListaLocal(c.id, c.nome, c.chaveImagem, c.idApi, c.nomeNaApi));
+            }
+            return listas;
+        }
+    }
+
+    /**
+     * Guarda o id que a API deu para a lista.
+     *
+     * @return false se a lista foi excluida no aparelho enquanto era criada na
+     * API: ai o id vai direto para a fila de apagar, senao ficaria orfa la.
+     */
+    boolean marcarCriadaNaApi(long id, long idApi, String nomeEnviado) {
+        synchronized (TRAVA) {
+            boolean achou = false;
+            List<ColecaoSalva> atualizadas = new ArrayList<>();
+            for (ColecaoSalva c : carregar()) {
+                if (c.id == id) {
+                    achou = true;
+                    atualizadas.add(c.naApi(idApi, nomeEnviado));
+                } else {
+                    atualizadas.add(c);
+                }
+            }
+            if (achou) {
+                salvar(atualizadas);
+            } else {
+                adicionarParaApagar(idApi);
+            }
+            return achou;
+        }
+    }
+
+    void marcarNomeEnviado(long id, String nomeEnviado) {
+        synchronized (TRAVA) {
+            List<ColecaoSalva> atualizadas = new ArrayList<>();
+            for (ColecaoSalva c : carregar()) {
+                atualizadas.add(c.id == id && c.idApi != null
+                        ? c.naApi(c.idApi, nomeEnviado) : c);
+            }
+            salvar(atualizadas);
+        }
+    }
+
+    /** A API nao tem mais a lista (ou ela nao e desta pessoa): na proxima, cria de novo. */
+    void esquecerIdApi(long id) {
+        synchronized (TRAVA) {
+            List<ColecaoSalva> atualizadas = new ArrayList<>();
+            for (ColecaoSalva c : carregar()) {
+                atualizadas.add(c.id == id ? c.naApi(null, null) : c);
+            }
+            salvar(atualizadas);
+        }
+    }
+
+    void esquecerTodosIdsApi() {
+        synchronized (TRAVA) {
+            List<ColecaoSalva> atualizadas = new ArrayList<>();
+            for (ColecaoSalva c : carregar()) {
+                atualizadas.add(c.naApi(null, null));
+            }
+            salvar(atualizadas);
+        }
+    }
+
+    Set<Long> idsParaApagarNaApi() {
+        synchronized (TRAVA) {
+            Set<Long> ids = new HashSet<>();
+            for (String id : prefs.getStringSet(CHAVE_APAGAR_NA_API, new HashSet<>())) {
+                ids.add(Long.parseLong(id));
+            }
+            return ids;
+        }
+    }
+
+    void marcarApagadaNaApi(long idApi) {
+        synchronized (TRAVA) {
+            Set<String> ids = new HashSet<>(prefs.getStringSet(CHAVE_APAGAR_NA_API, new HashSet<>()));
+            ids.remove(String.valueOf(idApi));
+            prefs.edit().putStringSet(CHAVE_APAGAR_NA_API, ids).apply();
+        }
+    }
+
+    // Chamado sempre de dentro da TRAVA.
+    private void adicionarParaApagar(long idApi) {
+        // Copia: o Set devolvido pelo SharedPreferences nao pode ser alterado.
+        Set<String> ids = new HashSet<>(prefs.getStringSet(CHAVE_APAGAR_NA_API, new HashSet<>()));
+        ids.add(String.valueOf(idApi));
+        prefs.edit().putStringSet(CHAVE_APAGAR_NA_API, ids).apply();
     }
 
     /**
@@ -182,6 +322,11 @@ public class ColecaoRepository {
         prefs.edit().putString(CHAVE_LISTAS, gson.toJson(listas)).apply();
     }
 
+    /**
+     * Um id nunca e reaproveitado, nem depois de excluir a lista mais nova.
+     * Os produtos de cada lista e o controle do envio para a API sao guardados
+     * por esse id: reaproveitar faria uma lista nova herdar o que era de outra.
+     */
     private long proximoId(List<ColecaoSalva> atuais) {
         long maior = 0;
         for (ColecaoSalva c : atuais) {
@@ -189,7 +334,11 @@ public class ColecaoRepository {
                 maior = c.id;
             }
         }
-        return maior + 1;
+        return Math.max(maior + 1, prefs.getLong(CHAVE_PROXIMO_ID, 0L));
+    }
+
+    private static String comparavel(@Nullable String nome) {
+        return nome == null ? "" : nome.trim().toLowerCase(Locale.ROOT);
     }
 
     private List<Colecao> paraColecoes(List<ColecaoSalva> salvas) {
@@ -200,10 +349,33 @@ public class ColecaoRepository {
         return lista;
     }
 
+    /** Retrato de uma lista para a SincronizacaoListas, sem nada da tela. */
+    static final class ListaLocal {
+        final long id;
+        final String nome;
+        // So as 3 listas de exemplo tem chave (favoritos, escaneados, skincare).
+        @Nullable final String chaveImagem;
+        @Nullable final Long idApi;
+        @Nullable final String nomeNaApi;
+
+        ListaLocal(long id, String nome, @Nullable String chaveImagem, @Nullable Long idApi,
+                   @Nullable String nomeNaApi) {
+            this.id = id;
+            this.nome = nome;
+            this.chaveImagem = chaveImagem;
+            this.idApi = idApi;
+            this.nomeNaApi = nomeNaApi;
+        }
+    }
+
     /**
      * Formato gravado no SharedPreferences. Guarda a CHAVE do drawable de
      * exemplo, nao o id do resource: um resource id pode mudar entre builds,
      * e um valor salvo assim ficaria apontando pro drawable errado.
+     *
+     * idApi e nomeNaApi ficam null ate a lista chegar na API - e em quem
+     * salvou antes desta versao do app, ja que o Gson deixa null o campo que
+     * nao estava no texto salvo.
      */
     private static class ColecaoSalva {
         final long id;
@@ -211,14 +383,43 @@ public class ColecaoRepository {
         final String descricao;
         final String chaveImagem;
         final String caminhoImagem;
+        final Long idApi;
+        final String nomeNaApi;
 
         ColecaoSalva(long id, String nome, String descricao, String chaveImagem,
                      String caminhoImagem) {
+            this(id, nome, descricao, chaveImagem, caminhoImagem, null, null);
+        }
+
+        ColecaoSalva(long id, String nome, String descricao, String chaveImagem,
+                     String caminhoImagem, Long idApi, String nomeNaApi) {
             this.id = id;
             this.nome = nome;
             this.descricao = descricao;
             this.chaveImagem = chaveImagem;
             this.caminhoImagem = caminhoImagem;
+            this.idApi = idApi;
+            this.nomeNaApi = nomeNaApi;
+        }
+
+        ColecaoSalva comNome(String novoNome) {
+            return new ColecaoSalva(id, novoNome, descricao, chaveImagem, caminhoImagem,
+                    idApi, nomeNaApi);
+        }
+
+        ColecaoSalva comDescricao(String novaDescricao) {
+            return new ColecaoSalva(id, nome, novaDescricao, chaveImagem, caminhoImagem,
+                    idApi, nomeNaApi);
+        }
+
+        ColecaoSalva comImagem(String novoCaminho) {
+            return new ColecaoSalva(id, nome, descricao, chaveImagem, novoCaminho,
+                    idApi, nomeNaApi);
+        }
+
+        ColecaoSalva naApi(@Nullable Long novoIdApi, @Nullable String nomeEnviado) {
+            return new ColecaoSalva(id, nome, descricao, chaveImagem, caminhoImagem,
+                    novoIdApi, nomeEnviado);
         }
 
         Colecao paraColecao() {

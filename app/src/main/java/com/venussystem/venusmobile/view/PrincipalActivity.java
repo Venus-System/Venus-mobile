@@ -19,6 +19,7 @@ import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.repository.AutenticacaoRepository;
 import com.venussystem.venusmobile.repository.PerfilRepository;
+import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.repository.SincronizacaoRepository;
 import com.venussystem.venusmobile.view.fragment.BuscaFragment;
 import com.venussystem.venusmobile.view.fragment.HistoricoFragment;
@@ -67,6 +68,9 @@ public class PrincipalActivity extends AppCompatActivity {
             // app reaberto): e o ponto para cadastrar a pessoa na API e mandar o
             // que ficou pendente. Roda em segundo plano, sem segurar a tela.
             new SincronizacaoRepository(this).sincronizarEmSegundoPlano();
+            // As listas vao depois, na mesma fila. Na primeira abertura desta
+            // versao, e aqui que sobem as listas que ja existiam no aparelho.
+            new SincronizacaoListas(this).sincronizarEmSegundoPlano();
         }
     }
 

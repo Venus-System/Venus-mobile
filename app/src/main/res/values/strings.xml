@@ -237,6 +237,7 @@
     <string name="lista_capa_galeria">Escolher da galeria</string>
     <string name="lista_capa_erro">Não foi possível carregar a imagem. Tente de novo.</string>
     <string name="lista_erro_nome">Dê um nome para a lista</string>
+    <string name="lista_erro_nome_repetido">Você já tem uma lista com esse nome</string>
     <string name="acao_tentar_de_novo">Tentar de novo</string>
     <string name="erro_sem_conexao">Não foi possível falar com o servidor. Verifique sua conexão e tente de novo.</string>
     <string name="historico_titulo">Histórico</string>
