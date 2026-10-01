@@ -14,12 +14,23 @@ import java.util.List;
 
 /**
  * Quais produtos do catalogo entraram em cada lista, guardado no aparelho e
- * separado por conta, como o ColecaoRepository: o /api/user-list-items ainda
- * nao foi ligado ao app.
+ * separado por conta, como o ColecaoRepository. A copia em
+ * /api/user-list-items e mantida pela SincronizacaoListas.
+ *
+ * A ordem guardada e a da tela: o mais recente primeiro.
  */
 public class ListaItemRepository {
 
     static final String ARQUIVO = "venus_lista_itens";
+
+    // Um contador por lista, como a versao do PerfilRepository: se a pessoa
+    // mexer na lista enquanto um envio esta no meio do caminho, a versao sobe
+    // e o envio antigo nao consegue marcar como enviado o que nem leu.
+    private static final String PREFIXO_VERSAO = "versao_";
+    private static final String PREFIXO_ENVIADA = "enviada_";
+
+    // A tela grava e a sincronizacao marca o envio, cada uma na sua thread.
+    private static final Object TRAVA = new Object();
 
     private final SharedPreferences prefs;
     private final Gson gson = new Gson();
@@ -43,26 +54,64 @@ public class ListaItemRepository {
     }
 
     public void adicionar(long listaId, long produtoId) {
-        List<Long> atuais = getProdutoIds(listaId);
-        if (atuais.contains(produtoId)) {
-            return;
+        synchronized (TRAVA) {
+            List<Long> atuais = getProdutoIds(listaId);
+            if (atuais.contains(produtoId)) {
+                return;
+            }
+            atuais.add(0, produtoId);
+            salvar(listaId, atuais);
         }
-        atuais.add(0, produtoId);
-        salvar(listaId, atuais);
     }
 
     public void remover(long listaId, long produtoId) {
-        List<Long> atuais = getProdutoIds(listaId);
-        atuais.remove(Long.valueOf(produtoId));
-        salvar(listaId, atuais);
+        synchronized (TRAVA) {
+            List<Long> atuais = getProdutoIds(listaId);
+            if (atuais.remove(Long.valueOf(produtoId))) {
+                salvar(listaId, atuais);
+            }
+        }
     }
 
-    /** Chamado quando a propria lista e excluida - nao faz sentido guardar os itens dela. */
+    /**
+     * Chamado quando a propria lista e excluida - nao faz sentido guardar os
+     * itens dela. Na API, apagar a lista ja apaga os itens junto.
+     */
     public void excluirTodos(long listaId) {
-        prefs.edit().remove(String.valueOf(listaId)).apply();
+        synchronized (TRAVA) {
+            prefs.edit()
+                    .remove(String.valueOf(listaId))
+                    .remove(PREFIXO_VERSAO + listaId)
+                    .remove(PREFIXO_ENVIADA + listaId)
+                    .apply();
+        }
     }
 
+    // ---- O que a SincronizacaoListas usa ----
+
+    long versao(long listaId) {
+        return prefs.getLong(PREFIXO_VERSAO + listaId, 0L);
+    }
+
+    boolean temItensParaEnviar(long listaId) {
+        return versao(listaId) != prefs.getLong(PREFIXO_ENVIADA + listaId, 0L);
+    }
+
+    /**
+     * Registra que os produtos ate essa versao ja estao na API. Quem chama
+     * passa a versao lida ANTES de montar o envio, nunca a do momento.
+     */
+    void marcarItensEnviados(long listaId, long versao) {
+        synchronized (TRAVA) {
+            prefs.edit().putLong(PREFIXO_ENVIADA + listaId, versao).apply();
+        }
+    }
+
+    // Chamado sempre de dentro da TRAVA.
     private void salvar(long listaId, List<Long> ids) {
-        prefs.edit().putString(String.valueOf(listaId), gson.toJson(ids)).apply();
+        prefs.edit()
+                .putString(String.valueOf(listaId), gson.toJson(ids))
+                .putLong(PREFIXO_VERSAO + listaId, versao(listaId) + 1)
+                .apply();
     }
 }
