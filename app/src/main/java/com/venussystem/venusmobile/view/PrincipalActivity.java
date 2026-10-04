@@ -59,6 +59,8 @@ public class PrincipalActivity extends AppCompatActivity {
         findViewById(R.id.btnAssistente).setOnClickListener(v ->
                 startActivity(new Intent(this, AssistenteActivity.class)));
 
+        findViewById(R.id.btnScan).setOnClickListener(v -> iniciarScan());
+
         findViewById(R.id.btnReiniciarTeste).setOnClickListener(v -> reiniciarTeste());
 
         if (savedInstanceState == null) {
@@ -116,6 +118,14 @@ public class PrincipalActivity extends AppCompatActivity {
                 .beginTransaction()
                 .replace(R.id.containerConteudo, fragment)
                 .commit();
+    }
+
+    private void iniciarScan() {
+        boolean onboardingCompleto = ScanTutorialState.isCompleted(this);
+        startActivity(new Intent(
+                this,
+                onboardingCompleto ? ScanCameraFrontActivity.class : ScanTutorial1Activity.class
+        ));
     }
 
     private void reiniciarTeste() {
