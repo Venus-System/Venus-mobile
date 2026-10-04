@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.repository.ColecaoRepository;
 import com.venussystem.venusmobile.repository.ListaItemRepository;
+import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.view.CriarListaActivity;
 import com.venussystem.venusmobile.view.DetalheListaActivity;
 import com.venussystem.venusmobile.model.Colecao;
@@ -69,6 +70,16 @@ public class ListasFragment extends Fragment {
         // view do fragment sobrevive nessa navegacao, entao sem isto uma lista
         // criada/editada/excluida so apareceria depois de sair e voltar desta aba.
         carregar();
+    }
+
+    /**
+     * Excluir arrastando acontece aqui, sem abrir o detalhe; o envio para a
+     * API fica para quando a pessoa sai da aba. Sem mudanca, nao vai na rede.
+     */
+    @Override
+    public void onStop() {
+        super.onStop();
+        new SincronizacaoListas(requireContext()).sincronizarEmSegundoPlano();
     }
 
     private void carregar() {

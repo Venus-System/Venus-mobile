@@ -127,6 +127,11 @@ public class CriarListaActivity extends AppCompatActivity {
             editNome.setError(getString(R.string.lista_erro_nome));
             return;
         }
+        // A API nao aceita duas listas com o mesmo nome para a mesma pessoa.
+        if (repository.nomeEmUso(nome, -1)) {
+            editNome.setError(getString(R.string.lista_erro_nome_repetido));
+            return;
+        }
 
         String descricao = editDescricao.getText().toString().trim();
         Colecao criada = repository.criar(nome, descricao, caminhoImagemEscolhida);

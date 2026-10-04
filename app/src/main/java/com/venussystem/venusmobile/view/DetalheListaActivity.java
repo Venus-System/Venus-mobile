@@ -35,6 +35,7 @@ import com.venussystem.venusmobile.repository.AutenticacaoRepository;
 import com.venussystem.venusmobile.repository.ColecaoRepository;
 import com.venussystem.venusmobile.repository.ListaItemRepository;
 import com.venussystem.venusmobile.repository.ProdutoRepository;
+import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.view.adapter.ItemListaAdapter;
 import com.venussystem.venusmobile.view.util.ImagemLocalUtil;
 
@@ -45,9 +46,10 @@ import java.util.List;
 /**
  * Uma lista do proprio usuario. Recebe pelo Intent o que ja se sabe dela; os
  * produtos vem do catalogo ja em memoria (ver ProdutoRepository) filtrados
- * pelos ids guardados no aparelho para esta lista (ver ListaItemRepository) -
- * a API tambem teria como fazer isso (/api/user-list-items), mas as listas
- * ainda nao foram migradas para ela.
+ * pelos ids guardados no aparelho para esta lista (ver ListaItemRepository).
+ *
+ * O que muda aqui e salvo no aparelho na hora e vai para a API quando a tela
+ * fecha (ver SincronizacaoListas), juntando todas as mudancas num envio so.
  */
 public class DetalheListaActivity extends AppCompatActivity {
 
@@ -129,6 +131,13 @@ public class DetalheListaActivity extends AppCompatActivity {
 
         preencherCabecalho();
         carregarItens();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Se nada mudou, a sincronizacao nao vai na rede.
+        new SincronizacaoListas(this).sincronizarEmSegundoPlano();
     }
 
     private void preencherCabecalho() {
@@ -216,6 +225,10 @@ public class DetalheListaActivity extends AppCompatActivity {
             String novoNome = campo.getText().toString().trim();
             if (novoNome.isEmpty()) {
                 campo.setError(getString(R.string.lista_erro_nome));
+                return;
+            }
+            if (colecaoRepository.nomeEmUso(novoNome, listaId)) {
+                campo.setError(getString(R.string.lista_erro_nome_repetido));
                 return;
             }
             nomeAtual = novoNome;

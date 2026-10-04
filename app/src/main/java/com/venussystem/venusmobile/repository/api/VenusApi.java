@@ -13,6 +13,10 @@ import com.venussystem.venusmobile.repository.api.dto.ProductVersionResponse;
 import com.venussystem.venusmobile.repository.api.dto.ScoringModelResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserAllergyRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserAllergyResponse;
+import com.venussystem.venusmobile.repository.api.dto.UserListItemRequest;
+import com.venussystem.venusmobile.repository.api.dto.UserListItemResponse;
+import com.venussystem.venusmobile.repository.api.dto.UserListRequest;
+import com.venussystem.venusmobile.repository.api.dto.UserListResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserPreferenceRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserProfileRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserProfileTagRequest;
@@ -26,6 +30,7 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
+import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
@@ -126,4 +131,30 @@ public interface VenusApi {
     @DELETE("api/user-profile-tags/user/{userId}/profile-tag/{profileTagId}")
     Call<Void> removerEtiqueta(@Path("userId") long userId,
                                @Path("profileTagId") long profileTagId);
+
+    // ---- Listas da pessoa e os produtos dentro delas ----
+
+    @POST("api/user-lists")
+    Call<UserListResponse> criarLista(@Body UserListRequest lista);
+
+    @PATCH("api/user-lists/{id}")
+    Call<Void> renomearLista(@Path("id") long id, @Body UserListRequest lista);
+
+    @DELETE("api/user-lists/{id}")
+    Call<Void> apagarLista(@Path("id") long id);
+
+    @GET("api/user-lists/user/{userId}")
+    Call<FatiaResponse<UserListResponse>> listasDoUsuario(@Path("userId") long userId,
+                                                          @Query("page") int pagina,
+                                                          @Query("size") int tamanho);
+
+    @GET("api/user-list-items/user-list/{userListId}")
+    Call<List<UserListItemResponse>> itensDaLista(@Path("userListId") long userListId);
+
+    @POST("api/user-list-items")
+    Call<Void> adicionarItem(@Body UserListItemRequest item);
+
+    @DELETE("api/user-list-items/user-list/{userListId}/product/{productId}")
+    Call<Void> removerItem(@Path("userListId") long userListId,
+                           @Path("productId") long productId);
 }
