@@ -35,6 +35,7 @@ import com.venussystem.venusmobile.repository.ProdutoRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.view.adapter.AlternativaAdapter;
 import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
+import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -467,7 +468,11 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 )
         );
 
-        carregarImagem(produto.getImageUrl());
+        // A foto é independente da leitura dos ingredientes. Resolve-a logo
+        // pelo media_assets para não fazer a imagem esperar as consultas da
+        // composição completa do produto.
+        ProdutoImagemLoader.carregar(
+                this, imgProduto, produto, R.drawable.bg_foto_produto);
     }
 
     private void carregarImagem(String url) {
@@ -476,7 +481,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         carregador.enqueue(
                 new ImageRequest.Builder(this)
-                        .data(url)
+                        .data(ProdutoImagemLoader.urlParaExibicao(url, 640))
                         .target(imgProduto)
                         .placeholder(
                                 R.drawable.bg_foto_produto

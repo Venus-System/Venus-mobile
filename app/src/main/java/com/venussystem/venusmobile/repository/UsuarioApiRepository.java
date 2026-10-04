@@ -102,6 +102,12 @@ public class UsuarioApiRepository {
         return uid == null ? null : idSalvo(uid);
     }
 
+    /** UID da sessão atual, usado para ler dados locais da mesma conta. */
+    @Nullable
+    public String uidAtual() {
+        return sessao.uid();
+    }
+
     /**
      * Descarta o id guardado da pessoa logada. Serve para quando a API mostra
      * que ele nao existe mais (banco recriado): a proxima chamada busca de novo.

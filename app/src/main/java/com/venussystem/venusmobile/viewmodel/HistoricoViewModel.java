@@ -10,7 +10,6 @@ import androidx.lifecycle.MediatorLiveData;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.ItemHistorico;
 import com.venussystem.venusmobile.model.LinhaHistorico;
-import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.repository.HistoricoRepository;
 
 import java.time.LocalDate;
@@ -23,19 +22,14 @@ public class HistoricoViewModel extends AndroidViewModel {
     private static final DateTimeFormatter FORMATO =
             DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    private final HistoricoRepository repository = new HistoricoRepository();
+    private final HistoricoRepository repository;
     private final MediatorLiveData<List<LinhaHistorico>> linhas = new MediatorLiveData<>();
 
     public HistoricoViewModel(@NonNull Application application) {
         super(application);
-        // As entradas de exemplo saem do catalogo real, entao dependem dele ter
-        // carregado - por isso a fonte aqui e o catalogo, nao uma lista pronta.
-        linhas.addSource(repository.getCatalogo(), this::montarDoCatalogo);
+        repository = new HistoricoRepository(application);
+        linhas.addSource(repository.getHistorico(), this::montarLinhas);
         repository.carregar();
-    }
-
-    private void montarDoCatalogo(List<Produto> catalogo) {
-        montarLinhas(repository.montar(catalogo));
     }
 
     public LiveData<List<LinhaHistorico>> getLinhas() {
@@ -60,7 +54,7 @@ public class HistoricoViewModel extends AndroidViewModel {
                 resultado.add(LinhaHistorico.deData(rotular(entrada.getData())));
                 dataAnterior = entrada.getData();
             }
-            resultado.add(LinhaHistorico.deProduto(entrada.getProduto()));
+            resultado.add(LinhaHistorico.deProduto(entrada.getProduto(), entrada.getStatus()));
         }
         linhas.setValue(resultado);
     }

@@ -37,27 +37,27 @@ public class ScanCameraBackActivity extends ScanCameraBaseActivity {
 
     @Override
     protected String initialInstruction() {
-        return "Vire a embalagem e fotografe o verso, principalmente a área de ingredientes ou composição.";
+        return "Fotografe o verso, principalmente os ingredientes.";
     }
 
     @Override
     protected String readyInstruction() {
-        return "Verso do produto: enquadre o rótulo inteiro. Aproxime para deixar os ingredientes legíveis; afaste se cortar o texto.";
+        return "Enquadre o verso. Deixe os ingredientes legíveis.";
     }
 
     @Override
     protected String focusingInstruction() {
-        return "Ajustando o foco nos ingredientes e no rótulo...";
+        return "Ajustando o foco nos ingredientes...";
     }
 
     @Override
     protected String focusedInstruction() {
-        return "Foco ajustado. Verifique se os ingredientes estão legíveis e se o rótulo não foi cortado.";
+        return "Foco ajustado. Confira os ingredientes e o rótulo.";
     }
 
     @Override
     protected String capturedInstruction() {
-        return "Foto registrada. Lendo ingredientes e informações do verso...";
+        return "Foto salva. Lendo os ingredientes...";
     }
 
     @Override

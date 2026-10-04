@@ -61,7 +61,7 @@ public class PrincipalActivity extends AppCompatActivity {
         findViewById(R.id.btnScan).setOnClickListener(v -> iniciarScan());
 
         if (savedInstanceState == null) {
-            selecionar(findViewById(R.id.navBusca), new BuscaFragment(), false);
+            selecionar(findViewById(R.id.navInicio), new HistoricoFragment(), false);
 
             // Toda entrada no app passa por aqui (fim do questionario, login ou
             // app reaberto): e o ponto para cadastrar a pessoa na API e mandar o
@@ -74,6 +74,15 @@ public class PrincipalActivity extends AppCompatActivity {
             // Foto de perfil que ficou sem enviar (sem rede, API dormindo).
             new FotoPerfilRepository(this).enviarEmSegundoPlano();
         }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        // O scan retorna para a mesma PrincipalActivity. Reabre a casinha para
+        // que o item recém-enviado apareça sem exigir um toque na navegação.
+        selecionar(findViewById(R.id.navInicio), new HistoricoFragment(), true);
     }
 
     private void montarItem(int id, @DrawableRes int icone, Class<? extends Fragment> tela) {

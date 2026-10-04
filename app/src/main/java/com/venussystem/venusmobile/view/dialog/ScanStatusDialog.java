@@ -58,7 +58,7 @@ public final class ScanStatusDialog {
             card.addView(progress, params);
         }
 
-        TextView saved = text(activity, "Scan salvo no aparelho. Cadastro pendente.",
+        TextView saved = text(activity, "Salvo no aparelho.",
                 13, R.color.cinza_descricao, false);
         add(card, saved, 12);
 
@@ -72,7 +72,7 @@ public final class ScanStatusDialog {
             primary.setOnClickListener(v -> { v.setEnabled(false); dialog.dismiss(); primaryAction.run(); });
             add(card, primary, 20);
         }
-        AppCompatButton exit = button(activity, "Voltar ao início", false);
+        AppCompatButton exit = button(activity, "Voltar", false);
         exit.setOnClickListener(v -> { v.setEnabled(false); dialog.dismiss(); exitAction.run(); });
         add(card, exit, primaryAction == null ? 20 : 8);
 

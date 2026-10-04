@@ -4,9 +4,11 @@ import com.google.gson.Gson;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.repository.api.VenusApi;
 import com.venussystem.venusmobile.repository.api.dto.BrandResponse;
+import com.venussystem.venusmobile.repository.api.dto.IngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.MediaAssetResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductCategoryResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductFullResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductIngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductLabelResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
@@ -146,6 +148,21 @@ public class ProdutoRepositoryTest {
             r.label = rotulo;
         }
         r.photos = fotos;
+        return r;
+    }
+
+    private static ProductIngredientResponse vinculo(long versaoId, long ingredienteId, int posicao) {
+        ProductIngredientResponse r = new ProductIngredientResponse();
+        r.productVersionId = versaoId;
+        r.ingredientId = ingredienteId;
+        r.position = posicao;
+        return r;
+    }
+
+    private static IngredientResponse ingrediente(long id, String inciName) {
+        IngredientResponse r = new IngredientResponse();
+        r.id = id;
+        r.inciName = inciName;
         return r;
     }
 
@@ -536,6 +553,57 @@ public class ProdutoRepositoryTest {
     }
 
     @Test
+    public void buscarDetalhe_prefereComposicaoPersistidaAoTextoDoRotulo() throws InterruptedException {
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        ProductFullResponse corpo = full("texto antigo do rotulo", Collections.emptyList());
+        corpo.currentVersion = versao(900L, 1L, true);
+        dispatcher.em(PATH_FULL_PRODUTO_1, json(corpo));
+        dispatcher.em("/api/product-ingredients/product-version/900",
+                json(Arrays.asList(
+                        vinculo(900L, 101L, 2),
+                        vinculo(900L, 100L, 1))));
+        dispatcher.em("/api/ingredients/100", json(ingrediente(100L, "Aqua")));
+        dispatcher.em("/api/ingredients/101", json(ingrediente(101L, "Glycerin")));
+        server.setDispatcher(dispatcher);
+
+        String[] resultado = buscarDetalhe();
+
+        assertEquals("Aqua, Glycerin", resultado[0]);
+    }
+
+    @Test
+    public void buscarDetalhe_semVersaoNoAgregado_resolveVersaoAtualAntesDaComposicao()
+            throws InterruptedException {
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        dispatcher.em(PATH_FULL_PRODUTO_1, json(full("texto de fallback", Collections.emptyList())));
+        dispatcher.em("/api/product-versions/product/1/current",
+                json(versao(901L, 1L, true)));
+        dispatcher.em("/api/product-ingredients/product-version/901",
+                json(Collections.singletonList(vinculo(901L, 102L, 1))));
+        dispatcher.em("/api/ingredients/102", json(ingrediente(102L, "SODIUM CHLORIDE")));
+        server.setDispatcher(dispatcher);
+
+        String[] resultado = buscarDetalhe();
+
+        assertEquals("SODIUM CHLORIDE", resultado[0]);
+    }
+
+    @Test
+    public void buscarDetalhe_naoExibeMarcadorAdministrativoComoComposicao()
+            throws InterruptedException {
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        dispatcher.em(PATH_FULL_PRODUTO_1, json(full(
+                "CATÁLOGO OFICIAL - composição integral não capturada nesta carga; "
+                        + "consultar a embalagem/ página oficial antes da validação.",
+                Collections.emptyList())));
+        server.setDispatcher(dispatcher);
+
+        String[] resultado = buscarDetalhe();
+
+        assertNull(resultado[0]);
+    }
+
+    @Test
     public void buscarDetalhe_404_devolveTudoNulo() throws InterruptedException {
         FakeApiDispatcher dispatcher = new FakeApiDispatcher();
         dispatcher.em(PATH_FULL_PRODUTO_1, new MockResponse().setResponseCode(404));
@@ -555,6 +623,56 @@ public class ProdutoRepositoryTest {
 
         assertNull(resultado[0]);
         assertNull(resultado[1]);
+    }
+
+    @Test
+    public void buscarImagemProduto_resolveMediaAssetEReutilizaCache() throws InterruptedException {
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        dispatcher.em(PATH_FULL_PRODUTO_1, json(full(null, Arrays.asList(
+                foto("https://cdn/produto.jpg", 1, "ACTIVE")))));
+        server.setDispatcher(dispatcher);
+
+        CountDownLatch primeira = new CountDownLatch(1);
+        String[] url = new String[1];
+        repository.buscarImagemProduto(1L, valor -> {
+            url[0] = valor;
+            primeira.countDown();
+        });
+        aguardarLatch(primeira, com.venussystem.venusmobile.testutil.LiveDataEspera.TIMEOUT_PADRAO_MS);
+        assertEquals("https://cdn/produto.jpg", url[0]);
+        int requisicoes = server.getRequestCount();
+
+        CountDownLatch segunda = new CountDownLatch(1);
+        repository.buscarImagemProduto(1L, valor -> {
+            assertEquals("https://cdn/produto.jpg", valor);
+            segunda.countDown();
+        });
+        aguardarLatch(segunda, com.venussystem.venusmobile.testutil.LiveDataEspera.TIMEOUT_PADRAO_MS);
+        assertEquals(requisicoes, server.getRequestCount());
+    }
+
+    @Test
+    public void buscarImagemProduto_comCatalogoUsaEndpointLeveDaVersao() throws InterruptedException {
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        enfileirarPadrao(dispatcher,
+                Collections.singletonList(produto(1L, 10L, 100L, "Produto A", true)),
+                Collections.emptyList(), Collections.emptyList(),
+                Collections.singletonList(versao(900L, 1L, true)),
+                Collections.emptyList());
+        carregarEEsperar(dispatcher);
+        dispatcher.em("/api/product-versions/900/photos", json(Collections.singletonList(
+                foto("https://cdn/leve.jpg", 1, "ACTIVE"))));
+
+        CountDownLatch latch = new CountDownLatch(1);
+        String[] url = new String[1];
+        repository.buscarImagemProduto(1L, valor -> {
+            url[0] = valor;
+            latch.countDown();
+        });
+        aguardarLatch(latch, com.venussystem.venusmobile.testutil.LiveDataEspera.TIMEOUT_PADRAO_MS);
+
+        assertEquals("https://cdn/leve.jpg", url[0]);
+        assertEquals(7, server.getRequestCount());
     }
 
     // ---- Modelo de scoring ativo / cargas simultaneas ----

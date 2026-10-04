@@ -91,7 +91,7 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
             backButton.setOnClickListener(v -> finish());
         }
 
-        setBadge("Lendo o verso e procurando as informações do rótulo...");
+        setBadge("Lendo o verso...");
 
         // Não existe continuidade válida sem o draft criado pela frente.
         if (draft == null) {
@@ -120,7 +120,7 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
                 this,
                 carregando -> {
                     if (carregando != null && carregando && !navegando) {
-                        setBadge("Lendo o verso e identificando os ingredientes...");
+                        setBadge("Lendo os ingredientes...");
                     }
                 }
         );
@@ -176,7 +176,7 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
         Log.d(TAG, "OCR_BACK_CONCLUIDO chars=" + texto.length()
                 + " lines=" + result.getLines().size());
 
-        setBadge("Organizando ingredientes e informações do rótulo...");
+        setBadge("Organizando os ingredientes...");
 
         final ScanBackData backData;
 
@@ -217,7 +217,7 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
         draft.setBackData(backData);
         draft.setStatus(ScanSubmissionDraft.STATUS_BACK_PROCESSED);
 
-        setBadge("Verso processado. Abrindo a próxima etapa...");
+        setBadge("Verso pronto. Continuando...");
 
         // IMPORTANTE: não esperar clique do usuário.
         mainHandler.postDelayed(

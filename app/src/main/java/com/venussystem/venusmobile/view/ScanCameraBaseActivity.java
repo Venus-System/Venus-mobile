@@ -68,10 +68,10 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                         if (granted) {
                             startCamera();
                         } else {
-                            setInstruction("Precisamos da câmera para fotografar o produto.");
+                            setInstruction("Precisamos da câmera para escanear.");
                             Toast.makeText(
                                     this,
-                                    "Permissão da câmera é necessária para o scan.",
+                                    "Permita a câmera para escanear.",
                                     Toast.LENGTH_LONG
                             ).show();
                         }
@@ -89,17 +89,17 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
 
     /** Mensagem após a câmera ficar pronta. */
     protected String readyInstruction() {
-        return "Centralize o rótulo. Se o texto estiver pequeno, aproxime; se cortar as bordas, afaste.";
+        return "Centralize o rótulo. Aproxime para ler; afaste se cortar.";
     }
 
     /** Mensagem durante o ajuste de foco por toque. */
     protected String focusingInstruction() {
-        return "Ajustando o foco no rótulo...";
+        return "Ajustando o foco...";
     }
 
     /** Mensagem quando o foco termina com sucesso. */
     protected String focusedInstruction() {
-        return "Foco ajustado. Capture quando o texto estiver nítido e o rótulo inteiro dentro da moldura.";
+        return "Foco ajustado. Deixe o texto nítido e o rótulo inteiro.";
     }
 
     /** Mensagem enquanto a foto é preparada para a próxima etapa. */
@@ -206,10 +206,10 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                         }
 
                         if (!cameraDisponivel) {
-                            setInstruction("A câmera traseira não está disponível neste aparelho.");
+                            setInstruction("Câmera traseira indisponível.");
                             Toast.makeText(
                                     this,
-                                    "A câmera traseira não está disponível neste aparelho.",
+                                    "Câmera traseira indisponível.",
                                     Toast.LENGTH_LONG
                             ).show();
                             return;
@@ -251,7 +251,7 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                                 "Erro ao obter ProcessCameraProvider.",
                                 exception
                         );
-                        setInstruction("Não foi possível iniciar a câmera. Tente novamente.");
+                        setInstruction("Não foi possível iniciar a câmera.");
                         Toast.makeText(
                                 this,
                                 "Não foi possível iniciar a câmera.",
@@ -265,7 +265,7 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                                 "Inicialização da câmera interrompida.",
                                 exception
                         );
-                        setInstruction("A inicialização da câmera foi interrompida.");
+                        setInstruction("A câmera foi interrompida.");
                         Toast.makeText(
                                 this,
                                 "Inicialização da câmera interrompida.",
@@ -278,10 +278,10 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                                 "Configuração da câmera incompatível.",
                                 exception
                         );
-                        setInstruction("A câmera não é compatível com esta configuração.");
+                        setInstruction("Câmera incompatível.");
                         Toast.makeText(
                                 this,
-                                "A configuração da câmera não é compatível com este aparelho.",
+                                "A câmera não é compatível.",
                                 Toast.LENGTH_LONG
                         ).show();
 
@@ -292,7 +292,7 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                                 "Falha inesperada ao configurar a câmera.",
                                 exception
                         );
-                        setInstruction("Não foi possível preparar a câmera. Tente novamente.");
+                        setInstruction("Não foi possível preparar a câmera.");
                         Toast.makeText(
                                 this,
                                 "Não foi possível preparar a câmera.",
@@ -369,7 +369,7 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
         if (imageCapture == null) {
             Toast.makeText(
                     this,
-                    "A câmera ainda está preparando a captura.",
+                    "Preparando a câmera...",
                     Toast.LENGTH_SHORT
             ).show();
             return;
@@ -380,7 +380,7 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
         if (!outputDir.exists() && !outputDir.mkdirs()) {
             Toast.makeText(
                     this,
-                    "Não foi possível preparar o arquivo da foto.",
+                    "Não foi possível preparar a foto.",
                     Toast.LENGTH_SHORT
             ).show();
             return;
@@ -391,7 +391,7 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
         if (photoFile.exists() && !photoFile.delete()) {
             Toast.makeText(
                     this,
-                    "Não foi possível preparar a nova foto.",
+                    "Não foi possível preparar a foto.",
                     Toast.LENGTH_SHORT
             ).show();
             return;
@@ -426,7 +426,7 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                             setInstruction(readyInstruction());
                             Toast.makeText(
                                     ScanCameraBaseActivity.this,
-                                    "A foto não foi gravada corretamente.",
+                                    "A foto não foi salva.",
                                     Toast.LENGTH_SHORT
                             ).show();
                             return;
@@ -458,13 +458,13 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
 
                         android.util.Log.e(
                                 "VENUS_CAMERA",
-                                "Erro ao capturar foto.",
+                                "Erro ao capturar a foto.",
                                 exception
                         );
 
                         Toast.makeText(
                                 ScanCameraBaseActivity.this,
-                                "Não foi possível capturar a foto.",
+                                "Não foi possível salvar a foto.",
                                 Toast.LENGTH_SHORT
                         ).show();
                     }

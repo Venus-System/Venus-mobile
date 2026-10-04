@@ -25,7 +25,9 @@ public final class ScanSubmissionMapper {
     private static final Set<String> GENERIC_FRONT_WORDS = new HashSet<>(Arrays.asList(
             "CREME", "LOCAO", "GEL", "SPRAY", "AEROSOL", "FRESH", "ORIGINAL",
             "PROTECAO", "ANTITRANSPIRANTE", "ANTIPERSPIRANTE", "PERFUME", "MASCULINO",
-            "FEMININO", "INFANTIL", "DESODORANTE", "HIDRATANTE", "NOVO", "NOVA"
+            "FEMININO", "INFANTIL", "DESODORANTE", "HIDRATANTE", "NOVO", "NOVA",
+            "SHAMPOO", "CONDICIONADOR", "SABONETE", "LOÇÃO", "CREME", "BODY",
+            "LOTION", "DEODORANT", "PERFUME", "KIT", "PRODUTO"
     ));
 
     public static ScanSessionRequest prepare(ScanSubmissionDraft draft, String uid,
@@ -116,6 +118,13 @@ public final class ScanSubmissionMapper {
 
     private static String bestFrontCandidate(List<String> values) {
         if (values == null || values.isEmpty()) return null;
+        boolean hasInformativeCandidate = false;
+        for (String candidate : values) {
+            if (isInformativeFrontCandidate(candidate)) {
+                hasInformativeCandidate = true;
+                break;
+            }
+        }
         String best = null;
         int bestScore = Integer.MIN_VALUE;
         for (int index = 0; index < values.size(); index++) {
@@ -124,13 +133,16 @@ public final class ScanSubmissionMapper {
             String value = candidate.trim().replaceAll("\\s+", " ");
             if (value.length() < 2 || value.length() > 80 || !value.matches(".*[A-Za-zÀ-ÿ].*")) continue;
             String normalized = value.toUpperCase(Locale.ROOT);
+            if (hasInformativeCandidate && !isInformativeFrontCandidate(value)) {
+                continue;
+            }
             int score = 100 - index * 3;
             int words = normalized.split("\\s+").length;
             score += Math.min(words, 3) * 4;
             if (value.length() <= 40) score += 5;
             if (normalized.matches(".*\\d.*")) score -= 12;
             for (String token : normalized.split("\\s+")) {
-                if (GENERIC_FRONT_WORDS.contains(token)) score -= 9;
+                if (GENERIC_FRONT_WORDS.contains(token)) score -= 18;
             }
             if (score > bestScore) {
                 best = value;
@@ -138,5 +150,19 @@ public final class ScanSubmissionMapper {
             }
         }
         return best;
+    }
+
+    private static boolean isInformativeFrontCandidate(String candidate) {
+        if (candidate == null) return false;
+        String normalized = candidate.trim()
+                .replaceAll("\\s+", " ")
+                .toUpperCase(Locale.ROOT);
+        if (normalized.length() < 2) return false;
+        for (String token : normalized.split("\\s+")) {
+            String clean = token.replaceAll("[^A-ZÀ-ÿ]", "");
+            if (clean.isEmpty()) continue;
+            if (!GENERIC_FRONT_WORDS.contains(clean)) return true;
+        }
+        return false;
     }
 }
