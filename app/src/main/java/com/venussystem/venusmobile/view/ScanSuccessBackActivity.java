@@ -149,7 +149,7 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
         File file = new File(photoPath);
 
         if (!file.exists() || !file.isFile() || file.length() <= 0) {
-            Log.e(TAG, "FOTO BACK INVALIDA: " + photoPath);
+            Log.e(TAG, "FOTO BACK INVALIDA");
             fecharFluxoParaPrincipal();
             return;
         }
@@ -173,11 +173,8 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
 
         ocrProcessado = true;
 
-        Log.d(TAG, "==============================");
-        Log.d(TAG, "OCR BACK CONCLUÍDO");
-        Log.d(TAG, "==============================");
-        Log.d(TAG, "TEXTO BACK:");
-        Log.d(TAG, texto);
+        Log.d(TAG, "OCR_BACK_CONCLUIDO chars=" + texto.length()
+                + " lines=" + result.getLines().size());
 
         setBadge("Organizando ingredientes e informações do rótulo...");
 
@@ -208,21 +205,11 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
                         + backData.getIngredients().size()
         );
 
-        for (int i = 0; i < backData.getIngredients().size(); i++) {
-            Log.d(
-                    TAG,
-                    "INGREDIENTE " + (i + 1) + ": "
-                            + backData.getIngredients()
-                            .get(i)
-                            .getNormalizedName()
-            );
-        }
-
-        Log.d(TAG, "FABRICANTE: " + backData.getManufacturer());
-        Log.d(TAG, "LOTE: " + backData.getBatch());
-        Log.d(TAG, "REGISTRO: " + backData.getRegistrationNumber());
-        Log.d(TAG, "CONTEÚDO: " + backData.getNetContent());
-        Log.d(TAG, "BARCODE: " + backData.getBarcode());
+        Log.d(TAG, "BACK_FIELDS_EXTRACTED manufacturer=" + (!backData.getManufacturer().isEmpty())
+                + " batch=" + (!backData.getBatch().isEmpty())
+                + " registration=" + (!backData.getRegistrationNumber().isEmpty())
+                + " content=" + (!backData.getNetContent().isEmpty())
+                + " barcode=" + (!backData.getBarcode().isEmpty()));
 
         draft.setBackPhotoPath(photoPath);
         draft.setBackOcrText(texto);

@@ -1,7 +1,7 @@
 package com.venussystem.venusmobile.view;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog;
 import android.content.Intent;
 import android.widget.Toast;
 
@@ -16,9 +16,11 @@ import com.venussystem.venusmobile.repository.ScanDraftStore;
 import com.venussystem.venusmobile.repository.ScanSubmissionRepository;
 import com.venussystem.venusmobile.repository.api.ScanApiException;
 import com.venussystem.venusmobile.repository.api.dto.ScanUploadSignaturesResponse;
+import com.venussystem.venusmobile.domain.scan.ScanPhotoQualityPolicy;
+import com.venussystem.venusmobile.view.dialog.ScanStatusDialog;
 
 /**
- * Persiste a coleta e solicita assinaturas. Ainda não envia fotos ou cadastra no MongoDB.
+ * Persiste a coleta, envia as fotos e cadastra o scan para análise administrativa.
  */
 public final class ScanFlowFinisher {
 
@@ -46,6 +48,8 @@ public final class ScanFlowFinisher {
             @NonNull Activity activity,
             @NonNull ScanSubmissionDraft draft
     ) {
+        android.util.Log.d("VENUS_SCAN_PIPELINE", "FINISH_REQUEST scanId=" + draft.getScanId()
+                + " hasBack=" + (draft.getBackData() != null));
         Usuario owner = new AutenticacaoRepository().usuarioLogado();
         if (owner == null) {
             Toast.makeText(activity, "Entre na conta que iniciou o scan. Nada foi enviado.", Toast.LENGTH_LONG).show();
@@ -56,14 +60,26 @@ public final class ScanFlowFinisher {
                 new ScanSubmissionRepository.Callback() {
                     @Override public void saved(ScanDraftStore.SavedDraft saved) {
                         if (activity.isFinishing() || activity.isDestroyed()) return;
+                        android.util.Log.d("VENUS_SCAN_PIPELINE", "DRAFT_SAVED scanId="
+                                + saved.draft.getScanId());
+                        if (ScanPhotoQualityPolicy.backgroundIsAdvisory(saved.draft.getPhotoQuality())) {
+                            Toast.makeText(activity,
+                                    "A iluminação ou o fundo não estão ideais; continuaremos e faremos uma revisão adicional.",
+                                    Toast.LENGTH_LONG).show();
+                        }
                         draft.setStatus(ScanSubmissionDraft.STATUS_WAITING_UPLOAD);
                         solicitarAssinaturas(activity, repository, saved);
                     }
                     @Override public void failed(Exception exception) {
                         if (activity.isFinishing() || activity.isDestroyed()) return;
+                        boolean qualityBlocked = exception instanceof IllegalArgumentException
+                                && exception.getMessage() != null
+                                && exception.getMessage().startsWith("A qualidade das fotos");
                         new android.app.AlertDialog.Builder(activity)
                                 .setTitle("Não foi possível salvar o rascunho")
-                                .setMessage("Nada foi enviado. Verifique a conta e o espaço disponível no aparelho.")
+                                .setMessage(qualityBlocked
+                                        ? "A foto está muito desfocada ou com iluminação extrema. Tire novas fotos do rótulo e tente novamente. Nada foi enviado."
+                                        : "Nada foi enviado. Verifique a conta e o espaço disponível no aparelho.")
                                 .setPositiveButton("Tentar novamente", (dialog, which) -> finalizar(activity, draft))
                                 .setNegativeButton("Voltar", (dialog, which) -> activity.finish())
                                 .show();
@@ -73,40 +89,150 @@ public final class ScanFlowFinisher {
 
     private static void solicitarAssinaturas(Activity activity, ScanSubmissionRepository repository,
                                              ScanDraftStore.SavedDraft saved) {
+        solicitarAssinaturas(activity, repository, saved, false, false);
+    }
+
+    private static void solicitarAssinaturas(Activity activity, ScanSubmissionRepository repository,
+            ScanDraftStore.SavedDraft saved, boolean connectAccount, boolean accountAttempted) {
         if (activity.isFinishing() || activity.isDestroyed()) return;
-        AlertDialog progress = new AlertDialog.Builder(activity)
-                .setTitle("Solicitando autorização para as fotos")
-                .setMessage("Fotos e dados salvos no aparelho. Aguardando a API; isso pode levar alguns minutos.")
-                .setCancelable(false)
-                .setNegativeButton("Voltar ao início", (dialog, which) -> abrirPrincipal(activity))
-                .create();
+        AlertDialog progress = ScanStatusDialog.create(activity,
+                connectAccount ? "Conectando sua conta" : "Preparando seu scan",
+                "Aguarde enquanto verificamos sua conta.",
+                true, null, null, () -> abrirPrincipal(activity));
         showWhileAlive(activity, progress);
-        repository.requestUploadSignatures(saved.firebaseUid, saved.draft.getScanId(),
-                new ScanSubmissionRepository.SignaturesCallback() {
+        ScanSubmissionRepository.SignaturesCallback callback = new ScanSubmissionRepository.SignaturesCallback() {
                     @Override public void ready(ScanUploadSignaturesResponse signatures) {
                         if (activity.isFinishing() || activity.isDestroyed()) return;
-                        progress.dismiss();
-                        ScanTutorialState.markCompleted(activity);
-                        // Do not persist expiring signatures or claim the photos were uploaded.
-                        Toast.makeText(activity,
-                                "Assinaturas de frente e verso recebidas. Fotos e dados ainda não foram enviados.",
-                                Toast.LENGTH_LONG).show();
-                        abrirPrincipal(activity);
+                        android.util.Log.d("VENUS_SCAN_PIPELINE", "SIGNATURES_READY scanId="
+                                + saved.draft.getScanId());
+                        ScanStatusDialog.updateMessage(progress, "Preparando o envio das fotos...");
+                        repository.uploadPhotos(saved.firebaseUid, saved.draft.getScanId(), signatures,
+                                new ScanSubmissionRepository.UploadCallback() {
+                                    @Override public void progress(String side) {
+                                        if (activity.isFinishing() || activity.isDestroyed()) return;
+                                        ScanStatusDialog.updateMessage(progress, "front".equals(side)
+                                                ? "Enviando a foto da frente..." : "Enviando a foto do verso...");
+                                    }
+                                    @Override public void uploaded(ScanDraftStore.SavedDraft result) {
+                                        if (activity.isFinishing() || activity.isDestroyed()) return;
+                                        android.util.Log.d("VENUS_SCAN_PIPELINE", "PHOTOS_UPLOADED_BEGIN_CATALOG scanId="
+                                                + result.draft.getScanId());
+                                        progress.dismiss();
+                                        consultarIngredientes(activity, repository, result);
+                                    }
+                                    @Override public void failed(Exception error) {
+                                        if (activity.isFinishing() || activity.isDestroyed()) return;
+                                        progress.dismiss();
+                                        AlertDialog failure = ScanStatusDialog.create(activity,
+                                                "O envio não foi concluído", "Tente novamente. As fotos já confirmadas não serão reenviadas.",
+                                                false, "Tentar novamente", () -> solicitarAssinaturas(activity, repository, saved,
+                                                        false, accountAttempted || connectAccount),
+                                                () -> abrirPrincipal(activity));
+                                        showWhileAlive(activity, failure);
+                                    }
+                                });
                     }
                     @Override public void failed(Exception exception) {
                         if (activity.isFinishing() || activity.isDestroyed()) return;
                         progress.dismiss();
-                        String detail = exception instanceof ScanApiException ? exception.getMessage()
-                                : "Não foi possível recuperar o rascunho ou autenticar a solicitação.";
-                        AlertDialog failure = new AlertDialog.Builder(activity)
-                                .setTitle("Não foi possível obter as assinaturas")
-                                .setMessage(detail + "\n\nFotos e dados continuam salvos neste aparelho. Nenhum produto foi enviado.")
-                                .setCancelable(false)
-                                .setPositiveButton("Tentar novamente", (dialog, which) ->
-                                        solicitarAssinaturas(activity, repository, saved))
-                                .setNegativeButton("Voltar ao início", (dialog, which) -> abrirPrincipal(activity))
-                                .create();
+                        ScanApiException failureInfo = exception instanceof ScanApiException
+                                ? (ScanApiException) exception : null;
+                        boolean forbidden = failureInfo != null && failureInfo.kind == ScanApiException.Kind.FORBIDDEN;
+                        boolean alreadyAttempted = accountAttempted || connectAccount;
+                        boolean offerConnection = forbidden && !alreadyAttempted;
+                        String title = "Não conseguimos continuar";
+                        String message = "Tente novamente em instantes.";
+                        if (forbidden) {
+                            title = offerConnection ? "Vamos conectar sua conta?" : "Sua conta precisa de atenção";
+                            message = offerConnection
+                                    ? "Use seu nome e e-mail para concluir o cadastro Venus e continuar."
+                                    : "Peça ao responsável pelo cadastro para verificar seu acesso.";
+                        } else if (failureInfo != null && failureInfo.kind == ScanApiException.Kind.AUTH) {
+                            title = "Entre novamente na sua conta";
+                            message = "Volte ao início e entre com a mesma conta deste scan.";
+                        } else if (failureInfo != null && (failureInfo.kind == ScanApiException.Kind.NETWORK
+                                || failureInfo.kind == ScanApiException.Kind.TIMEOUT)) {
+                            title = "A conexão não respondeu";
+                            message = "Verifique sua internet e tente novamente.";
+                        }
+                        boolean authError = failureInfo != null && failureInfo.kind == ScanApiException.Kind.AUTH;
+                        AlertDialog failure = ScanStatusDialog.create(activity, title, message, false,
+                                offerConnection ? "Conectar minha conta" : "Verificar novamente",
+                                authError ? null : () -> solicitarAssinaturas(activity, repository, saved,
+                                        offerConnection, alreadyAttempted || offerConnection),
+                                () -> abrirPrincipal(activity));
                         showWhileAlive(activity, failure);
+                    }
+                };
+        if (connectAccount) repository.connectAccountAndRequestSignatures(saved.firebaseUid, saved.draft.getScanId(), callback);
+        else repository.requestUploadSignatures(saved.firebaseUid, saved.draft.getScanId(), callback);
+    }
+
+    private static void consultarIngredientes(Activity activity, ScanSubmissionRepository repository,
+                                               ScanDraftStore.SavedDraft saved) {
+        if (activity.isFinishing() || activity.isDestroyed()) return;
+        android.util.Log.d("VENUS_SCAN_PIPELINE", "CATALOG_REQUEST scanId=" + saved.draft.getScanId());
+        AlertDialog progress = ScanStatusDialog.create(activity, "Consultando ingredientes",
+                "Verificando os nomes no catálogo Venus.", true, null, null, () -> abrirPrincipal(activity));
+        showWhileAlive(activity, progress);
+        repository.checkIngredients(saved.firebaseUid, saved.draft.getScanId(), new ScanSubmissionRepository.Callback() {
+            @Override public void saved(ScanDraftStore.SavedDraft result) {
+                if (activity.isFinishing() || activity.isDestroyed()) return;
+                android.util.Log.d("VENUS_SCAN_PIPELINE", "CATALOG_SAVED scanId=" + result.draft.getScanId());
+                progress.dismiss();
+                enviarParaMongo(activity, repository, result, false);
+            }
+            @Override public void failed(Exception error) {
+                if (activity.isFinishing() || activity.isDestroyed()) return;
+                android.util.Log.w("VENUS_SCAN_PIPELINE", "CATALOG_FAILED scanId=" + saved.draft.getScanId()
+                        + " type=" + error.getClass().getSimpleName()
+                        + " kind=" + (error instanceof ScanApiException
+                        ? ((ScanApiException) error).kind : "LOCAL")
+                        + " http=" + (error instanceof ScanApiException
+                        ? ((ScanApiException) error).httpCode : 0));
+                progress.dismiss();
+                String message = error instanceof ScanApiException && ((ScanApiException) error).kind == ScanApiException.Kind.AUTH
+                        ? "Entre com a conta que iniciou o scan. Suas fotos estão salvas."
+                        : "Confira a conexão e tente novamente. Suas fotos estão salvas.";
+                if (error instanceof ScanApiException && ((ScanApiException) error).kind != ScanApiException.Kind.AUTH)
+                    message = "O catálogo está indisponível. Tente novamente mais tarde. Suas fotos estão salvas.";
+                showWhileAlive(activity, ScanStatusDialog.create(activity, "Consulta não concluída", message,
+                        false, "Tentar novamente", () -> consultarIngredientes(activity, repository, saved),
+                        () -> abrirPrincipal(activity)));
+            }
+        });
+    }
+
+    private static void enviarParaMongo(Activity activity, ScanSubmissionRepository repository,
+                                         ScanDraftStore.SavedDraft saved, boolean retry) {
+        if (activity.isFinishing() || activity.isDestroyed()) return;
+        AlertDialog progress = ScanStatusDialog.create(activity, "Enviando para análise",
+                "Salvando o scan com as fotos e os dados do rótulo.", true, null, null,
+                () -> abrirPrincipal(activity));
+        showWhileAlive(activity, progress);
+        repository.submitToMongo(saved.firebaseUid, saved.draft.getScanId(), activity.getApplicationContext(),
+                new ScanSubmissionRepository.SubmissionCallback() {
+                    @Override public void submitted(ScanDraftStore.SavedDraft result) {
+                        if (activity.isFinishing() || activity.isDestroyed()) return;
+                        progress.dismiss();
+                        ScanTutorialState.markCompleted(activity);
+                        showWhileAlive(activity, ScanStatusDialog.create(activity, "Scan enviado",
+                                "O produto foi enviado para análise administrativa.", false,
+                                null, null, () -> abrirPrincipal(activity)));
+                    }
+                    @Override public void failed(Exception error) {
+                        if (activity.isFinishing() || activity.isDestroyed()) return;
+                        progress.dismiss();
+                        ScanApiException apiError = error instanceof ScanApiException ? (ScanApiException) error : null;
+                        String message = apiError != null && apiError.kind == ScanApiException.Kind.FORBIDDEN
+                                ? "Sua conta não está habilitada para enviar este scan."
+                                : apiError != null && (apiError.kind == ScanApiException.Kind.NETWORK
+                                || apiError.kind == ScanApiException.Kind.TIMEOUT)
+                                ? "A conexão não respondeu. Suas fotos continuam salvas."
+                                : "Não foi possível confirmar o envio. Suas fotos continuam salvas.";
+                        showWhileAlive(activity, ScanStatusDialog.create(activity, "Envio não concluído", message,
+                                false, "Tentar novamente", () -> enviarParaMongo(activity, repository, saved, true),
+                                () -> abrirPrincipal(activity)));
                     }
                 });
     }

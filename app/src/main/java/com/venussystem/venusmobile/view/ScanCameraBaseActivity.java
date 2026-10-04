@@ -432,10 +432,7 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                             return;
                         }
 
-                        android.util.Log.d(
-                                "VENUS_CAMERA",
-                                "Foto salva: " + photoFile.getAbsolutePath()
-                        );
+                        android.util.Log.d("VENUS_CAMERA", "FOTO_SALVA");
 
                         // Um pequeno atraso permite ao usuário perceber a mensagem
                         // antes da transição para a tela de processamento.

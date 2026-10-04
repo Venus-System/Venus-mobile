@@ -18,7 +18,7 @@ $jars = $artifacts | ForEach-Object {
         Select-Object -First 1 -ExpandProperty FullName
 }
 $transformed = & rg --files "$cache\9.1.0\transforms" -g classes.jar
-$needed = 'firebase-auth-24.2.0|firebase-auth-interop-20.0.0|firebase-common-22.2.0|play-services-tasks-18.4.0|play-services-basement-|appcompat-1.7.1|activity-1.13.0|core-1.18.0|fragment-1.8.9|lifecycle-.*release|lifecycle-livedata.*2.9.4|savedstate-release|loader-'
+$needed = 'firebase-auth-24.2.0|firebase-auth-interop-20.0.0|firebase-common-22.2.0|play-services-tasks-18.4.0|play-services-basement-|appcompat-1.7.1|activity-1.13.0|core-1.18.0|fragment-1.8.9|lifecycle-.*release|lifecycle-livedata.*2.9.4|savedstate-release|loader-|navigationevent'
 $jars += $transformed | Where-Object { $_ -match $needed } |
     Group-Object { Split-Path (Split-Path (Split-Path $_ -Parent) -Parent) -Leaf } |
     ForEach-Object { $_.Group[0] }
@@ -29,17 +29,22 @@ $jars += "$projectRoot\app\build\intermediates\compile_and_runtime_r_class_jar\d
 $classpath = $jars -join ';'
 $sources = @("$main\repository\api\FirebaseScanAuthSession.java",
     "$main\repository\api\ScanApiException.java", "$main\repository\api\AuthenticatedScanClient.java",
+    "$main\repository\api\ScanSubmissionApi.java",
+    "$main\repository\api\CloudinaryUploadClient.java", "$main\repository\api\ScanUploadException.java",
+    "$main\repository\ScanPhotoUploadCoordinator.java", "$main\repository\ScanDraftStore.java",
     "$main\repository\api\dto\ScanUploadSignaturesResponse.java",
     "$main\repository\SessaoUsuario.java", "$main\repository\SessaoFirebase.java",
     "$main\repository\api\TokenFirebase.java", "$main\repository\api\VenusApi.java",
     "$main\repository\ProdutoRepository.java",
     "$main\repository\api\ClienteApi.java", "$main\repository\ScanSubmissionRepository.java",
     "$main\view\util\ScanPhotoQualityAnalyzer.java", "$main\model\ScanPhotoQuality.java",
+    "$main\domain\scan\ScanPhotoQualityPolicy.java",
     "$main\model\ScanSubmissionDraft.java",
-    "$main\view\ScanFlowFinisher.java")
+    "$main\view\ScanFlowFinisher.java", "$main\view\dialog\ScanStatusDialog.java")
 $sources += Get-ChildItem -LiteralPath "$main\repository\api\dto" -Filter '*.java' |
     Select-Object -ExpandProperty FullName
 $sources = $sources | Select-Object -Unique
+$sources += "$main\repository\ScanIngredientCatalog.java", "$main\repository\api\ScanIngredientApi.java"
 & "$JavaHome\bin\javac.exe" --release 11 -encoding UTF-8 -cp $classpath -d $output @sources
 if ($LASTEXITCODE -ne 0) { throw 'Android integration compilation failed.' }
 Write-Output 'Auth, client, repository and finisher compiled. Full Activities/APK require Gradle.'

@@ -19,15 +19,25 @@ $classpath = (@($android) + $libs) -join ';'
 $main = Join-Path $projectRoot 'app\src\main\java\com\venussystem\venusmobile'
 $sources = @('ScanSubmissionDraft','ScanPhotoQuality','ScanBackData','ScanBackIngredientCandidate',
     'ScanCosmeticClassification','ScanFrontData','ScanOcrResult','ScanOcrToken') | ForEach-Object { "$main\model\$_.java" }
-$sources += @('ScanSubmissionMapper','ScanSubmissionValidator','ScanDraftStore') |
+$sources += @('ScanSubmissionMapper','ScanSubmissionValidator','ScanDraftStore','ScanPhotoUploadCoordinator') |
     ForEach-Object { "$main\repository\$_.java" }
-$sources += @('ScanAuthSession','ScanSubmissionApi','ScanApiException','AuthenticatedScanClient') |
+$sources += @('ScanAuthSession','ScanSubmissionApi','ScanApiException','AuthenticatedScanClient','CloudinaryUploadClient','ScanUploadException') |
     ForEach-Object { "$main\repository\api\$_.java" }
-$sources += @('ScanSessionRequest','ScanSessionResponse','ScanUploadSignaturesResponse') |
+$sources += @('ScanSessionRequest','ScanSessionResponse','ScanUploadSignaturesResponse','UserRequest','UserResponse','ScanUploadedPhoto') |
     ForEach-Object { "$main\repository\api\dto\$_.java" }
 $testRoot = "$projectRoot\app\src\test\java\com\venussystem\venusmobile\repository"
-$sources += "$testRoot\ScanSubmissionPreparationTest.java", "$testRoot\AuthenticatedScanClientTest.java"
+$sources += "$testRoot\ScanSubmissionPreparationTest.java", "$testRoot\AuthenticatedScanClientTest.java",
+    "$testRoot\ScanCatalogCharacterizationTest.java"
+$sources += "$main\model\Produto.java", "$main\model\ScanFrontData.java", "$main\model\ScanProductMatch.java",
+    "$main\view\util\ScanTextNormalizer.java"
+$sources += @('ScanCatalogRules','ScanCatalogText','ScanCatalogScoring','ScanCatalogMatcher') |
+    ForEach-Object { "$main\repository\$_.java" }
+$sources += "$PSScriptRoot\scan-back-test-support\android\util\Log.java"
+$sources += "$testRoot\CloudinaryUploadTest.java", "$testRoot\ScanIngredientCatalogTest.java",
+    "$main\repository\ScanIngredientCatalog.java", "$main\repository\api\ScanIngredientApi.java"
+$sources += Get-ChildItem -LiteralPath "$main\domain\scan" -Filter '*.java' |
+    Select-Object -ExpandProperty FullName
 & "$JavaHome\bin\javac.exe" --release 11 -encoding UTF-8 -cp $classpath -d $output @sources
 if ($LASTEXITCODE -ne 0) { throw 'Submission test compilation failed.' }
-& "$JavaHome\bin\java.exe" -cp "$output;$classpath" org.junit.runner.JUnitCore com.venussystem.venusmobile.repository.ScanSubmissionPreparationTest com.venussystem.venusmobile.repository.AuthenticatedScanClientTest
+& "$JavaHome\bin\java.exe" -cp "$output;$classpath" org.junit.runner.JUnitCore com.venussystem.venusmobile.repository.ScanSubmissionPreparationTest com.venussystem.venusmobile.repository.AuthenticatedScanClientTest com.venussystem.venusmobile.repository.CloudinaryUploadTest com.venussystem.venusmobile.repository.ScanCatalogCharacterizationTest com.venussystem.venusmobile.repository.ScanIngredientCatalogTest
 if ($LASTEXITCODE -ne 0) { throw 'Submission tests failed.' }

@@ -238,14 +238,14 @@ public class ScanViewModel extends AndroidViewModel {
 
         android.util.Log.d(
                 "VENUS_MATCH",
-                "MARCAS: "
-                        + frontData.getBrandCandidates()
+                "FRONT_CANDIDATES brands="
+                        + frontData.getBrandCandidates().size()
         );
 
         android.util.Log.d(
                 "VENUS_MATCH",
-                "PRODUTOS: "
-                        + frontData.getProductCandidates()
+                "products="
+                        + frontData.getProductCandidates().size()
         );
 
         productMatch.setValue(null);

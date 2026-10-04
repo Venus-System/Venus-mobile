@@ -252,4 +252,24 @@ public class ScanSubmissionDraft implements Serializable {
             if (finishedAt == null) finishedAt = OffsetDateTime.now().toString();
         }
     }
+
+    /**
+     * Removes the local copy of the label after the server acknowledged the
+     * submission. The server response remains as an idempotency receipt.
+     */
+    public void redactSensitiveDataAfterSubmission() {
+        frontPhotoPath = null;
+        frontOcrText = "";
+        if (frontOcrLines != null) frontOcrLines.clear();
+        if (brandCandidates != null) brandCandidates.clear();
+        if (productCandidates != null) productCandidates.clear();
+        if (presentationCandidates != null) presentationCandidates.clear();
+        capacity = "";
+        concentration = "";
+        classification = null;
+        backPhotoPath = null;
+        backOcrText = "";
+        if (backOcrLines != null) backOcrLines.clear();
+        backData = null;
+    }
 }

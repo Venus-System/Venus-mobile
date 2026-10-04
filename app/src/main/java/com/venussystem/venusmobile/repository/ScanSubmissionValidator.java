@@ -1,6 +1,7 @@
 package com.venussystem.venusmobile.repository;
 
 import com.venussystem.venusmobile.repository.api.dto.ScanSessionRequest;
+import com.venussystem.venusmobile.domain.scan.ScanIngredientPolicy;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -10,10 +11,43 @@ import java.util.UUID;
 
 /** Rejects invalid data rather than silently truncating OCR to fit the server. */
 public final class ScanSubmissionValidator {
+
     private ScanSubmissionValidator() { }
+
+    /**
+     * Validates only the ingredient portion before any future Mongo POST.
+     * OCR text is preserved for audit, but obvious package/company residue
+     * must never be promoted into the ingredient array or sent downstream.
+     */
+    public static void validateIngredientQuality(ScanSessionRequest r) {
+        require(r != null, "Submissão ausente.");
+        require(r.ingredients != null, "Lista de ingredientes ausente.");
+        ScanSessionRequest.BackExtracted back = r.ocr == null ? null : r.ocr.back == null
+                ? null : r.ocr.back.extracted;
+        String text = back == null ? "" : back.ingredientsText;
+        if (text == null || text.trim().isEmpty() || r.ingredients.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "A composição foi lida, mas nenhum ingrediente confiável foi separado.");
+        }
+        require(r.ingredients.size() <= 200, "Limite de 200 ingredientes excedido.");
+        for (ScanSessionRequest.Ingredient ingredient : r.ingredients) {
+            if (ingredient == null || ingredient.rawName == null) {
+                throw new IllegalArgumentException("Ingrediente inválido.");
+            }
+            String name = ingredient.rawName.trim();
+            require(!name.isEmpty() && name.length() <= 300, "Nome de ingrediente inválido.");
+            if (ScanIngredientPolicy.hasAdministrativeText(name)) {
+                throw new IllegalArgumentException(
+                        "Um ingrediente contém texto administrativo; revise o verso antes do cadastro.");
+            }
+            // Unknown OCR names are valid draft candidates. The API matcher marks them NEW
+            // and the administrator can LINK, CREATE or DISCARD them during review.
+        }
+    }
 
     public static void validate(ScanSessionRequest r, boolean requireUploadedImages) {
         require(r != null, "Submissão ausente.");
+        validateIngredientQuality(r);
         try { require(UUID.fromString(r.scanId).toString().equals(r.scanId), "scanId inválido."); }
         catch (RuntimeException e) { throw new IllegalArgumentException("scanId inválido."); }
         required(r.firebaseUid, 128, "Usuário Firebase");

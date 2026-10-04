@@ -2,6 +2,8 @@ package com.venussystem.venusmobile.repository;
 
 import com.google.gson.Gson;
 import com.venussystem.venusmobile.model.ScanSubmissionDraft;
+import com.venussystem.venusmobile.repository.api.dto.ScanUploadedPhoto;
+import com.venussystem.venusmobile.repository.api.dto.ScanSessionResponse;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +30,9 @@ public final class ScanDraftStore {
         public String firebaseUid;
         public ScanSubmissionDraft draft;
         public String state = "WAITING_UPLOAD";
+        public ScanUploadedPhoto frontUpload, backUpload;
+        public ScanIngredientCatalog.Report ingredientCatalog;
+        public ScanSessionResponse submission;
     }
 
     /** Immutable initial snapshot. Repeated saves never overwrite images under the same scanId. */
@@ -73,8 +78,13 @@ public final class ScanDraftStore {
                         || saved.draft == null || !scanId.equals(saved.draft.getScanId()))
                     throw new IOException("Rascunho incompatível ou de outra conta.");
                 // Do not trust serialized absolute paths; derive from the validated identity.
-                saved.draft.setFrontPhotoPath(directory.resolve("front.photo").toString());
-                saved.draft.setBackPhotoPath(directory.resolve("back.photo").toString());
+                if (saved.submission == null && !"SUBMITTED".equals(saved.state)) {
+                    saved.draft.setFrontPhotoPath(directory.resolve("front.photo").toString());
+                    saved.draft.setBackPhotoPath(directory.resolve("back.photo").toString());
+                } else {
+                    saved.draft.setFrontPhotoPath("");
+                    saved.draft.setBackPhotoPath("");
+                }
                 return saved;
             } catch (RuntimeException e) {
                 throw new IOException("Não foi possível ler o rascunho salvo.", e);
@@ -90,11 +100,83 @@ public final class ScanDraftStore {
             for (Path entry : (Iterable<Path>) entries::iterator) {
                 if (Files.isRegularFile(entry.resolve("draft.json"))) {
                     SavedDraft saved = read(uid, entry.getFileName().toString());
-                    if ("WAITING_UPLOAD".equals(saved.state)) result.add(saved);
+                    if ("WAITING_UPLOAD".equals(saved.state) || "PHOTOS_UPLOADED".equals(saved.state)) result.add(saved);
                 }
             }
         }
         return result;
+    }
+
+    /** Atomically acknowledges just one side, preserving the immutable OCR/photo snapshot. */
+    public SavedDraft recordUpload(String uid, String scanId, String side, ScanUploadedPhoto receipt) throws IOException {
+        synchronized (ScanDraftStore.class) {
+            if (receipt == null) throw new IOException("Confirmação ausente.");
+            receipt.validate(scanId, side);
+            SavedDraft saved = read(uid, scanId);
+            ScanUploadedPhoto other = "front".equals(side) ? saved.backUpload : saved.frontUpload;
+            if (other != null) other.validate(scanId, "front".equals(side) ? "back" : "front");
+            if (other != null && (!other.cloudName.equals(receipt.cloudName) || !other.deliveryType.equals(receipt.deliveryType)))
+                throw new IOException("As fotos precisam usar o mesmo destino.");
+            ScanUploadedPhoto existing = "front".equals(side) ? saved.frontUpload : saved.backUpload;
+            if (existing != null) { existing.validate(scanId, side); return saved; }
+            if ("front".equals(side)) saved.frontUpload = receipt;
+            else saved.backUpload = receipt;
+            saved.state = saved.frontUpload != null && saved.backUpload != null ? "PHOTOS_UPLOADED" : "WAITING_UPLOAD";
+            Path directory = directory(uid, scanId);
+            Path temporary = Files.createTempFile(directory, "receipt-", ".tmp");
+            try {
+                Files.write(temporary, GSON.toJson(saved).getBytes(StandardCharsets.UTF_8));
+                force(temporary);
+                Files.move(temporary, directory.resolve("draft.json"), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } finally { Files.deleteIfExists(temporary); }
+            return saved;
+        }
+    }
+
+    /** Stores lookup evidence separately, without rewriting OCR or changing upload state. */
+    public SavedDraft recordIngredientCatalog(String uid, String scanId, ScanIngredientCatalog.Report report) throws IOException {
+        synchronized (ScanDraftStore.class) {
+            if (report == null) throw new IOException("Consulta ausente.");
+            SavedDraft saved = read(uid, scanId);
+            saved.ingredientCatalog = report;
+            Path directory = directory(uid, scanId);
+            Path temporary = Files.createTempFile(directory, "catalog-", ".tmp");
+            try {
+                Files.write(temporary, GSON.toJson(saved).getBytes(StandardCharsets.UTF_8));
+                force(temporary);
+                Files.move(temporary, directory.resolve("draft.json"), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } finally { Files.deleteIfExists(temporary); }
+            return saved;
+        }
+    }
+
+    /** Acknowledges the idempotent MongoDB submission after the API confirms it. */
+    public SavedDraft recordSubmission(String uid, String scanId, ScanSessionResponse response) throws IOException {
+        synchronized (ScanDraftStore.class) {
+            if (response == null || response.id == null || response.id.trim().isEmpty()
+                    || response.status == null || response.status.trim().isEmpty()
+                    || !scanId.equals(response.scanId)) throw new IOException("Resposta de cadastro inválida.");
+            SavedDraft saved = read(uid, scanId);
+            saved.submission = response;
+            saved.state = "SUBMITTED";
+            saved.ingredientCatalog = null;
+            saved.frontUpload = null;
+            saved.backUpload = null;
+            saved.draft.redactSensitiveDataAfterSubmission();
+            Path directory = directory(uid, scanId);
+            Path temporary = Files.createTempFile(directory, "submission-", ".tmp");
+            try {
+                Files.write(temporary, GSON.toJson(saved).getBytes(StandardCharsets.UTF_8));
+                force(temporary);
+                Files.move(temporary, directory.resolve("draft.json"), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } finally { Files.deleteIfExists(temporary); }
+            // A submitted scan no longer needs local photos. Delete only the
+            // validated scan directory files; the receipt remains for retry
+            // idempotency and resume-after-process-death.
+            Files.deleteIfExists(directory.resolve("front.photo"));
+            Files.deleteIfExists(directory.resolve("back.photo"));
+            return saved;
+        }
     }
 
     private Path directory(String uid, String scanId) throws IOException {

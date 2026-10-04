@@ -22,8 +22,8 @@ public class AuthenticatedScanClientTest {
         AuthenticatedScanClient client = new AuthenticatedScanClient(api, (uid, refresh) -> {
             assertEquals("user-a", uid); refreshes.add(refresh); return "Bearer test-" + refresh;
         });
-        ScanSessionRequest r = new ScanSessionRequest(); r.firebaseUid = "user-a"; r.scanId = "stable-id";
-        assertEquals("stable-id", client.submit(r).scanId);
+        ScanSessionRequest r = validSubmission();
+        assertEquals(SCAN_ID, client.submit(r).scanId);
         assertEquals(java.util.Arrays.asList(false, true), refreshes);
         assertEquals(java.util.Arrays.asList("Bearer test-false", "Bearer test-true"), api.tokens);
         assertSame(api.requests.get(0), api.requests.get(1));
@@ -150,6 +150,105 @@ public class AuthenticatedScanClientTest {
     private static AuthenticatedScanClient client(FakeApi api) {
         return new AuthenticatedScanClient(api, (uid, refresh) -> "Bearer test");
     }
+
+    @Test public void uncertainIngredientsCanReachPostForAdministrativeReview() throws Exception {
+        FakeApi api = new FakeApi(201, 201, 201);
+        AuthenticatedScanClient client = client(api);
+        for (String raw : java.util.Arrays.asList("S2ACG 657381", "AT3332 4G Unilevev",
+                "ALUMINUM SESOLUICHLOROHYDRAIE HEXYL CINNAMAL")) {
+            ScanSessionRequest r = validSubmission();
+            r.ingredients.get(0).rawName = raw;
+            assertNotNull(client.submit(r));
+        }
+        assertEquals(3, api.calls);
+        assertEquals(3, api.requests.size());
+    }
+
+    private static ScanSessionRequest validSubmission() {
+        ScanSessionRequest r = new ScanSessionRequest();
+        r.scanId = SCAN_ID; r.firebaseUid = "user-a";
+        r.startedAt = "2026-10-01T10:00:00Z"; r.finishedAt = "2026-10-01T10:01:00Z";
+        r.device = new ScanSessionRequest.Device("test-device", "Android", "1", "Test");
+        r.qualityCheck = new ScanSessionRequest.QualityCheck(.1, .5, true, "COMPLETED");
+        r.ocr = new ScanSessionRequest.Ocr();
+        r.ocr.front = new ScanSessionRequest.Front(); r.ocr.back = new ScanSessionRequest.Back();
+        r.ocr.back.extracted = new ScanSessionRequest.BackExtracted();
+        r.ocr.back.extracted.ingredientsText = "AQUA";
+        r.ingredients = new ArrayList<>();
+        r.ingredients.add(new ScanSessionRequest.Ingredient(1, "AQUA"));
+        r.images = new ScanSessionRequest.Images();
+        r.images.front = validPhoto("front"); r.images.back = validPhoto("back");
+        return r;
+    }
+
+    private static ScanSessionRequest.Image validPhoto(String side) {
+        ScanSessionRequest.Image photo = new ScanSessionRequest.Image();
+        photo.publicId = "scans/" + SCAN_ID + "/" + side;
+        photo.width = 100; photo.height = 100; photo.bytes = 200L; photo.format = "jpg";
+        return photo;
+    }
+    @Test public void connectsOwnAccountBeforeRequestingSignatures() throws Exception {
+        FakeApi api = new FakeApi(201, 200);
+        assertNotNull(client(api).connectAccountAndGetSignatures("user-a", " Ana ", "ana@example.com", SCAN_ID));
+        assertEquals(java.util.Arrays.asList("REGISTER", "SIGNATURES"), api.operations);
+        UserRequest body = api.registrations.get(0);
+        assertEquals("user-a", body.firebaseUid);
+        assertEquals("Ana", body.name);
+        assertEquals("ana@example.com", body.email);
+        assertEquals("ACTIVE", body.status);
+        assertFalse(new com.google.gson.Gson().toJson(body).contains("password"));
+        assertEquals(java.util.Arrays.asList("Bearer test", "Bearer test"), api.tokens);
+        assertTrue(api.requests.isEmpty());
+    }
+    @Test public void duplicateAccountRequiresSuccessfulProtectedGet() throws Exception {
+        FakeApi api = new FakeApi(409, 200);
+        assertNotNull(client(api).connectAccountAndGetSignatures("user-a", "Ana", null, SCAN_ID));
+        assertEquals(1, api.registrations.size());
+        assertEquals(java.util.Arrays.asList("REGISTER", "SIGNATURES"), api.operations);
+    }
+    @Test public void duplicateBlockedAccountIsNotModifiedOrRetried() {
+        FakeApi api = new FakeApi(409, 403);
+        ScanApiException error = assertThrows(ScanApiException.class,
+                () -> client(api).connectAccountAndGetSignatures("user-a", "Ana", null, SCAN_ID));
+        assertEquals(ScanApiException.Kind.FORBIDDEN, error.kind);
+        assertEquals(2, api.calls);
+        assertEquals(1, api.registrations.size());
+    }
+    @Test public void registrationForbiddenStopsWithoutRequestingSignatures() {
+        FakeApi api = new FakeApi(403);
+        assertThrows(ScanApiException.class,
+                () -> client(api).connectAccountAndGetSignatures("user-a", "Ana", null, SCAN_ID));
+        assertTrue(api.scanIds.isEmpty());
+        assertEquals(1, api.calls);
+    }
+    @Test public void plainSignature403NeverCreatesAccount() {
+        FakeApi api = new FakeApi(403);
+        assertThrows(ScanApiException.class, () -> client(api).signatures("user-a", SCAN_ID));
+        assertTrue(api.registrations.isEmpty());
+    }
+    @Test public void registrationRejectsAnotherUid() {
+        FakeApi api = new FakeApi(201); api.userBody.firebaseUid = "other-user";
+        assertThrows(ScanApiException.class,
+                () -> client(api).connectAccountAndGetSignatures("user-a", "Ana", null, SCAN_ID));
+        assertTrue(api.scanIds.isEmpty());
+    }
+    @Test public void registrationRejectsInactiveStatus() {
+        FakeApi api = new FakeApi(201); api.userBody.status = "INACTIVE";
+        assertThrows(ScanApiException.class,
+                () -> client(api).connectAccountAndGetSignatures("user-a", "Ana", null, SCAN_ID));
+        assertTrue(api.scanIds.isEmpty());
+    }
+    @Test public void registrationDoesNotRunForInvalidScan() {
+        FakeApi api = new FakeApi(201);
+        assertThrows(ScanApiException.class,
+                () -> client(api).connectAccountAndGetSignatures("user-a", "Ana", null, "invalid"));
+        assertEquals(0, api.calls);
+    }
+    private static UserResponse validUser() {
+        UserResponse user = new UserResponse();
+        user.id = 7L; user.firebaseUid = "user-a"; user.status = "ACTIVE";
+        return user;
+    }
     private static void assertInvalidResponse(FakeApi api) {
         ScanApiException error = assertThrows(ScanApiException.class,
                 () -> client(api).signatures("user-a", SCAN_ID));
@@ -173,13 +272,22 @@ public class AuthenticatedScanClientTest {
         List<String> scanIds = new ArrayList<>();
         ScanUploadSignaturesResponse signatureBody = validSignatures();
         IOException failure;
+        UserResponse userBody = validUser();
+        List<UserRequest> registrations = new ArrayList<>();
+        List<String> operations = new ArrayList<>();
         FakeApi(int... codes) { this.codes = codes; }
         @Override public Call<ScanUploadSignaturesResponse> signatures(String bearer, String id) {
+            operations.add("SIGNATURES");
             tokens.add(bearer); scanIds.add(id); return call(signatureBody);
+        }
+        @Override public Call<UserResponse> registerAccount(String bearer, UserRequest request) {
+            operations.add("REGISTER");
+            tokens.add(bearer); registrations.add(request); return call(userBody);
         }
         @Override public Call<ScanSessionResponse> submit(String bearer, ScanSessionRequest r) {
             tokens.add(bearer); requests.add(r);
-            ScanSessionResponse response = new ScanSessionResponse(); response.scanId = r.scanId;
+            ScanSessionResponse response = new ScanSessionResponse(); response.id = "mongo-test-id";
+            response.scanId = r.scanId; response.status = "PENDING_REVIEW";
             return call(response);
         }
         private <T> Call<T> call(T body) {

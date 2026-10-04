@@ -12,21 +12,29 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public final class ClienteApi {
 
-    public static final String URL_BASE = "https://venus-crud.onrender.com/";
+    public static final String URL_BASE = "https://34-192-194-32.sslip.io/";
 
-    // A API esta hospedada no plano gratuito do Render, que derruba a instancia
-    // quando ninguem usa. Acordar o servidor foi medido em ~100s, entao o limite
-    // de leitura tem que ficar bem acima disso: com 90s o app desistia ANTES da
-    // API responder e mostrava erro de conexao numa chamada que ia dar certo.
-    //
-    // Conectar e outra historia - o TCP responde em menos de 100ms mesmo com o
-    // servidor dormindo, porque quem atende e a borda do Render. Se a conexao
-    // demorar, o problema e a rede do aparelho, e ai nao vale esperar muito.
+    // A API roda na EC2 por tras do Nginx/HTTPS. O limite de leitura continua
+    // alto porque catalogo e submissao podem envolver banco e servicos externos.
     private static final long LIMITE_CONEXAO = 30L;
     private static final long LIMITE_LEITURA = 180L;
 
     private static VenusApi instancia;
     private static ScanSubmissionApi scanApi;
+    private static ScanIngredientApi ingredientApi;
+
+    public static synchronized ScanIngredientApi ingredients() {
+        if (ingredientApi == null) {
+            OkHttpClient http = new OkHttpClient.Builder()
+                    .connectTimeout(LIMITE_CONEXAO, TimeUnit.SECONDS)
+                    .readTimeout(LIMITE_LEITURA, TimeUnit.SECONDS)
+                    .callTimeout(190, TimeUnit.SECONDS)
+                    .followRedirects(false).followSslRedirects(false).build();
+            ingredientApi = new Retrofit.Builder().baseUrl(URL_BASE).client(http)
+                    .addConverterFactory(GsonConverterFactory.create()).build().create(ScanIngredientApi.class);
+        }
+        return ingredientApi;
+    }
 
     public static synchronized ScanSubmissionApi scans() {
         if (scanApi == null) {

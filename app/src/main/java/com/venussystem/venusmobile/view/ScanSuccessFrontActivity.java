@@ -167,7 +167,6 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         if (!photoFile.exists()
                 || !photoFile.isFile()
                 || photoFile.length() <= 0) {
-            Log.e(TAG_OCR, "Foto inválida: " + photoPath);
             Log.e(TAG_OCR, "Foto frontal inválida ou indisponível. Encerrando o scan.");
             fecharFluxoParaPrincipal(
                     "A foto não pôde ser utilizada porque o arquivo da captura ficou inválido. Tire outra foto da frente do produto."
@@ -188,8 +187,9 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
 
         ultimoOcr = result;
 
-        Log.d(TAG_OCR, "OCR FRONT CONCLUÍDO");
-        Log.d(TAG_OCR, result.getFullText());
+        Log.d(TAG_OCR, "OCR_FRONT_CONCLUIDO chars="
+                + (result.getFullText() == null ? 0 : result.getFullText().length())
+                + " lines=" + result.getLines().size());
 
         if (result.getFullText() == null
                 || result.getFullText().trim().isEmpty()) {
@@ -204,15 +204,9 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                 result.getLines()
         );
 
-        Log.d(
-                TAG_OCR,
-                "MARCAS: " + ultimoFrontData.getBrandCandidates()
-        );
-
-        Log.d(
-                TAG_OCR,
-                "PRODUTOS: " + ultimoFrontData.getProductCandidates()
-        );
+        Log.d(TAG_OCR, "FRONT_CANDIDATES brands=" + ultimoFrontData.getBrandCandidates().size()
+                + " products=" + ultimoFrontData.getProductCandidates().size()
+                + " presentations=" + ultimoFrontData.getPresentationCandidates().size());
 
         setBadge("Buscando o produto no nosso banco...");
 
@@ -285,10 +279,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                 TAG_SCAN,
                 "CONFIANÇA HEURÍSTICA: " + ultimaClassificacao.getConfidenceScore()
         );
-        Log.d(
-                TAG_SCAN,
-                "EVIDÊNCIAS: " + ultimaClassificacao.getEvidence()
-        );
+        Log.d(TAG_SCAN, "EVIDENCIAS_COUNT=" + ultimaClassificacao.getEvidence().size());
 
         boolean catalogoNaoEncontrou = !match.isFound();
         boolean liberar = ScanCosmeticClassifier.shouldOpenNewCosmeticFlow(
@@ -400,12 +391,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
 
         navegando = true;
 
-        Log.d(TAG_SCAN, "==============================");
-        Log.d(TAG_SCAN, "PRODUTO ENCONTRADO");
-        Log.d(TAG_SCAN, "ID: " + produtoId);
-        Log.d(TAG_SCAN, "NOME: " + produto.getName());
-        Log.d(TAG_SCAN, "MARCA: " + produto.getBrandName());
-        Log.d(TAG_SCAN, "SCORE: " + match.getScore());
+        Log.d(TAG_SCAN, "PRODUTO_ENCONTRADO idPresent=true score=" + match.getScore());
 
         Intent intent = new Intent(
                 this,

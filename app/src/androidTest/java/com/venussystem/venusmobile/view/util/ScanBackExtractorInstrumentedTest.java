@@ -168,8 +168,6 @@ public class ScanBackExtractorInstrumentedTest {
         for (List<ScanOcrToken> tokens : Arrays.asList(
                 Arrays.asList(token(lines.get(0), 0, 30, 300, 50, 0, 0)),
                 Arrays.asList(token(lines.get(0), 0, 30, 300, 50, 0, 0),
-                        new ScanOcrToken(lines.get(1), new Rect(0, 0, 100, 20), .2f, 0, 0, 1, 0)),
-                Arrays.asList(token(lines.get(0), 0, 30, 300, 50, 0, 0),
                         new ScanOcrToken(lines.get(1), new Rect(0, 0, 100, 20), .9f, 90, 0, 1, 0)))) {
             assertTrue(ScanBackSpatialLayout.rows(lines, tokens).isEmpty());
             assertEquals(expected, names(ScanBackExtractor.extract(
@@ -183,6 +181,45 @@ public class ScanBackExtractorInstrumentedTest {
                 "INGREDIENTES: AQUA, AUIOATE, 0CTYLDODECAN"));
         assertEquals(Arrays.asList("AQUA", "AUIOATE", "0CTYLDODECAN"), names(data));
         data.getIngredients().forEach(i -> assertEquals("UNRESOLVED", i.getStatus()));
+    }
+
+    @Test
+    public void lowSpellingConfidenceInCompanyDoesNotDisableIngredientGeometry() {
+        List<String> lines = Arrays.asList("LIMONENE.", "INDUSTRIAL LTDA",
+                "INGREDIENTES: AQUA,", "GLYCINE,");
+        List<ScanOcrToken> tokens = Arrays.asList(
+                token(lines.get(0), 0, 120, 220, 140, 0, 0),
+                new ScanOcrToken(lines.get(1), new Rect(0, 0, 220, 20), .16f, 0, 0, 1, 0),
+                token(lines.get(2), 0, 60, 220, 80, 2, 0),
+                token(lines.get(3), 0, 90, 220, 110, 3, 0));
+        ScanBackData data = ScanBackExtractor.extract(new ScanOcrResult(String.join("\n", lines), lines, tokens));
+        assertEquals(Arrays.asList("AQUA", "GLYCINE", "LIMONENE"), names(data));
+        assertEquals(lines, data.getLines());
+        assertEquals(String.join("\n", lines), data.getFullText());
+    }
+
+    @Test
+    public void lowConfidenceIngredientTextIsRetainedWhenGeometryIsValid() {
+        List<String> lines = Arrays.asList("INGREDIENTES: AQUA,", "OCTYLDO0ECAML M");
+        List<ScanOcrToken> tokens = Arrays.asList(
+                token(lines.get(0), 0, 0, 220, 20, 0, 0),
+                new ScanOcrToken(lines.get(1), new Rect(0, 30, 220, 50), .2f, 0, 0, 1, 0));
+        assertTrue(!ScanBackSpatialLayout.rows(lines, tokens).isEmpty());
+        ScanBackData data = ScanBackExtractor.extract(new ScanOcrResult(String.join("\n", lines), lines, tokens));
+        assertTrue(names(data).contains("OCTYLDO0ECAML M"));
+    }
+
+    @Test
+    public void toleratesPerspectiveRotationWithinTwentyDegrees() {
+        List<String> lines = Arrays.asList("INGREDIENTES: AQUA,", "GLYCINE,", "LIMONENE.");
+        List<ScanOcrToken> tokens = Arrays.asList(
+                new ScanOcrToken(lines.get(0), new Rect(0, 0, 220, 20), .9f, -17.3f, 0, 0, 0),
+                new ScanOcrToken(lines.get(1), new Rect(0, 30, 220, 50), .9f, -5.1f, 0, 1, 0),
+                new ScanOcrToken(lines.get(2), new Rect(0, 60, 220, 80), .9f, .2f, 0, 2, 0));
+        assertTrue(!ScanBackSpatialLayout.rows(lines, tokens).isEmpty());
+        ScanBackData data = ScanBackExtractor.extract(
+                new ScanOcrResult(String.join("\n", lines), lines, tokens));
+        assertEquals(Arrays.asList("AQUA", "GLYCINE", "LIMONENE"), names(data));
     }
 
     @Test
@@ -267,6 +304,91 @@ public class ScanBackExtractorInstrumentedTest {
         List<String> names = new java.util.ArrayList<>();
         data.getIngredients().forEach(i -> names.add(i.getRawName()));
         return names;
+    }
+
+    @Test
+    public void peripheralVerticalCodeDoesNotDisableShuffledIngredientGeometry() {
+        // Synthetic coordinates: the device log does not include bounding boxes.
+        for (float angle : new float[] {-90, 90}) {
+            List<String> lines = Arrays.asList("LIMONENE.", "69657381",
+                    "INGREDIENTES: AQUA,", "GLYCINE,", "Unilever");
+            List<ScanOcrToken> tokens = Arrays.asList(
+                    token(lines.get(0), 0, 90, 220, 110, 0, 0),
+                    new ScanOcrToken(lines.get(1), new Rect(260, 30, 280, 130), .2f, angle, 0, 1, 0),
+                    token(lines.get(2), 0, 30, 220, 50, 2, 0),
+                    token(lines.get(3), 0, 60, 220, 80, 3, 0),
+                    token(lines.get(4), 0, 140, 100, 160, 4, 0));
+            List<List<ScanOcrToken>> rows = ScanBackSpatialLayout.rows(lines, tokens);
+            assertEquals(5, rows.size());
+            assertEquals("69657381", ScanBackSpatialLayout.join(rows.get(4)));
+            assertEquals(tokens.size(), rows.stream().mapToInt(List::size).sum());
+            ScanBackData data = ScanBackExtractor.extract(
+                    new ScanOcrResult(String.join("\n", lines), lines, tokens));
+            assertEquals(Arrays.asList("AQUA", "GLYCINE", "LIMONENE"), names(data));
+            assertEquals(lines, data.getLines());
+            assertEquals(String.join("\n", lines), data.getFullText());
+            assertTrue(!data.getIngredientsRawText().contains("69657381"));
+        }
+    }
+
+    @Test
+    public void overlappingVerticalCodeCannotBeSeparatedAsPeripheral() {
+        List<String> lines = Arrays.asList("INGREDIENTES: AQUA,", "69657381");
+        List<ScanOcrToken> tokens = Arrays.asList(
+                token(lines.get(0), 0, 30, 220, 50, 0, 0),
+                new ScanOcrToken(lines.get(1), new Rect(100, 20, 120, 80), .9f, -90, 0, 1, 0));
+        assertTrue(ScanBackSpatialLayout.rows(lines, tokens).isEmpty());
+    }
+
+    @Test
+    public void rotatedIngredientOrUnknownTextIsNeverClassifiedAsPeripheralCode() {
+        for (String text : Arrays.asList("CI 77491", "PPG-14 BUTYL ETHER", "AQUA", "UNKNOWN")) {
+            List<String> lines = Arrays.asList("INGREDIENTES: GLYCINE,", text);
+            List<ScanOcrToken> tokens = Arrays.asList(
+                    token(lines.get(0), 0, 0, 220, 20, 0, 0),
+                    new ScanOcrToken(text, new Rect(260, 0, 280, 130), .9f, -90, 0, 1, 0));
+            assertTrue(text, ScanBackSpatialLayout.rows(lines, tokens).isEmpty());
+            ScanBackData data = ScanBackExtractor.extract(
+                    new ScanOcrResult(String.join("\n", lines), lines, tokens));
+            assertTrue(data.getIngredientsRawText().contains(text));
+        }
+    }
+
+    @Test
+    public void mixedAnglesWithinCodeLineAndInvalidAnglesStillFallBack() {
+        List<String> lines = Arrays.asList("INGREDIENTES: AQUA.", "6965 7381");
+        for (float angle : new float[] {0, 90, Float.NaN, Float.POSITIVE_INFINITY}) {
+            List<ScanOcrToken> tokens = Arrays.asList(
+                    token(lines.get(0), 0, 0, 220, 20, 0, 0),
+                    new ScanOcrToken("6965", new Rect(260, 0, 280, 40), .9f, -90, 0, 1, 0),
+                    new ScanOcrToken("7381", new Rect(260, 40, 280, 80), .9f, angle, 0, 1, 1));
+            assertTrue(ScanBackSpatialLayout.rows(lines, tokens).isEmpty());
+        }
+    }
+
+    @Test
+    public void peripheralPartitionStillRequiresFullTextCoverage() {
+        List<String> lines = Arrays.asList("INGREDIENTES: AQUA.", "69657381");
+        List<ScanOcrToken> tokens = Arrays.asList(
+                token(lines.get(0), 0, 0, 220, 20, 0, 0),
+                new ScanOcrToken("6965", new Rect(260, 0, 280, 80), .9f, -90, 0, 1, 0));
+        assertTrue(ScanBackSpatialLayout.rows(lines, tokens).isEmpty());
+    }
+
+    @Test
+    public void separatedCodePreservesAuditAndExistingSectionRulesWithoutTerminalPeriod() {
+        List<String> lines = Arrays.asList("INGREDIENTES: AQUA,", "69657381");
+        List<ScanOcrToken> tokens = Arrays.asList(
+                token(lines.get(0), 0, 0, 220, 20, 0, 0),
+                new ScanOcrToken(lines.get(1), new Rect(260, 0, 280, 80), .9f, -90, 0, 1, 0));
+        ScanBackData data = ScanBackExtractor.extract(
+                new ScanOcrResult(String.join("\n", lines), lines, tokens));
+        // Existing section rules may identify a numeric barcode independently of rotation.
+        // Orientation separation must not change that decision or erase the source.
+        assertEquals(names(ScanBackExtractor.extract(lines)), names(data));
+        assertEquals(ScanBackExtractor.extract(lines).getIngredientsRawText(), data.getIngredientsRawText());
+        assertEquals(lines, data.getLines());
+        assertEquals(String.join("\n", lines), data.getFullText());
     }
 
     private static ScanOcrToken token(
