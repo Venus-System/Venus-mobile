@@ -3,9 +3,12 @@ package com.venussystem.venusmobile.repository.api;
 import com.venussystem.venusmobile.repository.api.dto.AllergyResponse;
 import com.venussystem.venusmobile.repository.api.dto.BrandResponse;
 import com.venussystem.venusmobile.repository.api.dto.FatiaResponse;
+import com.venussystem.venusmobile.repository.api.dto.IngredientResponse;
+import com.venussystem.venusmobile.repository.api.dto.MediaAssetResponse;
 import com.venussystem.venusmobile.repository.api.dto.PreferenceCatalogResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductCategoryResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductFullResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductIngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductLabelResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
@@ -63,6 +66,17 @@ public interface VenusApi {
 
     @GET("api/products/{id}/full")
     Call<ProductFullResponse> buscarProdutoCompleto(@Path("id") long id);
+
+    @GET("api/product-versions/{productVersionId}/photos")
+    Call<List<MediaAssetResponse>> listarFotosDaVersao(
+            @Path("productVersionId") long productVersionId);
+
+    @GET("api/product-ingredients/product-version/{productVersionId}")
+    Call<List<ProductIngredientResponse>> listarIngredientesDaVersao(
+            @Path("productVersionId") long productVersionId);
+
+    @GET("api/ingredients/{id}")
+    Call<IngredientResponse> buscarIngrediente(@Path("id") long id);
 
     /** Scans recentes da própria conta; a API aplica a regra de ownership. */
     @GET("api/scan-sessions/user/{userId}")

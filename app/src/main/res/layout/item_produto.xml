@@ -16,7 +16,7 @@
         android:layout_height="@dimen/foto_produto"
         android:background="@drawable/bg_foto_produto"
         android:importantForAccessibility="no"
-        android:scaleType="centerCrop"
+        android:scaleType="fitCenter"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
