@@ -1,5 +1,7 @@
 package com.venussystem.venusmobile.view.fragment;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,24 +10,40 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.AppCompatAutoCompleteTextView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+
+import coil.Coil;
+import coil.request.ImageRequest;
+import coil.size.Scale;
 
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Usuario;
 import com.venussystem.venusmobile.repository.AutenticacaoRepository;
 import com.venussystem.venusmobile.repository.CatalogoAlergiasRepository;
+import com.venussystem.venusmobile.repository.FotoPerfilRepository;
 import com.venussystem.venusmobile.repository.PerfilRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoRepository;
+import com.venussystem.venusmobile.view.BemVindoActivity;
+import com.venussystem.venusmobile.view.ProdutosEmAnaliseActivity;
+import com.venussystem.venusmobile.view.componente.AvatarPerfilView;
+import com.venussystem.venusmobile.view.dialog.MenuLateralPerfil;
 import com.venussystem.venusmobile.view.dialog.ModalEscolhaMultipla;
 import com.venussystem.venusmobile.view.dialog.ModalEscolhaUnica;
 import com.venussystem.venusmobile.view.dialog.ModalFaixaEtaria;
+import com.venussystem.venusmobile.view.util.ImagemLocalUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -152,8 +170,48 @@ public class PerfilFragment extends Fragment {
                     Arrays.asList(PerfilRepository.NENHUMA, PerfilRepository.PREFIRO_NAO_DIZER)),
     };
 
+    private static final String ESTADO_URI_CAMERA = "uri_camera";
+
     private PerfilRepository perfil;
+    private FotoPerfilRepository fotoPerfil;
     private LinearLayout listaAtributos;
+
+    // O que o cabecalho mostra; o menu lateral repete o mesmo nome e e-mail.
+    private String nomeExibido = "";
+    private String emailExibido = "";
+
+    // Onde a camera vai gravar a foto. Guardado no estado da tela porque o
+    // sistema pode fechar o app enquanto a camera esta aberta.
+    @Nullable
+    private Uri uriCameraPendente;
+
+    private final ActivityResultLauncher<PickVisualMediaRequest> pickerGaleria =
+            registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
+                if (uri != null) {
+                    trocarFoto(uri);
+                }
+            });
+
+    private final ActivityResultLauncher<Uri> pickerCamera =
+            registerForActivityResult(new ActivityResultContracts.TakePicture(), sucesso -> {
+                if (Boolean.TRUE.equals(sucesso) && uriCameraPendente != null) {
+                    trocarFoto(uriCameraPendente);
+                }
+            });
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (savedInstanceState != null) {
+            uriCameraPendente = savedInstanceState.getParcelable(ESTADO_URI_CAMERA, Uri.class);
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(ESTADO_URI_CAMERA, uriCameraPendente);
+    }
 
     @Nullable
     @Override
@@ -172,6 +230,14 @@ public class PerfilFragment extends Fragment {
 
         mostrarUsuario(view);
         montarAtributos();
+
+        view.findViewById(R.id.btnMenuPerfil).setOnClickListener(v -> abrirMenuLateral());
+
+        // A foto guardada aparece na hora; sem foto no aparelho, a API e
+        // consultada (foto posta pelo site ou em outro celular).
+        fotoPerfil = new FotoPerfilRepository(requireContext());
+        mostrarFoto(fotoPerfil.caminho());
+        fotoPerfil.buscarDaApiEmSegundoPlano(this::mostrarFoto);
 
         CatalogoAlergiasRepository catalogo = new CatalogoAlergiasRepository(requireContext());
         prepararSecaoDeLista(view, R.id.campoAlergia, R.id.chipsAlergias,
@@ -204,18 +270,101 @@ public class PerfilFragment extends Fragment {
     private void mostrarUsuario(View view) {
         Usuario usuario = new AutenticacaoRepository().usuarioLogado();
 
-        TextView nome = view.findViewById(R.id.textNome);
-        TextView email = view.findViewById(R.id.textEmail);
+        boolean semNome = usuario == null
+                || usuario.getNome() == null || usuario.getNome().trim().isEmpty();
+        nomeExibido = semNome ? getString(R.string.perfil_sem_nome) : usuario.getNome();
+        emailExibido = usuario == null || usuario.getEmail() == null ? "" : usuario.getEmail();
 
-        if (usuario == null) {
-            nome.setText(R.string.perfil_sem_nome);
-            email.setText("");
+        ((TextView) view.findViewById(R.id.textNome)).setText(nomeExibido);
+        ((TextView) view.findViewById(R.id.textEmail)).setText(emailExibido);
+    }
+
+    private void abrirMenuLateral() {
+        MenuLateralPerfil.mostrar(requireContext(), nomeExibido, emailExibido,
+                this::escolherFoto, this::abrirProdutosEmAnalise, this::voltarAoLogin);
+    }
+
+    private void abrirProdutosEmAnalise() {
+        startActivity(new Intent(requireContext(), ProdutosEmAnaliseActivity.class));
+    }
+
+    private void escolherFoto() {
+        new AlertDialog.Builder(requireContext())
+                .setItems(new CharSequence[]{
+                        getString(R.string.foto_perfil_tirar),
+                        getString(R.string.foto_perfil_galeria)
+                }, (dialog, opcao) -> {
+                    if (opcao == 0) {
+                        abrirCamera();
+                    } else {
+                        pickerGaleria.launch(new PickVisualMediaRequest.Builder()
+                                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                                .build());
+                    }
+                })
+                .show();
+    }
+
+    private void abrirCamera() {
+        try {
+            uriCameraPendente = ImagemLocalUtil.criarUriParaCaptura(requireContext());
+            pickerCamera.launch(uriCameraPendente);
+        } catch (IOException e) {
+            Toast.makeText(requireContext(), R.string.foto_perfil_erro, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * A foto nova aparece assim que fica pronta no aparelho; o envio para a
+     * API vai em segundo plano e, se falhar, tenta de novo na proxima abertura.
+     */
+    private void trocarFoto(Uri origem) {
+        fotoPerfil.trocar(origem, caminho -> {
+            if (caminho == null) {
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), R.string.foto_perfil_erro,
+                            Toast.LENGTH_SHORT).show();
+                }
+                return;
+            }
+            mostrarFoto(caminho);
+            fotoPerfil.enviarEmSegundoPlano();
+        });
+    }
+
+    /** Pode chegar depois que a tela fechou (a foto vem da API): ai nao faz nada. */
+    private void mostrarFoto(@Nullable String caminho) {
+        View raiz = getView();
+        if (raiz == null) {
             return;
         }
+        AvatarPerfilView avatar = raiz.findViewById(R.id.imgAvatar);
+        if (caminho == null) {
+            avatar.setImageDrawable(null);
+            return;
+        }
+        Coil.imageLoader(requireContext()).enqueue(new ImageRequest.Builder(requireContext())
+                .data(caminho)
+                // A view posiciona a foto sozinha (ver AvatarPerfilView); FILL
+                // faz o Coil abrir a imagem grande o bastante para cobrir o
+                // circulo sem ficar borrada.
+                .scale(Scale.FILL)
+                .target(avatar)
+                .build());
+    }
 
-        boolean semNome = usuario.getNome() == null || usuario.getNome().trim().isEmpty();
-        nome.setText(semNome ? getString(R.string.perfil_sem_nome) : usuario.getNome());
-        email.setText(usuario.getEmail() == null ? "" : usuario.getEmail());
+    /**
+     * Sai da conta e volta para a tela de boas-vindas (Entrar / Cadastrar),
+     * limpando a pilha para o voltar do celular nao trazer o perfil de volta.
+     * As respostas do questionario continuam no aparelho, guardadas por conta
+     * (ver DadosDaConta): entrar de novo com a mesma conta traz tudo de volta.
+     */
+    private void voltarAoLogin() {
+        new AutenticacaoRepository().sair();
+
+        Intent intent = new Intent(requireContext(), BemVindoActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
     }
 
     private void montarAtributos() {

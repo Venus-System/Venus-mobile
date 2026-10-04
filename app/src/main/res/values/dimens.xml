@@ -33,6 +33,7 @@
     <dimen name="botao_scan">62dp</dimen>
     <dimen name="selo_nota">34dp</dimen>
     <dimen name="altura_barra_nav">72dp</dimen>
+    <dimen name="raio_barra_nav">24dp</dimen>
     <dimen name="foto_produto">94dp</dimen>
     <dimen name="icone_nav">32dp</dimen>
     <dimen name="largura_indicador">32dp</dimen>
@@ -45,8 +46,7 @@
     <dimen name="foto_historico">52dp</dimen>
     <dimen name="largura_nota_historico">44dp</dimen>
     <dimen name="altura_nota_historico">30dp</dimen>
-    <dimen name="avatar_perfil">128dp</dimen>
-    <dimen name="foto_avatar_perfil">96dp</dimen>
+    <dimen name="avatar_perfil">200dp</dimen>
     <dimen name="botao_editar">34dp</dimen>
     <dimen name="miniatura_chat">44dp</dimen>
     <dimen name="nota_circular">44dp</dimen>
@@ -67,4 +67,9 @@
     <dimen name="texto_pergunta">34sp</dimen>
     <dimen name="texto_titulo_destaque">28sp</dimen>
     <dimen name="texto_titulo_aba">20sp</dimen>
+
+    <!-- Largura do menu lateral do perfil: o resto da tela fica escurecido. -->
+    <dimen name="largura_menu_lateral">280dp</dimen>
+    <!-- O mesmo raio dos modais do perfil (bg_modal_escolha). -->
+    <dimen name="raio_menu_lateral">20dp</dimen>
 </resources>
