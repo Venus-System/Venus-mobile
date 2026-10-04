@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Colecao;
 import com.venussystem.venusmobile.repository.api.VenusApi;
 import com.venussystem.venusmobile.testutil.ApiDeTeste;
@@ -51,7 +52,7 @@ public class SincronizacaoListasTest {
     private static final String CAPA_7 = "POST /api/user-lists/7/cover";
     private static final String LINK_CAPA_7 = "https://res.cloudinary.com/venus/user-lists/7/cover/a.jpg";
 
-    // As 3 de exemplo nascem com os ids 1, 2 e 3; a primeira criada e a 4.
+    // Ids das 3 listas de exemplo numa conta antiga (ver contaComAsListasDeExemplo).
     private static final long FAVORITOS = 1L;
     private static final long ESCANEADOS = 2L;
     private static final long SKINCARE = 3L;
@@ -98,6 +99,20 @@ public class SincronizacaoListasTest {
         return id;
     }
 
+    /**
+     * Conta de antes desta versao em que as 3 listas de exemplo ficaram no
+     * aparelho, ja revistas (ver ColecaoRepository.tirarExemplosIntocados).
+     */
+    private void contaComAsListasDeExemplo() {
+        DadosDaConta.prefs(context, ColecaoRepository.ARQUIVO, "uid-ana").edit()
+                .putString("minhas_listas", "["
+                        + "{\"id\":1,\"nome\":\"Produtos favoritados\",\"chaveImagem\":\"favoritos\"},"
+                        + "{\"id\":2,\"nome\":\"Produtos escaneados\",\"chaveImagem\":\"escaneados\"},"
+                        + "{\"id\":3,\"nome\":\"Rotina de skincare\",\"chaveImagem\":\"skincare\"}]")
+                .putBoolean(ColecaoRepository.CHAVE_EXEMPLOS_REVISTOS, true)
+                .commit();
+    }
+
     /** Uma foto de capa ja copiada para o aparelho, como a tela deixa. */
     private String capaNoAparelho(String nome) throws IOException {
         File pasta = new File(context.getFilesDir(), "capas_lista");
@@ -112,7 +127,17 @@ public class SincronizacaoListasTest {
     // ---- Quando nao tem nada para mandar ----
 
     @Test
+    public void contaSemListas_nemVaiNaRede() {
+        listas.minhasListas();
+
+        assertFalse(sincronizacao.sincronizarAgora());
+
+        assertTrue(api.pedidos.isEmpty());
+    }
+
+    @Test
     public void soAsListasDeExemploVazias_nemVaiNaRede() {
+        contaComAsListasDeExemplo();
         listas.minhasListas();
 
         assertFalse(sincronizacao.sincronizarAgora());
@@ -166,6 +191,7 @@ public class SincronizacaoListasTest {
 
     @Test
     public void listaDeExemplo_sobeComACapaPadraoEmMaiusculo() {
+        contaComAsListasDeExemplo();
         itens.adicionar(FAVORITOS, 100L);
         itens.adicionar(ESCANEADOS, 100L);
         itens.adicionar(SKINCARE, 100L);
@@ -182,6 +208,7 @@ public class SincronizacaoListasTest {
 
     @Test
     public void listaDeExemplo_sobeQuandoGanhaOPrimeiroProduto_comOTipoDela() {
+        contaComAsListasDeExemplo();
         itens.adicionar(FAVORITOS, 100L);
         itens.adicionar(ESCANEADOS, 100L);
         itens.adicionar(SKINCARE, 100L);
@@ -447,7 +474,7 @@ public class SincronizacaoListasTest {
         sincronizacao.sincronizarAgora();
 
         assertEquals(1, api.corposEm(POST_LISTA).size());
-        assertEquals(3, listas.minhasListas().getValue().size());
+        assertTrue(listas.minhasListas().getValue().isEmpty());
         assertTrue(itens.getProdutoIds(viagem).isEmpty());
     }
 
@@ -507,7 +534,7 @@ public class SincronizacaoListasTest {
 
         List<Colecao> naTela = listas.minhasListas().getValue();
 
-        assertEquals(4, naTela.size());
+        assertEquals(1, naTela.size());
         assertEquals(viagem, (long) naTela.get(0).getId());
         assertEquals("Viagem", naTela.get(0).getName());
     }
@@ -537,7 +564,7 @@ public class SincronizacaoListasTest {
         assertTrue(sincronizacao.atualizarAgora());
 
         List<Colecao> telaToda = listas.minhasListas().getValue();
-        assertEquals(4, telaToda.size());
+        assertEquals(1, telaToda.size());
         Colecao doSite = telaToda.get(0);
         assertEquals("Do site", doSite.getName());
         assertEquals("Feita no site", doSite.getDescricao());
@@ -560,8 +587,24 @@ public class SincronizacaoListasTest {
     }
 
     @Test
-    public void listaDeExemploNaApi_eAMesmaDoAparelho() {
+    public void listaComCapaPadraoNaApi_entraNaContaSemListas() {
         // Celular novo: a conta ja tem favoritos no servidor.
+        naApi("{\"id\":9,\"name\":\"Produtos favoritados\",\"coverKey\":\"FAVORITOS\"}");
+        api.em(ITENS_9, 200, "[{\"productId\":100,\"positionOrder\":1}]");
+
+        assertTrue(sincronizacao.atualizarAgora());
+
+        List<Colecao> telaToda = listas.minhasListas().getValue();
+        assertEquals(1, telaToda.size());
+        assertEquals("Produtos favoritados", telaToda.get(0).getName());
+        assertEquals(R.drawable.capa_favoritos, telaToda.get(0).getImagemLocal());
+        assertEquals(Arrays.asList(100L), itens.getProdutoIds(telaToda.get(0).getId()));
+    }
+
+    @Test
+    public void listaDeExemploNaApi_eAMesmaDoAparelho() {
+        // Celular com as listas de exemplo antigas; a conta ja tem favoritos no servidor.
+        contaComAsListasDeExemplo();
         naApi("{\"id\":9,\"name\":\"Produtos favoritados\",\"coverKey\":\"FAVORITOS\"}");
         api.em(ITENS_9, 200, "[{\"productId\":100,\"positionOrder\":1}]");
 
@@ -625,7 +668,7 @@ public class SincronizacaoListasTest {
 
         assertTrue(sincronizacao.atualizarAgora());
 
-        assertEquals(3, listas.minhasListas().getValue().size());
+        assertTrue(listas.minhasListas().getValue().isEmpty());
         assertTrue("nao manda apagar o que ja nao existe", api.pedidosEm(DELETE_7).isEmpty());
         assertTrue(listas.idsParaApagarNaApi().isEmpty());
     }
@@ -639,7 +682,7 @@ public class SincronizacaoListasTest {
 
         sincronizacao.atualizarAgora();
 
-        assertEquals(3, listas.minhasListas().getValue().size());
+        assertTrue(listas.minhasListas().getValue().isEmpty());
     }
 
     @Test
@@ -671,7 +714,7 @@ public class SincronizacaoListasTest {
 
         assertFalse(sincronizacao.atualizarAgora());
 
-        assertEquals(4, listas.minhasListas().getValue().size());
+        assertEquals(1, listas.minhasListas().getValue().size());
     }
 
     @Test

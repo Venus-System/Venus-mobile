@@ -19,7 +19,6 @@ import com.venussystem.venusmobile.model.Colecao;
 import java.io.File;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,6 +36,9 @@ import java.util.Set;
  * /api/user-lists o que mudou no aparelho e traz de la o que mudou no
  * servidor. Para saber o que falta mandar, cada lista guarda o id da API e o
  * ultimo nome, descricao, capa padrao e foto de capa enviados.
+ *
+ * A conta comeca sem nenhuma lista: so existe o que a pessoa criou (aqui ou
+ * no site).
  */
 public class ColecaoRepository {
 
@@ -45,14 +47,18 @@ public class ColecaoRepository {
     private static final String CHAVE_PROXIMO_ID = "proximo_id";
     private static final String CHAVE_APAGAR_NA_API = "apagar_na_api";
     private static final String CHAVE_DONO_NA_API = "dono_na_api";
+    @VisibleForTesting
+    static final String CHAVE_EXEMPLOS_REVISTOS = "exemplos_revistos";
 
-    // Cada conta comeca com estas 3, como ponto de partida. Depois disso quem
-    // manda e o que estiver salvo (criar, editar capa, renomear, excluir).
-    private static final List<ColecaoSalva> EXEMPLO = Arrays.asList(
-            new ColecaoSalva(1L, "Produtos favoritados", null, "favoritos", null),
-            new ColecaoSalva(2L, "Produtos escaneados", null, "escaneados", null),
-            new ColecaoSalva(3L, "Rotina de skincare", null, "skincare", null)
-    );
+    // Ate esta versao, toda conta nascia com estas 3 listas (chave da capa ->
+    // nome). Sao usadas so para achar as que ficaram como nasceram e tirar.
+    private static final Map<String, String> EXEMPLOS_ANTIGOS = new HashMap<>();
+
+    static {
+        EXEMPLOS_ANTIGOS.put("favoritos", "Produtos favoritados");
+        EXEMPLOS_ANTIGOS.put("escaneados", "Produtos escaneados");
+        EXEMPLOS_ANTIGOS.put("skincare", "Rotina de skincare");
+    }
 
     private static final Type TIPO_LISTA_SALVA = new TypeToken<List<ColecaoSalva>>() {
     }.getType();
@@ -62,6 +68,8 @@ public class ColecaoRepository {
     private static final Object TRAVA = new Object();
 
     private final SharedPreferences prefs;
+    // So para saber se uma lista de exemplo antiga ganhou produto.
+    private final ListaItemRepository itens;
     private final Gson gson = new Gson();
 
     public ColecaoRepository(Context context) {
@@ -71,6 +79,7 @@ public class ColecaoRepository {
     @VisibleForTesting
     public ColecaoRepository(Context context, @Nullable String uid) {
         this.prefs = DadosDaConta.prefs(context, ARQUIVO, uid);
+        this.itens = new ListaItemRepository(context, uid);
     }
 
     /**
@@ -330,8 +339,8 @@ public class ColecaoRepository {
      *
      * - A que o aparelho tem e o servidor nao: foi apagada la e sai daqui.
      * - A que so o servidor tem: se e uma do aparelho que ainda nao tinha
-     *   subido (a de exemplo num celular novo, pela capa padrao ou pelo
-     *   nome), as duas viram uma; senao, entra no topo.
+     *   subido (pela capa padrao ou pelo nome), as duas viram uma; senao,
+     *   entra no topo.
      * - A que esta na fila de apagar nao volta.
      *
      * @param daApi todas as listas da pessoa na API. Uma lista incompleta
@@ -480,12 +489,43 @@ public class ColecaoRepository {
 
     private List<ColecaoSalva> carregar() {
         String salvo = prefs.getString(CHAVE_LISTAS, null);
-        if (salvo == null) {
-            salvar(EXEMPLO);
-            return new ArrayList<>(EXEMPLO);
+        List<ColecaoSalva> lista = salvo == null ? null : gson.fromJson(salvo, TIPO_LISTA_SALVA);
+        if (lista == null) {
+            lista = new ArrayList<>();
         }
-        List<ColecaoSalva> lista = gson.fromJson(salvo, TIPO_LISTA_SALVA);
-        return lista == null ? new ArrayList<>() : lista;
+        if (!prefs.getBoolean(CHAVE_EXEMPLOS_REVISTOS, false)) {
+            lista = tirarExemplosIntocados(lista);
+        }
+        return lista;
+    }
+
+    /**
+     * Roda uma vez por conta: tira as listas de exemplo que ficaram como
+     * nasceram - vazias, com o nome e a capa padrao, sem descricao e sem ter
+     * subido. Se a pessoa mexeu em alguma, ela fica.
+     *
+     * Uma vez so porque, depois, uma lista assim pode ser legitima: uma que
+     * veio da API com capa padrao e teve o id esquecido (ver esquecerTodosIdsApi).
+     *
+     * Chamado sempre de dentro da TRAVA.
+     */
+    private List<ColecaoSalva> tirarExemplosIntocados(List<ColecaoSalva> salvas) {
+        List<ColecaoSalva> ficam = new ArrayList<>();
+        for (ColecaoSalva c : salvas) {
+            if (c.exemploIntocado() && itens.getProdutoIds(c.id).isEmpty()) {
+                // Um produto que entrou e saiu deixa o controle de envio para tras.
+                itens.excluirTodos(c.id);
+            } else {
+                ficam.add(c);
+            }
+        }
+        prefs.edit()
+                .putString(CHAVE_LISTAS, gson.toJson(ficam))
+                // Os ids das que sairam nao voltam (ver proximoId).
+                .putLong(CHAVE_PROXIMO_ID, proximoId(salvas))
+                .putBoolean(CHAVE_EXEMPLOS_REVISTOS, true)
+                .apply();
+        return ficam;
     }
 
     private void salvar(List<ColecaoSalva> listas) {
@@ -535,7 +575,8 @@ public class ColecaoRepository {
         final String nome;
         // null quando a lista nao tem descricao, nunca "".
         @Nullable final String descricao;
-        // So as 3 listas de exemplo tem chave (favoritos, escaneados, skincare).
+        // So tem chave (favoritos, escaneados, skincare) a lista que veio da API
+        // com capa padrao ou uma das listas de exemplo antigas que a pessoa usou.
         @Nullable final String chaveImagem;
         // Arquivo da foto escolhida aqui (file:), link da foto do servidor, ou null.
         @Nullable final String caminhoImagem;
@@ -736,6 +777,15 @@ public class ColecaoRepository {
             String caminho = fotoPendente(caminhoImagem, capaEnviada) ? caminhoImagem : daApi.linkCapa;
             return new ColecaoSalva(id, daApi.nome, daApi.descricao, daApi.chave, caminho,
                     daApi.id, daApi.nome, daApi.descricao, daApi.chave, null, daApi.linkCapa);
+        }
+
+        /** Uma das 3 listas de exemplo antigas, do jeito que nasceu. */
+        boolean exemploIntocado() {
+            return chaveImagem != null
+                    && nome != null && nome.equals(EXEMPLOS_ANTIGOS.get(chaveImagem))
+                    && semTextoVazio(descricao) == null
+                    && caminhoImagem == null
+                    && idApi == null;
         }
 
         boolean mesmaNaTela(ColecaoSalva outra) {
