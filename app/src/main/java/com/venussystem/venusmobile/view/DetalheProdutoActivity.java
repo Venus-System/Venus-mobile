@@ -4,12 +4,18 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.Menu;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -21,8 +27,12 @@ import coil.request.ImageRequest;
 
 import com.google.android.material.tabs.TabLayout;
 import com.venussystem.venusmobile.R;
+import com.venussystem.venusmobile.model.Colecao;
 import com.venussystem.venusmobile.model.Produto;
+import com.venussystem.venusmobile.repository.ColecaoRepository;
+import com.venussystem.venusmobile.repository.ListaItemRepository;
 import com.venussystem.venusmobile.repository.ProdutoRepository;
+import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.view.adapter.AlternativaAdapter;
 import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
 import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
@@ -54,6 +64,10 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     private View carregandoIngredientes;
     private TextView textIngredientes;
     private ImageView imgProduto;
+    private ImageButton btnSalvarNaLista;
+
+    private ColecaoRepository colecaoRepository;
+    private ListaItemRepository itemRepository;
 
     private Produto produto;
     private long produtoIdRecebido = -1L;
@@ -62,6 +76,10 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     private boolean alternativasMontadas = false;
     private boolean telaInicializada = false;
     private boolean mensagemErroMostrada = false;
+
+    // So vai para a API quando a tela fecha, juntando todos os toques do
+    // menu de listas num envio so (como na DetalheListaActivity).
+    private boolean listasAlteradas = false;
 
     @Override
     protected void onCreate(
@@ -72,10 +90,20 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         prepararReferenciasDeTela();
 
+        colecaoRepository =
+                new ColecaoRepository(this);
+
+        itemRepository =
+                new ListaItemRepository(this);
+
         findViewById(
                 R.id.btnVoltar
         ).setOnClickListener(
                 v -> finish()
+        );
+
+        btnSalvarNaLista.setOnClickListener(
+                this::mostrarListasParaSalvar
         );
 
         produtoIdRecebido =
@@ -103,8 +131,35 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         resolverProduto();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // O produto pode ter saido de uma lista enquanto esta tela estava
+        // por baixo (ex.: removido na DetalheListaActivity).
+        if (telaInicializada) {
+            atualizarIconeDoMarcador();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        if (listasAlteradas) {
+            listasAlteradas = false;
+            new SincronizacaoListas(this)
+                    .sincronizarEmSegundoPlano();
+        }
+    }
+
     private void prepararReferenciasDeTela() {
         imgProduto = findViewById(R.id.imgProduto);
+
+        btnSalvarNaLista =
+                findViewById(
+                        R.id.btnSalvarNaLista
+                );
 
         conteudoAvaliacao =
                 findViewById(
@@ -309,6 +364,12 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         preencherCabecalho();
         prepararAbas();
+
+        // Escondido ate aqui: antes de achar o produto nao ha o que salvar.
+        btnSalvarNaLista.setVisibility(
+                View.VISIBLE
+        );
+        atualizarIconeDoMarcador();
     }
 
     private void finalizarSemProduto(
@@ -645,6 +706,241 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 vazia
                         ? View.VISIBLE
                         : View.GONE
+        );
+    }
+
+    /**
+     * Menu preso ao marcador com todas as listas do usuario. As que ja tem
+     * este produto aparecem marcadas; tocar numa lista salva o produto nela
+     * (no topo, como o "Adicionar produto" da propria lista) ou tira, se ja
+     * estava. A ultima opcao cria uma lista nova ja com o produto - e a unica
+     * quando a pessoa ainda nao tem lista nenhuma.
+     */
+    private void mostrarListasParaSalvar(
+            View ancora
+    ) {
+
+        if (produto == null) {
+            return;
+        }
+
+        List<Colecao> encontradas =
+                colecaoRepository
+                        .minhasListas()
+                        .getValue();
+
+        List<Colecao> listas =
+                encontradas != null
+                        ? encontradas
+                        : new ArrayList<>();
+
+        PopupMenu menu =
+                new PopupMenu(
+                        this,
+                        ancora,
+                        Gravity.END
+                );
+
+        for (int i = 0; i < listas.size(); i++) {
+
+            Colecao lista = listas.get(i);
+
+            // O id do item e a posicao na lista, para achar a Colecao no clique.
+            menu.getMenu()
+                    .add(
+                            Menu.NONE,
+                            i,
+                            i,
+                            lista.getName()
+                    )
+                    .setCheckable(true)
+                    .setChecked(
+                            itemRepository.contem(
+                                    lista.getId(),
+                                    produto.getId()
+                            )
+                    );
+        }
+
+        // Depois de todas as listas: o id dela e o primeiro que sobra.
+        int idNovaLista = listas.size();
+
+        menu.getMenu()
+                .add(
+                        Menu.NONE,
+                        idNovaLista,
+                        idNovaLista,
+                        R.string.produto_nova_lista
+                );
+
+        menu.setOnMenuItemClickListener(
+                item -> {
+
+                    if (item.getItemId() == idNovaLista) {
+
+                        mostrarDialogoNovaLista();
+
+                    } else {
+
+                        alternarProdutoNaLista(
+                                listas.get(
+                                        item.getItemId()
+                                )
+                        );
+                    }
+
+                    return true;
+                }
+        );
+
+        menu.show();
+    }
+
+    /**
+     * Pede so o nome (como o "Editar nome" da lista) e ja salva o produto
+     * na lista criada. Descricao e capa ficam para a tela da lista.
+     */
+    private void mostrarDialogoNovaLista() {
+
+        View conteudo =
+                getLayoutInflater()
+                        .inflate(
+                                R.layout.dialog_editar_texto,
+                                null
+                        );
+
+        EditText campo =
+                conteudo.findViewById(
+                        R.id.editTexto
+                );
+
+        AlertDialog dialog =
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.lista_nova)
+                        .setView(conteudo)
+                        .setPositiveButton(R.string.lista_salvar, null)
+                        .setNegativeButton(R.string.lista_cancelar, null)
+                        .create();
+
+        // Botao positivo tratado a mao: nome vazio ou repetido mantem o
+        // dialog aberto mostrando o erro (o listener do Builder sempre fecha).
+        dialog.setOnShowListener(
+                d -> dialog
+                        .getButton(AlertDialog.BUTTON_POSITIVE)
+                        .setOnClickListener(
+                                v -> {
+
+                                    String nome =
+                                            campo.getText()
+                                                    .toString()
+                                                    .trim();
+
+                                    if (nome.isEmpty()) {
+                                        campo.setError(
+                                                getString(R.string.lista_erro_nome)
+                                        );
+                                        return;
+                                    }
+
+                                    if (colecaoRepository.nomeEmUso(nome, -1)) {
+                                        campo.setError(
+                                                getString(R.string.lista_erro_nome_repetido)
+                                        );
+                                        return;
+                                    }
+
+                                    Colecao criada =
+                                            colecaoRepository.criar(
+                                                    nome,
+                                                    "",
+                                                    null
+                                            );
+
+                                    alternarProdutoNaLista(
+                                            criada
+                                    );
+
+                                    dialog.dismiss();
+                                }
+                        )
+        );
+
+        dialog.show();
+    }
+
+    private void alternarProdutoNaLista(
+            @NonNull Colecao lista
+    ) {
+
+        long listaId = lista.getId();
+        long produtoId = produto.getId();
+
+        int mensagem;
+
+        if (itemRepository.contem(
+                listaId,
+                produtoId
+        )) {
+
+            itemRepository.remover(
+                    listaId,
+                    produtoId
+            );
+
+            mensagem = R.string.produto_removido_da_lista;
+
+        } else {
+
+            itemRepository.adicionar(
+                    listaId,
+                    produtoId
+            );
+
+            mensagem = R.string.produto_salvo_na_lista;
+        }
+
+        listasAlteradas = true;
+        atualizarIconeDoMarcador();
+
+        Toast.makeText(
+                this,
+                getString(
+                        mensagem,
+                        lista.getName()
+                ),
+                Toast.LENGTH_SHORT
+        ).show();
+    }
+
+    /** Marcador preenchido quando o produto esta em pelo menos uma lista. */
+    private void atualizarIconeDoMarcador() {
+
+        boolean salvo = false;
+
+        List<Colecao> listas =
+                colecaoRepository
+                        .minhasListas()
+                        .getValue();
+
+        if (listas != null) {
+
+            for (Colecao lista : listas) {
+
+                if (itemRepository.contem(
+                        lista.getId(),
+                        produto.getId()
+                )) {
+
+                    salvo = true;
+                    break;
+                }
+            }
+        }
+
+        btnSalvarNaLista.setImageResource(
+                salvo
+                        ? R.drawable.ic_marcador_preenchido
+                        : R.drawable.ic_marcador
         );
     }
 

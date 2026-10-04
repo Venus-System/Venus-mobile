@@ -75,11 +75,10 @@ public class DadosDaContaTest {
     }
 
     @Test
-    public void contaNova_comecaSoComAsListasDeExemplo() {
+    public void contaNova_comecaSemListas_mesmoComOutraContaNoCelular() {
         new ColecaoRepository(context, ANA).criar("Rotina da Ana", "", null);
 
-        assertEquals(Arrays.asList("Produtos favoritados", "Produtos escaneados", "Rotina de skincare"),
-                nomes(new ColecaoRepository(context, BIA).minhasListas().getValue()));
+        assertTrue(nomes(new ColecaoRepository(context, BIA).minhasListas().getValue()).isEmpty());
     }
 
     @Test

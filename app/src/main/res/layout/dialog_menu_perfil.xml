@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Menu lateral do perfil (MenuLateralPerfil). Os itens ficam embaixo do nome;
+     "Voltar ao login" mora sempre no fim. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/menuLateral"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/espaco_grande"
+    android:paddingTop="@dimen/espaco_medio"
+    android:paddingEnd="@dimen/espaco_medio"
+    android:paddingBottom="@dimen/espaco_medio">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/menu_lateral_titulo"
+            android:textColor="@color/roxo_venus"
+            android:textSize="@dimen/texto_titulo_aba"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnFecharMenu"
+            android:layout_width="@dimen/area_toque_minima"
+            android:layout_height="@dimen/area_toque_minima"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/desc_fechar"
+            android:scaleType="center"
+            android:src="@drawable/ic_fechar" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/textNomeMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaco_medio"
+        android:textColor="@color/preto_texto"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        tools:text="Rafael sepol" />
+
+    <TextView
+        android:id="@+id/textEmailMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="@color/cinza_descricao"
+        android:textSize="12sp"
+        tools:text="rafael@venus.com" />
+
+    <TextView
+        android:id="@+id/btnAlterarFoto"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/area_toque_minima"
+        android:layout_marginTop="@dimen/espaco_grande"
+        android:background="?attr/selectableItemBackground"
+        android:drawablePadding="12dp"
+        android:gravity="center_vertical"
+        android:text="@string/menu_alterar_foto"
+        android:textColor="@color/preto_texto"
+        android:textSize="15sp"
+        app:drawableStartCompat="@drawable/ic_foto" />
+
+    <TextView
+        android:id="@+id/btnProdutosEmAnalise"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/area_toque_minima"
+        android:background="?attr/selectableItemBackground"
+        android:drawablePadding="12dp"
+        android:gravity="center_vertical"
+        android:text="@string/menu_produtos_em_analise"
+        android:textColor="@color/preto_texto"
+        android:textSize="15sp"
+        app:drawableStartCompat="@drawable/ic_produtos_em_analise" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginBottom="@dimen/espaco_pequeno"
+        android:background="@color/borda_lilas" />
+
+    <TextView
+        android:id="@+id/btnVoltarAoLogin"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/area_toque_minima"
+        android:background="?attr/selectableItemBackground"
+        android:drawablePadding="12dp"
+        android:gravity="center_vertical"
+        android:text="@string/menu_voltar_ao_login"
+        android:textColor="@color/roxo_venus"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:drawableStartCompat="@drawable/ic_sair" />
+
+</LinearLayout>

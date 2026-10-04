@@ -45,7 +45,8 @@ public class SincronizacaoRepository {
 
     // Uma fila so: a tela principal e a de perfil podem pedir juntas, e dois
     // envios em paralelo do mesmo perfil so gastariam o cold start duas vezes.
-    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
+    // A SincronizacaoListas usa a mesma fila, pelo mesmo motivo.
+    static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
     // O app nao pergunta a gravidade da alergia, e a API exige uma. HIGH foi a
     // decisao junto com a API de classificacao; o site pergunta e manda a sua.

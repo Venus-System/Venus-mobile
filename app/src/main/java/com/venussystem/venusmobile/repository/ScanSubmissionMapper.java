@@ -16,6 +16,11 @@ import java.util.Set;
 /** Preserves raw OCR and selects the strongest front candidate without trusting OCR blindly. */
 public final class ScanSubmissionMapper {
     private ScanSubmissionMapper() { }
+    // The API accepts up to 2000 characters per extracted field. These fields are
+    // derived from the back OCR, which still goes whole in fullText (up to 20000),
+    // so capping them loses nothing; letting them through made the validator
+    // reject the whole scan, and a retry resent the same text.
+    private static final int EXTRACTED_FIELD_LIMIT = 2000;
     private static final Set<String> GENERIC_FRONT_WORDS = new HashSet<>(Arrays.asList(
             "CREME", "LOCAO", "GEL", "SPRAY", "AEROSOL", "FRESH", "ORIGINAL",
             "PROTECAO", "ANTITRANSPIRANTE", "ANTIPERSPIRANTE", "PERFUME", "MASCULINO",
@@ -62,18 +67,18 @@ public final class ScanSubmissionMapper {
             throw new IllegalArgumentException("A composição precisa de uma nova leitura.");
         ScanSessionRequest.BackExtracted back = new ScanSessionRequest.BackExtracted();
         back.ingredientsText = data.getIngredientsRawText();
-        back.manufacturer = data.getManufacturer();
-        back.manufacturerAddress = data.getManufacturerAddress();
-        back.contact = data.getContact();
-        back.country = data.getCountry();
-        back.batch = data.getBatch();
-        back.registrationNumber = data.getRegistrationNumber();
-        back.netContent = data.getNetContent();
-        back.usage = data.getUsage();
-        back.precautions = data.getPrecautions();
-        back.warnings = data.getWarnings();
-        back.barcode = data.getBarcode();
-        back.otherText = data.getOtherText();
+        back.manufacturer = capped(data.getManufacturer());
+        back.manufacturerAddress = capped(data.getManufacturerAddress());
+        back.contact = capped(data.getContact());
+        back.country = capped(data.getCountry());
+        back.batch = capped(data.getBatch());
+        back.registrationNumber = capped(data.getRegistrationNumber());
+        back.netContent = capped(data.getNetContent());
+        back.usage = capped(data.getUsage());
+        back.precautions = capped(data.getPrecautions());
+        back.warnings = capped(data.getWarnings());
+        back.barcode = capped(data.getBarcode());
+        back.otherText = capped(data.getOtherText());
         back.claims = new ArrayList<>(data.getClaims());
         request.ocr.back.extracted = back;
         request.ingredients = new ArrayList<>();
@@ -98,6 +103,11 @@ public final class ScanSubmissionMapper {
         String raw = candidate.getRawName();
         String corrected = ScanIngredientPolicy.correct(raw);
         return corrected.equals(ScanIngredientPolicy.normalize(raw)) ? raw : corrected;
+    }
+
+    private static String capped(String value) {
+        return value == null || value.length() <= EXTRACTED_FIELD_LIMIT
+                ? value : value.substring(0, EXTRACTED_FIELD_LIMIT);
     }
 
     private static String bestFrontCandidate(List<String> values) {

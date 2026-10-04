@@ -47,6 +47,12 @@
         <activity
             android:name=".view.ScanTutorial3Activity"
             android:exported="false" />
+        <activity
+            android:name=".view.ProdutosEmAnaliseActivity"
+            android:exported="false" />
+        <activity
+            android:name=".view.DetalheProdutoEmAnaliseActivity"
+            android:exported="false" />
 
         <meta-data
             android:name="com.google.mlkit.vision.DEPENDENCIES"

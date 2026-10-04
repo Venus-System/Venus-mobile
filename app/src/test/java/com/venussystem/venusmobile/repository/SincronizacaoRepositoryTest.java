@@ -2,13 +2,12 @@ package com.venussystem.venusmobile.repository;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.venussystem.venusmobile.repository.api.VenusApi;
 import com.venussystem.venusmobile.testutil.ApiDeTeste;
+import com.venussystem.venusmobile.testutil.ApiPorRota;
 import com.venussystem.venusmobile.testutil.SessaoFalsa;
 
 import org.junit.After;
@@ -19,18 +18,10 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
-import okhttp3.mockwebserver.Dispatcher;
-import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -60,59 +51,15 @@ public class SincronizacaoRepositoryTest {
 
     private static final String NADA_SALVO = "{\"content\":[],\"last\":true}";
 
-    /**
-     * Responde por "METODO caminho" e guarda cada pedido com o corpo, para o
-     * teste conferir o que foi enviado e em que ordem.
-     */
-    private static class ApiFalsa extends Dispatcher {
-        final Map<String, MockResponse> respostas = new ConcurrentHashMap<>();
-        final List<String> pedidos = new CopyOnWriteArrayList<>();
-        final Map<String, List<String>> corpos = new ConcurrentHashMap<>();
-        volatile Runnable aoReceberPutPerfil;
-
-        ApiFalsa em(String rota, int codigo, String corpo) {
-            respostas.put(rota, new MockResponse()
-                    .setResponseCode(codigo)
-                    .setHeader("Content-Type", "application/json")
-                    .setBody(corpo));
-            return this;
-        }
-
-        /** O ultimo corpo mandado nessa rota. */
-        JsonObject corpo(String rota) {
-            List<String> daRota = corpos.get(rota);
-            return JsonParser.parseString(daRota.get(daRota.size() - 1)).getAsJsonObject();
-        }
-
-        List<String> corposEm(String rota) {
-            List<String> daRota = corpos.get(rota);
-            return daRota == null ? Collections.emptyList() : daRota;
-        }
-
-        @NonNull
-        @Override
-        public MockResponse dispatch(@NonNull RecordedRequest request) {
-            String rota = request.getMethod() + " " + request.getPath();
-            pedidos.add(rota);
-            corpos.computeIfAbsent(rota, r -> new CopyOnWriteArrayList<>())
-                    .add(request.getBody().readUtf8());
-            if (rota.equals(PUT_PERFIL) && aoReceberPutPerfil != null) {
-                aoReceberPutPerfil.run();
-            }
-            MockResponse resposta = respostas.get(rota);
-            return resposta == null ? new MockResponse().setResponseCode(404) : resposta;
-        }
-    }
-
     private MockWebServer server;
-    private ApiFalsa api;
+    private ApiPorRota api;
     private PerfilRepository perfil;
     private SincronizacaoRepository sincronizacao;
 
     @Before
     public void setUp() throws IOException {
         server = new MockWebServer();
-        api = new ApiFalsa();
+        api = new ApiPorRota();
         server.setDispatcher(api);
         server.start();
 
@@ -156,7 +103,7 @@ public class SincronizacaoRepositoryTest {
     }
 
     private void apiSemPerfilAinda() {
-        // PUT sem resposta configurada ja cai no 404 do ApiFalsa.
+        // PUT sem resposta configurada ja cai no 404 do ApiPorRota.
         api.em(POST_PERFIL, 201, "{}");
         api.em(POST_PREFERENCIAS, 201, "{}");
     }
@@ -164,16 +111,6 @@ public class SincronizacaoRepositoryTest {
     private void apiComPerfil() {
         api.em(PUT_PERFIL, 200, "{}");
         api.em(PUT_PREFERENCIAS, 200, "{}");
-    }
-
-    private List<String> pedidosEm(String... rotas) {
-        List<String> filtrados = new ArrayList<>();
-        for (String pedido : api.pedidos) {
-            if (Arrays.asList(rotas).contains(pedido)) {
-                filtrados.add(pedido);
-            }
-        }
-        return filtrados;
     }
 
     // ---- Primeiro envio ----
@@ -220,7 +157,7 @@ public class SincronizacaoRepositoryTest {
         assertTrue(sincronizacao.sincronizarAgora());
 
         assertEquals(Arrays.asList(PUT_PERFIL, PUT_PREFERENCIAS),
-                pedidosEm(PUT_PERFIL, POST_PERFIL, PUT_PREFERENCIAS, POST_PREFERENCIAS));
+                api.pedidosEm(PUT_PERFIL, POST_PERFIL, PUT_PREFERENCIAS, POST_PREFERENCIAS));
     }
 
     // ---- Alergias ----
@@ -276,7 +213,7 @@ public class SincronizacaoRepositoryTest {
 
         assertTrue(sincronizacao.sincronizarAgora());
 
-        assertEquals(Collections.singletonList(DELETE_LATEX), pedidosEm(DELETE_LATEX));
+        assertEquals(Collections.singletonList(DELETE_LATEX), api.pedidosEm(DELETE_LATEX));
     }
 
     @Test
@@ -291,7 +228,7 @@ public class SincronizacaoRepositoryTest {
         assertTrue(sincronizacao.sincronizarAgora());
 
         assertEquals(1, api.corposEm(POST_ALERGIA).size());
-        assertTrue(pedidosEm(DELETE_SOJA).isEmpty());
+        assertTrue(api.pedidosEm(DELETE_SOJA).isEmpty());
     }
 
     @Test
@@ -311,7 +248,7 @@ public class SincronizacaoRepositoryTest {
 
         assertTrue(sincronizacao.sincronizarAgora());
 
-        assertEquals(Collections.singletonList(DELETE_LATEX), pedidosEm(DELETE_LATEX));
+        assertEquals(Collections.singletonList(DELETE_LATEX), api.pedidosEm(DELETE_LATEX));
     }
 
     @Test
@@ -324,7 +261,7 @@ public class SincronizacaoRepositoryTest {
         assertFalse(sincronizacao.sincronizarAgora());
 
         assertTrue(perfil.temAlteracaoParaEnviar());
-        assertTrue("parou antes das etiquetas", pedidosEm(CATALOGO_ETIQUETAS).isEmpty());
+        assertTrue("parou antes das etiquetas", api.pedidosEm(CATALOGO_ETIQUETAS).isEmpty());
     }
 
     // ---- Etiquetas ----
@@ -402,8 +339,8 @@ public class SincronizacaoRepositoryTest {
     public void edicaoDuranteOEnvio_continuaPendente() {
         responderQuestionarioCompleto();
         apiSemPerfilAinda();
-        api.aoReceberPutPerfil = () ->
-                perfil.salvarResposta(PerfilRepository.TIPO_PELE, "OILY", "Oleosa");
+        api.aoReceber(PUT_PERFIL, () ->
+                perfil.salvarResposta(PerfilRepository.TIPO_PELE, "OILY", "Oleosa"));
 
         assertTrue(sincronizacao.sincronizarAgora());
 
@@ -444,7 +381,7 @@ public class SincronizacaoRepositoryTest {
 
         long buscas = api.pedidos.stream().filter(BUSCA::equals).count();
         assertEquals(2, buscas);
-        assertTrue("403 nao e 'nao existe': nao tenta criar", pedidosEm(POST_PERFIL).isEmpty());
+        assertTrue("403 nao e 'nao existe': nao tenta criar", api.pedidosEm(POST_PERFIL).isEmpty());
         assertTrue(perfil.temAlteracaoParaEnviar());
     }
 }

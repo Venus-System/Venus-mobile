@@ -22,6 +22,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <ImageButton
+        android:id="@+id/btnSalvarNaLista"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:layout_marginEnd="12dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/desc_salvar_na_lista"
+        android:scaleType="center"
+        android:src="@drawable/ic_marcador"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
+
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/imgProduto"
         android:layout_width="@dimen/avatar_lista"

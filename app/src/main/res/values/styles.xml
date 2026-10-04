@@ -214,6 +214,28 @@
         <item name="cornerSize">50%</item>
     </style>
 
+    <!-- Menu lateral do perfil (MenuLateralPerfil). O fundo e o arredondado
+         ficam no proprio painel do Material, e nao no layout: um fundo no
+         conteudo cobriria os cantos. -->
+    <style name="ThemeOverlay.VenusMobile.MenuLateral" parent="ThemeOverlay.Material3.SideSheetDialog">
+        <item name="sideSheetModalStyle">@style/Widget.VenusMobile.MenuLateral</item>
+    </style>
+
+    <style name="Widget.VenusMobile.MenuLateral" parent="Widget.Material3.SideSheet.Modal">
+        <item name="android:layout_width">@dimen/largura_menu_lateral</item>
+        <item name="backgroundTint">@color/white</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.VenusMobile.MenuLateral</item>
+    </style>
+
+    <!-- Arredondado so do lado de dentro: o lado direito encosta na borda da tela. -->
+    <style name="ShapeAppearance.VenusMobile.MenuLateral" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">@dimen/raio_menu_lateral</item>
+        <item name="cornerSizeBottomLeft">@dimen/raio_menu_lateral</item>
+        <item name="cornerSizeTopRight">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
     <style name="TituloSecaoPerfil">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
