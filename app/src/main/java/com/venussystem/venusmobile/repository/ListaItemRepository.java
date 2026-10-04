@@ -53,6 +53,10 @@ public class ListaItemRepository {
         return ids == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(ids));
     }
 
+    public boolean contem(long listaId, long produtoId) {
+        return getProdutoIds(listaId).contains(produtoId);
+    }
+
     public void adicionar(long listaId, long produtoId) {
         synchronized (TRAVA) {
             List<Long> atuais = getProdutoIds(listaId);

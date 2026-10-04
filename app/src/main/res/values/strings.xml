@@ -324,6 +324,10 @@
     <string name="produto_aba_avaliacao">Avaliação</string>
     <string name="produto_aba_match">Match com você</string>
     <string name="produto_aba_alternativas">Alternativas</string>
+    <string name="desc_salvar_na_lista">Salvar em uma lista</string>
+    <string name="produto_salvo_na_lista">Salvo em %1$s</string>
+    <string name="produto_removido_da_lista">Removido de %1$s</string>
+    <string name="produto_sem_listas">Você ainda não tem listas. Crie uma na aba Listas.</string>
     <string name="produto_titulo_ingredientes">Ingredientes</string>
     <string name="produto_ingredientes_erro">Não foi possível carregar os ingredientes agora.</string>
     <string name="produto_relatar_erro">Encontrou algo errado no cadastro deste produto? Clique aqui e informe a gente. Obrigado.</string>
