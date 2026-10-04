@@ -211,9 +211,10 @@ public class SincronizacaoListas {
     }
 
     /**
-     * As 3 listas de exemplo so vao para a API quando ganham o primeiro
-     * produto: sem isso, toda conta nova nasceria com 3 listas vazias la. As
-     * criadas pela pessoa vao sempre, mesmo vazias - ela pediu para ter.
+     * As listas de exemplo antigas (as que a pessoa renomeou ou trocou a capa
+     * e por isso ficaram, ver ColecaoRepository) so vao para a API quando
+     * ganham o primeiro produto. As criadas pela pessoa vao sempre, mesmo
+     * vazias - ela pediu para ter.
      */
     private boolean deveExistirNaApi(ListaLocal lista) {
         return lista.chaveImagem == null || !itens.getProdutoIds(lista.id).isEmpty();

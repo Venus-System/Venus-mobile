@@ -59,4 +59,23 @@
         tools:itemCount="3"
         tools:listitem="@layout/item_colecao" />
 
+    <TextView
+        android:id="@+id/textListasVazio"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:layout_marginTop="@dimen/espaco_medio"
+        android:layout_marginEnd="@dimen/espaco_medio"
+        android:background="@drawable/bg_lista_vazia"
+        android:gravity="center"
+        android:padding="@dimen/espaco_grande"
+        android:text="@string/listas_vazio"
+        android:textColor="@color/preto_texto"
+        android:textSize="@dimen/texto_corpo"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnNovaLista"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

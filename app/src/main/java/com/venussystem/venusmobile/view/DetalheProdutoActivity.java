@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
@@ -14,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -706,7 +708,8 @@ public class DetalheProdutoActivity extends AppCompatActivity {
      * Menu preso ao marcador com todas as listas do usuario. As que ja tem
      * este produto aparecem marcadas; tocar numa lista salva o produto nela
      * (no topo, como o "Adicionar produto" da propria lista) ou tira, se ja
-     * estava.
+     * estava. A ultima opcao cria uma lista nova ja com o produto - e a unica
+     * quando a pessoa ainda nao tem lista nenhuma.
      */
     private void mostrarListasParaSalvar(
             View ancora
@@ -716,22 +719,15 @@ public class DetalheProdutoActivity extends AppCompatActivity {
             return;
         }
 
-        List<Colecao> listas =
+        List<Colecao> encontradas =
                 colecaoRepository
                         .minhasListas()
                         .getValue();
 
-        if (listas == null
-                || listas.isEmpty()) {
-
-            Toast.makeText(
-                    this,
-                    R.string.produto_sem_listas,
-                    Toast.LENGTH_LONG
-            ).show();
-
-            return;
-        }
+        List<Colecao> listas =
+                encontradas != null
+                        ? encontradas
+                        : new ArrayList<>();
 
         PopupMenu menu =
                 new PopupMenu(
@@ -761,20 +757,110 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                     );
         }
 
+        // Depois de todas as listas: o id dela e o primeiro que sobra.
+        int idNovaLista = listas.size();
+
+        menu.getMenu()
+                .add(
+                        Menu.NONE,
+                        idNovaLista,
+                        idNovaLista,
+                        R.string.produto_nova_lista
+                );
+
         menu.setOnMenuItemClickListener(
                 item -> {
 
-                    alternarProdutoNaLista(
-                            listas.get(
-                                    item.getItemId()
-                            )
-                    );
+                    if (item.getItemId() == idNovaLista) {
+
+                        mostrarDialogoNovaLista();
+
+                    } else {
+
+                        alternarProdutoNaLista(
+                                listas.get(
+                                        item.getItemId()
+                                )
+                        );
+                    }
 
                     return true;
                 }
         );
 
         menu.show();
+    }
+
+    /**
+     * Pede so o nome (como o "Editar nome" da lista) e ja salva o produto
+     * na lista criada. Descricao e capa ficam para a tela da lista.
+     */
+    private void mostrarDialogoNovaLista() {
+
+        View conteudo =
+                getLayoutInflater()
+                        .inflate(
+                                R.layout.dialog_editar_texto,
+                                null
+                        );
+
+        EditText campo =
+                conteudo.findViewById(
+                        R.id.editTexto
+                );
+
+        AlertDialog dialog =
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.lista_nova)
+                        .setView(conteudo)
+                        .setPositiveButton(R.string.lista_salvar, null)
+                        .setNegativeButton(R.string.lista_cancelar, null)
+                        .create();
+
+        // Botao positivo tratado a mao: nome vazio ou repetido mantem o
+        // dialog aberto mostrando o erro (o listener do Builder sempre fecha).
+        dialog.setOnShowListener(
+                d -> dialog
+                        .getButton(AlertDialog.BUTTON_POSITIVE)
+                        .setOnClickListener(
+                                v -> {
+
+                                    String nome =
+                                            campo.getText()
+                                                    .toString()
+                                                    .trim();
+
+                                    if (nome.isEmpty()) {
+                                        campo.setError(
+                                                getString(R.string.lista_erro_nome)
+                                        );
+                                        return;
+                                    }
+
+                                    if (colecaoRepository.nomeEmUso(nome, -1)) {
+                                        campo.setError(
+                                                getString(R.string.lista_erro_nome_repetido)
+                                        );
+                                        return;
+                                    }
+
+                                    Colecao criada =
+                                            colecaoRepository.criar(
+                                                    nome,
+                                                    "",
+                                                    null
+                                            );
+
+                                    alternarProdutoNaLista(
+                                            criada
+                                    );
+
+                                    dialog.dismiss();
+                                }
+                        )
+        );
+
+        dialog.show();
     }
 
     private void alternarProdutoNaLista(

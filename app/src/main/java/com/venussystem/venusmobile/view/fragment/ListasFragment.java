@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -33,6 +34,7 @@ public class ListasFragment extends Fragment {
     private ListaItemRepository itemRepository;
     private ColecaoAdapter adapter;
     private RecyclerView lista;
+    private TextView textListasVazio;
 
     @Nullable
     @Override
@@ -51,6 +53,7 @@ public class ListasFragment extends Fragment {
         adapter = new ColecaoAdapter(this::abrirLista);
 
         lista = view.findViewById(R.id.listaColecoes);
+        textListasVazio = view.findViewById(R.id.textListasVazio);
         // 1 coluna no celular; vira grade no tablet (values-w600dp/w900dp).
         int colunas = getResources().getInteger(R.integer.colunas_grade);
         lista.setLayoutManager(new GridLayoutManager(requireContext(), colunas));
@@ -93,7 +96,11 @@ public class ListasFragment extends Fragment {
     }
 
     private void carregar() {
-        repository.minhasListas().observe(getViewLifecycleOwner(), adapter::atualizar);
+        repository.minhasListas().observe(getViewLifecycleOwner(), colecoes -> {
+            adapter.atualizar(colecoes);
+            // A conta comeca sem listas: sem o aviso, a aba ficaria em branco.
+            textListasVazio.setVisibility(colecoes.isEmpty() ? View.VISIBLE : View.GONE);
+        });
     }
 
     private void abrirLista(Colecao colecao) {
