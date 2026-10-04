@@ -2,4 +2,7 @@
 <resources>
     <!-- Colunas das listas em grade (Busca e Listas). -->
     <integer name="colunas_grade">1</integer>
+
+    <!-- O mesmo limite da API: uma descricao maior volta 400 e a lista nao sobe. -->
+    <integer name="limite_descricao_lista">500</integer>
 </resources>

@@ -32,8 +32,8 @@ import java.util.Set;
  *
  * O aparelho continua sendo a fonte do que a tela mostra. A copia em
  * /api/user-lists e mantida pela SincronizacaoListas, que usa o id da API e o
- * ultimo nome enviado, guardados aqui junto de cada lista. Descricao e capa
- * ainda ficam so no aparelho: a API nao tem onde guardar.
+ * ultimo nome, descricao e capa padrao enviados, guardados aqui junto de cada
+ * lista. A foto de capa escolhida pela pessoa ainda fica so no aparelho.
  */
 public class ColecaoRepository {
 
@@ -197,26 +197,29 @@ public class ColecaoRepository {
         synchronized (TRAVA) {
             List<ListaLocal> listas = new ArrayList<>();
             for (ColecaoSalva c : carregar()) {
-                listas.add(new ListaLocal(c.id, c.nome, c.chaveImagem, c.idApi, c.nomeNaApi));
+                listas.add(new ListaLocal(c.id, c.nome, semTextoVazio(c.descricao), c.chaveImagem,
+                        c.idApi, c.nomeNaApi, c.descricaoNaApi, c.capaNaApi));
             }
             return listas;
         }
     }
 
     /**
-     * Guarda o id que a API deu para a lista.
+     * Guarda o id que a API deu para a lista e o que foi mandado na criacao.
      *
+     * @param enviada a lista como estava quando foi mandada. Se ela mudou no
+     *                meio do envio, a mudanca continua pendente.
      * @return false se a lista foi excluida no aparelho enquanto era criada na
      * API: ai o id vai direto para a fila de apagar, senao ficaria orfa la.
      */
-    boolean marcarCriadaNaApi(long id, long idApi, String nomeEnviado) {
+    boolean marcarCriadaNaApi(long idApi, ListaLocal enviada) {
         synchronized (TRAVA) {
             boolean achou = false;
             List<ColecaoSalva> atualizadas = new ArrayList<>();
             for (ColecaoSalva c : carregar()) {
-                if (c.id == id) {
+                if (c.id == enviada.id) {
                     achou = true;
-                    atualizadas.add(c.naApi(idApi, nomeEnviado));
+                    atualizadas.add(c.naApi(idApi, enviada));
                 } else {
                     atualizadas.add(c);
                 }
@@ -230,12 +233,13 @@ public class ColecaoRepository {
         }
     }
 
-    void marcarNomeEnviado(long id, String nomeEnviado) {
+    /** Ver marcarCriadaNaApi. */
+    void marcarEnviada(ListaLocal enviada) {
         synchronized (TRAVA) {
             List<ColecaoSalva> atualizadas = new ArrayList<>();
             for (ColecaoSalva c : carregar()) {
-                atualizadas.add(c.id == id && c.idApi != null
-                        ? c.naApi(c.idApi, nomeEnviado) : c);
+                atualizadas.add(c.id == enviada.id && c.idApi != null
+                        ? c.naApi(c.idApi, enviada) : c);
             }
             salvar(atualizadas);
         }
@@ -341,6 +345,12 @@ public class ColecaoRepository {
         return nome == null ? "" : nome.trim().toLowerCase(Locale.ROOT);
     }
 
+    /** As de exemplo nao tem descricao (null); a tela grava "" quando a pessoa apaga. */
+    @Nullable
+    private static String semTextoVazio(@Nullable String texto) {
+        return texto == null || texto.trim().isEmpty() ? null : texto;
+    }
+
     private List<Colecao> paraColecoes(List<ColecaoSalva> salvas) {
         List<Colecao> lista = new ArrayList<>();
         for (ColecaoSalva s : salvas) {
@@ -349,22 +359,34 @@ public class ColecaoRepository {
         return lista;
     }
 
-    /** Retrato de uma lista para a SincronizacaoListas, sem nada da tela. */
+    /**
+     * Retrato de uma lista para a SincronizacaoListas, sem nada da tela. Os
+     * campos "NaApi" sao o que foi mandado da ultima vez; o que difere do
+     * valor atual ainda falta enviar.
+     */
     static final class ListaLocal {
         final long id;
         final String nome;
+        // null quando a lista nao tem descricao, nunca "".
+        @Nullable final String descricao;
         // So as 3 listas de exemplo tem chave (favoritos, escaneados, skincare).
         @Nullable final String chaveImagem;
         @Nullable final Long idApi;
         @Nullable final String nomeNaApi;
+        @Nullable final String descricaoNaApi;
+        @Nullable final String capaNaApi;
 
-        ListaLocal(long id, String nome, @Nullable String chaveImagem, @Nullable Long idApi,
-                   @Nullable String nomeNaApi) {
+        ListaLocal(long id, String nome, @Nullable String descricao, @Nullable String chaveImagem,
+                   @Nullable Long idApi, @Nullable String nomeNaApi,
+                   @Nullable String descricaoNaApi, @Nullable String capaNaApi) {
             this.id = id;
             this.nome = nome;
+            this.descricao = descricao;
             this.chaveImagem = chaveImagem;
             this.idApi = idApi;
             this.nomeNaApi = nomeNaApi;
+            this.descricaoNaApi = descricaoNaApi;
+            this.capaNaApi = capaNaApi;
         }
     }
 
@@ -373,9 +395,10 @@ public class ColecaoRepository {
      * exemplo, nao o id do resource: um resource id pode mudar entre builds,
      * e um valor salvo assim ficaria apontando pro drawable errado.
      *
-     * idApi e nomeNaApi ficam null ate a lista chegar na API - e em quem
-     * salvou antes desta versao do app, ja que o Gson deixa null o campo que
-     * nao estava no texto salvo.
+     * idApi e os campos "NaApi" ficam null ate a lista chegar na API - e em
+     * quem salvou antes desta versao do app, ja que o Gson deixa null o campo
+     * que nao estava no texto salvo. Uma lista que subiu antes de a API ter
+     * descricao e capa padrao fica com esses dois null e recebe os dois depois.
      */
     private static class ColecaoSalva {
         final long id;
@@ -385,14 +408,17 @@ public class ColecaoRepository {
         final String caminhoImagem;
         final Long idApi;
         final String nomeNaApi;
+        final String descricaoNaApi;
+        final String capaNaApi;
 
         ColecaoSalva(long id, String nome, String descricao, String chaveImagem,
                      String caminhoImagem) {
-            this(id, nome, descricao, chaveImagem, caminhoImagem, null, null);
+            this(id, nome, descricao, chaveImagem, caminhoImagem, null, null, null, null);
         }
 
         ColecaoSalva(long id, String nome, String descricao, String chaveImagem,
-                     String caminhoImagem, Long idApi, String nomeNaApi) {
+                     String caminhoImagem, Long idApi, String nomeNaApi,
+                     String descricaoNaApi, String capaNaApi) {
             this.id = id;
             this.nome = nome;
             this.descricao = descricao;
@@ -400,26 +426,33 @@ public class ColecaoRepository {
             this.caminhoImagem = caminhoImagem;
             this.idApi = idApi;
             this.nomeNaApi = nomeNaApi;
+            this.descricaoNaApi = descricaoNaApi;
+            this.capaNaApi = capaNaApi;
         }
 
         ColecaoSalva comNome(String novoNome) {
             return new ColecaoSalva(id, novoNome, descricao, chaveImagem, caminhoImagem,
-                    idApi, nomeNaApi);
+                    idApi, nomeNaApi, descricaoNaApi, capaNaApi);
         }
 
         ColecaoSalva comDescricao(String novaDescricao) {
             return new ColecaoSalva(id, nome, novaDescricao, chaveImagem, caminhoImagem,
-                    idApi, nomeNaApi);
+                    idApi, nomeNaApi, descricaoNaApi, capaNaApi);
         }
 
         ColecaoSalva comImagem(String novoCaminho) {
             return new ColecaoSalva(id, nome, descricao, chaveImagem, novoCaminho,
-                    idApi, nomeNaApi);
+                    idApi, nomeNaApi, descricaoNaApi, capaNaApi);
         }
 
-        ColecaoSalva naApi(@Nullable Long novoIdApi, @Nullable String nomeEnviado) {
+        /** @param enviada null esquece tudo o que foi mandado (junto com o id). */
+        ColecaoSalva naApi(@Nullable Long novoIdApi, @Nullable ListaLocal enviada) {
+            if (enviada == null) {
+                return new ColecaoSalva(id, nome, descricao, chaveImagem, caminhoImagem,
+                        novoIdApi, null, null, null);
+            }
             return new ColecaoSalva(id, nome, descricao, chaveImagem, caminhoImagem,
-                    novoIdApi, nomeEnviado);
+                    novoIdApi, enviada.nome, enviada.descricao, enviada.chaveImagem);
         }
 
         Colecao paraColecao() {

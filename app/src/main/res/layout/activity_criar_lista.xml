@@ -110,6 +110,7 @@
             android:autofillHints="name"
             android:hint="@string/lista_hint_descricao"
             android:inputType="text"
+            android:maxLength="@integer/limite_descricao_lista"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/labelDescricao" />
