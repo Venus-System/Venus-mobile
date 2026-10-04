@@ -63,13 +63,22 @@ public class PrincipalActivity extends AppCompatActivity {
         findViewById(R.id.btnReiniciarTeste).setOnClickListener(v -> reiniciarTeste());
 
         if (savedInstanceState == null) {
-            selecionar(findViewById(R.id.navBusca), new BuscaFragment(), false);
+            selecionar(findViewById(R.id.navInicio), new HistoricoFragment(), false);
 
             // Toda entrada no app passa por aqui (fim do questionario, login ou
             // app reaberto): e o ponto para cadastrar a pessoa na API e mandar o
             // que ficou pendente. Roda em segundo plano, sem segurar a tela.
             new SincronizacaoRepository(this).sincronizarEmSegundoPlano();
         }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        // O scan retorna para a mesma PrincipalActivity. Reabre a casinha para
+        // que o item recém-enviado apareça sem exigir um toque na navegação.
+        selecionar(findViewById(R.id.navInicio), new HistoricoFragment(), true);
     }
 
     private void montarItem(int id, @DrawableRes int icone, Class<? extends Fragment> tela) {

@@ -51,6 +51,20 @@
         tools:text="Deo" />
 
     <TextView
+        android:id="@+id/textStatus"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/cinza_descricao"
+        android:textSize="11sp"
+        app:layout_constraintEnd_toEndOf="@+id/textNome"
+        app:layout_constraintStart_toStartOf="@+id/textNome"
+        app:layout_constraintTop_toBottomOf="@+id/textMarca"
+        tools:text="Em análise" />
+
+    <TextView
         android:id="@+id/textNota"
         android:layout_width="@dimen/largura_nota_historico"
         android:layout_height="@dimen/altura_nota_historico"

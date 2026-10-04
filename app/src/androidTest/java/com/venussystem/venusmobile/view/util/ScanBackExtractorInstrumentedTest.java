@@ -300,6 +300,23 @@ public class ScanBackExtractorInstrumentedTest {
         data.getIngredients().forEach(i -> assertEquals("UNRESOLVED", i.getStatus()));
     }
 
+    @Test
+    public void recoversIngredientsAfterInterleavedMarketingColumn() {
+        ScanBackData data = ScanBackExtractor.extract(Arrays.asList(
+                "INGREDIENTES: BUTANE, ISOBUTANE, PROPANE, PPG-14 BUTL ETE",
+                "WAS VENDIDO DO MERCADO DE DESODORANTES NO BRASIL",
+                "DO.OPENTASILOXANE, ALUMINUM SESQUICHLOROHYDRATE, PARIN",
+                "EJANTHUS ANNUUS SEED OIL, GLYCINE, AQUA, CALCIUM CHLORIDE",
+                "DIMETHICONOL, ALPHA-ISOMETHYL IONONE, HEXYL CINNAMAL, LIMONENE.",
+                "Y33824C"));
+
+        assertTrue(data.getIngredientsRawText().contains("DO.OPENTASILOXANE"));
+        assertTrue(names(data).contains("DIMETHICONOL"));
+        assertTrue(names(data).contains("LIMONENE"));
+        assertTrue(data.getIngredients().size() > 4);
+        assertTrue(!data.getIngredientsRawText().contains("MERCADO DE DESODORANTES"));
+    }
+
     private static List<String> names(ScanBackData data) {
         List<String> names = new java.util.ArrayList<>();
         data.getIngredients().forEach(i -> names.add(i.getRawName()));

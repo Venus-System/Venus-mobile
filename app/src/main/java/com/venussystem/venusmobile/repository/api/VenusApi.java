@@ -11,6 +11,7 @@ import com.venussystem.venusmobile.repository.api.dto.ProductResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductVersionResponse;
 import com.venussystem.venusmobile.repository.api.dto.ScoringModelResponse;
+import com.venussystem.venusmobile.repository.api.dto.ScanSessionResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserAllergyRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserAllergyResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserPreferenceRequest;
@@ -62,6 +63,14 @@ public interface VenusApi {
 
     @GET("api/products/{id}/full")
     Call<ProductFullResponse> buscarProdutoCompleto(@Path("id") long id);
+
+    /** Scans recentes da própria conta; a API aplica a regra de ownership. */
+    @GET("api/scan-sessions/user/{userId}")
+    Call<FatiaResponse<ScanSessionResponse>> listarScansDoUsuario(
+            @Path("userId") long userId,
+            @Query("page") int pagina,
+            @Query("size") int tamanho,
+            @Query("sort") String ordenacao);
 
     // ---- Usuario: liga o UID do Firebase ao id numerico da API ----
 
