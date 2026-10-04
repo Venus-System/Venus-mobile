@@ -6,6 +6,7 @@ import com.venussystem.venusmobile.model.ScanBackIngredientCandidate;
 import com.venussystem.venusmobile.model.ScanSubmissionDraft;
 import com.venussystem.venusmobile.model.ScanPhotoQuality;
 import com.venussystem.venusmobile.repository.api.dto.ScanSessionRequest;
+import android.util.Log;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -82,12 +83,17 @@ public final class ScanSubmissionMapper {
         back.claims = new ArrayList<>(data.getClaims());
         request.ocr.back.extracted = back;
         request.ingredients = new ArrayList<>();
+        int dropped = 0;
         for (ScanBackIngredientCandidate i : data.getIngredients()) {
             String wireName = ingredientNameForWire(i);
             if (ScanIngredientPolicy.hasAdministrativeText(wireName)) {
+                dropped++;
                 continue;
             }
             request.ingredients.add(new ScanSessionRequest.Ingredient(i.getPosition(), wireName));
+        }
+        if (dropped > 0) {
+            Log.d("VENUS_SCAN_SUBMISSION", "INGREDIENTS_FILTERED count=" + dropped);
         }
         ScanSubmissionValidator.validateIngredientQuality(request);
         return request;

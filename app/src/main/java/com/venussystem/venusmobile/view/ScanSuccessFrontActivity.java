@@ -131,6 +131,12 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
 
                     Log.e(
                             TAG_SCAN,
+                            "ERRO NO SCAN",
+                            exception
+                    );
+
+                    Log.e(
+                            TAG_SCAN,
                             "Erro durante o processamento da frente. Encerrando o scan."
                     );
                     fecharFluxoParaPrincipal(
@@ -148,6 +154,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         leituraIniciada = true;
 
         if (photoPath == null || photoPath.trim().isEmpty()) {
+            Log.e(TAG_OCR, "photoPath nulo ou vazio");
             Log.e(TAG_OCR, "Foto frontal não recebida. Encerrando o scan.");
             fecharFluxoParaPrincipal(
                     "Não lemos a foto. Tire outra com o rótulo visível."
@@ -167,6 +174,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
             return;
         }
 
+        Log.d(TAG_OCR, "INICIANDO PROCESSAMENTO DA FOTO FRONT");
         setBadge("Lendo a foto e buscando o produto...");
 
         scanViewModel.reconhecer(Uri.fromFile(photoFile));
@@ -178,6 +186,10 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         }
 
         ultimoOcr = result;
+
+        Log.d(TAG_OCR, "OCR_FRONT_CONCLUIDO chars="
+                + (result.getFullText() == null ? 0 : result.getFullText().length())
+                + " lines=" + result.getLines().size());
 
         if (result.getFullText() == null
                 || result.getFullText().trim().isEmpty()) {
@@ -191,6 +203,10 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         ultimoFrontData = ScanFrontExtractor.extract(
                 result.getLines()
         );
+
+        Log.d(TAG_OCR, "FRONT_CANDIDATES brands=" + ultimoFrontData.getBrandCandidates().size()
+                + " products=" + ultimoFrontData.getProductCandidates().size()
+                + " presentations=" + ultimoFrontData.getPresentationCandidates().size());
 
         setBadge("Buscando o produto...");
 
@@ -218,6 +234,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
             Produto produto = match.getProduto();
 
             if (produto.getId() == null || produto.getId() <= 0) {
+                Log.e(TAG_SCAN, "Produto encontrado sem ID válido");
                 Log.e(TAG_SCAN, "Produto encontrado sem ID válido. Encerrando o scan.");
                 fecharFluxoParaPrincipal(
                         "Produto encontrado, mas não foi possível abri-lo."
@@ -229,9 +246,11 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
             return;
         }
 
+        Log.d(TAG_SCAN, "PRODUTO NÃO ENCONTRADO NO CATÁLOGO");
         setBadge("Produto não encontrado. Verificando...");
 
         if (ultimoOcr == null || ultimoFrontData == null) {
+            Log.e(TAG_SCAN, "Resultado do OCR/extração ainda não disponível");
             Log.e(TAG_SCAN, "Dados do OCR/extração ausentes. Encerrando o scan.");
             fecharFluxoParaPrincipal(
                     "Não entendemos a foto. Mostre o rótulo e tente novamente."
@@ -252,9 +271,30 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
             return;
         }
 
+        Log.d(
+                TAG_SCAN,
+                "CLASSIFICAÇÃO COSMÉTICO: " + ultimaClassificacao.getStatus()
+        );
+        Log.d(
+                TAG_SCAN,
+                "CONFIANÇA HEURÍSTICA: " + ultimaClassificacao.getConfidenceScore()
+        );
+        Log.d(TAG_SCAN, "EVIDENCIAS_COUNT=" + ultimaClassificacao.getEvidence().size());
+
+        boolean catalogoNaoEncontrou = !match.isFound();
         boolean liberar = ScanCosmeticClassifier.shouldOpenNewCosmeticFlow(
                 match.isFound(),
                 ultimaClassificacao
+        );
+
+        Log.d(
+                TAG_SCAN,
+                "DECISAO NOVO PRODUTO: catalogoNaoEncontrou="
+                        + catalogoNaoEncontrou
+                        + " confirmadoCosmetico="
+                        + ultimaClassificacao.isConfirmedCosmetic()
+                        + " liberar="
+                        + liberar
         );
 
         if (liberar) {
@@ -263,10 +303,12 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         }
 
         if (ultimaClassificacao.isNonCosmetic()) {
+            Log.d(TAG_SCAN, "Produto não cosmético. Encerrando o scan e retornando à PrincipalActivity.");
             fecharFluxoParaPrincipal(
                     "Foto recusada. Fotografe um cosmético."
             );
         } else {
+            Log.d(TAG_SCAN, "Produto não confirmado como cosmético. Encerrando o scan e retornando à PrincipalActivity.");
             fecharFluxoParaPrincipal(
                     "Foto recusada. Mostre o nome e o tipo do produto."
             );
@@ -282,6 +324,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                 || ultimoOcr == null
                 || ultimoFrontData == null
                 || ultimaClassificacao == null) {
+            Log.e(TAG_SCAN, "Dados insuficientes para criar o draft do novo produto");
             Log.e(TAG_SCAN, "Dados insuficientes para criar o draft do novo produto. Encerrando o scan.");
             fecharFluxoParaPrincipal(
                     "Não foi possível preparar a foto. Scan encerrado."
@@ -347,6 +390,8 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         }
 
         navegando = true;
+
+        Log.d(TAG_SCAN, "PRODUTO_ENCONTRADO idPresent=true score=" + match.getScore());
 
         Intent intent = new Intent(
                 this,

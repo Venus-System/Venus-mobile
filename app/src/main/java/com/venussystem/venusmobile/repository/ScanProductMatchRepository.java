@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import static com.venussystem.venusmobile.repository.ScanCatalogMatcher.procurarMelhorProduto;
+import static com.venussystem.venusmobile.repository.ScanCatalogRules.TAG;
 
 /**
  * Identifica um produto da VENUS usando os dados extraídos
@@ -57,10 +58,31 @@ public class ScanProductMatchRepository {
             @NonNull ScanFrontData frontData,
             @NonNull Callback callback
     ) {
+        Log.d(
+                TAG,
+                "IDENTIFICAR() CHAMADO"
+        );
         executor.execute(() -> {
+            Log.d(
+                    TAG,
+                    "THREAD DO MATCH INICIADA"
+            );
             try {
+                Log.d(
+                        TAG,
+                        "BUSCANDO CATALOGO..."
+                );
                 List<Produto> catalogo =
                         obterCatalogo();
+                Log.d(
+                        TAG,
+                        "CATALOGO RECEBIDO: "
+                                + (
+                                catalogo == null
+                                        ? "NULL"
+                                        : catalogo.size()
+                        )
+                );
                 if (catalogo == null
                         || catalogo.isEmpty()) {
                     postarResultado(
@@ -74,6 +96,10 @@ public class ScanProductMatchRepository {
                                 frontData,
                                 catalogo
                         );
+                Log.d(
+                        TAG,
+                        criarLogResultado(resultado)
+                );
                 postarResultado(
                         callback,
                         resultado
@@ -146,6 +172,26 @@ public class ScanProductMatchRepository {
                                 resultado
                         )
         );
+    }
+
+    @NonNull
+    private String criarLogResultado(
+            @NonNull ScanProductMatch resultado
+    ) {
+        if (!resultado.isFound()) {
+            if (resultado.hasError()) {
+                return
+                        "MATCH ERROR: "
+                                + resultado
+                                .getErrorMessage();
+            }
+            return
+                    "MATCH: nenhum produto encontrado";
+        }
+        Produto produto =
+                resultado.getProduto();
+        return "MATCH_ENCONTRADO idPresent=" + (produto != null && produto.getId() != null)
+                + " score=" + resultado.getScore();
     }
 
     public void close() {

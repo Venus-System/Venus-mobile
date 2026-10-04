@@ -226,6 +226,28 @@ public class ScanViewModel extends AndroidViewModel {
             @NonNull ScanFrontData frontData
     ) {
 
+        android.util.Log.d(
+                "VENUS_MATCH",
+                "================================"
+        );
+
+        android.util.Log.d(
+                "VENUS_MATCH",
+                "INICIANDO IDENTIFICACAO"
+        );
+
+        android.util.Log.d(
+                "VENUS_MATCH",
+                "FRONT_CANDIDATES brands="
+                        + frontData.getBrandCandidates().size()
+        );
+
+        android.util.Log.d(
+                "VENUS_MATCH",
+                "products="
+                        + frontData.getProductCandidates().size()
+        );
+
         productMatch.setValue(null);
 
         productMatchRepository.identificar(
@@ -236,6 +258,11 @@ public class ScanViewModel extends AndroidViewModel {
                     public void onSuccess(
                             @NonNull ScanProductMatch resultado
                     ) {
+
+                        android.util.Log.d(
+                                "VENUS_MATCH",
+                                "CALLBACK RECEBIDO"
+                        );
 
                         productMatch.postValue(
                                 resultado

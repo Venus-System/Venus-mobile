@@ -1,5 +1,7 @@
 package com.venussystem.venusmobile.view.util;
 
+import android.util.Log;
+
 import com.venussystem.venusmobile.model.ScanOcrToken;
 import com.venussystem.venusmobile.domain.scan.ScanIngredientPolicy;
 
@@ -18,7 +20,7 @@ final class ScanBackSpatialLayout {
 
     // Empty means uncertain/incomplete geometry: the caller must use the source text.
     static List<List<ScanOcrToken>> rows(List<String> source, List<ScanOcrToken> tokens) {
-        if (tokens == null || tokens.isEmpty()) return fallback();
+        if (tokens == null || tokens.isEmpty()) return fallback("NO_TOKENS");
         List<String> nonEmpty = new ArrayList<>();
         for (String line : source) {
             if (line != null && !line.trim().isEmpty()) nonEmpty.add(line);
@@ -29,21 +31,24 @@ final class ScanBackSpatialLayout {
         for (ScanOcrToken token : tokens) {
             if (token == null || token.getBoundingBox() == null
                     || token.getHeight() <= 0 || token.getWidth() <= 0)
-                return fallback();
+                return fallback("MISSING_OR_INVALID_BOX");
             if (token.getLineIndex() < 0 || token.getLineIndex() >= nonEmpty.size())
-                return fallback();
+                return fallback("LINE_INDEX_OUT_OF_RANGE line=" + token.getLineIndex());
             if (!Float.isFinite(token.getRotation()))
-                return fallback();
+                return fallback("ROTATION line=" + token.getLineIndex() + " angle=" + token.getRotation());
             // Recognition confidence measures spelling, not the validity of a box.
             // Keep every token; geometry is checked independently below.
+            if (token.getConfidence() > 0 && token.getConfidence() < 0.5f)
+                Log.d("VENUS_BACK_PARSE", "BACK_TEXT_LOW_CONFIDENCE line="
+                        + token.getLineIndex() + " value=" + token.getConfidence());
             original.computeIfAbsent(token.getLineIndex(), k -> new ArrayList<>()).add(token);
         }
         // Never replace whole OCR lines with a partial subset of their elements.
-        if (original.size() != nonEmpty.size()) return fallback();
+        if (original.size() != nonEmpty.size()) return fallback("INCOMPLETE_LINE_COVERAGE");
         for (Map.Entry<Integer, List<ScanOcrToken>> entry : original.entrySet()) {
             entry.getValue().sort(Comparator.comparingInt(ScanOcrToken::getElementIndex));
             if (!compact(join(entry.getValue())).equals(compact(nonEmpty.get(entry.getKey())))) {
-                return fallback();
+                return fallback("TEXT_TOKEN_MISMATCH line=" + entry.getKey());
             }
         }
         List<ScanOcrToken> primary = new ArrayList<>();
@@ -60,15 +65,17 @@ final class ScanBackSpatialLayout {
                         && ScanIngredientPolicy.isPackagingTailLine(text);
                 boolean vertical = Math.abs(Math.abs(orientation) - 90) <= 12
                         && line.stream().allMatch(t -> Math.abs(t.getRotation() - orientation) <= 12);
-                if (!code || !vertical) return fallback();
+                if (!code || !vertical) return fallback("AMBIGUOUS_ORIENTATION line="
+                        + line.get(0).getLineIndex());
                 peripheral.add(line);
             }
         }
-        if (primary.isEmpty()) return fallback();
+        if (primary.isEmpty()) return fallback("NO_PRIMARY_ORIENTATION");
         for (List<ScanOcrToken> line : peripheral) {
             for (ScanOcrToken side : line) {
                 for (ScanOcrToken main : primary) {
-                    if (overlaps(side, main)) return fallback();
+                    if (overlaps(side, main)) return fallback("ORIENTATION_OVERLAP line="
+                            + side.getLineIndex());
                 }
             }
         }
@@ -81,7 +88,7 @@ final class ScanBackSpatialLayout {
         double angle = angles.get(angles.size() / 2);
         for (double a : angles) {
             if (Math.abs(a - angle) > MAX_PERSPECTIVE_SPREAD)
-                return fallback();
+                return fallback("INCONSISTENT_ROTATION angle=" + a + " median=" + angle);
         }
         double radians = Math.toRadians(angle);
         double sin = Math.sin(radians), cos = Math.cos(radians);
@@ -121,6 +128,9 @@ final class ScanBackSpatialLayout {
         // Keep peripheral codes as separate trailing rows, never merged with composition.
         // The caller also retains the untouched fullText and original lines for audit.
         result.addAll(peripheral);
+        if (!peripheral.isEmpty()) Log.d("VENUS_BACK_PARSE",
+                "BACK_ORIENTATION_GROUPS primaryTokens=" + primary.size()
+                        + " peripheralLines=" + peripheral.size());
         return result;
     }
 
@@ -131,7 +141,8 @@ final class ScanBackSpatialLayout {
                 && b.getBoundingBox().top < a.getBoundingBox().bottom;
     }
 
-    private static List<List<ScanOcrToken>> fallback() {
+    private static List<List<ScanOcrToken>> fallback(String reason) {
+        Log.d("VENUS_BACK_PARSE", "BACK_LAYOUT_FALLBACK_REASON=" + reason);
         return Collections.emptyList();
     }
 

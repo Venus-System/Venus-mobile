@@ -34,6 +34,7 @@ public class ScanTutorial3Activity extends AppCompatActivity {
         }
 
         if (ScanTutorialState.isTutorial3Seen(this)) {
+            Log.d(TAG, "Tutorial 3 já visto; finalizando automaticamente.");
             ScanFlowFinisher.finalizar(this, draft);
             return;
         }

@@ -1,5 +1,6 @@
 package com.venussystem.venusmobile.view.util;
 
+import android.util.Log;
 import com.venussystem.venusmobile.domain.scan.ScanIngredientPolicy;
 import androidx.annotation.NonNull;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import static com.venussystem.venusmobile.view.util.ScanBackRules.INLINE_COMPANY
 import static com.venussystem.venusmobile.view.util.ScanBackRules.PHONE_PATTERN;
 import static com.venussystem.venusmobile.view.util.ScanBackRules.REGISTRATION_MARKER_PATTERN;
 import static com.venussystem.venusmobile.view.util.ScanBackRules.STREET_PATTERN;
+import static com.venussystem.venusmobile.view.util.ScanBackRules.TAG;
 import static com.venussystem.venusmobile.view.util.ScanBackRules.URL_PATTERN;
 import static com.venussystem.venusmobile.view.util.ScanBackText.HeadingMatch;
 import static com.venussystem.venusmobile.view.util.ScanBackText.compactarEspacos;
@@ -402,6 +404,7 @@ final class ScanBackIngredientSection {
                     && collected.get(collected.size() - 1).trim().endsWith(".")
                     && isPackagingSuffix(lines, i)) {
                 stopReason = "PACKAGING_TAIL";
+                Log.d(TAG, "INGREDIENT_SECTION_STOP reason=PACKAGING_TAIL line=" + i);
                 break;
             }
             StopMatch stop =
@@ -471,6 +474,19 @@ final class ScanBackIngredientSection {
                 limparPontosFinais(
                         raw
                 );
+        Log.d(
+                TAG,
+                "Secao ingredientes: heading="
+                        + heading
+                        + " start="
+                        + start
+                        + " end="
+                        + end
+                        + " found=true stop="
+                        + stopReason
+                        + " fallback="
+                        + detectedByContent
+        );
         return new IngredientSection(
                 true,
                 start,

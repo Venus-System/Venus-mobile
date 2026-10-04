@@ -2,6 +2,7 @@ package com.venussystem.venusmobile.view.util;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 import java.io.File;
 import java.io.IOException;
 import com.venussystem.venusmobile.model.ScanPhotoQuality;
@@ -16,12 +17,22 @@ public final class ScanPhotoQualityAnalyzer {
 
     public static ScanPhotoQuality aggregate(String frontPath, String backPath) throws IOException {
         ScanPhotoQuality front = analyze(frontPath);
+        logQuality("FRONT", front);
         ScanPhotoQuality back = analyze(backPath);
+        logQuality("BACK", back);
         return new ScanPhotoQuality(
                 Math.max(front.getBlurScore(), back.getBlurScore()),
                 (front.getBrightness() + back.getBrightness()) / 2d,
                 front.isBackgroundOk() && back.isBackgroundOk(),
                 "COMPLETED");
+    }
+
+    private static void logQuality(String side, ScanPhotoQuality quality) {
+        Log.d("VENUS_SCAN_QUALITY", "side=" + side
+                + " blurScore=" + quality.getBlurScore()
+                + " brightness=" + quality.getBrightness()
+                + " backgroundOk=" + quality.isBackgroundOk()
+                + " status=" + quality.getStatus());
     }
 
     public static ScanPhotoQuality analyze(String path) throws IOException {
