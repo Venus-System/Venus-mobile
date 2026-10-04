@@ -12,6 +12,7 @@ import com.venussystem.venusmobile.repository.api.VenusApi;
 import com.venussystem.venusmobile.repository.api.dto.FatiaResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserListItemRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserListItemResponse;
+import com.venussystem.venusmobile.repository.api.dto.UserListPatchRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserListRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserListResponse;
 
@@ -19,19 +20,21 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import retrofit2.Response;
 
 /**
- * Leva as listas do aparelho para o Venus-CRUD: cria, renomeia e apaga as
- * listas em /api/user-lists e deixa os produtos de cada uma iguais em
- * /api/user-list-items.
+ * Leva as listas do aparelho para o Venus-CRUD: cria, atualiza (nome,
+ * descricao e capa padrao) e apaga as listas em /api/user-lists e deixa os
+ * produtos de cada uma iguais em /api/user-list-items.
  *
  * Como o SincronizacaoRepository, roda quieto e o aparelho continua sendo a
  * fonte do que a tela mostra; o que falhar fica pendente e vai na proxima.
- * Descricao e capa ainda nao vao: a API nao tem onde guardar.
+ * A foto de capa escolhida pela pessoa ainda nao vai.
  *
  * So mexe nas listas que o proprio app criou na API. Uma lista feita pelo
  * site, que o app nunca mostrou, fica como esta.
@@ -118,7 +121,7 @@ public class SincronizacaoListas {
                 if (deveExistirNaApi(lista)) {
                     return true;
                 }
-            } else if (!lista.nome.equals(lista.nomeNaApi) || itens.temItensParaEnviar(lista.id)) {
+            } else if (mudouDesdeOEnvio(lista) || itens.temItensParaEnviar(lista.id)) {
                 return true;
             }
         }
@@ -157,7 +160,7 @@ public class SincronizacaoListas {
             if (idApi == null) {
                 return false;
             }
-            if (!listas.marcarCriadaNaApi(lista.id, idApi, lista.nome)) {
+            if (!listas.marcarCriadaNaApi(idApi, lista)) {
                 // Excluida no aparelho enquanto era criada: ja esta na fila de apagar.
                 return true;
             }
@@ -165,7 +168,7 @@ public class SincronizacaoListas {
             return sincronizarItens(lista.id, idApi);
         }
 
-        if (!lista.nome.equals(lista.nomeNaApi) && !renomear(userId, lista)) {
+        if (mudouDesdeOEnvio(lista) && !atualizar(lista)) {
             return false;
         }
         if (itens.temItensParaEnviar(lista.id)) {
@@ -183,6 +186,8 @@ public class SincronizacaoListas {
         corpo.userId = userId;
         corpo.name = lista.nome;
         corpo.listType = tipoNaApi(lista.chaveImagem);
+        corpo.description = lista.descricao;
+        corpo.coverKey = capaPadraoNaApi(lista.chaveImagem);
 
         Response<UserListResponse> resposta = api.criarLista(corpo).execute();
         exigirPermissao(resposta);
@@ -229,23 +234,31 @@ public class SincronizacaoListas {
         return null;
     }
 
-    private boolean renomear(long userId, ListaLocal lista) throws IOException, Proibido {
-        UserListRequest corpo = new UserListRequest();
-        corpo.userId = userId;
-        corpo.name = lista.nome;
+    /** Manda so o que mudou desde o ultimo envio. */
+    private boolean atualizar(ListaLocal lista) throws IOException, Proibido {
+        UserListPatchRequest corpo = new UserListPatchRequest();
+        if (!lista.nome.equals(lista.nomeNaApi)) {
+            corpo.name(lista.nome);
+        }
+        if (!Objects.equals(lista.descricao, lista.descricaoNaApi)) {
+            corpo.description(lista.descricao);
+        }
+        if (!Objects.equals(lista.chaveImagem, lista.capaNaApi)) {
+            corpo.coverKey(capaPadraoNaApi(lista.chaveImagem));
+        }
 
-        Response<Void> resposta = api.renomearLista(lista.idApi, corpo).execute();
+        Response<Void> resposta = api.atualizarLista(lista.idApi, corpo.paraEnviar()).execute();
         exigirPermissao(resposta);
         if (resposta.isSuccessful()) {
-            listas.marcarNomeEnviado(lista.id, lista.nome);
+            listas.marcarEnviada(lista);
             return true;
         }
         if (resposta.code() == NAO_ENCONTRADO) {
             // Apagada na API: na proxima vez ela e criada de novo, com os produtos.
             listas.esquecerIdApi(lista.id);
         }
-        // 409: o nome ja e de uma lista do site. Fica pendente ate a pessoa
-        // trocar o nome aqui ou la.
+        // 409: o nome ja e de uma lista do site. Fica pendente (com a
+        // descricao, se ela mudou junto) ate a pessoa trocar o nome aqui ou la.
         return false;
     }
 
@@ -339,6 +352,25 @@ public class SincronizacaoListas {
             return TIPO_ROTINA;
         }
         return TIPO_PERSONALIZADA;
+    }
+
+    private static boolean mudouDesdeOEnvio(ListaLocal lista) {
+        return !lista.nome.equals(lista.nomeNaApi)
+                || !Objects.equals(lista.descricao, lista.descricaoNaApi)
+                || !Objects.equals(lista.chaveImagem, lista.capaNaApi);
+    }
+
+    /**
+     * Capa padrao na API: a mesma chave das listas de exemplo, em maiusculo
+     * (a API recusa minusculo). As outras listas nao tem.
+     */
+    @Nullable
+    private static String capaPadraoNaApi(@Nullable String chaveImagem) {
+        if ("favoritos".equals(chaveImagem) || "escaneados".equals(chaveImagem)
+                || "skincare".equals(chaveImagem)) {
+            return chaveImagem.toUpperCase(Locale.ROOT);
+        }
+        return null;
     }
 
     private static void exigirPermissao(Response<?> resposta) throws Proibido {

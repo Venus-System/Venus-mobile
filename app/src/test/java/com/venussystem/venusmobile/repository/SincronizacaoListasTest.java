@@ -52,6 +52,7 @@ public class SincronizacaoListasTest {
     private static final long ESCANEADOS = 2L;
     private static final long SKINCARE = 3L;
 
+    private Context context;
     private MockWebServer server;
     private ApiPorRota api;
     private ColecaoRepository listas;
@@ -65,7 +66,7 @@ public class SincronizacaoListasTest {
         server.setDispatcher(api);
         server.start();
 
-        Context context = ApplicationProvider.getApplicationContext();
+        context = ApplicationProvider.getApplicationContext();
         listas = new ColecaoRepository(context, "uid-ana");
         itens = new ListaItemRepository(context, "uid-ana");
         VenusApi venusApi = ApiDeTeste.criar(server, VenusApi.class);
@@ -124,7 +125,42 @@ public class SincronizacaoListasTest {
         assertEquals(42, corpo.get("userId").getAsLong());
         assertEquals("Viagem", corpo.get("name").getAsString());
         assertEquals("CUSTOM", corpo.get("listType").getAsString());
-        assertFalse("descricao ainda nao tem onde ir", corpo.has("description"));
+    }
+
+    @Test
+    public void listaCriadaPelaPessoa_sobeComADescricaoESemCapaPadrao() {
+        listas.criar("Viagem", "Para levar na mala", null);
+
+        assertTrue(sincronizacao.sincronizarAgora());
+
+        JsonObject corpo = api.corpo(POST_LISTA);
+        assertEquals("Para levar na mala", corpo.get("description").getAsString());
+        assertFalse(corpo.has("coverKey"));
+    }
+
+    @Test
+    public void listaSemDescricao_naoMandaDescricaoEmBranco() {
+        listas.criar("Viagem", "  ", null);
+
+        assertTrue(sincronizacao.sincronizarAgora());
+
+        assertFalse(api.corpo(POST_LISTA).has("description"));
+    }
+
+    @Test
+    public void listaDeExemplo_sobeComACapaPadraoEmMaiusculo() {
+        itens.adicionar(FAVORITOS, 100L);
+        itens.adicionar(ESCANEADOS, 100L);
+        itens.adicionar(SKINCARE, 100L);
+
+        sincronizacao.sincronizarAgora();
+
+        Set<String> capas = new HashSet<>();
+        for (String corpo : api.corposEm(POST_LISTA)) {
+            capas.add(JsonParser.parseString(corpo).getAsJsonObject().get("coverKey").getAsString());
+        }
+        // A API so aceita em maiusculo: "favoritos" da 400.
+        assertEquals(new HashSet<>(Arrays.asList("FAVORITOS", "ESCANEADOS", "SKINCARE")), capas);
     }
 
     @Test
@@ -186,6 +222,7 @@ public class SincronizacaoListasTest {
         JsonObject corpo = api.corpo(PATCH_7);
         assertEquals("Férias", corpo.get("name").getAsString());
         assertFalse(corpo.has("listType"));
+        assertFalse("sem o campo, a API mantem a descricao", corpo.has("description"));
     }
 
     @Test
@@ -214,6 +251,67 @@ public class SincronizacaoListasTest {
         assertTrue(sincronizacao.sincronizarAgora());
 
         assertEquals(Collections.singletonList(TIRAR_100_DA_7), api.pedidosEm(TIRAR_100_DA_7));
+    }
+
+    // ---- Descricao e capa padrao ----
+
+    @Test
+    public void descricaoEditada_mandaSoADescricao() {
+        long viagem = viagemJaNaApi();
+        listas.atualizarDescricao(viagem, "Para levar na mala");
+        api.em(PATCH_7, 200, "{}");
+
+        assertTrue(sincronizacao.sincronizarAgora());
+
+        JsonObject corpo = api.corpo(PATCH_7);
+        assertEquals("Para levar na mala", corpo.get("description").getAsString());
+        assertFalse(corpo.has("name"));
+    }
+
+    @Test
+    public void descricaoApagada_mandaNullParaAApiApagar() {
+        long viagem = listas.criar("Viagem", "Para levar na mala", null).getId();
+        assertTrue(sincronizacao.sincronizarAgora());
+        listas.atualizarDescricao(viagem, "");
+        api.em(PATCH_7, 200, "{}");
+
+        assertTrue(sincronizacao.sincronizarAgora());
+
+        // No PATCH, campo omitido mantem o valor; so o null apaga.
+        JsonObject corpo = api.corpo(PATCH_7);
+        assertTrue(corpo.has("description"));
+        assertTrue(corpo.get("description").isJsonNull());
+    }
+
+    @Test
+    public void descricaoEditadaDuranteOEnvio_continuaPendente() {
+        long viagem = viagemJaNaApi();
+        listas.atualizarDescricao(viagem, "Praia");
+        api.em(PATCH_7, 200, "{}");
+        api.aoReceber(PATCH_7, () -> listas.atualizarDescricao(viagem, "Serra"));
+
+        sincronizacao.sincronizarAgora();
+        sincronizacao.sincronizarAgora();
+
+        assertEquals("Serra", api.corpo(PATCH_7).get("description").getAsString());
+    }
+
+    @Test
+    public void listaDeExemploQueSubiuSemCapaPadrao_recebeACapaDepois() {
+        // Gravado pela versao que ja mandava as listas, mas ainda sem a capa.
+        DadosDaConta.prefs(context, ColecaoRepository.ARQUIVO, "uid-ana").edit()
+                .putString("minhas_listas", "[{\"id\":1,\"nome\":\"Produtos favoritados\","
+                        + "\"chaveImagem\":\"favoritos\",\"idApi\":7,"
+                        + "\"nomeNaApi\":\"Produtos favoritados\"}]")
+                .commit();
+        api.em(PATCH_7, 200, "{}");
+
+        assertTrue(sincronizacao.sincronizarAgora());
+
+        JsonObject corpo = api.corpo(PATCH_7);
+        assertEquals("FAVORITOS", corpo.get("coverKey").getAsString());
+        assertFalse(corpo.has("name"));
+        assertFalse(corpo.has("description"));
     }
 
     // ---- Quando a API discorda ----

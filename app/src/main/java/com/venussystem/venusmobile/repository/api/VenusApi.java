@@ -26,6 +26,7 @@ import com.venussystem.venusmobile.repository.api.dto.UserResponse;
 
 import java.util.List;
 
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
@@ -137,8 +138,9 @@ public interface VenusApi {
     @POST("api/user-lists")
     Call<UserListResponse> criarLista(@Body UserListRequest lista);
 
+    /** O corpo vem do UserListPatchRequest.paraEnviar(). */
     @PATCH("api/user-lists/{id}")
-    Call<Void> renomearLista(@Path("id") long id, @Body UserListRequest lista);
+    Call<Void> atualizarLista(@Path("id") long id, @Body RequestBody lista);
 
     @DELETE("api/user-lists/{id}")
     Call<Void> apagarLista(@Path("id") long id);

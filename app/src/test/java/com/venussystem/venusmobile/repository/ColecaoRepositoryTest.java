@@ -73,7 +73,7 @@ public class ColecaoRepositoryTest {
     @Test
     public void excluirListaQueJaEstavaNaApi_entraNaFilaDeApagar() {
         long id = listas.criar("Viagem", "", null).getId();
-        listas.marcarCriadaNaApi(id, 7L, "Viagem");
+        listas.marcarCriadaNaApi(7L, listas.paraSincronizar().get(0));
 
         listas.excluir(id);
 
@@ -92,7 +92,7 @@ public class ColecaoRepositoryTest {
     @Test
     public void renomearEMudarCapa_naoPerdemOIdDaApi() {
         long id = listas.criar("Viagem", "", null).getId();
-        listas.marcarCriadaNaApi(id, 7L, "Viagem");
+        listas.marcarCriadaNaApi(7L, listas.paraSincronizar().get(0));
 
         listas.renomear(id, "Férias");
         listas.atualizarImagem(id, "file:///capa.jpg");
@@ -102,6 +102,8 @@ public class ColecaoRepositoryTest {
         assertEquals(Long.valueOf(7L), lista.idApi);
         assertEquals("Férias", lista.nome);
         assertEquals("Viagem", lista.nomeNaApi);
+        assertEquals("Praia", lista.descricao);
+        assertNull("a descricao nova ainda nao foi enviada", lista.descricaoNaApi);
     }
 
     @Test

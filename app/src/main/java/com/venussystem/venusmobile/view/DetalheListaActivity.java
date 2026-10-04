@@ -3,6 +3,7 @@ package com.venussystem.venusmobile.view;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.InputFilter;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
@@ -242,6 +243,9 @@ public class DetalheListaActivity extends AppCompatActivity {
     private void mostrarDialogoEditarDescricao() {
         View conteudo = getLayoutInflater().inflate(R.layout.dialog_editar_texto, null);
         EditText campo = conteudo.findViewById(R.id.editTexto);
+        // O layout do dialogo e o mesmo do nome, entao o limite vem aqui.
+        int limite = getResources().getInteger(R.integer.limite_descricao_lista);
+        campo.setFilters(new InputFilter[]{new InputFilter.LengthFilter(limite)});
         campo.setText(descricaoAtual);
         if (descricaoAtual != null) {
             campo.setSelection(descricaoAtual.length());
