@@ -2,8 +2,6 @@ package com.venussystem.venusmobile.repository;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.ImageDecoder;
 import android.net.Uri;
 
 import androidx.annotation.Nullable;
@@ -16,10 +14,7 @@ import com.venussystem.venusmobile.repository.api.VenusApi;
 import com.venussystem.venusmobile.repository.api.dto.MediaAssetResponse;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.URI;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -52,12 +47,6 @@ public class FotoPerfilRepository {
     private static final String CHAVE_CAMINHO = "caminho";
     private static final String CHAVE_PENDENTE = "pendente";
     private static final String PASTA = "fotos_perfil";
-
-    // Uma foto de camera passa de 4000 px e de alguns MB. A API limita tamanho
-    // e dimensao (configurados no servidor), e o avatar aparece com 128dp:
-    // 1024 px no lado maior sobra para a tela e fica em poucas centenas de KB.
-    private static final int LADO_MAXIMO = 1024;
-    private static final int QUALIDADE_JPEG = 85;
 
     private static final MediaType JPEG = MediaType.get("image/jpeg");
     private static final String CAMPO_ARQUIVO = "file";
@@ -252,54 +241,19 @@ public class FotoPerfilRepository {
         }
     }
 
-    /**
-     * Abre a imagem ja do tamanho final e grava como JPEG. O ImageDecoder
-     * tambem aplica a rotacao que a camera grava no EXIF: sem isso, uma foto
-     * tirada em pe apareceria deitada.
-     */
     private String salvarReduzida(Uri origem) throws IOException {
-        ImageDecoder.Source fonte = ImageDecoder.createSource(context.getContentResolver(), origem);
-        Bitmap foto = ImageDecoder.decodeBitmap(fonte, (decoder, info, src) -> {
-            int largura = info.getSize().getWidth();
-            int altura = info.getSize().getHeight();
-            int maior = Math.max(largura, altura);
-            if (maior > LADO_MAXIMO) {
-                float fator = (float) LADO_MAXIMO / maior;
-                decoder.setTargetSize(Math.round(largura * fator), Math.round(altura * fator));
-            }
-            // Bitmap de hardware nao pode ser comprimido para JPEG.
-            decoder.setAllocator(ImageDecoder.ALLOCATOR_SOFTWARE);
-        });
-
         File pasta = new File(context.getFilesDir(), PASTA);
         if (!pasta.exists() && !pasta.mkdirs()) {
             throw new IOException("Nao foi possivel criar a pasta das fotos de perfil.");
         }
         File destino = new File(pasta, "foto_" + UUID.randomUUID() + ".jpg");
-        try (OutputStream saida = new FileOutputStream(destino)) {
-            if (!foto.compress(Bitmap.CompressFormat.JPEG, QUALIDADE_JPEG, saida)) {
-                throw new IOException("Nao foi possivel gravar a foto de perfil.");
-            }
-        } finally {
-            foto.recycle();
-        }
+        ImagemReduzida.gravar(context, origem, destino);
         return destino.toURI().toString();
     }
 
-    /**
-     * O arquivo de uma foto escolhida neste aparelho; null para link da API ou
-     * sem foto. Usa java.net.URI (par do File.toURI) para ida e volta darem o
-     * mesmo arquivo em qualquer sistema - inclusive nos testes no Windows.
-     */
+    /** O arquivo de uma foto escolhida neste aparelho; null para link da API ou sem foto. */
     @Nullable
     private static File arquivoLocal(@Nullable String caminho) {
-        if (caminho == null || !caminho.startsWith("file:")) {
-            return null;
-        }
-        try {
-            return new File(URI.create(caminho));
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+        return ImagemReduzida.arquivoLocal(caminho);
     }
 }

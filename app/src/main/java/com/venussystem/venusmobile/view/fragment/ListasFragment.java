@@ -61,6 +61,16 @@ public class ListasFragment extends Fragment {
                 startActivity(new Intent(requireContext(), CriarListaActivity.class)));
 
         carregar();
+
+        // Ao abrir a aba, traz o que mudou no servidor (pelo site ou em outro
+        // aparelho) e recarrega se veio alguma coisa.
+        new SincronizacaoListas(requireContext()).atualizarEmSegundoPlano(this::recarregarSeAberta);
+    }
+
+    private void recarregarSeAberta() {
+        if (getView() != null) {
+            carregar();
+        }
     }
 
     @Override
