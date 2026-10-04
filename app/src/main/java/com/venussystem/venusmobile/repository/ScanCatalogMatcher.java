@@ -1,6 +1,5 @@
 package com.venussystem.venusmobile.repository;
 
-import android.util.Log;
 import androidx.annotation.NonNull;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.model.ScanFrontData;
@@ -9,7 +8,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import static com.venussystem.venusmobile.repository.ScanCatalogRules.TAG;
 import static com.venussystem.venusmobile.repository.ScanCatalogScoring.ProductEvidence;
 import static com.venussystem.venusmobile.repository.ScanCatalogScoring.extrairTermosFortes;
 import static com.venussystem.venusmobile.repository.ScanCatalogScoring.gerarFrasesProduto;
@@ -56,16 +54,6 @@ final class ScanCatalogMatcher {
                 limparCandidatosProduto(
                         frontData.getProductCandidates()
                 );
-        Log.d(
-                TAG,
-                "CANDIDATOS_MARCA_LIMPOS count="
-                        + marcasOCR.size()
-        );
-        Log.d(
-                TAG,
-                "CANDIDATOS_PRODUTO_LIMPOS count="
-                        + produtosOCR.size()
-        );
         if (marcasOCR.isEmpty()
                 && produtosOCR.isEmpty()) {
             return ScanProductMatch.semMatch();
@@ -98,14 +86,6 @@ final class ScanCatalogMatcher {
          * =========================================================
          */
         if (marcaEncontrada != null) {
-            Log.d(
-                    TAG,
-                    "MARCA_ENCONTRADA score=" + marcaEncontrada.score
-            );
-            Log.d(
-                    TAG,
-                    "MARCA_CONFIDENCE score=" + marcaEncontrada.score
-            );
             /*
              * Restringe o catálogo somente aos produtos
              * pertencentes à marca identificada.
@@ -129,11 +109,6 @@ final class ScanCatalogMatcher {
                     );
                 }
             }
-            Log.d(
-                    TAG,
-                    "PRODUTOS_DA_MARCA count="
-                            + produtosDaMarca.size()
-            );
             if (produtosDaMarca.isEmpty()) {
                 return ScanProductMatch
                         .semMatch();
@@ -152,21 +127,6 @@ final class ScanCatalogMatcher {
                 return ScanProductMatch
                         .semMatch();
             }
-            Log.d(
-                    TAG,
-                    "MELHOR_PRODUTO score=" + produtoEncontrado.score
-            );
-            Log.d(
-                    TAG,
-                    "SEGUNDO SCORE: "
-                            + produtoEncontrado
-                            .segundoScore
-            );
-            Log.d(
-                    TAG,
-                    "TERMOS_FORTES_CASADOS count="
-                            + produtoEncontrado.termosFortesCasados
-            );
             boolean produtoConfiavel =
                     produtoEncontrado.score
                             >= MIN_PRODUCT_SCORE_WITH_BRAND
@@ -186,14 +146,6 @@ final class ScanCatalogMatcher {
             }
             if (!produtoConfiavel
                     || ambiguo) {
-                Log.d(
-                        TAG,
-                        "MATCH REJEITADO: "
-                                + "confiavel="
-                                + produtoConfiavel
-                                + " ambiguo="
-                                + ambiguo
-                );
                 return ScanProductMatch
                         .semMatch();
             }
@@ -283,11 +235,6 @@ final class ScanCatalogMatcher {
                 );
             }
         }
-        Log.d(
-                TAG,
-                "MARCAS_NO_CATALOGO count="
-                        + marcasCatalogo.size()
-        );
         BrandMatch melhor =
                 null;
         for (String candidatoOCR :

@@ -1,12 +1,10 @@
 package com.venussystem.venusmobile.repository;
 
-import android.util.Log;
 import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import static com.venussystem.venusmobile.repository.ScanCatalogRules.TAG;
 import static com.venussystem.venusmobile.repository.ScanCatalogText.adicionarUnico;
 import static com.venussystem.venusmobile.repository.ScanCatalogText.isTermoFraco;
 import static com.venussystem.venusmobile.repository.ScanCatalogText.melhorSimilaridadeOCR;
@@ -357,25 +355,6 @@ final class ScanCatalogScoring {
                 melhorFrase != null
                         ? melhorFrase
                         : melhorTermo;
-        Log.d(
-                TAG,
-                "EVIDENCIA_PRODUTO tokensAlvo="
-                        + tokensAlvo.size()
-                        + " | alvoCasados="
-                        + tokensAlvoCasados
-                        + " | alvoExatos="
-                        + tokensAlvoExatos
-                        + " | cobertura="
-                        + targetCoverage
-                        + " | media="
-                        + targetSimilarityAverage
-                        + " | fraseScore="
-                        + melhorFraseScore
-                        + " | termosFortes="
-                        + termosFortesCasados
-                        + " | scoreFinal="
-                        + score
-        );
         return new ProductEvidence(
                 score,
                 candidatoFinal,

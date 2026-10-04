@@ -7,7 +7,6 @@ import com.venussystem.venusmobile.model.ScanOcrResult;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import static com.venussystem.venusmobile.view.util.ScanCosmeticCategories.detectarCategorias;
 import static com.venussystem.venusmobile.view.util.ScanCosmeticCategories.temCategoriaAltaPrecisao;
@@ -71,8 +70,6 @@ import static com.venussystem.venusmobile.view.util.ScanCosmeticText.montarTexto
  * - Texto de IDE/Logcat/tela contaminada gera UNCERTAIN.
  */
 public final class ScanCosmeticClassifier {
-
-    private static final String TAG = "VENUS_COSMETIC";
 
     /*
      * Threshold principal.
@@ -906,22 +903,8 @@ public final class ScanCosmeticClassifier {
             Set<String> n4,
             Set<String> naoCosmeticos
     ) {
-        android.util.Log.d(
-                TAG,
-                "RESULTADO="
-                        + status
-                        + " SCORE="
-                        + String.format(
-                        Locale.US,
-                        "%.2f",
-                        score
-                )
-        );
-        android.util.Log.d(TAG, "CLASSIFIER_COUNTS tipos=" + tipos.size()
-                + " n1=" + n1.size() + " n2=" + n2.size()
-                + " n3=" + n3.size() + " n4=" + n4.size()
-                + " nonCosmetic=" + naoCosmeticos.size()
-                + " evidence=" + evidencias.size());
+        // A classificação é uma função de domínio; não registra OCR nem
+        // depende de android.util.Log para funcionar em testes unitários.
     }
 
     private static List<String> prefixarNivel(
