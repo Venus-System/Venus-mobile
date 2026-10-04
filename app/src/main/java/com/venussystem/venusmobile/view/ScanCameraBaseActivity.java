@@ -240,11 +240,6 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
 
                         instalarComportamentoPosCameraPronta();
 
-                        android.util.Log.d(
-                                "VENUS_CAMERA",
-                                "Câmera inicializada com sucesso."
-                        );
-
                     } catch (ExecutionException exception) {
                         android.util.Log.e(
                                 "VENUS_CAMERA",
@@ -432,8 +427,6 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                             return;
                         }
 
-                        android.util.Log.d("VENUS_CAMERA", "FOTO_SALVA");
-
                         // Um pequeno atraso permite ao usuário perceber a mensagem
                         // antes da transição para a tela de processamento.
                         mainHandler.postDelayed(
@@ -502,14 +495,6 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
         if (draft != null) {
             draft.putInto(intent);
         }
-
-        android.util.Log.d(
-                "VENUS_CAMERA",
-                "Abrindo successActivity="
-                        + successActivity().getSimpleName()
-                        + " draftPresente="
-                        + (draft != null)
-        );
 
         startActivity(intent);
         finish();

@@ -48,8 +48,6 @@ public final class ScanFlowFinisher {
             @NonNull Activity activity,
             @NonNull ScanSubmissionDraft draft
     ) {
-        android.util.Log.d("VENUS_SCAN_PIPELINE", "FINISH_REQUEST scanId=" + draft.getScanId()
-                + " hasBack=" + (draft.getBackData() != null));
         Usuario owner = new AutenticacaoRepository().usuarioLogado();
         if (owner == null) {
             Toast.makeText(activity, "Entre na conta usada no scan.", Toast.LENGTH_LONG).show();
@@ -60,8 +58,6 @@ public final class ScanFlowFinisher {
                 new ScanSubmissionRepository.Callback() {
                     @Override public void saved(ScanDraftStore.SavedDraft saved) {
                         if (activity.isFinishing() || activity.isDestroyed()) return;
-                        android.util.Log.d("VENUS_SCAN_PIPELINE", "DRAFT_SAVED scanId="
-                                + saved.draft.getScanId());
                         if (ScanPhotoQualityPolicy.backgroundIsAdvisory(saved.draft.getPhotoQuality())) {
                             Toast.makeText(activity,
                                     "Fundo ou iluminação fora do ideal. Continuaremos.",
@@ -103,8 +99,6 @@ public final class ScanFlowFinisher {
         ScanSubmissionRepository.SignaturesCallback callback = new ScanSubmissionRepository.SignaturesCallback() {
                     @Override public void ready(ScanUploadSignaturesResponse signatures) {
                         if (activity.isFinishing() || activity.isDestroyed()) return;
-                        android.util.Log.d("VENUS_SCAN_PIPELINE", "SIGNATURES_READY scanId="
-                                + saved.draft.getScanId());
                         ScanStatusDialog.updateMessage(progress, "Preparando as fotos...");
                         repository.uploadPhotos(saved.firebaseUid, saved.draft.getScanId(), signatures,
                                 new ScanSubmissionRepository.UploadCallback() {
@@ -115,8 +109,6 @@ public final class ScanFlowFinisher {
                                     }
                                     @Override public void uploaded(ScanDraftStore.SavedDraft result) {
                                         if (activity.isFinishing() || activity.isDestroyed()) return;
-                                        android.util.Log.d("VENUS_SCAN_PIPELINE", "PHOTOS_UPLOADED_BEGIN_CATALOG scanId="
-                                                + result.draft.getScanId());
                                         progress.dismiss();
                                         consultarIngredientes(activity, repository, result);
                                     }
@@ -171,14 +163,12 @@ public final class ScanFlowFinisher {
     private static void consultarIngredientes(Activity activity, ScanSubmissionRepository repository,
                                                ScanDraftStore.SavedDraft saved) {
         if (activity.isFinishing() || activity.isDestroyed()) return;
-        android.util.Log.d("VENUS_SCAN_PIPELINE", "CATALOG_REQUEST scanId=" + saved.draft.getScanId());
         AlertDialog progress = ScanStatusDialog.create(activity, "Consultando ingredientes",
                 "Conferindo os nomes no catálogo.", true, null, null, () -> abrirPrincipal(activity));
         showWhileAlive(activity, progress);
         repository.checkIngredients(saved.firebaseUid, saved.draft.getScanId(), new ScanSubmissionRepository.Callback() {
             @Override public void saved(ScanDraftStore.SavedDraft result) {
                 if (activity.isFinishing() || activity.isDestroyed()) return;
-                android.util.Log.d("VENUS_SCAN_PIPELINE", "CATALOG_SAVED scanId=" + result.draft.getScanId());
                 progress.dismiss();
                 enviarParaMongo(activity, repository, result, false);
             }

@@ -1,6 +1,5 @@
 package com.venussystem.venusmobile.view.util;
 
-import android.util.Log;
 import com.venussystem.venusmobile.model.ScanBackIngredientCandidate;
 import com.venussystem.venusmobile.model.ScanOcrToken;
 import java.nio.charset.StandardCharsets;
@@ -26,7 +25,6 @@ import static com.venussystem.venusmobile.view.util.ScanBackRules.EMAIL_PATTERN;
 import static com.venussystem.venusmobile.view.util.ScanBackRules.EMPTY;
 import static com.venussystem.venusmobile.view.util.ScanBackRules.INLINE_COMPANY_PATTERN;
 import static com.venussystem.venusmobile.view.util.ScanBackRules.PHONE_PATTERN;
-import static com.venussystem.venusmobile.view.util.ScanBackRules.TAG;
 import static com.venussystem.venusmobile.view.util.ScanBackRules.URL_PATTERN;
 import static com.venussystem.venusmobile.view.util.ScanBackText.HeadingMatch;
 import static com.venussystem.venusmobile.view.util.ScanBackText.compactarEspacos;
@@ -95,9 +93,6 @@ final class ScanBackIngredients {
                             "UNRESOLVED"
                     )
             );
-            if (correction.corrected) {
-                Log.d(TAG, "INGREDIENT_CORRECTION applied=true");
-            }
         }
         return result;
     }
@@ -170,7 +165,6 @@ final class ScanBackIngredients {
             lastBottom = row.get(0).getBoundingBox().bottom;
         }
         if (candidates.size() < 2 || !pendingLeft.isEmpty()) return section.rawText;
-        Log.d(TAG, "BACK_LAYOUT_COLUMNS=CONFIRMED pairs=" + candidates.size());
         return String.join(", ", candidates);
     }
 

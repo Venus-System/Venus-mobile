@@ -62,8 +62,6 @@ public class ScanSubmissionRepository {
                 stage = "READ_DRAFT";
                 ScanDraftStore.SavedDraft saved = store.read(uid, scanId);
                 if (saved.submission != null) {
-                    Log.d("VENUS_SCAN_SUBMISSION", "ALREADY_SUBMITTED scanId=" + scanId
-                            + " id=" + saved.submission.id + " status=" + saved.submission.status);
                     main.post(() -> callback.submitted(saved));
                     return;
                 }
@@ -85,14 +83,11 @@ public class ScanSubmissionRepository {
                 ScanSessionRequest request = ScanSubmissionMapper.prepare(saved.draft, uid, device, null);
                 request.images.front = saved.frontUpload.image;
                 request.images.back = saved.backUpload.image;
-                Log.d("VENUS_SCAN_SUBMISSION", "REQUEST scanId=" + scanId);
                 stage = "POST_SCAN_SESSION";
                 ScanSessionResponse response = new AuthenticatedScanClient(ClienteApi.scans(), auth).submit(request);
                 stage = "ACKNOWLEDGE_RESPONSE";
                 auth.requireSameUser(uid);
                 ScanDraftStore.SavedDraft result = store.recordSubmission(uid, scanId, response);
-                Log.d("VENUS_SCAN_SUBMISSION", "MONGO_SUBMITTED scanId=" + scanId + " id=" + response.id
-                        + " status=" + response.status);
                 main.post(() -> callback.submitted(result));
             } catch (Exception e) {
                 int code = e instanceof ScanApiException ? ((ScanApiException) e).httpCode : 0;
@@ -121,7 +116,6 @@ public class ScanSubmissionRepository {
                 ScanDraftStore.SavedDraft saved = store.read(uid, scanId);
                 java.util.List<String> names = new java.util.ArrayList<>();
                 saved.draft.getBackData().getIngredients().forEach(i -> names.add(i.getRawName()));
-                Log.d("VENUS_SCAN_INGREDIENTS", "REQUEST scanId=" + scanId + " candidates=" + names.size());
                 ScanIngredientCatalog.Report report = new ScanIngredientCatalog(ClienteApi.ingredients(),
                         () -> auth.requireSameUser(uid)).lookup(names);
                 auth.requireSameUser(uid);
@@ -129,15 +123,6 @@ public class ScanSubmissionRepository {
                 main.post(() -> {
                     try { auth.requireSameUser(uid); }
                     catch (Exception e) { callback.failed(e); return; }
-                    Log.d("VENUS_SCAN_INGREDIENTS", "READY scanId=" + scanId + " known=" + report.known
-                            + " alias=" + report.alias + " ambiguous=" + report.ambiguous
-                            + " notFound=" + report.notFound + " errors=" + report.errors + " mongo=false");
-                    for (int i = 0; i < report.matches.size(); i++) {
-                        ScanIngredientCatalog.Match match = report.matches.get(i);
-                        Log.d("VENUS_SCAN_INGREDIENTS", "MATCH position=" + (i + 1)
-                                + " status=" + match.status + " ingredientId=" + match.ingredientId
-                                + " error=" + match.errorCode);
-                    }
                     callback.saved(result);
                 });
             } catch (Exception e) {
@@ -159,13 +144,11 @@ public class ScanSubmissionRepository {
                 ScanDraftStore.SavedDraft saved = new ScanPhotoUploadCoordinator(store,
                         () -> api.signatures(uid, scanId), () -> auth.requireSameUser(uid), cloud::upload)
                         .run(uid, scanId, signatures, (event, side) -> {
-                            Log.d("VENUS_SCAN_UPLOAD", event + " scanId=" + scanId + " side=" + side);
                             if ("START".equals(event)) main.post(() -> callback.progress(side));
                         });
                 main.post(() -> {
                     try { auth.requireSameUser(uid); }
                     catch (Exception e) { callback.failed(e); return; }
-                    Log.d("VENUS_SCAN_UPLOAD", "PHOTOS_READY scanId=" + scanId + " front=true back=true");
                     callback.uploaded(saved);
                 });
             } catch (Exception e) {
@@ -196,7 +179,6 @@ public class ScanSubmissionRepository {
                 ScanDraftStore.SavedDraft saved = store.read(uid, scanId);
                 FirebaseScanAuthSession auth = new FirebaseScanAuthSession();
                 auth.requireSameUser(saved.firebaseUid);
-                Log.d("VENUS_SCAN_SIGNATURES", "REQUEST scanId=" + saved.draft.getScanId());
                 AuthenticatedScanClient client = new AuthenticatedScanClient(ClienteApi.scans(), auth);
                 ScanUploadSignaturesResponse signatures;
                 if (connectAccount) {
@@ -204,7 +186,6 @@ public class ScanSubmissionRepository {
                     String name = profile.nome();
                     String email = profile.email();
                     auth.requireSameUser(saved.firebaseUid);
-                    Log.d("VENUS_SCAN_SIGNATURES", "CONNECT_ACCOUNT scanId=" + scanId);
                     signatures = client.connectAccountAndGetSignatures(saved.firebaseUid, name, email, scanId);
                 } else {
                     signatures = client.signatures(saved.firebaseUid, saved.draft.getScanId());
@@ -218,7 +199,6 @@ public class ScanSubmissionRepository {
                         callback.failed(e);
                         return;
                     }
-                    Log.d("VENUS_SCAN_SIGNATURES", "READY scanId=" + scanId + " front=true back=true");
                     callback.ready(signatures);
                 });
             } catch (Exception e) {
@@ -241,16 +221,9 @@ public class ScanSubmissionRepository {
                 draft.setPhotoQuality(ScanPhotoQualityAnalyzer.aggregate(
                         draft.getFrontPhotoPath(), draft.getBackPhotoPath()));
                 com.venussystem.venusmobile.model.ScanPhotoQuality quality = draft.getPhotoQuality();
-                Log.d("VENUS_SCAN_QUALITY", "side=AGGREGATE blurScore=" + quality.getBlurScore()
-                        + " brightness=" + quality.getBrightness()
-                        + " backgroundOk=" + quality.isBackgroundOk()
-                        + " status=" + quality.getStatus());
                 if (ScanPhotoQualityPolicy.shouldBlock(quality)) {
                     throw new IllegalArgumentException("A qualidade das fotos não permite uma leitura segura ("
                             + ScanPhotoQualityPolicy.blockReason(quality) + "). Tire novas fotos do rótulo.");
-                }
-                if (ScanPhotoQualityPolicy.backgroundIsAdvisory(quality)) {
-                    Log.d("VENUS_SCAN_QUALITY", "BACKGROUND_ADVISORY=true");
                 }
                 ScanDraftStore.SavedDraft saved = store.save(uid, draft);
                 main.post(() -> callback.saved(saved));

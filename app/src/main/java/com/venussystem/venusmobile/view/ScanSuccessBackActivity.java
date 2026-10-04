@@ -173,9 +173,6 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
 
         ocrProcessado = true;
 
-        Log.d(TAG, "OCR_BACK_CONCLUIDO chars=" + texto.length()
-                + " lines=" + result.getLines().size());
-
         setBadge("Organizando os ingredientes...");
 
         final ScanBackData backData;
@@ -193,23 +190,6 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
             fecharFluxoParaPrincipal();
             return;
         }
-
-        Log.d(
-                TAG,
-                "SEÇÃO DE INGREDIENTES: "
-                        + backData.isIngredientSectionFound()
-        );
-        Log.d(
-                TAG,
-                "INGREDIENTES ENCONTRADOS: "
-                        + backData.getIngredients().size()
-        );
-
-        Log.d(TAG, "BACK_FIELDS_EXTRACTED manufacturer=" + (!backData.getManufacturer().isEmpty())
-                + " batch=" + (!backData.getBatch().isEmpty())
-                + " registration=" + (!backData.getRegistrationNumber().isEmpty())
-                + " content=" + (!backData.getNetContent().isEmpty())
-                + " barcode=" + (!backData.getBarcode().isEmpty()));
 
         draft.setBackPhotoPath(photoPath);
         draft.setBackOcrText(texto);

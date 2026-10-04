@@ -1,8 +1,6 @@
 package com.venussystem.venusmobile.view.util;
 
-import android.util.Log;
 import androidx.annotation.NonNull;
-import com.venussystem.venusmobile.domain.scan.ScanIngredientPolicy;
 import com.venussystem.venusmobile.model.ScanBackData;
 import com.venussystem.venusmobile.model.ScanBackIngredientCandidate;
 import com.venussystem.venusmobile.model.ScanOcrResult;
@@ -27,10 +25,7 @@ import static com.venussystem.venusmobile.view.util.ScanBackMetadata.extrairCont
 import static com.venussystem.venusmobile.view.util.ScanBackMetadata.extrairLote;
 import static com.venussystem.venusmobile.view.util.ScanBackMetadata.extrairRegistro;
 import static com.venussystem.venusmobile.view.util.ScanBackRules.EMPTY;
-import static com.venussystem.venusmobile.view.util.ScanBackRules.TAG;
-import static com.venussystem.venusmobile.view.util.ScanBackText.compactarEspacos;
 import static com.venussystem.venusmobile.view.util.ScanBackText.joinLines;
-import static com.venussystem.venusmobile.view.util.ScanBackText.normalizar;
 import static com.venussystem.venusmobile.view.util.ScanBackText.normalizarLinhas;
 
 /**
@@ -152,25 +147,6 @@ public final class ScanBackExtractor {
                 }
             }
         }
-        Log.d(TAG, "BACK_LAYOUT=" + (visualRows.isEmpty() ? "TEXT_FALLBACK" : "GEOMETRIC_ROWS")
-                + " rows=" + lines.size());
-        String normalizedFullText =
-                compactarEspacos(
-                        normalizar(
-                                fullText
-                        )
-                );
-        /*
-         * Mantemos esta variável por compatibilidade e diagnóstico.
-         * O parser trabalha principalmente com as linhas originais
-         * normalizadas, porque a estrutura de linhas é importante.
-         */
-        if (normalizedFullText.isEmpty()) {
-            Log.d(
-                    TAG,
-                    "TEXTO COMPLETO NORMALIZADO: vazio"
-            );
-        }
         IngredientSection section =
                 localizarSecaoIngredientes(
                         lines
@@ -180,13 +156,6 @@ public final class ScanBackExtractor {
                         section,
                         orderedTokens
                 );
-        Log.d(
-                TAG,
-                "SPATIAL OCR: tokens="
-                        + (spatialTokens == null
-                        ? 0
-                        : spatialTokens.size())
-        );
         String manufacturer =
                 extrairFabricante(
                         lines
@@ -251,59 +220,6 @@ public final class ScanBackExtractor {
                 gerarAssinaturaOCR(
                         ingredients
                 );
-        /*
-         * ============================================================
-         * LOG
-         * ============================================================
-         */
-        Log.d(
-                TAG,
-                "========================================"
-        );
-        Log.d(
-                TAG,
-                "V7.2 PARSER / BACK SCAN"
-        );
-        Log.d(
-                TAG,
-                "========================================"
-        );
-        Log.d(
-                TAG,
-                "SECAO INGREDIENTES ENCONTRADA: "
-                        + section.found
-        );
-        Log.d(
-                TAG,
-                "INGREDIENTES START: "
-                        + section.startIndex
-        );
-        Log.d(
-                TAG,
-                "INGREDIENTES END: "
-                        + section.endIndex
-        );
-        Log.d(
-                TAG,
-                "INGREDIENTES STOP: "
-                        + section.stopReason
-        );
-        Log.d(
-                TAG,
-                "QUANTIDADE INGREDIENTES: "
-                        + ingredients.size()
-        );
-        long uncertain = ingredients.stream().filter(i ->
-                !ScanIngredientPolicy.isRecognized(i.getNormalizedName())).count();
-        Log.d(TAG, "INGREDIENT_REVIEW_REQUIRED="
-                + (!section.found || ingredients.isEmpty() || uncertain > 0
-                || ScanIngredientPolicy.hasAdministrativeText(section.rawText))
-                + " uncertain=" + uncertain + " candidates=" + ingredients.size());
-        /*
-         * ============================================================
-         * OBJETO FINAL
-         * ============================================================
-         */
         return new ScanBackData(
                 fullText == null
                         ? EMPTY
