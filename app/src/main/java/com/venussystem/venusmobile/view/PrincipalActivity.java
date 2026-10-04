@@ -17,8 +17,7 @@ import androidx.fragment.app.Fragment;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
 import com.venussystem.venusmobile.R;
-import com.venussystem.venusmobile.repository.AutenticacaoRepository;
-import com.venussystem.venusmobile.repository.PerfilRepository;
+import com.venussystem.venusmobile.repository.FotoPerfilRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.repository.SincronizacaoRepository;
 import com.venussystem.venusmobile.view.fragment.BuscaFragment;
@@ -61,8 +60,6 @@ public class PrincipalActivity extends AppCompatActivity {
 
         findViewById(R.id.btnScan).setOnClickListener(v -> iniciarScan());
 
-        findViewById(R.id.btnReiniciarTeste).setOnClickListener(v -> reiniciarTeste());
-
         if (savedInstanceState == null) {
             selecionar(findViewById(R.id.navBusca), new BuscaFragment(), false);
 
@@ -73,6 +70,8 @@ public class PrincipalActivity extends AppCompatActivity {
             // As listas vao depois, na mesma fila. Na primeira abertura desta
             // versao, e aqui que sobem as listas que ja existiam no aparelho.
             new SincronizacaoListas(this).sincronizarEmSegundoPlano();
+            // Foto de perfil que ficou sem enviar (sem rede, API dormindo).
+            new FotoPerfilRepository(this).enviarEmSegundoPlano();
         }
     }
 
@@ -126,16 +125,6 @@ public class PrincipalActivity extends AppCompatActivity {
                 this,
                 onboardingCompleto ? ScanCameraFrontActivity.class : ScanTutorial1Activity.class
         ));
-    }
-
-    private void reiniciarTeste() {
-        new PerfilRepository(this).limpar();
-        new AutenticacaoRepository().sair();
-
-        Intent intent = new Intent(this, LoginActivity.class);
-
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
     }
 
     private void moverIndicador(View item, boolean animar) {

@@ -190,7 +190,6 @@
     <string name="busca_ver_todas">Ver todas (%1$d)</string>
     <string name="busca_ver_menos">Ver menos</string>
     <string name="nota_indisponivel">—</string>
-    <string name="acao_reiniciar_teste">reiniciar teste</string>
 
     <string name="sheet_couro_titulo">Como é o seu couro cabeludo?</string>
     <string name="sheet_couro_descricao">Olhe para a raiz, não para o comprimento do fio. O jeito mais fácil é lembrar como ele fica no segundo dia depois de lavar.</string>
@@ -282,6 +281,40 @@
     <string name="lista_vazia">Sua lista está vazia</string>
     <string name="lista_criada_por">Criado por %1$s</string>
     <string name="desc_mais_opcoes">Mais opções</string>
+    <string name="desc_abrir_menu">Abrir menu</string>
+    <string name="menu_lateral_titulo">Menu</string>
+    <string name="menu_voltar_ao_login">Voltar ao login</string>
+    <string name="menu_alterar_foto">Alterar foto de perfil</string>
+    <string name="menu_produtos_em_analise">Produtos em análise</string>
+
+    <!-- Produtos em analise: o que a pessoa escaneou e mandou para a equipe conferir -->
+    <string name="analise_titulo">Produtos em análise</string>
+    <string name="analise_detalhe_titulo">Detalhes do envio</string>
+    <string name="analise_vazio_titulo">Nenhum produto enviado</string>
+    <string name="analise_vazio">Quando você escanear um produto que ainda não está no Venus e mandar para a gente, ele aparece aqui até ser analisado.</string>
+    <string name="analise_sem_nome">Produto sem nome</string>
+    <string name="analise_enviado_em">Enviado em %1$s</string>
+    <string name="analise_aprovado_em">Aprovado em %1$s</string>
+    <string name="analise_recusado_em">Recusado em %1$s</string>
+    <string name="analise_frente">Frente</string>
+    <string name="analise_verso">Verso</string>
+    <string name="analise_motivo_recusa">Motivo da recusa</string>
+    <string name="analise_ver_produto">Ver produto</string>
+    <string name="desc_foto_frente_enviada">Foto da frente do produto enviado</string>
+    <string name="desc_foto_verso_enviada">Foto do verso do produto enviado</string>
+    <string name="situacao_aguardando">Aguardando análise</string>
+    <string name="situacao_em_analise">Em análise</string>
+    <string name="situacao_aprovado">Aprovado</string>
+    <string name="situacao_recusado">Recusado</string>
+    <string name="situacao_aguardando_explicacao">Recebemos o seu envio. Ele está na fila para a nossa equipe conferir.</string>
+    <string name="situacao_em_analise_explicacao">Nossa equipe está conferindo as fotos e os dados do produto.</string>
+    <string name="situacao_aprovado_explicacao">Pronto! O produto já está no catálogo do Venus.</string>
+    <string name="situacao_aprovado_aguardando_catalogo_explicacao">Aprovado! Em breve o produto aparece no catálogo do Venus.</string>
+    <string name="situacao_recusado_explicacao">Não conseguimos adicionar este produto ao catálogo.</string>
+    <string name="foto_perfil_tirar">Tirar foto</string>
+    <string name="foto_perfil_galeria">Escolher da galeria</string>
+    <string name="foto_perfil_erro">Não foi possível usar essa imagem. Tente outra.</string>
+    <string name="desc_foto_perfil">Foto de perfil</string>
     <string name="lista_editar_nome">Editar nome</string>
     <string name="lista_editar_descricao">Editar descrição</string>
     <string name="lista_excluir">Excluir lista</string>
