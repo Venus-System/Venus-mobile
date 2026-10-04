@@ -5,18 +5,25 @@ import android.content.Context;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
+import androidx.core.content.ContextCompat;
 
+import com.venussystem.venusmobile.repository.ColecaoRepository.DaApiAplicada;
+import com.venussystem.venusmobile.repository.ColecaoRepository.ListaDaApi;
 import com.venussystem.venusmobile.repository.ColecaoRepository.ListaLocal;
 import com.venussystem.venusmobile.repository.api.ClienteApi;
 import com.venussystem.venusmobile.repository.api.VenusApi;
 import com.venussystem.venusmobile.repository.api.dto.FatiaResponse;
+import com.venussystem.venusmobile.repository.api.dto.MediaAssetResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserListItemRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserListItemResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserListPatchRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserListRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserListResponse;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,57 +31,99 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 import retrofit2.Response;
 
 /**
- * Leva as listas do aparelho para o Venus-CRUD: cria, atualiza (nome,
- * descricao e capa padrao) e apaga as listas em /api/user-lists e deixa os
- * produtos de cada uma iguais em /api/user-list-items.
+ * Mantem as listas do aparelho e as do Venus-CRUD iguais.
  *
- * Como o SincronizacaoRepository, roda quieto e o aparelho continua sendo a
- * fonte do que a tela mostra; o que falhar fica pendente e vai na proxima.
- * A foto de capa escolhida pela pessoa ainda nao vai.
+ * Mandar: cria, atualiza (nome, descricao, capa padrao e foto de capa) e
+ * apaga as listas em /api/user-lists e deixa os produtos de cada uma iguais
+ * em /api/user-list-items. Roda quieto quando uma tela de listas fecha; o que
+ * falhar fica pendente e vai na proxima.
  *
- * So mexe nas listas que o proprio app criou na API. Uma lista feita pelo
- * site, que o app nunca mostrou, fica como esta.
+ * Trazer: ao abrir o app e a aba Listas, depois de mandar o pendente, le as
+ * listas da pessoa no servidor. O servidor vence, menos no que mudou no
+ * aparelho e ainda nao subiu (ver ColecaoRepository.aplicarDaApi). Assim a
+ * pessoa ve, em outro celular ou depois de reinstalar, as listas que ja tinha,
+ * e o que mudou pelo site.
  */
 public class SincronizacaoListas {
+
+    /** Prepara o arquivo da capa para o envio. */
+    public interface PreparoDaCapa {
+        /** @return o arquivo a mandar; se for outro que nao o original, e apagado depois. */
+        File preparar(File original) throws IOException;
+    }
 
     private static final String TIPO_PERSONALIZADA = "CUSTOM";
     private static final String TIPO_FAVORITOS = "FAVORITES";
     private static final String TIPO_ROTINA = "ROUTINE";
 
+    // As chaves das listas de exemplo, que na API sao a capa padrao (em maiusculo).
+    private static final Set<String> CAPAS_PADRAO =
+            new HashSet<>(Arrays.asList("favoritos", "escaneados", "skincare"));
+
+    private static final MediaType JPEG = MediaType.get("image/jpeg");
+    private static final String CAMPO_ARQUIVO = "file";
+
     private static final int TAMANHO_PAGINA = 100;
     private static final int LIMITE_PAGINAS = 20;
 
+    private static final int INVALIDO = 400;
     private static final int PROIBIDO = 403;
     private static final int NAO_ENCONTRADO = 404;
     private static final int CONFLITO = 409;
-    private static final int INVALIDO = 422;
+    private static final int GRANDE_DEMAIS = 413;
+    private static final int NAO_PROCESSAVEL = 422;
 
     private final ColecaoRepository listas;
     private final ListaItemRepository itens;
     private final UsuarioApiRepository usuarios;
     private final VenusApi api;
+    private final PreparoDaCapa preparoDaCapa;
+    private final Executor principal;
 
     public SincronizacaoListas(Context context) {
         this(new ColecaoRepository(context), new ListaItemRepository(context),
-                new UsuarioApiRepository(context), ClienteApi.get());
+                new UsuarioApiRepository(context), ClienteApi.get(),
+                original -> ImagemReduzida.copiaParaEnvio(context, original),
+                ContextCompat.getMainExecutor(context));
     }
 
     @VisibleForTesting
     public SincronizacaoListas(ColecaoRepository listas, ListaItemRepository itens,
-                               UsuarioApiRepository usuarios, VenusApi api) {
+                               UsuarioApiRepository usuarios, VenusApi api,
+                               PreparoDaCapa preparoDaCapa, Executor principal) {
         this.listas = listas;
         this.itens = itens;
         this.usuarios = usuarios;
         this.api = api;
+        this.preparoDaCapa = preparoDaCapa;
+        this.principal = principal;
     }
 
     /** Mesma fila do envio do perfil: nada de dois envios em paralelo. */
     public void sincronizarEmSegundoPlano() {
         SincronizacaoRepository.EXECUTOR.execute(this::sincronizarAgora);
+    }
+
+    /**
+     * Manda o pendente e traz o que mudou no servidor.
+     *
+     * @param aoMudar chamado na thread principal se alguma lista mudou no
+     *                aparelho, para a tela recarregar.
+     */
+    public void atualizarEmSegundoPlano(@Nullable Runnable aoMudar) {
+        SincronizacaoRepository.EXECUTOR.execute(() -> {
+            if (atualizarAgora() && aoMudar != null) {
+                principal.execute(aoMudar);
+            }
+        });
     }
 
     /**
@@ -88,28 +137,60 @@ public class SincronizacaoListas {
         if (!temAlgoParaEnviar()) {
             return false;
         }
-        Long userId = usuarios.obterIdSincrono();
+        Long userId = idDaPessoa();
         if (userId == null) {
             return false;
         }
-
         try {
-            boolean tudoEnviado = apagarExcluidas();
-            for (ListaLocal lista : listas.paraSincronizar()) {
-                tudoEnviado &= sincronizar(userId, lista);
-            }
-            return tudoEnviado;
+            return enviarPendentes(userId);
         } catch (IOException e) {
             return false;
         } catch (Proibido e) {
-            // A API disse que o id nao e desta pessoa. O caso conhecido e o
-            // banco recriado: o id guardado da pessoa e os das listas passaram
-            // a ser de outras contas. Esquecer tudo faz a proxima tentativa
-            // achar a pessoa de novo e recriar as listas.
-            usuarios.esquecerId();
-            listas.esquecerTodosIdsApi();
+            esquecerIds();
             return false;
         }
+    }
+
+    /**
+     * @return true se alguma lista mudou no aparelho.
+     */
+    @WorkerThread
+    @VisibleForTesting
+    public boolean atualizarAgora() {
+        Long userId = idDaPessoa();
+        if (userId == null) {
+            return false;
+        }
+        try {
+            // Primeiro o que mudou aqui: assim o que vem do servidor ja inclui.
+            enviarPendentes(userId);
+            return trazerDaApi(userId);
+        } catch (IOException e) {
+            return false;
+        } catch (Proibido e) {
+            esquecerIds();
+            return false;
+        }
+    }
+
+    @Nullable
+    private Long idDaPessoa() {
+        Long userId = usuarios.obterIdSincrono();
+        if (userId != null) {
+            listas.conferirDono(userId);
+        }
+        return userId;
+    }
+
+    /**
+     * A API disse que o id nao e desta pessoa. O caso conhecido e o banco
+     * recriado: o id guardado da pessoa e os das listas passaram a ser de
+     * outras contas. Esquecer tudo faz a proxima tentativa achar a pessoa de
+     * novo e recriar as listas.
+     */
+    private void esquecerIds() {
+        usuarios.esquecerId();
+        listas.esquecerTodosIdsApi();
     }
 
     private boolean temAlgoParaEnviar() {
@@ -121,7 +202,8 @@ public class SincronizacaoListas {
                 if (deveExistirNaApi(lista)) {
                     return true;
                 }
-            } else if (mudouDesdeOEnvio(lista) || itens.temItensParaEnviar(lista.id)) {
+            } else if (mudouDesdeOEnvio(lista) || itens.temItensParaEnviar(lista.id)
+                    || lista.capaPendente()) {
                 return true;
             }
         }
@@ -135,6 +217,14 @@ public class SincronizacaoListas {
      */
     private boolean deveExistirNaApi(ListaLocal lista) {
         return lista.chaveImagem == null || !itens.getProdutoIds(lista.id).isEmpty();
+    }
+
+    private boolean enviarPendentes(long userId) throws IOException, Proibido {
+        boolean tudoEnviado = apagarExcluidas();
+        for (ListaLocal lista : listas.paraSincronizar()) {
+            tudoEnviado &= sincronizar(userId, lista);
+        }
+        return tudoEnviado;
     }
 
     private boolean apagarExcluidas() throws IOException {
@@ -164,17 +254,20 @@ public class SincronizacaoListas {
                 // Excluida no aparelho enquanto era criada: ja esta na fila de apagar.
                 return true;
             }
-            // Lista recem-criada vai com os produtos que ja tinha.
-            return sincronizarItens(lista.id, idApi);
+            // Lista recem-criada vai com os produtos e a foto que ja tinha.
+            if (!sincronizarItens(lista.id, idApi)) {
+                return false;
+            }
+            return !lista.capaPendente() || enviarCapa(idApi, lista);
         }
 
         if (mudouDesdeOEnvio(lista) && !atualizar(lista)) {
             return false;
         }
-        if (itens.temItensParaEnviar(lista.id)) {
-            return sincronizarItens(lista.id, lista.idApi);
+        if (itens.temItensParaEnviar(lista.id) && !sincronizarItens(lista.id, lista.idApi)) {
+            return false;
         }
-        return true;
+        return !lista.capaPendente() || enviarCapa(lista.idApi, lista);
     }
 
     /**
@@ -205,6 +298,10 @@ public class SincronizacaoListas {
 
     @Nullable
     private Long idDaListaComNome(long userId, String nome) throws IOException, Proibido {
+        List<UserListResponse> daApi = todasAsListas(userId);
+        if (daApi == null) {
+            return null;
+        }
         // A lista ja ligada a outra lista do aparelho nao pode ser assumida
         // de novo: as duas ficariam brigando pelos mesmos produtos.
         Set<Long> jaLigadas = new HashSet<>();
@@ -213,22 +310,9 @@ public class SincronizacaoListas {
                 jaLigadas.add(outra.idApi);
             }
         }
-
-        for (int pagina = 0; pagina < LIMITE_PAGINAS; pagina++) {
-            Response<FatiaResponse<UserListResponse>> resposta =
-                    api.listasDoUsuario(userId, pagina, TAMANHO_PAGINA).execute();
-            exigirPermissao(resposta);
-            FatiaResponse<UserListResponse> fatia = resposta.body();
-            if (!resposta.isSuccessful() || fatia == null || fatia.content == null) {
-                return null;
-            }
-            for (UserListResponse daApi : fatia.content) {
-                if (daApi.id != null && nome.equals(daApi.name) && !jaLigadas.contains(daApi.id)) {
-                    return daApi.id;
-                }
-            }
-            if (!Boolean.FALSE.equals(fatia.last) || fatia.content.size() < TAMANHO_PAGINA) {
-                return null;
+        for (UserListResponse lista : daApi) {
+            if (lista.id != null && nome.equals(lista.name) && !jaLigadas.contains(lista.id)) {
+                return lista.id;
             }
         }
         return null;
@@ -254,8 +338,7 @@ public class SincronizacaoListas {
             return true;
         }
         if (resposta.code() == NAO_ENCONTRADO) {
-            // Apagada na API: na proxima vez ela e criada de novo, com os produtos.
-            listas.esquecerIdApi(lista.id);
+            sumiuDaApi(lista.id);
         }
         // 409: o nome ja e de uma lista do site. Fica pendente (com a
         // descricao, se ela mudou junto) ate a pessoa trocar o nome aqui ou la.
@@ -279,7 +362,7 @@ public class SincronizacaoListas {
         Response<List<UserListItemResponse>> resposta = api.itensDaLista(idApi).execute();
         exigirPermissao(resposta);
         if (resposta.code() == NAO_ENCONTRADO) {
-            listas.esquecerIdApi(listaId);
+            sumiuDaApi(listaId);
             return false;
         }
         if (!resposta.isSuccessful() || resposta.body() == null) {
@@ -316,7 +399,7 @@ public class SincronizacaoListas {
             int codigo = adicionado.code();
             // 404/422: o produto saiu do catalogo. Insistir nao adianta, e o
             // resto da lista nao pode ficar parado por causa dele.
-            if (!sucesso(codigo) && codigo != NAO_ENCONTRADO && codigo != INVALIDO) {
+            if (!sucesso(codigo) && codigo != NAO_ENCONTRADO && codigo != NAO_PROCESSAVEL) {
                 // 409: outro envio usou a posicao ao mesmo tempo. Na proxima,
                 // a posicao e recalculada com a lista lida de novo.
                 tudoEnviado = false;
@@ -341,6 +424,172 @@ public class SincronizacaoListas {
     }
 
     /**
+     * Manda a foto de capa escolhida no aparelho. A original fica guardada
+     * inteira para a tela; vai uma copia reduzida (ver ImagemReduzida), que e
+     * apagada depois do envio.
+     */
+    private boolean enviarCapa(long idApi, ListaLocal lista) throws IOException, Proibido {
+        File original = ImagemReduzida.arquivoLocal(lista.caminhoImagem);
+        if (original == null || !original.exists()) {
+            // O arquivo sumiu (limpeza do sistema): nao ha o que mandar.
+            listas.marcarCapaEnviada(lista.id, lista.caminhoImagem, null);
+            return true;
+        }
+        File arquivo;
+        try {
+            arquivo = preparoDaCapa.preparar(original);
+        } catch (IOException | RuntimeException e) {
+            // Imagem corrompida ou num formato que o Android nao abre: fica so aqui.
+            listas.marcarCapaEnviada(lista.id, lista.caminhoImagem, null);
+            return true;
+        }
+
+        try {
+            RequestBody corpo = RequestBody.create(arquivo, JPEG);
+            MultipartBody.Part parte =
+                    MultipartBody.Part.createFormData(CAMPO_ARQUIVO, arquivo.getName(), corpo);
+            Response<MediaAssetResponse> resposta = api.enviarCapaDaLista(idApi, parte).execute();
+            exigirPermissao(resposta);
+            int codigo = resposta.code();
+
+            if (resposta.isSuccessful()) {
+                MediaAssetResponse capa = resposta.body();
+                listas.marcarCapaEnviada(lista.id, lista.caminhoImagem,
+                        capa == null ? null : capa.url);
+                return true;
+            }
+            if (codigo == INVALIDO || codigo == GRANDE_DEMAIS || codigo == NAO_PROCESSAVEL) {
+                // A API recusou esta imagem (tipo, tamanho ou dimensao). Mandar
+                // a mesma de novo nao adianta: ela fica so no aparelho.
+                listas.marcarCapaEnviada(lista.id, lista.caminhoImagem, null);
+                return true;
+            }
+            if (codigo == NAO_ENCONTRADO) {
+                sumiuDaApi(lista.id);
+            }
+            return false;
+        } finally {
+            if (!arquivo.equals(original)) {
+                arquivo.delete();
+            }
+        }
+    }
+
+    /** A lista foi apagada no servidor: sai do aparelho tambem, sem voltar para la. */
+    private void sumiuDaApi(long listaId) {
+        listas.removerApagadaNaApi(listaId);
+        itens.excluirTodos(listaId);
+    }
+
+    // ---- Trazer do servidor ----
+
+    /**
+     * @return true se alguma lista mudou no aparelho.
+     */
+    private boolean trazerDaApi(long userId) throws IOException, Proibido {
+        List<UserListResponse> respostas = todasAsListas(userId);
+        if (respostas == null) {
+            // Sem a lista inteira, nao da para saber o que foi apagado la.
+            return false;
+        }
+        List<ListaDaApi> daApi = new ArrayList<>();
+        for (UserListResponse resposta : respostas) {
+            if (resposta.id != null && resposta.name != null) {
+                daApi.add(new ListaDaApi(resposta.id, resposta.name, resposta.description,
+                        chaveDaCapaPadrao(resposta.coverKey), resposta.coverUrl));
+            }
+        }
+
+        DaApiAplicada aplicada = listas.aplicarDaApi(daApi);
+        boolean mudou = aplicada.mudou;
+        for (long listaId : aplicada.removidas) {
+            itens.excluirTodos(listaId);
+        }
+        for (Map.Entry<Long, Long> ligada : aplicada.ligadas.entrySet()) {
+            try {
+                mudou |= trazerItens(ligada.getKey(), ligada.getValue(),
+                        aplicada.juntadas.contains(ligada.getValue()));
+            } catch (IOException e) {
+                // Sem rede no meio: o resto vem na proxima. O que ja mudou fica.
+                break;
+            }
+        }
+        return mudou;
+    }
+
+    /**
+     * Traz os produtos de uma lista, do mais recente (maior posicao) para o
+     * mais antigo, como na tela. Produtos mudados aqui e ainda nao enviados
+     * ficam: o proximo envio manda.
+     *
+     * @param juntada a lista do aparelho que ainda nao tinha subido e virou
+     *                esta do servidor: fica com os produtos dos dois.
+     */
+    private boolean trazerItens(long idApi, long listaId, boolean juntada)
+            throws IOException, Proibido {
+        long versao = itens.versao(listaId);
+        boolean juntar = juntada && !itens.getProdutoIds(listaId).isEmpty();
+        if (!juntar && itens.temItensParaEnviar(listaId)) {
+            return false;
+        }
+
+        Response<List<UserListItemResponse>> resposta = api.itensDaLista(idApi).execute();
+        exigirPermissao(resposta);
+        if (!resposta.isSuccessful() || resposta.body() == null) {
+            return false;
+        }
+        List<UserListItemResponse> daApi = new ArrayList<>();
+        for (UserListItemResponse item : resposta.body()) {
+            if (item.productId != null) {
+                daApi.add(item);
+            }
+        }
+        daApi.sort((a, b) -> Integer.compare(posicao(b), posicao(a)));
+        List<Long> produtos = new ArrayList<>();
+        for (UserListItemResponse item : daApi) {
+            produtos.add(item.productId);
+        }
+
+        return juntar
+                ? itens.juntarComOsDaApi(listaId, produtos)
+                : itens.trocarPelosDaApi(listaId, versao, produtos);
+    }
+
+    /**
+     * Todas as listas da pessoa na API, pagina por pagina.
+     *
+     * @return null se alguma pagina falhou ou se passou do limite de paginas.
+     */
+    @Nullable
+    private List<UserListResponse> todasAsListas(long userId) throws IOException, Proibido {
+        List<UserListResponse> todas = new ArrayList<>();
+        for (int pagina = 0; pagina < LIMITE_PAGINAS; pagina++) {
+            Response<FatiaResponse<UserListResponse>> resposta =
+                    api.listasDoUsuario(userId, pagina, TAMANHO_PAGINA).execute();
+            exigirPermissao(resposta);
+            FatiaResponse<UserListResponse> fatia = resposta.body();
+            if (!resposta.isSuccessful() || fatia == null || fatia.content == null) {
+                return null;
+            }
+            todas.addAll(fatia.content);
+            if (!Boolean.FALSE.equals(fatia.last) || fatia.content.size() < TAMANHO_PAGINA) {
+                return todas;
+            }
+        }
+        return null;
+    }
+
+    private static int posicao(UserListItemResponse item) {
+        return item.positionOrder == null ? 0 : item.positionOrder;
+    }
+
+    private static boolean mudouDesdeOEnvio(ListaLocal lista) {
+        return !lista.nome.equals(lista.nomeNaApi)
+                || !Objects.equals(lista.descricao, lista.descricaoNaApi)
+                || !Objects.equals(lista.chaveImagem, lista.capaNaApi);
+    }
+
+    /**
      * Tipo da lista na API. As de exemplo tem tipo proprio quando existe um
      * que combina; o resto, inclusive "Produtos escaneados", e personalizada.
      */
@@ -354,23 +603,24 @@ public class SincronizacaoListas {
         return TIPO_PERSONALIZADA;
     }
 
-    private static boolean mudouDesdeOEnvio(ListaLocal lista) {
-        return !lista.nome.equals(lista.nomeNaApi)
-                || !Objects.equals(lista.descricao, lista.descricaoNaApi)
-                || !Objects.equals(lista.chaveImagem, lista.capaNaApi);
-    }
-
     /**
      * Capa padrao na API: a mesma chave das listas de exemplo, em maiusculo
      * (a API recusa minusculo). As outras listas nao tem.
      */
     @Nullable
     private static String capaPadraoNaApi(@Nullable String chaveImagem) {
-        if ("favoritos".equals(chaveImagem) || "escaneados".equals(chaveImagem)
-                || "skincare".equals(chaveImagem)) {
-            return chaveImagem.toUpperCase(Locale.ROOT);
+        return chaveImagem != null && CAPAS_PADRAO.contains(chaveImagem)
+                ? chaveImagem.toUpperCase(Locale.ROOT) : null;
+    }
+
+    /** O contrario de capaPadraoNaApi; null para valor que o app nao conhece. */
+    @Nullable
+    private static String chaveDaCapaPadrao(@Nullable String coverKey) {
+        if (coverKey == null) {
+            return null;
         }
-        return null;
+        String chave = coverKey.toLowerCase(Locale.ROOT);
+        return CAPAS_PADRAO.contains(chave) ? chave : null;
     }
 
     private static void exigirPermissao(Response<?> resposta) throws Proibido {

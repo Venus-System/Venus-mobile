@@ -150,6 +150,12 @@ public interface VenusApi {
     @DELETE("api/user-lists/{id}")
     Call<Void> apagarLista(@Path("id") long id);
 
+    /** Uma capa nova substitui a anterior; a resposta traz o link da foto. */
+    @Multipart
+    @POST("api/user-lists/{id}/cover")
+    Call<MediaAssetResponse> enviarCapaDaLista(@Path("id") long id,
+                                               @Part MultipartBody.Part arquivo);
+
     @GET("api/user-lists/user/{userId}")
     Call<FatiaResponse<UserListResponse>> listasDoUsuario(@Path("userId") long userId,
                                                           @Query("page") int pagina,

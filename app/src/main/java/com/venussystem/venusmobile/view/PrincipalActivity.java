@@ -67,9 +67,10 @@ public class PrincipalActivity extends AppCompatActivity {
             // app reaberto): e o ponto para cadastrar a pessoa na API e mandar o
             // que ficou pendente. Roda em segundo plano, sem segurar a tela.
             new SincronizacaoRepository(this).sincronizarEmSegundoPlano();
-            // As listas vao depois, na mesma fila. Na primeira abertura desta
-            // versao, e aqui que sobem as listas que ja existiam no aparelho.
-            new SincronizacaoListas(this).sincronizarEmSegundoPlano();
+            // As listas vao depois, na mesma fila: sobe o que ficou pendente e
+            // vem o que mudou no servidor. Num celular novo ou depois de
+            // reinstalar, e aqui que as listas que a pessoa ja tinha voltam.
+            new SincronizacaoListas(this).atualizarEmSegundoPlano(null);
             // Foto de perfil que ficou sem enviar (sem rede, API dormindo).
             new FotoPerfilRepository(this).enviarEmSegundoPlano();
         }
