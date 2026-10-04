@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -154,7 +155,9 @@ public class CloudinaryUploadTest {
         }).run("owner",id,signatures(id),(e,s)->{});
         assertEquals(Arrays.asList("front","back","back"),sides);
         assertEquals("PHOTOS_UPLOADED",complete.state); assertEquals(1,reopened.pending("owner").size());
-        String json = Files.readString(Path.of(complete.draft.getFrontPhotoPath()).resolveSibling("draft.json"));
+        String json = new String(
+                Files.readAllBytes(Path.of(complete.draft.getFrontPhotoPath()).resolveSibling("draft.json")),
+                StandardCharsets.UTF_8);
         assertTrue(json.contains("OCR preserved")); assertFalse(json.contains("synthetic-key"));
         assertFalse(json.contains("synthetic-front-signature")); assertFalse(json.contains("Bearer"));
     }
