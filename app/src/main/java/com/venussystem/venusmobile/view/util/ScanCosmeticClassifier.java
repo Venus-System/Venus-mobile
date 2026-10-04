@@ -498,17 +498,6 @@ public final class ScanCosmeticClassifier {
             evidencias.add(
                     "captura possivelmente contaminada"
             );
-            logResultado(
-                    "UNCERTAIN",
-                    0.10,
-                    evidencias,
-                    tipos,
-                    nivel1Categoria,
-                    nivel2Contexto,
-                    nivel3Estrutura,
-                    nivel4Apoio,
-                    sinaisNaoCosmeticos
-            );
             return new ScanCosmeticClassification(
                     ScanCosmeticClassification.Status.UNCERTAIN,
                     0.10,
@@ -560,17 +549,6 @@ public final class ScanCosmeticClassifier {
                 evidencias.add(
                         "sinais cosméticos e não cosméticos em conflito"
                 );
-                logResultado(
-                        "UNCERTAIN_CONFLICT",
-                        0.30,
-                        evidencias,
-                        tipos,
-                        nivel1Categoria,
-                        nivel2Contexto,
-                        nivel3Estrutura,
-                        nivel4Apoio,
-                        sinaisNaoCosmeticos
-                );
                 return new ScanCosmeticClassification(
                         ScanCosmeticClassification.Status.UNCERTAIN,
                         0.30,
@@ -578,17 +556,6 @@ public final class ScanCosmeticClassifier {
                         new ArrayList<>(tipos)
                 );
             }
-            logResultado(
-                    "NON_COSMETIC",
-                    0.98,
-                    evidencias,
-                    tipos,
-                    nivel1Categoria,
-                    nivel2Contexto,
-                    nivel3Estrutura,
-                    nivel4Apoio,
-                    sinaisNaoCosmeticos
-            );
             return new ScanCosmeticClassification(
                     ScanCosmeticClassification.Status.NON_COSMETIC,
                     0.98,
@@ -815,17 +782,6 @@ public final class ScanCosmeticClassifier {
                                     && score >= 0.70
                     );
             if (scoreAceito) {
-                logResultado(
-                        "COSMETIC_CONFIRMED",
-                        score,
-                        evidencias,
-                        tipos,
-                        nivel1Categoria,
-                        nivel2Contexto,
-                        nivel3Estrutura,
-                        nivel4Apoio,
-                        sinaisNaoCosmeticos
-                );
                 return new ScanCosmeticClassification(
                         ScanCosmeticClassification.Status.COSMETIC_CONFIRMED,
                         score,
@@ -852,17 +808,6 @@ public final class ScanCosmeticClassifier {
         )) {
             scoreIncerto = 0.20;
         }
-        logResultado(
-                "UNCERTAIN",
-                scoreIncerto,
-                evidencias,
-                tipos,
-                nivel1Categoria,
-                nivel2Contexto,
-                nivel3Estrutura,
-                nivel4Apoio,
-                sinaisNaoCosmeticos
-        );
         return new ScanCosmeticClassification(
                 ScanCosmeticClassification.Status.UNCERTAIN,
                 scoreIncerto,
@@ -885,26 +830,6 @@ public final class ScanCosmeticClassifier {
         }
         return !productFoundInCatalog
                 && classification.isConfirmedCosmetic();
-    }
-
-    /*
-     * =============================================================
-     * LOG
-     * =============================================================
-     */
-    private static void logResultado(
-            String status,
-            double score,
-            Set<String> evidencias,
-            Set<String> tipos,
-            Set<String> n1,
-            Set<String> n2,
-            Set<String> n3,
-            Set<String> n4,
-            Set<String> naoCosmeticos
-    ) {
-        // A classificação é uma função de domínio; não registra OCR nem
-        // depende de android.util.Log para funcionar em testes unitários.
     }
 
     private static List<String> prefixarNivel(
