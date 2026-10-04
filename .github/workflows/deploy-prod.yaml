@@ -29,12 +29,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build do APK
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleRelease
 
       - name: Copiar APK para o contexto do Docker
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk dist/venus-mobile.apk
+          cp app/build/outputs/apk/release/app-release.apk dist/venus-mobile.apk
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
