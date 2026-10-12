@@ -19,6 +19,7 @@ import com.venussystem.venusmobile.repository.api.dto.ScanSessionResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserAllergyRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserAllergyResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserListItemRequest;
+import com.venussystem.venusmobile.repository.api.dto.UserLocationRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserListItemResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserListRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserListResponse;
@@ -103,6 +104,13 @@ public interface VenusApi {
 
     @POST("api/users")
     Call<UserResponse> criarUsuario(@Body UserRequest usuario);
+
+    // PATCH: so os campos de localizacao seguem no corpo, o resto do usuario nao
+    // muda. ATENCAO: o contrato disso no Venus-CRUD ainda precisa ser confirmado
+    // com o backend (nome da rota e dos campos).
+    @PATCH("api/users/{userId}")
+    Call<Void> atualizarLocalizacao(@Path("userId") long userId,
+                                    @Body UserLocationRequest localizacao);
 
     // ---- Perfil do questionario ----
     // O PUT responde 404 quando a pessoa ainda nao tem perfil; ai vale o POST.

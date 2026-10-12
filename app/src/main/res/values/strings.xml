@@ -359,4 +359,9 @@
     <string name="scan_produto_nao_cadastrado_descricao">Ainda não está no nosso catálogo.</string>
     <string name="scan_produto_nao_cadastrado_ajuda">Fotografe o verso com os ingredientes visíveis.</string>
 
+    <string name="localizacao_titulo">Usar sua localização?</string>
+    <string name="localizacao_mensagem">Usamos sua localização aproximada (cidade e estado) para entender melhor as necessidades da sua região e melhorar as análises. Você pode negar e continuar usando o app normalmente.</string>
+    <string name="localizacao_permitir">Permitir</string>
+    <string name="localizacao_agora_nao">Agora não</string>
+
 </resources>
