@@ -19,6 +19,22 @@
         app:layout_constraintStart_toStartOf="@+id/rolagemPerfil"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Abre o menu lateral (MenuLateralPerfil). Preso ao fim da coluna do
+         conteudo, para no tablet ficar alinhado com os cartoes, e nao com a
+         borda da tela. -->
+    <ImageButton
+        android:id="@+id/btnMenuPerfil"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:layout_marginEnd="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/desc_abrir_menu"
+        android:scaleType="center"
+        android:src="@drawable/ic_menu_lateral"
+        app:layout_constraintBottom_toBottomOf="@+id/textTituloPerfil"
+        app:layout_constraintEnd_toEndOf="@+id/rolagemPerfil"
+        app:layout_constraintTop_toTopOf="@+id/textTituloPerfil" />
+
     <androidx.core.widget.NestedScrollView
         android:id="@+id/rolagemPerfil"
         android:layout_width="0dp"
@@ -38,25 +54,15 @@
             android:paddingStart="@dimen/espaco_medio"
             android:paddingEnd="@dimen/espaco_medio">
 
-            <FrameLayout
+            <!-- A foto num circulo por cima do escudo; sem foto, so o escudo.
+                 Troca pelo menu lateral. -->
+            <com.venussystem.venusmobile.view.componente.AvatarPerfilView
+                android:id="@+id/imgAvatar"
                 android:layout_width="@dimen/avatar_perfil"
                 android:layout_height="@dimen/avatar_perfil"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="@dimen/espaco_medio"
-                android:background="@drawable/bg_avatar_perfil">
-
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/imgAvatar"
-                    android:layout_width="@dimen/foto_avatar_perfil"
-                    android:layout_height="@dimen/foto_avatar_perfil"
-                    android:layout_gravity="center"
-                    android:background="@color/lilas_claro"
-                    android:importantForAccessibility="no"
-                    android:scaleType="centerCrop"
-                    app:shapeAppearanceOverlay="@style/AvatarRedondo"
-                    tools:src="@drawable/ic_launcher_foreground" />
-
-            </FrameLayout>
+                android:contentDescription="@string/desc_foto_perfil" />
 
             <TextView
                 android:id="@+id/textNome"

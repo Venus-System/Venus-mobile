@@ -53,6 +53,10 @@ public class ListaItemRepository {
         return ids == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(ids));
     }
 
+    public boolean contem(long listaId, long produtoId) {
+        return getProdutoIds(listaId).contains(produtoId);
+    }
+
     public void adicionar(long listaId, long produtoId) {
         synchronized (TRAVA) {
             List<Long> atuais = getProdutoIds(listaId);
@@ -104,6 +108,53 @@ public class ListaItemRepository {
     void marcarItensEnviados(long listaId, long versao) {
         synchronized (TRAVA) {
             prefs.edit().putLong(PREFIXO_ENVIADA + listaId, versao).apply();
+        }
+    }
+
+    /**
+     * Troca os produtos pelos que estao na API, que ja ficam como enviados.
+     * Nao troca se a lista mudou aqui desde a versao lida antes de perguntar
+     * a API, nem se tem produto esperando envio: o proximo envio manda.
+     *
+     * @param daApi na ordem da tela, o mais recente primeiro.
+     * @return true se os produtos mudaram.
+     */
+    boolean trocarPelosDaApi(long listaId, long versaoLida, List<Long> daApi) {
+        synchronized (TRAVA) {
+            if (versao(listaId) != versaoLida || temItensParaEnviar(listaId)
+                    || getProdutoIds(listaId).equals(daApi)) {
+                return false;
+            }
+            long nova = versaoLida + 1;
+            prefs.edit()
+                    .putString(String.valueOf(listaId), gson.toJson(daApi))
+                    .putLong(PREFIXO_VERSAO + listaId, nova)
+                    .putLong(PREFIXO_ENVIADA + listaId, nova)
+                    .apply();
+            return true;
+        }
+    }
+
+    /**
+     * Junta os produtos da API aos daqui, que ainda nao tinham subido: os da
+     * API entram depois, como os mais antigos, e os daqui sobem no proximo envio.
+     *
+     * @return true se os produtos mudaram.
+     */
+    boolean juntarComOsDaApi(long listaId, List<Long> daApi) {
+        synchronized (TRAVA) {
+            List<Long> atuais = getProdutoIds(listaId);
+            boolean mudou = false;
+            for (Long produtoId : daApi) {
+                if (!atuais.contains(produtoId)) {
+                    atuais.add(produtoId);
+                    mudou = true;
+                }
+            }
+            if (mudou) {
+                salvar(listaId, atuais);
+            }
+            return mudou;
         }
     }
 

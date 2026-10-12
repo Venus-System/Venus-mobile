@@ -24,16 +24,16 @@ public class ScanCameraFrontActivity extends ScanCameraBaseActivity {
 
     @Override
     protected String initialInstruction() {
-        return "Fotografe a frente do produto. A foto será usada para procurar o produto no nosso banco.";
+        return "Fotografe a frente do produto.";
     }
 
     @Override
     protected String readyInstruction() {
-        return "Frente do produto: centralize o rótulo. Aproxime se o texto estiver pequeno; afaste se cortar as bordas.";
+        return "Centralize o rótulo. Aproxime para ler; afaste se cortar.";
     }
 
     @Override
     protected String capturedInstruction() {
-        return "Foto registrada. Buscando o produto no nosso banco...";
+        return "Foto salva. Buscando o produto...";
     }
 }

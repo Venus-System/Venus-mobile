@@ -11,13 +11,10 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import coil.Coil;
-import coil.ImageLoader;
-import coil.request.ImageRequest;
-
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
+import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -95,14 +92,8 @@ public class AlternativaAdapter extends RecyclerView.Adapter<AlternativaAdapter.
             nota.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(
                     itemView.getContext(), NotaProdutoUtil.fundoPara(valor))));
 
-            ImageLoader carregador = Coil.imageLoader(itemView.getContext());
-            carregador.enqueue(new ImageRequest.Builder(itemView.getContext())
-                    .data(produto.getImageUrl())
-                    .target(imagem)
-                    .placeholder(R.drawable.bg_foto_historico)
-                    .error(R.drawable.bg_foto_historico)
-                    .fallback(R.drawable.bg_foto_historico)
-                    .build());
+            ProdutoImagemLoader.carregar(
+                    itemView.getContext(), imagem, produto, R.drawable.bg_foto_historico);
 
             itemView.setOnClickListener(v -> aoClicar.noProduto(produto));
         }

@@ -174,6 +174,15 @@ final class ScanBackIngredientSection {
             64;
 
     /*
+     * O OCR espacial pode intercalar uma coluna de advertências/marketing
+     * no meio da composição. Depois de uma barreira desse tipo, permitimos
+     * recuperar no máximo duas continuações com sinais fortes de INCI.
+     * Barreiras de empresa, endereço e registro continuam definitivas.
+     */
+    private static final int MAX_INGREDIENT_SECTION_RECOVERIES = 2;
+    private static final int INGREDIENT_CONTINUATION_LOOKAHEAD = 24;
+
+    /*
      * ================================================================
      * INGREDIENTES
      * ================================================================
@@ -294,6 +303,7 @@ final class ScanBackIngredientSection {
         }
         String firstStopReason =
                 null;
+        boolean firstLineRecovered = false;
         if (
                 !firstRemainder.isEmpty()
         ) {
@@ -323,8 +333,22 @@ final class ScanBackIngredientSection {
                         );
                 firstRemainder =
                         prefix;
-                firstStopReason =
-                        firstStop.reason;
+                if (isRecoverableIngredientBarrier(firstStop)
+                        && localizarContinuacaoIngredientes(
+                        lines,
+                        start + 1
+                ) >= 0) {
+                    /*
+                     * O heading pode ter sido seguido por uma coluna de
+                     * marketing. Mantemos o prefixo útil e retomamos quando
+                     * aparecer uma sequência com sinais de ingredientes.
+                     */
+                    firstStopReason = null;
+                    firstLineRecovered = true;
+                } else {
+                    firstStopReason =
+                            firstStop.reason;
+                }
             }
             if (!firstRemainder.isEmpty()) {
                 collected.add(
@@ -336,10 +360,16 @@ final class ScanBackIngredientSection {
         }
         int end =
                 start;
-        String stopReason =
-                firstStopReason == null
-                        ? "END_OF_TEXT"
-                        : firstStopReason;
+        String stopReason;
+        if (firstStopReason != null) {
+            stopReason = firstStopReason;
+        } else if (firstLineRecovered) {
+            stopReason = "RECOVERED_AFTER_SAFETY_OR_MARKETING";
+        } else {
+            stopReason = "END_OF_TEXT";
+        }
+        int recoveryCount =
+                firstLineRecovered ? 1 : 0;
         /*
          * ============================================================
          * DEMAIS LINHAS
@@ -395,6 +425,26 @@ final class ScanBackIngredientSection {
                             )
                     );
                 }
+                int continuation =
+                        recoveryCount < MAX_INGREDIENT_SECTION_RECOVERIES
+                                && isRecoverableIngredientBarrier(stop)
+                                ? localizarContinuacaoIngredientes(
+                                lines,
+                                i + 1
+                        )
+                                : -1;
+                if (continuation >= 0) {
+                    recoveryCount++;
+                    end = i;
+                    /*
+                     * Ignora apenas o trecho administrativo intercalado.
+                     * A linha de continuação volta ao fluxo normal e ainda
+                     * passa por todas as barreiras existentes.
+                     */
+                    i = continuation - 1;
+                    stopReason = "RECOVERED_AFTER_" + stop.reason;
+                    continue;
+                }
                 stopReason =
                         stop.reason;
                 end =
@@ -444,6 +494,53 @@ final class ScanBackIngredientSection {
                 raw,
                 stopReason
         );
+    }
+
+    private static boolean isRecoverableIngredientBarrier(StopMatch stop) {
+        return stop != null
+                && "SAFETY_OR_MARKETING".equals(stop.reason);
+    }
+
+    /**
+     * Procura uma nova sequência de linhas que pareça composição INCI após
+     * uma barreira de segurança/marketing. Exige dois sinais consecutivos ou
+     * dois sinais na mesma linha para não reabrir a seção por acaso.
+     */
+    private static int localizarContinuacaoIngredientes(
+            List<String> lines,
+            int fromIndex
+    ) {
+        if (lines == null || fromIndex < 0 || fromIndex >= lines.size()) {
+            return -1;
+        }
+        int runStart = -1;
+        int runSignals = 0;
+        int limit = Math.min(
+                lines.size(),
+                fromIndex + INGREDIENT_CONTINUATION_LOOKAHEAD
+        );
+        for (int i = fromIndex; i < limit; i++) {
+            String normalized = normalizar(lines.get(i));
+            if (normalized.isEmpty()) continue;
+            if (pareceAdministrativoForte(normalized)) {
+                runStart = -1;
+                runSignals = 0;
+                continue;
+            }
+            int signals = contarSinaisINCI(normalized);
+            if (signals >= 2) {
+                return i;
+            }
+            if (signals > 0) {
+                if (runStart < 0) runStart = i;
+                runSignals++;
+                if (runSignals >= 2) return runStart;
+            } else {
+                runStart = -1;
+                runSignals = 0;
+            }
+        }
+        return -1;
     }
 
     private static boolean isPackagingSuffix(List<String> lines, int start) {

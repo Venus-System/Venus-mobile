@@ -4,12 +4,16 @@ import android.content.Context;
 
 import androidx.test.core.app.ApplicationProvider;
 
+import com.venussystem.venusmobile.model.Colecao;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -49,9 +53,102 @@ public class ColecaoRepositoryTest {
         assertFalse(listas.nomeEmUso("viagem", id));
     }
 
+    // ---- Listas de exemplo ----
+
+    private static final String FAVORITOS_COMO_NASCEU =
+            "{\"id\":1,\"nome\":\"Produtos favoritados\",\"chaveImagem\":\"favoritos\"}";
+    private static final String ESCANEADOS_COMO_NASCEU =
+            "{\"id\":2,\"nome\":\"Produtos escaneados\",\"chaveImagem\":\"escaneados\"}";
+    private static final String SKINCARE_COMO_NASCEU =
+            "{\"id\":3,\"nome\":\"Rotina de skincare\",\"chaveImagem\":\"skincare\"}";
+
+    /** Grava as listas como uma versao anterior do app deixou. */
+    private void listasGravadas(String... json) {
+        DadosDaConta.prefs(context, ColecaoRepository.ARQUIVO, "uid-ana").edit()
+                .putString("minhas_listas", "[" + String.join(",", json) + "]")
+                .commit();
+    }
+
+    private List<String> nomesNaTela() {
+        List<String> nomes = new ArrayList<>();
+        for (Colecao colecao : listas.minhasListas().getValue()) {
+            nomes.add(colecao.getName());
+        }
+        return nomes;
+    }
+
     @Test
-    public void nomeEmUso_valeTambemParaAsDeExemplo() {
-        assertTrue(listas.nomeEmUso("Produtos favoritados", -1));
+    public void contaNova_comecaSemNenhumaLista() {
+        assertTrue(listas.minhasListas().getValue().isEmpty());
+        assertFalse(listas.nomeEmUso("Produtos favoritados", -1));
+    }
+
+    @Test
+    public void contaAntiga_perdeAsListasDeExemploQueFicaramComoNasceram() {
+        listasGravadas(FAVORITOS_COMO_NASCEU, ESCANEADOS_COMO_NASCEU, SKINCARE_COMO_NASCEU);
+
+        assertTrue(listas.minhasListas().getValue().isEmpty());
+    }
+
+    @Test
+    public void contaAntiga_mantemAsListasDeExemploQueAPessoaUsou() {
+        ListaItemRepository itens = new ListaItemRepository(context, "uid-ana");
+        itens.adicionar(1L, 100L);
+        listasGravadas(
+                FAVORITOS_COMO_NASCEU,
+                "{\"id\":2,\"nome\":\"Meus scans\",\"chaveImagem\":\"escaneados\"}",
+                "{\"id\":3,\"nome\":\"Rotina de skincare\",\"chaveImagem\":\"skincare\","
+                        + "\"descricao\":\"Noite\"}",
+                "{\"id\":4,\"nome\":\"Viagem\",\"descricao\":\"\"}");
+
+        assertEquals(Arrays.asList("Produtos favoritados", "Meus scans", "Rotina de skincare",
+                "Viagem"), nomesNaTela());
+    }
+
+    @Test
+    public void contaAntiga_mantemAListaDeExemploQueSubiuOuGanhouCapa() {
+        listasGravadas(
+                "{\"id\":1,\"nome\":\"Produtos favoritados\",\"chaveImagem\":\"favoritos\","
+                        + "\"idApi\":7}",
+                "{\"id\":2,\"nome\":\"Produtos escaneados\",\"chaveImagem\":\"escaneados\","
+                        + "\"caminhoImagem\":\"file:///capa.jpg\"}",
+                SKINCARE_COMO_NASCEU);
+
+        assertEquals(Arrays.asList("Produtos favoritados", "Produtos escaneados"), nomesNaTela());
+    }
+
+    @Test
+    public void listaDeExemploQueSaiu_naoDeixaProdutoParaEnviar() {
+        ListaItemRepository itens = new ListaItemRepository(context, "uid-ana");
+        // Entrou um produto e saiu: a lista esta vazia, mas a versao subiu.
+        itens.adicionar(3L, 100L);
+        itens.remover(3L, 100L);
+        listasGravadas(SKINCARE_COMO_NASCEU);
+
+        listas.minhasListas();
+
+        assertFalse(itens.temItensParaEnviar(3L));
+    }
+
+    @Test
+    public void idDasListasDeExemploQueSairam_naoEReaproveitado() {
+        listasGravadas(FAVORITOS_COMO_NASCEU, ESCANEADOS_COMO_NASCEU, SKINCARE_COMO_NASCEU);
+
+        long primeiraCriada = listas.criar("Viagem", "", null).getId();
+
+        assertEquals(4L, primeiraCriada);
+    }
+
+    @Test
+    public void listasDeExemplo_saoRevistasUmaVezSo() {
+        listasGravadas(FAVORITOS_COMO_NASCEU);
+        listas.minhasListas();
+
+        // Depois da revisao, uma lista assim e legitima: por exemplo, a que veio
+        // da API com capa padrao e teve o id esquecido.
+        listasGravadas(FAVORITOS_COMO_NASCEU);
+
+        assertEquals(Collections.singletonList("Produtos favoritados"), nomesNaTela());
     }
 
     // ---- Ids ----

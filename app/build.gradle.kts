@@ -44,6 +44,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Provisorio: ainda nao existe a chave de release (o keystore vai
+            // nos secrets do GitHub). Sem assinatura o APK nem instala, entao
+            // por enquanto o release usa a chave de debug. O que protege a
+            // pessoa e o release nao ser depuravel: num APK de debug, o
+            // "adb run-as" le o token do Firebase e as respostas de saude.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
