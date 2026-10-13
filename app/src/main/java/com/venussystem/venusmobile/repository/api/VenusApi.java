@@ -3,6 +3,7 @@ package com.venussystem.venusmobile.repository.api;
 import com.venussystem.venusmobile.repository.api.dto.AllergyResponse;
 import com.venussystem.venusmobile.repository.api.dto.BrandResponse;
 import com.venussystem.venusmobile.repository.api.dto.FatiaResponse;
+import com.venussystem.venusmobile.repository.api.dto.IngredientEffectResponse;
 import com.venussystem.venusmobile.repository.api.dto.IngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.MediaAssetResponse;
 import com.venussystem.venusmobile.repository.api.dto.PreferenceCatalogResponse;
@@ -88,6 +89,15 @@ public interface VenusApi {
 
     @GET("api/ingredients/{id}")
     Call<IngredientResponse> buscarIngrediente(@Path("id") long id);
+
+    /** Efeitos do ingrediente sobre cada etiqueta de perfil (catalogo aberto). */
+    @GET("api/ingredient-effects/ingredient/{ingredientId}")
+    Call<List<IngredientEffectResponse>> listarEfeitosDoIngrediente(
+            @Path("ingredientId") long ingredientId);
+
+    /** Catalogo inteiro de etiquetas de perfil (pele, cabelo, valores...). */
+    @GET("api/profile-tags")
+    Call<List<PreferenceCatalogResponse>> listarEtiquetas(@Query("size") int tamanho);
 
     /** Scans recentes da própria conta; a API aplica a regra de ownership. */
     @GET("api/scan-sessions/user/{userId}")
