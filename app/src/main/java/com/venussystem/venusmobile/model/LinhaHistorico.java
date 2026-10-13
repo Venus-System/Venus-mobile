@@ -13,19 +13,25 @@ public class LinhaHistorico {
     private final int tipo;
     private final String data;
     private final Produto produto;
+    private final String status;
 
-    private LinhaHistorico(int tipo, String data, Produto produto) {
+    private LinhaHistorico(int tipo, String data, Produto produto, String status) {
         this.tipo = tipo;
         this.data = data;
         this.produto = produto;
+        this.status = status;
     }
 
     public static LinhaHistorico deData(String data) {
-        return new LinhaHistorico(TIPO_DATA, data, null);
+        return new LinhaHistorico(TIPO_DATA, data, null, null);
     }
 
     public static LinhaHistorico deProduto(Produto produto) {
-        return new LinhaHistorico(TIPO_PRODUTO, null, produto);
+        return deProduto(produto, null);
+    }
+
+    public static LinhaHistorico deProduto(Produto produto, String status) {
+        return new LinhaHistorico(TIPO_PRODUTO, null, produto, status);
     }
 
     public int getTipo() {
@@ -38,5 +44,9 @@ public class LinhaHistorico {
 
     public Produto getProduto() {
         return produto;
+    }
+
+    public String getStatus() {
+        return status;
     }
 }

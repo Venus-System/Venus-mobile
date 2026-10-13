@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Produtos em analise (ProdutosEmAnaliseActivity): o que a pessoa escaneou e
+     mandou para a equipe conferir. Um dos quatro de baixo aparece por vez:
+     lista, carregando, vazio ou erro. -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context=".view.ProdutosEmAnaliseActivity">
+
+    <ImageButton
+        android:id="@+id/btnVoltar"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/desc_voltar"
+        android:rotation="180"
+        android:scaleType="center"
+        android:src="@drawable/ic_chevron"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textTitulo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/espaco_grande"
+        android:text="@string/analise_titulo"
+        android:textColor="@color/roxo_venus"
+        android:textSize="@dimen/texto_titulo_aba"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/btnVoltar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btnVoltar"
+        app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/listaProdutosEmAnalise"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:clipToPadding="false"
+        android:paddingStart="@dimen/espaco_pequeno"
+        android:paddingEnd="@dimen/espaco_pequeno"
+        android:paddingBottom="@dimen/espaco_grande"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnVoltar"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista"
+        tools:listitem="@layout/item_produto_em_analise"
+        tools:visibility="visible" />
+
+    <ProgressBar
+        android:id="@+id/carregando"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminateTint="@color/roxo_venus"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnVoltar" />
+
+    <LinearLayout
+        android:id="@+id/blocoVazio"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_secao"
+        android:layout_marginEnd="@dimen/espaco_secao"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnVoltar">
+
+        <ImageView
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:alpha="0.5"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_produtos_em_analise" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaco_medio"
+            android:gravity="center"
+            android:text="@string/analise_vazio_titulo"
+            android:textColor="@color/preto_texto"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaco_pequeno"
+            android:gravity="center"
+            android:text="@string/analise_vazio"
+            android:textColor="@color/cinza_descricao"
+            android:textSize="@dimen/texto_corpo" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/blocoErro"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_secao"
+        android:layout_marginEnd="@dimen/espaco_secao"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnVoltar">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/erro_sem_conexao"
+            android:textColor="@color/cinza_descricao"
+            android:textSize="@dimen/texto_corpo" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnTentarDeNovo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaco_medio"
+            android:background="@drawable/bg_botao_gradiente"
+            android:paddingStart="@dimen/espaco_grande"
+            android:paddingEnd="@dimen/espaco_grande"
+            android:text="@string/acao_tentar_de_novo"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="@dimen/texto_campo" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

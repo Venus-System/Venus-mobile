@@ -12,13 +12,10 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import coil.Coil;
-import coil.ImageLoader;
-import coil.request.ImageRequest;
-
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.LinhaHistorico;
 import com.venussystem.venusmobile.model.Produto;
+import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +64,8 @@ public class HistoricoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         if (holder instanceof DataViewHolder) {
             ((DataViewHolder) holder).preencher(linha.getData());
         } else {
-            ((ProdutoViewHolder) holder).preencher(linha.getProduto(), aoClicar);
+            ((ProdutoViewHolder) holder).preencher(
+                    linha.getProduto(), linha.getStatus(), aoClicar);
         }
     }
 
@@ -95,6 +93,7 @@ public class HistoricoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         private final TextView nome;
         private final TextView marca;
         private final TextView nota;
+        private final TextView status;
 
         ProdutoViewHolder(@NonNull View item) {
             super(item);
@@ -102,22 +101,50 @@ public class HistoricoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             nome = item.findViewById(R.id.textNome);
             marca = item.findViewById(R.id.textMarca);
             nota = item.findViewById(R.id.textNota);
+            status = item.findViewById(R.id.textStatus);
         }
 
-        void preencher(Produto produto, AoClicar aoClicar) {
+        void preencher(Produto produto, String scanStatus, AoClicar aoClicar) {
             nome.setText(produto.getName());
-            marca.setText(produto.getBrandName());
+            String brandName = produto.getBrandName();
+            marca.setText(brandName == null ? "" : brandName);
+            marca.setVisibility(brandName == null || brandName.trim().isEmpty()
+                    ? View.GONE : View.VISIBLE);
+            if (status != null) {
+                String statusText = textoStatus(scanStatus);
+                status.setText(statusText);
+                status.setVisibility(statusText.isEmpty() ? View.GONE : View.VISIBLE);
+            }
             mostrarNota(produto.getOverallScore());
 
-            ImageLoader carregador = Coil.imageLoader(itemView.getContext());
-            carregador.enqueue(new ImageRequest.Builder(itemView.getContext())
-                    .data(produto.getImageUrl())
-                    .target(imagem)
-                    .placeholder(R.drawable.bg_foto_historico)
-                    .error(R.drawable.bg_foto_historico)
-                    .build());
+            ProdutoImagemLoader.carregar(
+                    itemView.getContext(), imagem, produto, R.drawable.bg_foto_historico);
 
-            itemView.setOnClickListener(v -> aoClicar.noProduto(produto));
+            boolean abreDetalhe = produto.getId() != null && produto.getId() > 0;
+            itemView.setOnClickListener(abreDetalhe
+                    ? v -> aoClicar.noProduto(produto) : null);
+            itemView.setClickable(abreDetalhe);
+            itemView.setFocusable(abreDetalhe);
+        }
+
+        private String textoStatus(String status) {
+            if (status == null) {
+                return "";
+            }
+            switch (status) {
+                case "PENDING_REVIEW":
+                case "IN_REVIEW":
+                    return itemView.getContext().getString(R.string.historico_em_analise);
+                case "APPROVED":
+                case "SYNCED":
+                    return itemView.getContext().getString(R.string.historico_aprovado);
+                case "REJECTED":
+                    return itemView.getContext().getString(R.string.historico_recusado);
+                case "SYNC_FAILED":
+                    return itemView.getContext().getString(R.string.historico_aguardando_sincronizacao);
+                default:
+                    return "";
+            }
         }
 
         /**

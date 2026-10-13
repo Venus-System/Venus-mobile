@@ -107,6 +107,31 @@ public final class ScanDraftStore {
         return result;
     }
 
+    /**
+     * Submissões já confirmadas pelo servidor. Elas funcionam como cache
+     * imediato do histórico enquanto a listagem remota ainda não refletiu o
+     * scan recém-enviado.
+     */
+    public List<SavedDraft> submitted(String uid) throws IOException {
+        List<SavedDraft> result = new ArrayList<>();
+        Path account = account(uid);
+        if (!Files.exists(account)) return result;
+        try (Stream<Path> entries = Files.list(account)) {
+            for (Path entry : (Iterable<Path>) entries::iterator) {
+                if (!Files.isRegularFile(entry.resolve("draft.json"))) continue;
+                try {
+                    SavedDraft saved = read(uid, entry.getFileName().toString());
+                    if (saved.submission != null || "SUBMITTED".equals(saved.state)) {
+                        result.add(saved);
+                    }
+                } catch (IOException ignored) {
+                    // Um rascunho corrompido não deve esconder os demais itens.
+                }
+            }
+        }
+        return result;
+    }
+
     /** Atomically acknowledges just one side, preserving the immutable OCR/photo snapshot. */
     public SavedDraft recordUpload(String uid, String scanId, String side, ScanUploadedPhoto receipt) throws IOException {
         synchronized (ScanDraftStore.class) {

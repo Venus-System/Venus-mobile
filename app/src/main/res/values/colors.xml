@@ -37,8 +37,8 @@
     <color name="nota_boa_fundo">#FFE5EFE9</color>
     <color name="nota_media_fundo">#FFF7EFE3</color>
     <color name="nota_ruim_fundo">#FFF3E3EC</color>
-    <color name="lilas_avatar">#FFC9B0E8</color>
-    <color name="roxo_avatar_borda">#FF5B2E8C</color>
+    <color name="lilas_avatar">#FFCDB3E3</color>
+    <color name="roxo_avatar_borda">#FF321B5D</color>
     <color name="laranja_pendente">#FFE08A2E</color>
     <color name="borda_card_perfil">#FFEDE7F3</color>
     <color name="fundo_chip_perfil">#FFF7F2FC</color>

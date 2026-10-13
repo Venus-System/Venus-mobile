@@ -137,6 +137,13 @@ public class DetalheListaActivity extends AppCompatActivity {
         });
 
         preencherCabecalho();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Recarrega toda vez que a tela volta: um produto aberto daqui pode ter
+        // sido tirado desta lista (ou salvo nela) pelo marcador da tela dele.
         carregarItens();
     }
 

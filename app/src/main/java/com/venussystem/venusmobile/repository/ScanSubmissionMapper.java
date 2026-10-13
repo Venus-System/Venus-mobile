@@ -17,10 +17,17 @@ import java.util.Set;
 /** Preserves raw OCR and selects the strongest front candidate without trusting OCR blindly. */
 public final class ScanSubmissionMapper {
     private ScanSubmissionMapper() { }
+    // The API accepts up to 2000 characters per extracted field. These fields are
+    // derived from the back OCR, which still goes whole in fullText (up to 20000),
+    // so capping them loses nothing; letting them through made the validator
+    // reject the whole scan, and a retry resent the same text.
+    private static final int EXTRACTED_FIELD_LIMIT = 2000;
     private static final Set<String> GENERIC_FRONT_WORDS = new HashSet<>(Arrays.asList(
             "CREME", "LOCAO", "GEL", "SPRAY", "AEROSOL", "FRESH", "ORIGINAL",
             "PROTECAO", "ANTITRANSPIRANTE", "ANTIPERSPIRANTE", "PERFUME", "MASCULINO",
-            "FEMININO", "INFANTIL", "DESODORANTE", "HIDRATANTE", "NOVO", "NOVA"
+            "FEMININO", "INFANTIL", "DESODORANTE", "HIDRATANTE", "NOVO", "NOVA",
+            "SHAMPOO", "CONDICIONADOR", "SABONETE", "LOÇÃO", "CREME", "BODY",
+            "LOTION", "DEODORANT", "PERFUME", "KIT", "PRODUTO"
     ));
 
     public static ScanSessionRequest prepare(ScanSubmissionDraft draft, String uid,
@@ -61,18 +68,18 @@ public final class ScanSubmissionMapper {
             throw new IllegalArgumentException("A composição precisa de uma nova leitura.");
         ScanSessionRequest.BackExtracted back = new ScanSessionRequest.BackExtracted();
         back.ingredientsText = data.getIngredientsRawText();
-        back.manufacturer = data.getManufacturer();
-        back.manufacturerAddress = data.getManufacturerAddress();
-        back.contact = data.getContact();
-        back.country = data.getCountry();
-        back.batch = data.getBatch();
-        back.registrationNumber = data.getRegistrationNumber();
-        back.netContent = data.getNetContent();
-        back.usage = data.getUsage();
-        back.precautions = data.getPrecautions();
-        back.warnings = data.getWarnings();
-        back.barcode = data.getBarcode();
-        back.otherText = data.getOtherText();
+        back.manufacturer = capped(data.getManufacturer());
+        back.manufacturerAddress = capped(data.getManufacturerAddress());
+        back.contact = capped(data.getContact());
+        back.country = capped(data.getCountry());
+        back.batch = capped(data.getBatch());
+        back.registrationNumber = capped(data.getRegistrationNumber());
+        back.netContent = capped(data.getNetContent());
+        back.usage = capped(data.getUsage());
+        back.precautions = capped(data.getPrecautions());
+        back.warnings = capped(data.getWarnings());
+        back.barcode = capped(data.getBarcode());
+        back.otherText = capped(data.getOtherText());
         back.claims = new ArrayList<>(data.getClaims());
         request.ocr.back.extracted = back;
         request.ingredients = new ArrayList<>();
@@ -104,8 +111,20 @@ public final class ScanSubmissionMapper {
         return corrected.equals(ScanIngredientPolicy.normalize(raw)) ? raw : corrected;
     }
 
+    private static String capped(String value) {
+        return value == null || value.length() <= EXTRACTED_FIELD_LIMIT
+                ? value : value.substring(0, EXTRACTED_FIELD_LIMIT);
+    }
+
     private static String bestFrontCandidate(List<String> values) {
         if (values == null || values.isEmpty()) return null;
+        boolean hasInformativeCandidate = false;
+        for (String candidate : values) {
+            if (isInformativeFrontCandidate(candidate)) {
+                hasInformativeCandidate = true;
+                break;
+            }
+        }
         String best = null;
         int bestScore = Integer.MIN_VALUE;
         for (int index = 0; index < values.size(); index++) {
@@ -114,13 +133,16 @@ public final class ScanSubmissionMapper {
             String value = candidate.trim().replaceAll("\\s+", " ");
             if (value.length() < 2 || value.length() > 80 || !value.matches(".*[A-Za-zÀ-ÿ].*")) continue;
             String normalized = value.toUpperCase(Locale.ROOT);
+            if (hasInformativeCandidate && !isInformativeFrontCandidate(value)) {
+                continue;
+            }
             int score = 100 - index * 3;
             int words = normalized.split("\\s+").length;
             score += Math.min(words, 3) * 4;
             if (value.length() <= 40) score += 5;
             if (normalized.matches(".*\\d.*")) score -= 12;
             for (String token : normalized.split("\\s+")) {
-                if (GENERIC_FRONT_WORDS.contains(token)) score -= 9;
+                if (GENERIC_FRONT_WORDS.contains(token)) score -= 18;
             }
             if (score > bestScore) {
                 best = value;
@@ -128,5 +150,19 @@ public final class ScanSubmissionMapper {
             }
         }
         return best;
+    }
+
+    private static boolean isInformativeFrontCandidate(String candidate) {
+        if (candidate == null) return false;
+        String normalized = candidate.trim()
+                .replaceAll("\\s+", " ")
+                .toUpperCase(Locale.ROOT);
+        if (normalized.length() < 2) return false;
+        for (String token : normalized.split("\\s+")) {
+            String clean = token.replaceAll("[^A-ZÀ-ÿ]", "");
+            if (clean.isEmpty()) continue;
+            if (!GENERIC_FRONT_WORDS.contains(clean)) return true;
+        }
+        return false;
     }
 }

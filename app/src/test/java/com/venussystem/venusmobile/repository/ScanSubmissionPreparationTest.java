@@ -58,6 +58,26 @@ public class ScanSubmissionPreparationTest {
         assertNull(r.ocr.front.extracted.category);
         assertEquals("150 ML", r.ocr.back.extracted.netContent);
     }
+    @Test public void capsDerivedBackFieldsAtApiLimitAndKeepsFullOcr() throws Exception {
+        // Verso real de 2659 caracteres em que 2200 caíram no otherText: a API
+        // aceita 2000 por campo extraído, e o envio parava no validador.
+        String sobra = String.join("", Collections.nCopies(220, "TEXTO SOLTO"));
+        String verso = "INGREDIENTES: AQUA, PARFUM " + sobra;
+        ScanSubmissionDraft d = draft();
+        ScanBackData old = d.getBackData();
+        d.setBackOcrText(verso);
+        d.setBackData(new ScanBackData(verso, old.getLines(), true,
+                old.getIngredientsRawText(), old.getIngredients(),
+                "", "", "", "", "", "", "150 ML", sobra, "", "", Collections.emptyList(), "", sobra, "OCR:hash"));
+        ScanSessionRequest r = ScanSubmissionMapper.prepare(d, "user-a",
+                new ScanSessionRequest.Device("installation-1", "Android", "1.0", "Test device"),
+                new ScanSessionRequest.QualityCheck(.1, .5, true, "COMPLETED"));
+        ScanSubmissionValidator.validate(r, false);
+        assertEquals(2000, r.ocr.back.extracted.otherText.length());
+        assertEquals(sobra.substring(0, 2000), r.ocr.back.extracted.otherText);
+        assertEquals(2000, r.ocr.back.extracted.usage.length());
+        assertEquals(verso, r.ocr.back.fullText);
+    }
     @Test public void sendsHighConfidenceIngredientCorrectionToExistingApiField() throws Exception {
         ScanSubmissionDraft d = draft();
         d.setBackData(new ScanBackData(d.getBackData().getFullText(), d.getBackData().getLines(), true,

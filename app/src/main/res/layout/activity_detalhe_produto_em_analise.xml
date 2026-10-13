@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Detalhe de um produto enviado para analise (DetalheProdutoEmAnaliseActivity):
+     as duas fotos, a situacao explicada, o motivo quando foi recusado e o
+     "Ver produto" quando ja entrou no catalogo. -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context=".view.DetalheProdutoEmAnaliseActivity">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/espaco_grande"
+            android:paddingEnd="@dimen/espaco_grande"
+            android:paddingBottom="@dimen/espaco_grande">
+
+            <ImageButton
+                android:id="@+id/btnVoltar"
+                android:layout_width="@dimen/area_toque_minima"
+                android:layout_height="@dimen/area_toque_minima"
+                android:layout_marginStart="-12dp"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/desc_voltar"
+                android:rotation="180"
+                android:scaleType="center"
+                android:src="@drawable/ic_chevron"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/textTitulo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/analise_detalhe_titulo"
+                android:textColor="@color/roxo_venus"
+                android:textSize="@dimen/texto_titulo_aba"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="@+id/btnVoltar"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/btnVoltar"
+                app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
+
+            <!-- Frente e verso lado a lado, cada um com metade da largura. -->
+            <TextView
+                android:id="@+id/textFrente"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_medio"
+                android:layout_marginEnd="6dp"
+                android:text="@string/analise_frente"
+                android:textColor="@color/cinza_descricao"
+                android:textSize="@dimen/texto_label"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toStartOf="@+id/textVerso"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/btnVoltar" />
+
+            <TextView
+                android:id="@+id/textVerso"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:text="@string/analise_verso"
+                android:textColor="@color/cinza_descricao"
+                android:textSize="@dimen/texto_label"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/textFrente"
+                app:layout_constraintTop_toTopOf="@+id/textFrente" />
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/imgFrente"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_foto_produto"
+                android:contentDescription="@string/desc_foto_frente_enviada"
+                android:scaleType="centerCrop"
+                app:layout_constraintDimensionRatio="3:4"
+                app:layout_constraintEnd_toEndOf="@+id/textFrente"
+                app:layout_constraintStart_toStartOf="@+id/textFrente"
+                app:layout_constraintTop_toBottomOf="@+id/textFrente"
+                app:shapeAppearanceOverlay="@style/FotoProdutoArredondada" />
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/imgVerso"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:background="@drawable/bg_foto_produto"
+                android:contentDescription="@string/desc_foto_verso_enviada"
+                android:scaleType="centerCrop"
+                app:layout_constraintDimensionRatio="3:4"
+                app:layout_constraintEnd_toEndOf="@+id/textVerso"
+                app:layout_constraintStart_toStartOf="@+id/textVerso"
+                app:layout_constraintTop_toTopOf="@+id/imgFrente"
+                app:shapeAppearanceOverlay="@style/FotoProdutoArredondada" />
+
+            <TextView
+                android:id="@+id/textNome"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_grande"
+                android:textColor="@color/preto_texto"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/imgFrente"
+                tools:text="Cuide-se Bem Rosa e Algodão" />
+
+            <TextView
+                android:id="@+id/textMarca"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/cinza_descricao"
+                android:textSize="15sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textNome"
+                tools:text="oBoticário" />
+
+            <TextView
+                android:id="@+id/textSituacao"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_medio"
+                android:background="@drawable/bg_selo_situacao"
+                android:paddingStart="14dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="6dp"
+                android:textSize="@dimen/texto_corpo"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textMarca"
+                tools:backgroundTint="@color/nota_ruim_fundo"
+                tools:text="@string/situacao_recusado"
+                tools:textColor="@color/nota_ruim" />
+
+            <TextView
+                android:id="@+id/textExplicacao"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:textColor="@color/texto_label"
+                android:textSize="15sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textSituacao"
+                tools:text="@string/situacao_recusado_explicacao" />
+
+            <TextView
+                android:id="@+id/textDatas"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:lineSpacingExtra="2dp"
+                android:textColor="@color/texto_ajuda"
+                android:textSize="13sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textExplicacao"
+                tools:text="Enviado em 02/10/2026\nRecusado em 03/10/2026" />
+
+            <LinearLayout
+                android:id="@+id/blocoMotivo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_medio"
+                android:background="@drawable/bg_foto_produto"
+                android:orientation="vertical"
+                android:padding="@dimen/espaco_medio"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textDatas"
+                tools:visibility="visible">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/analise_motivo_recusa"
+                    android:textColor="@color/roxo_venus"
+                    android:textSize="@dimen/texto_corpo"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/textMotivo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/preto_texto"
+                    android:textSize="15sp"
+                    tools:text="Foto do verso ilegível" />
+
+            </LinearLayout>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnVerProduto"
+                style="@style/BotaoGradiente"
+                android:layout_marginTop="@dimen/espaco_grande"
+                android:text="@string/analise_ver_produto"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/blocoMotivo"
+                tools:visibility="visible" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -19,6 +19,7 @@ retrofit = "2.11.0"
 okhttp = "4.12.0"
 camerax = "1.6.2"
 mlkitTextRecognition = "19.0.1"
+playServicesLocation = "21.3.0"
 robolectric = "4.14.1"
 androidxTestCore = "1.6.1"
 archCoreTesting = "2.2.0"
@@ -48,6 +49,7 @@ camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "
 camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" }
 camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
 camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 mlkit-text-recognition = { group = "com.google.android.gms", name = "play-services-mlkit-text-recognition", version.ref = "mlkitTextRecognition" }
 okhttp-mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "okhttp" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }

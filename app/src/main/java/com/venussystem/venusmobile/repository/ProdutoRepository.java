@@ -2,12 +2,15 @@ package com.venussystem.venusmobile.repository;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.venussystem.venusmobile.BuildConfig;
 import com.venussystem.venusmobile.model.IngredienteProduto;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.repository.api.ClienteApi;
@@ -24,11 +27,12 @@ import com.venussystem.venusmobile.repository.api.dto.ProductVersionResponse;
 import com.venussystem.venusmobile.repository.api.dto.ScoringModelResponse;
 
 import java.io.IOException;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -42,6 +46,8 @@ import retrofit2.Response;
 
 public class ProdutoRepository {
 
+    private static final String TAG = "VENUS_PRODUCT_DETAIL";
+
     private static final ExecutorService EXECUTOR =
             Executors.newSingleThreadExecutor();
 
@@ -49,16 +55,11 @@ public class ProdutoRepository {
     // vez de uma esperando a outra.
     private static final ExecutorService REDE = Executors.newFixedThreadPool(6);
 
-    // Uma chamada por ingrediente (ate ~60 por produto). Pool proprio: quem as
-    // espera ocupa uma thread de REDE, entao dividir o pool poderia travar.
-    private static final ExecutorService INGREDIENTES = Executors.newFixedThreadPool(6);
-
-    // Fotos dos cards: a lista de produtos nao traz foto, so o /full de cada
-    // um. Buscadas sob demanda (so os cards que aparecem) e guardadas aqui;
-    // "" marca produto sem foto, para nao perguntar de novo.
-    private static final ExecutorService FOTOS = Executors.newFixedThreadPool(4);
-    private static final Map<Long, String> FOTOS_EM_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
-    private static final Map<Long, List<AoObterFoto>> FOTOS_PEDIDAS = new HashMap<>();
+    // A composição traz ids e cada id precisa ser resolvido para o nome INCI.
+    // Este pool separado não bloqueia o pool principal quando a tela de
+    // detalhe busca vários ingredientes ao mesmo tempo.
+    private static final ExecutorService REDE_INGREDIENTES =
+            Executors.newFixedThreadPool(6);
 
     private static final Handler PRINCIPAL =
             new Handler(Looper.getMainLooper());
@@ -74,6 +75,18 @@ public class ProdutoRepository {
 
     private static final MutableLiveData<String> ERRO =
             new MutableLiveData<>();
+
+    /*
+     * As listas do catálogo não expõem media_assets. A imagem é resolvida
+     * sob demanda pela rota leve de fotos da versão atual e fica em cache
+     * para que cada produto seja consultado uma única vez por processo.
+     */
+    private static final Object CACHE_LOCK = new Object();
+    private static final Map<Long, String> IMAGENS_CACHE = new HashMap<>();
+    private static final Map<Long, Long> VERSOES_CACHE = new HashMap<>();
+    private static final Map<Long, String> COMPOSICOES_CACHE = new HashMap<>();
+    private static final Map<Long, List<AoObterImagem>> IMAGENS_EM_ANDAMENTO =
+            new HashMap<>();
 
     private static final AtomicBoolean EM_ANDAMENTO =
             new AtomicBoolean(false);
@@ -97,7 +110,12 @@ public class ProdutoRepository {
         CARREGANDO.postValue(false);
         ERRO.postValue(null);
         EM_ANDAMENTO.set(false);
-        FOTOS_EM_CACHE.clear();
+        synchronized (CACHE_LOCK) {
+            IMAGENS_CACHE.clear();
+            VERSOES_CACHE.clear();
+            COMPOSICOES_CACHE.clear();
+            IMAGENS_EM_ANDAMENTO.clear();
+        }
     }
 
     /**
@@ -122,62 +140,6 @@ public class ProdutoRepository {
         }
     }
 
-    public interface AoObterFoto {
-        /** Url da foto, ou null quando o produto nao tem foto ou a chamada falhou. */
-        void aoConcluir(@Nullable String urlFoto);
-    }
-
-    /** Foto ja conhecida: a url, "" se o produto nao tem foto, null se nunca foi buscada. */
-    @Nullable
-    public static String fotoEmCache(long produtoId) {
-        return FOTOS_EM_CACHE.get(produtoId);
-    }
-
-    /**
-     * Busca a foto do produto no /full e a guarda. Falha de rede nao entra no
-     * cache, para a proxima vez que o card aparecer tentar de novo.
-     */
-    public void buscarFotoDoProduto(long produtoId, AoObterFoto callback) {
-        String conhecida = FOTOS_EM_CACHE.get(produtoId);
-        if (conhecida != null) {
-            callback.aoConcluir(conhecida.isEmpty() ? null : conhecida);
-            return;
-        }
-        synchronized (FOTOS_PEDIDAS) {
-            List<AoObterFoto> esperando = FOTOS_PEDIDAS.get(produtoId);
-            if (esperando != null) {
-                esperando.add(callback);
-                return;
-            }
-            esperando = new ArrayList<>();
-            esperando.add(callback);
-            FOTOS_PEDIDAS.put(produtoId, esperando);
-        }
-        FOTOS.execute(() -> {
-            String url = null;
-            try {
-                Response<ProductFullResponse> resposta =
-                        api.buscarProdutoCompleto(produtoId).execute();
-                if (resposta.isSuccessful() && resposta.body() != null) {
-                    url = primeiraFotoAtiva(resposta.body().photos);
-                    FOTOS_EM_CACHE.put(produtoId, url == null ? "" : url);
-                }
-            } catch (IOException ignorada) {
-                // sem cache: tenta de novo na proxima vez
-            }
-            List<AoObterFoto> interessados;
-            synchronized (FOTOS_PEDIDAS) {
-                interessados = FOTOS_PEDIDAS.remove(produtoId);
-            }
-            String resultado = url;
-            PRINCIPAL.post(() -> {
-                for (AoObterFoto interessado : interessados) {
-                    interessado.aoConcluir(resultado);
-                }
-            });
-        });
-    }
-
     public interface AoObterIngredientes {
         /** Lista vazia quando o produto nao tem ingredientes ou algo falhou. */
         void aoConcluir(List<IngredienteProduto> ingredientes);
@@ -185,6 +147,10 @@ public class ProdutoRepository {
 
     public interface AoObterDetalhe {
         void aoConcluir(@Nullable String textoRotulo, @Nullable String urlFoto);
+    }
+
+    public interface AoObterImagem {
+        void aoConcluir(@Nullable String urlFoto);
     }
 
     public LiveData<List<Produto>> getCatalogo() {
@@ -286,69 +252,118 @@ public class ProdutoRepository {
     public void buscarDetalheProduto(long produtoId, AoObterDetalhe callback) {
         REDE.execute(() -> {
             DetalheProduto detalhe = obterDetalheCompleto(produtoId);
+            guardarImagem(produtoId, detalhe.urlFoto);
             PRINCIPAL.post(() -> callback.aoConcluir(detalhe.textoRotulo, detalhe.urlFoto));
         });
     }
 
     /**
-     * Ingredientes do produto, na ordem do rotulo, cada um com nome e
-     * descricao: versao atual -> product-ingredients -> um GET por ingrediente.
-     * Se qualquer passo falhar devolve lista vazia, e nao uma lista parcial
-     * (omitir ingrediente em silencio enganaria quem confere o rotulo); a
-     * tela volta ao texto corrido do rotulo.
+     * Ingredientes do produto na ordem do rotulo, cada um com nome e
+     * descricao (a tela mostra um item por ingrediente). Reaproveita a mesma
+     * composicao do texto corrido: versao atual -> product-ingredients -> um
+     * GET por ingrediente. Se qualquer passo falhar devolve lista vazia, e nao
+     * uma lista parcial: omitir ingrediente em silencio enganaria quem confere
+     * o rotulo, e a tela cai no texto corrido.
      */
     public void buscarIngredientesDoProduto(long produtoId, AoObterIngredientes callback) {
         REDE.execute(() -> {
-            List<IngredienteProduto> lista = obterIngredientes(produtoId);
+            List<IngredienteProduto> lista = obterIngredientesDoProduto(produtoId);
             PRINCIPAL.post(() -> callback.aoConcluir(lista));
         });
     }
 
-    private List<IngredienteProduto> obterIngredientes(long produtoId) {
+    private List<IngredienteProduto> obterIngredientesDoProduto(long produtoId) {
+        Long versaoId = buscarVersaoAtual(produtoId);
+        if (versaoId == null) {
+            return Collections.emptyList();
+        }
         try {
-            Response<ProductVersionResponse> versao = api.versaoAtual(produtoId).execute();
-            if (!versao.isSuccessful() || versao.body() == null || versao.body().id == null) {
-                return Collections.emptyList();
-            }
-            Response<List<ProductIngredientResponse>> vinculos =
-                    api.ingredientesDaVersao(versao.body().id).execute();
-            if (!vinculos.isSuccessful() || vinculos.body() == null) {
+            Response<List<ProductIngredientResponse>> resposta =
+                    api.listarIngredientesDaVersao(versaoId).execute();
+            if (!resposta.isSuccessful() || resposta.body() == null) {
                 return Collections.emptyList();
             }
 
-            List<ProductIngredientResponse> ordenados = new ArrayList<>();
-            for (ProductIngredientResponse v : vinculos.body()) {
-                if (v != null && v.ingredientId != null) {
-                    ordenados.add(v);
+            List<ProductIngredientResponse> vinculos = new ArrayList<>();
+            for (ProductIngredientResponse v : resposta.body()) {
+                if (v != null && v.ingredientId != null && v.ingredientId > 0) {
+                    vinculos.add(v);
                 }
             }
-            Collections.sort(ordenados, Comparator.comparingInt(
-                    v -> v.position == null ? Integer.MAX_VALUE : v.position));
+            vinculos.sort((esquerda, direita) -> Integer.compare(
+                    posicaoDoIngrediente(esquerda), posicaoDoIngrediente(direita)));
 
-            List<Future<IngredientResponse>> pedidos = new ArrayList<>();
-            for (ProductIngredientResponse v : ordenados) {
+            List<Future<IngredientResponse>> consultas = new ArrayList<>();
+            for (ProductIngredientResponse v : vinculos) {
                 long id = v.ingredientId;
-                pedidos.add(INGREDIENTES.submit(() -> {
-                    Response<IngredientResponse> r = api.buscarIngrediente(id).execute();
-                    return r.isSuccessful() ? r.body() : null;
-                }));
+                consultas.add(REDE_INGREDIENTES.submit(() -> obterIngrediente(id)));
             }
 
             List<IngredienteProduto> resultado = new ArrayList<>();
-            for (Future<IngredientResponse> pedido : pedidos) {
-                IngredienteProduto item = IngredienteProduto.de(pedido.get(30, TimeUnit.SECONDS));
+            for (Future<IngredientResponse> consulta : consultas) {
+                IngredienteProduto item = IngredienteProduto.de(consulta.get(30, TimeUnit.SECONDS));
                 if (item == null) {
                     return Collections.emptyList();
                 }
                 resultado.add(item);
             }
             return resultado;
-        } catch (IOException | ExecutionException | TimeoutException e) {
+        } catch (IOException | ExecutionException | TimeoutException | RuntimeException e) {
             return Collections.emptyList();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * Resolve a primeira foto ativa de media_assets para cards e listas.
+     * Chamadas simultâneas do mesmo produto compartilham a mesma consulta.
+     */
+    public void buscarImagemProduto(long produtoId, @NonNull AoObterImagem callback) {
+        if (produtoId <= 0) {
+            PRINCIPAL.post(() -> callback.aoConcluir(null));
+            return;
+        }
+
+        String imagemPronta = null;
+        boolean responderDoCache = false;
+        synchronized (CACHE_LOCK) {
+            if (IMAGENS_CACHE.containsKey(produtoId)) {
+                imagemPronta = IMAGENS_CACHE.get(produtoId);
+                responderDoCache = true;
+            } else {
+                List<AoObterImagem> callbacks = IMAGENS_EM_ANDAMENTO.get(produtoId);
+                if (callbacks != null) {
+                    callbacks.add(callback);
+                    return;
+                }
+                callbacks = new ArrayList<>();
+                callbacks.add(callback);
+                IMAGENS_EM_ANDAMENTO.put(produtoId, callbacks);
+            }
+        }
+
+        if (responderDoCache) {
+            String url = imagemPronta;
+            PRINCIPAL.post(() -> callback.aoConcluir(url));
+            return;
+        }
+
+        REDE.execute(() -> {
+            String url = obterImagemProduto(produtoId);
+            List<AoObterImagem> callbacks;
+            synchronized (CACHE_LOCK) {
+                IMAGENS_CACHE.put(produtoId, url);
+                callbacks = IMAGENS_EM_ANDAMENTO.remove(produtoId);
+            }
+            if (callbacks == null) return;
+            PRINCIPAL.post(() -> {
+                for (AoObterImagem listener : callbacks) {
+                    listener.aoConcluir(url);
+                }
+            });
+        });
     }
 
     private DetalheProduto obterDetalheCompleto(long produtoId) {
@@ -360,11 +375,224 @@ public class ProdutoRepository {
             }
 
             ProductFullResponse corpo = resposta.body();
-            String texto = corpo.label == null ? null : corpo.label.normalizedText;
+            String textoRotulo = corpo.label == null
+                    ? null
+                    : rotuloParaExibicao(corpo.label.normalizedText);
+            Long versaoId = corpo.currentVersion == null ? null : corpo.currentVersion.id;
+            if (versaoId == null) {
+                versaoId = buscarVersaoAtual(produtoId);
+            }
+            guardarVersaoAtual(produtoId, versaoId);
+            String textoIngredientes = obterTextoIngredientes(versaoId);
+            registrarDiagnostico("COMPOSITION_RESULT product=" + produtoId
+                    + " version=" + versaoId
+                    + " source=" + (textoIngredientes == null ? "LABEL_FALLBACK" : "CATALOG"));
+            String texto = textoIngredientes == null ? textoRotulo : textoIngredientes;
             String urlFoto = primeiraFotoAtiva(corpo.photos);
             return new DetalheProduto(texto, urlFoto);
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException e) {
             return new DetalheProduto(null, null);
+        }
+    }
+
+    /**
+     * Busca a composição persistida. O endpoint de product-ingredients só
+     * retorna ids; os nomes INCI são resolvidos em paralelo no catálogo de
+     * ingredientes e remontados na ordem do rótulo.
+     */
+    @Nullable
+    private String obterTextoIngredientes(@Nullable Long versaoId) {
+        if (versaoId == null || versaoId <= 0) {
+            return null;
+        }
+
+        synchronized (CACHE_LOCK) {
+            if (COMPOSICOES_CACHE.containsKey(versaoId)) {
+                return COMPOSICOES_CACHE.get(versaoId);
+            }
+        }
+
+        List<ProductIngredientResponse> vinculos;
+        try {
+            Response<List<ProductIngredientResponse>> resposta =
+                    api.listarIngredientesDaVersao(versaoId).execute();
+            if (!resposta.isSuccessful() || resposta.body() == null) {
+                registrarDiagnostico("COMPOSITION_LINKS version=" + versaoId
+                        + " count=0 http=" + resposta.code());
+                return null;
+            }
+            vinculos = new ArrayList<>();
+            for (ProductIngredientResponse vinculo : resposta.body()) {
+                if (vinculo != null && vinculo.ingredientId != null
+                        && vinculo.ingredientId > 0) {
+                    vinculos.add(vinculo);
+                }
+            }
+        } catch (IOException | RuntimeException e) {
+            registrarDiagnostico("COMPOSITION_LINKS version=" + versaoId
+                    + " count=0 reason=" + e.getClass().getSimpleName());
+            return null;
+        }
+
+        registrarDiagnostico("COMPOSITION_LINKS version=" + versaoId
+                + " count=" + vinculos.size());
+
+        if (vinculos.isEmpty()) {
+            return null;
+        }
+
+        vinculos.sort((esquerda, direita) -> Integer.compare(
+                posicaoDoIngrediente(esquerda), posicaoDoIngrediente(direita)));
+
+        List<Future<IngredientResponse>> consultas = new ArrayList<>();
+        for (ProductIngredientResponse vinculo : vinculos) {
+            consultas.add(REDE_INGREDIENTES.submit(
+                    () -> obterIngrediente(vinculo.ingredientId)));
+        }
+
+        StringBuilder texto = new StringBuilder();
+        int ingredientesResolvidos = 0;
+        for (Future<IngredientResponse> consulta : consultas) {
+            try {
+                IngredientResponse ingrediente = consulta.get(30, TimeUnit.SECONDS);
+                String nome = nomeDoIngrediente(ingrediente);
+                if (nome.isEmpty()) {
+                    continue;
+                }
+                if (texto.length() > 0) {
+                    texto.append(", ");
+                }
+                texto.append(nome);
+                ingredientesResolvidos++;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (ExecutionException | TimeoutException ignored) {
+                // Um ingrediente indisponível não deve esconder os demais.
+            }
+        }
+
+        registrarDiagnostico("COMPOSITION_RESOLVED version=" + versaoId
+                + " count=" + ingredientesResolvidos);
+        if (texto.length() == 0) {
+            return null;
+        }
+
+        String composicao = texto.toString();
+        synchronized (CACHE_LOCK) {
+            COMPOSICOES_CACHE.put(versaoId, composicao);
+        }
+        return composicao;
+    }
+
+    @Nullable
+    private IngredientResponse obterIngrediente(long ingredienteId) {
+        try {
+            Response<IngredientResponse> resposta =
+                    api.buscarIngrediente(ingredienteId).execute();
+            return resposta.isSuccessful() ? resposta.body() : null;
+        } catch (IOException | RuntimeException e) {
+            return null;
+        }
+    }
+
+    @Nullable
+    private Long buscarVersaoAtual(long produtoId) {
+        try {
+            Response<ProductVersionResponse> resposta = api.versaoAtual(produtoId).execute();
+            if (!resposta.isSuccessful() || resposta.body() == null) {
+                return null;
+            }
+            return resposta.body().id;
+        } catch (IOException | RuntimeException e) {
+            return null;
+        }
+    }
+
+    private void registrarDiagnostico(String mensagem) {
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, mensagem);
+        }
+    }
+
+    private int posicaoDoIngrediente(ProductIngredientResponse vinculo) {
+        return vinculo.position == null ? Integer.MAX_VALUE : vinculo.position;
+    }
+
+    private String nomeDoIngrediente(@Nullable IngredientResponse ingrediente) {
+        if (ingrediente == null) {
+            return "";
+        }
+        if (ingrediente.inciName != null && !ingrediente.inciName.trim().isEmpty()) {
+            return ingrediente.inciName.trim();
+        }
+        return ingrediente.commonName == null ? "" : ingrediente.commonName.trim();
+    }
+
+    /**
+     * Esse texto é um marcador interno salvo em cargas antigas, não uma
+     * composição. Ele nunca deve aparecer para a pessoa usuária como se fosse
+     * a lista de ingredientes.
+     */
+    @Nullable
+    private String rotuloParaExibicao(@Nullable String texto) {
+        if (texto == null || texto.trim().isEmpty()) {
+            return null;
+        }
+        String semAcentos = Normalizer.normalize(texto, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT);
+        if (semAcentos.contains("catalogo oficial")
+                && semAcentos.contains("composicao integral")) {
+            return null;
+        }
+        return texto.trim();
+    }
+
+    @Nullable
+    private String obterImagemProduto(long produtoId) {
+        try {
+            Long versaoId = versaoAtualEmCache(produtoId);
+            if (versaoId != null) {
+                Response<List<MediaAssetResponse>> fotos =
+                        api.listarFotosDaVersao(versaoId).execute();
+                if (fotos.isSuccessful() && fotos.body() != null) {
+                    String url = primeiraFotoAtiva(fotos.body());
+                    if (url != null) {
+                        return url;
+                    }
+                }
+            }
+
+            // Histórico e produtos abertos antes do catálogo não têm a versão
+            // no cache; nesses casos o agregado completo continua sendo o
+            // caminho compatível.
+            Response<ProductFullResponse> resposta =
+                    api.buscarProdutoCompleto(produtoId).execute();
+            if (!resposta.isSuccessful() || resposta.body() == null) {
+                return null;
+            }
+            return primeiraFotoAtiva(resposta.body().photos);
+        } catch (IOException | RuntimeException e) {
+            return null;
+        }
+    }
+
+    @Nullable
+    private Long versaoAtualEmCache(long produtoId) {
+        synchronized (CACHE_LOCK) {
+            return VERSOES_CACHE.get(produtoId);
+        }
+    }
+
+    private void guardarImagem(long produtoId, @Nullable String urlFoto) {
+        if (produtoId <= 0) return;
+        synchronized (CACHE_LOCK) {
+            // Uma falha transitória no carregamento do detalhe não deve
+            // apagar uma URL válida já resolvida por outra tela.
+            if (urlFoto != null || !IMAGENS_CACHE.containsKey(produtoId)) {
+                IMAGENS_CACHE.put(produtoId, urlFoto);
+            }
         }
     }
 
@@ -378,6 +606,9 @@ public class ProdutoRepository {
         }
         MediaAssetResponse escolhida = null;
         for (MediaAssetResponse foto : fotos) {
+            if (foto == null) {
+                continue;
+            }
             boolean valida = "ACTIVE".equals(foto.status) && "PRODUCT_PHOTO".equals(foto.purpose);
             if (!valida) {
                 continue;
@@ -551,15 +782,23 @@ public class ProdutoRepository {
                 marca = "";
             }
 
-            // Esta listagem (ProductResponse/ProductVersionResponse) nao tem campo
-            // de imagem, entao o item cai no placeholder do adapter. As fotos ja
-            // existem na API em /api/products/{id}/full e
-            // /api/product-versions/{id}/photos, so a listagem que nao expoe.
+            // A listagem nao traz media_assets. Os adapters resolvem a primeira
+            // foto ativa sob demanda pelo endpoint leve de fotos da versao.
+            guardarVersaoAtual(produto.id, versaoAtual);
             catalogo.add(new Produto(produto.id, produto.name, marca, nota, null,
                     produto.productCategoryId, nomeDaCategoria.get(produto.productCategoryId)));
         }
 
         return catalogo;
+    }
+
+    private void guardarVersaoAtual(long produtoId, @Nullable Long versaoId) {
+        if (produtoId <= 0 || versaoId == null || versaoId <= 0) {
+            return;
+        }
+        synchronized (CACHE_LOCK) {
+            VERSOES_CACHE.put(produtoId, versaoId);
+        }
     }
 
     /**

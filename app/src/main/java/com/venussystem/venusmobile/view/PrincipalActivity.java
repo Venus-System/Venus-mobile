@@ -17,8 +17,7 @@ import androidx.fragment.app.Fragment;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
 import com.venussystem.venusmobile.R;
-import com.venussystem.venusmobile.repository.AutenticacaoRepository;
-import com.venussystem.venusmobile.repository.PerfilRepository;
+import com.venussystem.venusmobile.repository.FotoPerfilRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.repository.SincronizacaoRepository;
 import com.venussystem.venusmobile.view.fragment.BuscaFragment;
@@ -61,19 +60,29 @@ public class PrincipalActivity extends AppCompatActivity {
 
         findViewById(R.id.btnScan).setOnClickListener(v -> iniciarScan());
 
-        findViewById(R.id.btnReiniciarTeste).setOnClickListener(v -> reiniciarTeste());
-
         if (savedInstanceState == null) {
-            selecionar(findViewById(R.id.navBusca), new BuscaFragment(), false);
+            selecionar(findViewById(R.id.navInicio), new HistoricoFragment(), false);
 
             // Toda entrada no app passa por aqui (fim do questionario, login ou
             // app reaberto): e o ponto para cadastrar a pessoa na API e mandar o
             // que ficou pendente. Roda em segundo plano, sem segurar a tela.
             new SincronizacaoRepository(this).sincronizarEmSegundoPlano();
-            // As listas vao depois, na mesma fila. Na primeira abertura desta
-            // versao, e aqui que sobem as listas que ja existiam no aparelho.
-            new SincronizacaoListas(this).sincronizarEmSegundoPlano();
+            // As listas vao depois, na mesma fila: sobe o que ficou pendente e
+            // vem o que mudou no servidor. Num celular novo ou depois de
+            // reinstalar, e aqui que as listas que a pessoa ja tinha voltam.
+            new SincronizacaoListas(this).atualizarEmSegundoPlano(null);
+            // Foto de perfil que ficou sem enviar (sem rede, API dormindo).
+            new FotoPerfilRepository(this).enviarEmSegundoPlano();
         }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        // O scan retorna para a mesma PrincipalActivity. Reabre a casinha para
+        // que o item recém-enviado apareça sem exigir um toque na navegação.
+        selecionar(findViewById(R.id.navInicio), new HistoricoFragment(), true);
     }
 
     private void montarItem(int id, @DrawableRes int icone, Class<? extends Fragment> tela) {
@@ -126,16 +135,6 @@ public class PrincipalActivity extends AppCompatActivity {
                 this,
                 onboardingCompleto ? ScanCameraFrontActivity.class : ScanTutorial1Activity.class
         ));
-    }
-
-    private void reiniciarTeste() {
-        new PerfilRepository(this).limpar();
-        new AutenticacaoRepository().sair();
-
-        Intent intent = new Intent(this, LoginActivity.class);
-
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
     }
 
     private void moverIndicador(View item, boolean animar) {

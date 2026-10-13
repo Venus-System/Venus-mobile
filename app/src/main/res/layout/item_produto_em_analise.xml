@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Um produto enviado para analise (ProdutoEmAnaliseAdapter): foto da frente,
+     nome e marca lidos pelo OCR, dia do envio e o selo da situacao. -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:paddingStart="@dimen/espaco_medio"
+    android:paddingTop="@dimen/espaco_pequeno"
+    android:paddingEnd="@dimen/espaco_pequeno"
+    android:paddingBottom="@dimen/espaco_pequeno">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/imgFrente"
+        android:layout_width="@dimen/foto_produto"
+        android:layout_height="@dimen/foto_produto"
+        android:background="@drawable/bg_foto_produto"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/FotoProdutoArredondada"
+        tools:src="@drawable/ic_launcher_foreground" />
+
+    <TextView
+        android:id="@+id/textNome"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textColor="@color/preto_texto"
+        android:textSize="17sp"
+        app:layout_constraintEnd_toStartOf="@+id/imgAbrir"
+        app:layout_constraintStart_toEndOf="@+id/imgFrente"
+        app:layout_constraintTop_toTopOf="@+id/imgFrente"
+        tools:text="Cuide-se Bem Rosa e Algodão" />
+
+    <TextView
+        android:id="@+id/textMarca"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/cinza_descricao"
+        android:textSize="15sp"
+        app:layout_constraintEnd_toEndOf="@+id/textNome"
+        app:layout_constraintStart_toStartOf="@+id/textNome"
+        app:layout_constraintTop_toBottomOf="@+id/textNome"
+        tools:text="oBoticário" />
+
+    <TextView
+        android:id="@+id/textEnviadoEm"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:maxLines="1"
+        android:textColor="@color/texto_ajuda"
+        android:textSize="@dimen/texto_label"
+        app:layout_constraintEnd_toEndOf="@+id/textNome"
+        app:layout_constraintStart_toStartOf="@+id/textNome"
+        app:layout_constraintTop_toBottomOf="@+id/textMarca"
+        tools:text="Enviado em 02/10/2026" />
+
+    <TextView
+        android:id="@+id/textSituacao"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_selo_situacao"
+        android:paddingStart="12dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="4dp"
+        android:textSize="@dimen/texto_label"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@+id/textNome"
+        app:layout_constraintTop_toBottomOf="@+id/textEnviadoEm"
+        tools:backgroundTint="@color/nota_media_fundo"
+        tools:text="@string/situacao_em_analise"
+        tools:textColor="@color/nota_media" />
+
+    <ImageView
+        android:id="@+id/imgAbrir"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:importantForAccessibility="no"
+        android:scaleType="center"
+        android:src="@drawable/ic_chevron"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

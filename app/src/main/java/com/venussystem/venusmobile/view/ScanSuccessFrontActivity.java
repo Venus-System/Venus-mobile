@@ -112,7 +112,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                     }
 
                     if (carregando) {
-                        setBadge("Lendo a foto e buscando o produto no nosso banco...");
+                        setBadge("Lendo a foto e buscando o produto...");
                     }
                 }
         );
@@ -140,7 +140,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                             "Erro durante o processamento da frente. Encerrando o scan."
                     );
                     fecharFluxoParaPrincipal(
-                            "Não foi possível concluir a leitura da foto. Tente novamente com o rótulo mais nítido e bem enquadrado."
+                    "Não foi possível ler a foto. Tente outra mais nítida."
                     );
                 }
         );
@@ -157,7 +157,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
             Log.e(TAG_OCR, "photoPath nulo ou vazio");
             Log.e(TAG_OCR, "Foto frontal não recebida. Encerrando o scan.");
             fecharFluxoParaPrincipal(
-                    "Não conseguimos ler esta foto. Tire outra foto da frente do produto, aproximando ou afastando a embalagem até o rótulo ficar bem visível."
+                    "Não lemos a foto. Tire outra com o rótulo visível."
             );
             return;
         }
@@ -169,13 +169,13 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                 || photoFile.length() <= 0) {
             Log.e(TAG_OCR, "Foto frontal inválida ou indisponível. Encerrando o scan.");
             fecharFluxoParaPrincipal(
-                    "A foto não pôde ser utilizada porque o arquivo da captura ficou inválido. Tire outra foto da frente do produto."
+                    "A foto ficou inválida. Tire outra da frente."
             );
             return;
         }
 
         Log.d(TAG_OCR, "INICIANDO PROCESSAMENTO DA FOTO FRONT");
-        setBadge("Lendo a foto e buscando o produto no nosso banco...");
+        setBadge("Lendo a foto e buscando o produto...");
 
         scanViewModel.reconhecer(Uri.fromFile(photoFile));
     }
@@ -208,7 +208,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                 + " products=" + ultimoFrontData.getProductCandidates().size()
                 + " presentations=" + ultimoFrontData.getPresentationCandidates().size());
 
-        setBadge("Buscando o produto no nosso banco...");
+        setBadge("Buscando o produto...");
 
         scanViewModel.identificarProduto(ultimoFrontData);
     }
@@ -223,9 +223,9 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                     TAG_SCAN,
                     "Erro no matching: " + match.getErrorMessage()
             );
-            setBadge("Não foi possível consultar o catálogo. Encerrando o scan.");
+            setBadge("Catálogo indisponível. Encerrando o scan.");
             fecharFluxoParaPrincipal(
-                    "Não foi possível consultar o nosso banco de produtos agora. O scan foi encerrado; tente novamente."
+                        "Catálogo indisponível. Tente novamente."
             );
             return;
         }
@@ -237,7 +237,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                 Log.e(TAG_SCAN, "Produto encontrado sem ID válido");
                 Log.e(TAG_SCAN, "Produto encontrado sem ID válido. Encerrando o scan.");
                 fecharFluxoParaPrincipal(
-                        "Encontramos um produto, mas não foi possível abrir os dados dele. Tente o scan novamente."
+                        "Produto encontrado, mas não foi possível abri-lo."
                 );
                 return;
             }
@@ -247,13 +247,13 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         }
 
         Log.d(TAG_SCAN, "PRODUTO NÃO ENCONTRADO NO CATÁLOGO");
-        setBadge("Produto não encontrado. Verificando se é um cosmético...");
+        setBadge("Produto não encontrado. Verificando...");
 
         if (ultimoOcr == null || ultimoFrontData == null) {
             Log.e(TAG_SCAN, "Resultado do OCR/extração ainda não disponível");
             Log.e(TAG_SCAN, "Dados do OCR/extração ausentes. Encerrando o scan.");
             fecharFluxoParaPrincipal(
-                    "Não conseguimos entender a foto frontal. Tire outra foto mostrando claramente o rótulo do produto."
+                    "Não entendemos a foto. Mostre o rótulo e tente novamente."
             );
             return;
         }
@@ -266,7 +266,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         } catch (Exception exception) {
             Log.e(TAG_SCAN, "Erro ao classificar a frente. Encerrando o scan.", exception);
             fecharFluxoParaPrincipal(
-                    "Não foi possível analisar esta foto frontal. Tire outra foto com o produto inteiro e o rótulo legível."
+                    "Não foi possível analisar. Mostre o rótulo inteiro."
             );
             return;
         }
@@ -305,12 +305,12 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         if (ultimaClassificacao.isNonCosmetic()) {
             Log.d(TAG_SCAN, "Produto não cosmético. Encerrando o scan e retornando à PrincipalActivity.");
             fecharFluxoParaPrincipal(
-                    "Foto recusada: não identificamos um produto cosmético nesta imagem. Fotografe a frente de um produto cosmético e tente novamente."
+                    "Foto recusada. Fotografe um cosmético."
             );
         } else {
             Log.d(TAG_SCAN, "Produto não confirmado como cosmético. Encerrando o scan e retornando à PrincipalActivity.");
             fecharFluxoParaPrincipal(
-                    "Foto recusada: não conseguimos confirmar que esta embalagem é um cosmético. Deixe o nome e o tipo do produto visíveis e tire outra foto."
+                    "Foto recusada. Mostre o nome e o tipo do produto."
             );
         }
     }
@@ -327,18 +327,18 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
             Log.e(TAG_SCAN, "Dados insuficientes para criar o draft do novo produto");
             Log.e(TAG_SCAN, "Dados insuficientes para criar o draft do novo produto. Encerrando o scan.");
             fecharFluxoParaPrincipal(
-                    "Não foi possível preparar os dados desta foto para continuar o cadastro. O scan foi encerrado."
+                    "Não foi possível preparar a foto. Scan encerrado."
             );
             return;
         }
 
         navegando = true;
-        setBadge("Produto não cadastrado. Preparando o próximo passo...");
+        setBadge("Preparando o próximo passo...");
 
         com.venussystem.venusmobile.model.Usuario owner =
                 new com.venussystem.venusmobile.repository.AutenticacaoRepository().usuarioLogado();
         if (owner == null) {
-            fecharFluxoParaPrincipal("Entre na sua conta antes de enviar um novo produto.");
+            fecharFluxoParaPrincipal("Entre na sua conta para enviar.");
             return;
         }
         ScanSubmissionDraft draft = ScanSubmissionDraft.fromFront(
@@ -366,7 +366,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                     exception
             );
             fecharFluxoParaPrincipal(
-                    "Não foi possível abrir a etapa de novo produto. Tente fazer o scan novamente."
+                    "Não foi possível abrir a próxima etapa."
             );
         }
     }
@@ -384,7 +384,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         if (produtoId == null || produtoId <= 0) {
             Log.e(TAG_SCAN, "Produto encontrado sem ID válido ao abrir detalhes. Encerrando o scan.");
             fecharFluxoParaPrincipal(
-                    "O produto foi encontrado, mas não foi possível abrir os dados dele. Tente novamente."
+                    "Produto encontrado, mas não foi possível abri-lo."
             );
             return;
         }
@@ -409,7 +409,7 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         } catch (Exception exception) {
             Log.e(TAG_SCAN, "Falha ao abrir detalhes do produto.", exception);
             fecharFluxoParaPrincipal(
-                    "Não foi possível abrir os detalhes do produto. Tente o scan novamente."
+                    "Não foi possível abrir os detalhes."
             );
         }
     }

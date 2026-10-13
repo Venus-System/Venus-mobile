@@ -137,6 +137,10 @@ public class BuscaFragment extends Fragment {
         int colunas = getResources().getInteger(R.integer.colunas_grade);
         listaProdutos.setLayoutManager(new GridLayoutManager(requireContext(), colunas));
         listaProdutos.setAdapter(adapter);
+        // A busca troca o conjunto inteiro em memoria. A animacao padrao de
+        // insercao/remocao fazia a troca de filtro parecer lenta enquanto as
+        // imagens ainda eram resolvidas em segundo plano.
+        listaProdutos.setItemAnimator(null);
 
         view.findViewById(R.id.btnTentarDeNovo)
                 .setOnClickListener(v -> viewModel.recarregar());
