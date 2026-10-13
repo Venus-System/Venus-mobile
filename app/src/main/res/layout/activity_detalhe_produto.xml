@@ -154,6 +154,14 @@
                 tools:text="Cyclopentasiloxane, Dicaprylyl Carbonate, Dimethiconol, Parfum, Tocopheryl Acetate."
                 tools:visibility="visible" />
 
+            <LinearLayout
+                android:id="@+id/listaIngredientes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:orientation="vertical"
+                android:visibility="gone" />
+
             <TextView
                 android:id="@+id/textRelatarErro"
                 android:layout_width="match_parent"
