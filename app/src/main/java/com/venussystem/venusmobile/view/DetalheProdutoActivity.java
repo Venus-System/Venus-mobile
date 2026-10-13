@@ -8,6 +8,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -32,9 +33,13 @@ import com.google.android.material.tabs.TabLayout;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Colecao;
 import com.venussystem.venusmobile.model.IngredienteProduto;
+import com.venussystem.venusmobile.domain.match.ResultadoMatch;
 import com.venussystem.venusmobile.model.Produto;
+import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
 import com.venussystem.venusmobile.repository.ColecaoRepository;
 import com.venussystem.venusmobile.repository.ListaItemRepository;
+import com.venussystem.venusmobile.repository.MatchProdutoRepository;
+import com.venussystem.venusmobile.repository.PerfilRepository;
 import com.venussystem.venusmobile.repository.ProdutoRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.view.adapter.AlternativaAdapter;
@@ -62,6 +67,13 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
     private View conteudoAvaliacao;
     private View conteudoMatch;
+    private View carregandoMatch;
+    private TextView textMatchVeredito;
+    private TextView textMatchMensagem;
+    private TextView textMatchNota;
+    private TextView textMatchAviso;
+    private LinearLayout listaMatchAlertas;
+    private LinearLayout listaMatchPositivos;
     private RecyclerView listaAlternativas;
     private TextView textSemAlternativas;
 
@@ -79,6 +91,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
     private boolean ingredientesCarregados = false;
     private boolean alternativasMontadas = false;
+    private boolean matchCarregado = false;
     private boolean telaInicializada = false;
     private boolean mensagemErroMostrada = false;
 
@@ -190,6 +203,14 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 findViewById(
                         R.id.carregandoIngredientes
                 );
+
+        carregandoMatch = findViewById(R.id.carregandoMatch);
+        textMatchVeredito = findViewById(R.id.textMatchVeredito);
+        textMatchMensagem = findViewById(R.id.textMatchMensagem);
+        textMatchNota = findViewById(R.id.textMatchNota);
+        textMatchAviso = findViewById(R.id.textMatchAviso);
+        listaMatchAlertas = findViewById(R.id.listaMatchAlertas);
+        listaMatchPositivos = findViewById(R.id.listaMatchPositivos);
 
         textIngredientes =
                 findViewById(
@@ -605,11 +626,198 @@ public class DetalheProdutoActivity extends AppCompatActivity {
             carregarIngredientes();
         }
 
+        if (aba == ABA_MATCH
+                && !matchCarregado) {
+
+            carregarMatch();
+        }
+
         if (naAlternativas
                 && !alternativasMontadas) {
 
             montarAlternativas();
         }
+    }
+
+    private void carregarMatch() {
+
+        if (produto == null || produto.getId() == null) {
+            return;
+        }
+
+        matchCarregado = true;
+
+        carregandoMatch.setVisibility(View.VISIBLE);
+        textMatchVeredito.setVisibility(View.GONE);
+        textMatchMensagem.setVisibility(View.GONE);
+        textMatchNota.setVisibility(View.GONE);
+        textMatchAviso.setVisibility(View.GONE);
+        listaMatchAlertas.removeAllViews();
+        listaMatchPositivos.removeAllViews();
+
+        new MatchProdutoRepository(new PerfilRepository(this)).calcular(
+                produto.getId(),
+                new MatchProdutoRepository.AoCalcular() {
+                    @Override
+                    public void aoConcluir(
+                            @NonNull ResultadoMatch resultado,
+                            ProductScoreResponse nota,
+                            @NonNull List<String> consideradas
+                    ) {
+                        if (isFinishing() || isDestroyed()) return;
+                        mostrarMatch(resultado, nota, consideradas);
+                    }
+
+                    @Override
+                    public void aoFalhar() {
+                        if (isFinishing() || isDestroyed()) return;
+                        // Deixa tentar de novo ao reabrir a aba.
+                        matchCarregado = false;
+                        carregandoMatch.setVisibility(View.GONE);
+                        mostrarMensagemMatch(R.string.produto_match_indisponivel);
+                    }
+                }
+        );
+    }
+
+    private void mostrarMatch(
+            ResultadoMatch resultado,
+            ProductScoreResponse nota,
+            List<String> consideradas
+    ) {
+
+        carregandoMatch.setVisibility(View.GONE);
+
+        switch (resultado.veredito) {
+            case SEM_PERFIL:
+                mostrarMensagemMatch(R.string.produto_match_sem_perfil);
+                // Quando a pessoa responder o questionario, a aba recalcula.
+                matchCarregado = false;
+                return;
+            case NAO_RECOMENDADO:
+                mostrarVeredito(R.string.produto_match_veredito_nao_recomendado);
+                break;
+            case ATENCAO:
+                mostrarVeredito(R.string.produto_match_veredito_atencao);
+                break;
+            case COMBINA:
+                mostrarVeredito(R.string.produto_match_veredito_combina);
+                break;
+            default:
+                if (consideradas.isEmpty()) {
+                    mostrarMensagemMatch(R.string.produto_match_sem_pontos);
+                } else {
+                    textMatchMensagem.setText(getString(
+                            R.string.produto_match_sem_pontos_considerado,
+                            String.join(", ", consideradas)
+                    ));
+                    textMatchMensagem.setVisibility(View.VISIBLE);
+                }
+                break;
+        }
+
+        adicionarAchados(
+                listaMatchAlertas,
+                R.string.produto_match_titulo_alertas,
+                resultado.alertas
+        );
+        adicionarAchados(
+                listaMatchPositivos,
+                R.string.produto_match_titulo_positivos,
+                resultado.positivos
+        );
+
+        if (nota != null && nota.overallScore != null) {
+            textMatchNota.setText(
+                    getString(R.string.produto_match_nota, nota.overallScore)
+            );
+            textMatchNota.setVisibility(View.VISIBLE);
+        }
+        textMatchAviso.setVisibility(View.VISIBLE);
+    }
+
+    private void mostrarVeredito(int texto) {
+        textMatchVeredito.setText(texto);
+        textMatchVeredito.setVisibility(View.VISIBLE);
+    }
+
+    private void mostrarMensagemMatch(int texto) {
+        textMatchMensagem.setText(texto);
+        textMatchMensagem.setVisibility(View.VISIBLE);
+    }
+
+    private void adicionarAchados(
+            LinearLayout destino,
+            int titulo,
+            List<ResultadoMatch.Achado> achados
+    ) {
+
+        if (achados.isEmpty()) {
+            return;
+        }
+
+        destino.addView(
+                novoTexto(getString(titulo), 15, true, R.color.preto_texto, 24)
+        );
+
+        for (ResultadoMatch.Achado achado : achados) {
+
+            destino.addView(
+                    novoTexto(
+                            achado.titulo,
+                            14,
+                            true,
+                            achado.grave
+                                    ? R.color.amarelo_aviso_texto
+                                    : R.color.preto_texto,
+                            12
+                    )
+            );
+
+            if (!achado.descricao.isEmpty()) {
+                destino.addView(
+                        novoTexto(achado.descricao, 13, false,
+                                R.color.cinza_descricao, 2)
+                );
+            }
+
+            destino.addView(
+                    novoTexto(
+                            getString(
+                                    R.string.produto_match_ingredientes,
+                                    String.join(", ", achado.ingredientes)
+                            ),
+                            12, false, R.color.cinza_descricao, 2
+                    )
+            );
+        }
+    }
+
+    private TextView novoTexto(
+            String texto,
+            int tamanhoSp,
+            boolean negrito,
+            int cor,
+            int margemTopoDp
+    ) {
+
+        TextView view = new TextView(this);
+        view.setText(texto);
+        view.setTextSize(tamanhoSp);
+        view.setTextColor(ContextCompat.getColor(this, cor));
+        if (negrito) {
+            view.setTypeface(view.getTypeface(), android.graphics.Typeface.BOLD);
+        }
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        params.topMargin = Math.round(
+                margemTopoDp * getResources().getDisplayMetrics().density
+        );
+        view.setLayoutParams(params);
+        return view;
     }
 
     private boolean listaVazia() {
