@@ -547,6 +547,123 @@ public class ProdutoRepositoryTest {
         assertNull(resultado[1]);
     }
 
+    // ---- buscarFotoDoProduto (foto sob demanda dos cards) ----
+
+    @Test
+    public void buscarFoto_devolveGuardaNoCacheENaoPerguntaDeNovo() throws InterruptedException {
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        dispatcher.em(PATH_FULL_PRODUTO_1, json(full("Aqua", Collections.singletonList(
+                foto("https://cdn/card.jpg", 1, "ACTIVE")))));
+        server.setDispatcher(dispatcher);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        String[] url = new String[1];
+        repository.buscarFotoDoProduto(1L, resultado -> {
+            url[0] = resultado;
+            latch.countDown();
+        });
+        aguardarLatch(latch, com.venussystem.venusmobile.testutil.LiveDataEspera.TIMEOUT_PADRAO_MS);
+
+        assertEquals("https://cdn/card.jpg", url[0]);
+        assertEquals("https://cdn/card.jpg", ProdutoRepository.fotoEmCache(1L));
+        assertEquals(1, server.getRequestCount());
+    }
+
+    @Test
+    public void buscarFoto_falhaNaoVaiParaOCache() throws InterruptedException {
+        server.setDispatcher(new FakeApiDispatcher());
+
+        CountDownLatch latch = new CountDownLatch(1);
+        repository.buscarFotoDoProduto(1L, resultado -> latch.countDown());
+        aguardarLatch(latch, com.venussystem.venusmobile.testutil.LiveDataEspera.TIMEOUT_PADRAO_MS);
+
+        assertNull(ProdutoRepository.fotoEmCache(1L));
+    }
+
+    // ---- buscarIngredientesDoProduto (product-ingredients + ingredients) ----
+
+    private List<com.venussystem.venusmobile.model.IngredienteProduto> buscarIngredientes()
+            throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        List<com.venussystem.venusmobile.model.IngredienteProduto>[] resultado = new List[1];
+        repository.buscarIngredientesDoProduto(1L, lista -> {
+            resultado[0] = lista;
+            latch.countDown();
+        });
+        aguardarLatch(latch, com.venussystem.venusmobile.testutil.LiveDataEspera.TIMEOUT_PADRAO_MS);
+        return resultado[0];
+    }
+
+    private static com.venussystem.venusmobile.repository.api.dto.ProductIngredientResponse vinculo(
+            long ingredienteId, int posicao) {
+        com.venussystem.venusmobile.repository.api.dto.ProductIngredientResponse v =
+                new com.venussystem.venusmobile.repository.api.dto.ProductIngredientResponse();
+        v.ingredientId = ingredienteId;
+        v.position = posicao;
+        return v;
+    }
+
+    private static com.venussystem.venusmobile.repository.api.dto.IngredientResponse ingrediente(
+            long id, String inci, String comum, String descricao) {
+        com.venussystem.venusmobile.repository.api.dto.IngredientResponse i =
+                new com.venussystem.venusmobile.repository.api.dto.IngredientResponse();
+        i.id = id;
+        i.inciName = inci;
+        i.commonName = comum;
+        i.description = descricao;
+        return i;
+    }
+
+    private FakeApiDispatcher dispatcherComVersaoAtual() {
+        ProductVersionResponse versao = new ProductVersionResponse();
+        versao.id = 7L;
+        versao.productId = 1L;
+        return new FakeApiDispatcher()
+                .em("/api/product-versions/product/1/current", json(versao));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void buscarIngredientes_devolveNaOrdemDaPosicaoComDescricao() throws InterruptedException {
+        FakeApiDispatcher dispatcher = dispatcherComVersaoAtual();
+        dispatcher.em("/api/product-ingredients/product-version/7", json(Arrays.asList(
+                vinculo(20L, 2), vinculo(10L, 1))));
+        dispatcher.em("/api/ingredients/10", json(ingrediente(10L, "AQUA", "ÁGUA",
+                "Solvente que dissolve os demais ingredientes.")));
+        dispatcher.em("/api/ingredients/20", json(ingrediente(20L, "GLYCERIN", "GLICERINA",
+                "Hidrata a pele.")));
+        server.setDispatcher(dispatcher);
+
+        List<com.venussystem.venusmobile.model.IngredienteProduto> lista = buscarIngredientes();
+
+        assertEquals(2, lista.size());
+        assertEquals("ÁGUA", lista.get(0).getNome());
+        assertEquals("AQUA", lista.get(0).getNomeInci());
+        assertEquals("Solvente que dissolve os demais ingredientes.", lista.get(0).getDescricao());
+        assertEquals("GLICERINA", lista.get(1).getNome());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void buscarIngredientes_ingredienteQueFalha_devolveListaVazia() throws InterruptedException {
+        FakeApiDispatcher dispatcher = dispatcherComVersaoAtual();
+        dispatcher.em("/api/product-ingredients/product-version/7", json(Arrays.asList(
+                vinculo(10L, 1), vinculo(20L, 2))));
+        dispatcher.em("/api/ingredients/10", json(ingrediente(10L, "AQUA", "ÁGUA", "x")));
+        // /api/ingredients/20 responde 404
+        server.setDispatcher(dispatcher);
+
+        assertTrue(buscarIngredientes().isEmpty());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void buscarIngredientes_semVersaoAtual_devolveListaVazia() throws InterruptedException {
+        server.setDispatcher(new FakeApiDispatcher());
+
+        assertTrue(buscarIngredientes().isEmpty());
+    }
+
     @Test
     public void buscarDetalhe_falhaDeRede_devolveTudoNulo() throws InterruptedException, IOException {
         server.shutdown();

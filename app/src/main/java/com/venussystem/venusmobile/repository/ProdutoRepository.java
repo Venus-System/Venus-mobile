@@ -8,13 +8,16 @@ import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.venussystem.venusmobile.model.IngredienteProduto;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.repository.api.ClienteApi;
 import com.venussystem.venusmobile.repository.api.VenusApi;
 import com.venussystem.venusmobile.repository.api.dto.BrandResponse;
+import com.venussystem.venusmobile.repository.api.dto.IngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.MediaAssetResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductCategoryResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductFullResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductIngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductVersionResponse;
@@ -23,6 +26,7 @@ import com.venussystem.venusmobile.repository.api.dto.ScoringModelResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +48,17 @@ public class ProdutoRepository {
     // As chamadas do catalogo sao independentes, entao vao juntas neste pool em
     // vez de uma esperando a outra.
     private static final ExecutorService REDE = Executors.newFixedThreadPool(6);
+
+    // Uma chamada por ingrediente (ate ~60 por produto). Pool proprio: quem as
+    // espera ocupa uma thread de REDE, entao dividir o pool poderia travar.
+    private static final ExecutorService INGREDIENTES = Executors.newFixedThreadPool(6);
+
+    // Fotos dos cards: a lista de produtos nao traz foto, so o /full de cada
+    // um. Buscadas sob demanda (so os cards que aparecem) e guardadas aqui;
+    // "" marca produto sem foto, para nao perguntar de novo.
+    private static final ExecutorService FOTOS = Executors.newFixedThreadPool(4);
+    private static final Map<Long, String> FOTOS_EM_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Map<Long, List<AoObterFoto>> FOTOS_PEDIDAS = new HashMap<>();
 
     private static final Handler PRINCIPAL =
             new Handler(Looper.getMainLooper());
@@ -82,6 +97,7 @@ public class ProdutoRepository {
         CARREGANDO.postValue(false);
         ERRO.postValue(null);
         EM_ANDAMENTO.set(false);
+        FOTOS_EM_CACHE.clear();
     }
 
     /**
@@ -104,6 +120,67 @@ public class ProdutoRepository {
             // Se nem o no-op responder, o proprio teste que chamou isto vai
             // estourar seu timeout e relatar o problema real.
         }
+    }
+
+    public interface AoObterFoto {
+        /** Url da foto, ou null quando o produto nao tem foto ou a chamada falhou. */
+        void aoConcluir(@Nullable String urlFoto);
+    }
+
+    /** Foto ja conhecida: a url, "" se o produto nao tem foto, null se nunca foi buscada. */
+    @Nullable
+    public static String fotoEmCache(long produtoId) {
+        return FOTOS_EM_CACHE.get(produtoId);
+    }
+
+    /**
+     * Busca a foto do produto no /full e a guarda. Falha de rede nao entra no
+     * cache, para a proxima vez que o card aparecer tentar de novo.
+     */
+    public void buscarFotoDoProduto(long produtoId, AoObterFoto callback) {
+        String conhecida = FOTOS_EM_CACHE.get(produtoId);
+        if (conhecida != null) {
+            callback.aoConcluir(conhecida.isEmpty() ? null : conhecida);
+            return;
+        }
+        synchronized (FOTOS_PEDIDAS) {
+            List<AoObterFoto> esperando = FOTOS_PEDIDAS.get(produtoId);
+            if (esperando != null) {
+                esperando.add(callback);
+                return;
+            }
+            esperando = new ArrayList<>();
+            esperando.add(callback);
+            FOTOS_PEDIDAS.put(produtoId, esperando);
+        }
+        FOTOS.execute(() -> {
+            String url = null;
+            try {
+                Response<ProductFullResponse> resposta =
+                        api.buscarProdutoCompleto(produtoId).execute();
+                if (resposta.isSuccessful() && resposta.body() != null) {
+                    url = primeiraFotoAtiva(resposta.body().photos);
+                    FOTOS_EM_CACHE.put(produtoId, url == null ? "" : url);
+                }
+            } catch (IOException ignorada) {
+                // sem cache: tenta de novo na proxima vez
+            }
+            List<AoObterFoto> interessados;
+            synchronized (FOTOS_PEDIDAS) {
+                interessados = FOTOS_PEDIDAS.remove(produtoId);
+            }
+            String resultado = url;
+            PRINCIPAL.post(() -> {
+                for (AoObterFoto interessado : interessados) {
+                    interessado.aoConcluir(resultado);
+                }
+            });
+        });
+    }
+
+    public interface AoObterIngredientes {
+        /** Lista vazia quando o produto nao tem ingredientes ou algo falhou. */
+        void aoConcluir(List<IngredienteProduto> ingredientes);
     }
 
     public interface AoObterDetalhe {
@@ -211,6 +288,67 @@ public class ProdutoRepository {
             DetalheProduto detalhe = obterDetalheCompleto(produtoId);
             PRINCIPAL.post(() -> callback.aoConcluir(detalhe.textoRotulo, detalhe.urlFoto));
         });
+    }
+
+    /**
+     * Ingredientes do produto, na ordem do rotulo, cada um com nome e
+     * descricao: versao atual -> product-ingredients -> um GET por ingrediente.
+     * Se qualquer passo falhar devolve lista vazia, e nao uma lista parcial
+     * (omitir ingrediente em silencio enganaria quem confere o rotulo); a
+     * tela volta ao texto corrido do rotulo.
+     */
+    public void buscarIngredientesDoProduto(long produtoId, AoObterIngredientes callback) {
+        REDE.execute(() -> {
+            List<IngredienteProduto> lista = obterIngredientes(produtoId);
+            PRINCIPAL.post(() -> callback.aoConcluir(lista));
+        });
+    }
+
+    private List<IngredienteProduto> obterIngredientes(long produtoId) {
+        try {
+            Response<ProductVersionResponse> versao = api.versaoAtual(produtoId).execute();
+            if (!versao.isSuccessful() || versao.body() == null || versao.body().id == null) {
+                return Collections.emptyList();
+            }
+            Response<List<ProductIngredientResponse>> vinculos =
+                    api.ingredientesDaVersao(versao.body().id).execute();
+            if (!vinculos.isSuccessful() || vinculos.body() == null) {
+                return Collections.emptyList();
+            }
+
+            List<ProductIngredientResponse> ordenados = new ArrayList<>();
+            for (ProductIngredientResponse v : vinculos.body()) {
+                if (v != null && v.ingredientId != null) {
+                    ordenados.add(v);
+                }
+            }
+            Collections.sort(ordenados, Comparator.comparingInt(
+                    v -> v.position == null ? Integer.MAX_VALUE : v.position));
+
+            List<Future<IngredientResponse>> pedidos = new ArrayList<>();
+            for (ProductIngredientResponse v : ordenados) {
+                long id = v.ingredientId;
+                pedidos.add(INGREDIENTES.submit(() -> {
+                    Response<IngredientResponse> r = api.buscarIngrediente(id).execute();
+                    return r.isSuccessful() ? r.body() : null;
+                }));
+            }
+
+            List<IngredienteProduto> resultado = new ArrayList<>();
+            for (Future<IngredientResponse> pedido : pedidos) {
+                IngredienteProduto item = IngredienteProduto.de(pedido.get(30, TimeUnit.SECONDS));
+                if (item == null) {
+                    return Collections.emptyList();
+                }
+                resultado.add(item);
+            }
+            return resultado;
+        } catch (IOException | ExecutionException | TimeoutException e) {
+            return Collections.emptyList();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Collections.emptyList();
+        }
     }
 
     private DetalheProduto obterDetalheCompleto(long produtoId) {

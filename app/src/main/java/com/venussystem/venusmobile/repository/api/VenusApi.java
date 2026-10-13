@@ -3,9 +3,11 @@ package com.venussystem.venusmobile.repository.api;
 import com.venussystem.venusmobile.repository.api.dto.AllergyResponse;
 import com.venussystem.venusmobile.repository.api.dto.BrandResponse;
 import com.venussystem.venusmobile.repository.api.dto.FatiaResponse;
+import com.venussystem.venusmobile.repository.api.dto.IngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.PreferenceCatalogResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductCategoryResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductFullResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductIngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductLabelResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
@@ -62,6 +64,13 @@ public interface VenusApi {
 
     @GET("api/product-labels/product-version/{productVersionId}")
     Call<ProductLabelResponse> buscarRotulo(@Path("productVersionId") long productVersionId);
+
+    @GET("api/product-ingredients/product-version/{productVersionId}")
+    Call<List<ProductIngredientResponse>> ingredientesDaVersao(
+            @Path("productVersionId") long productVersionId);
+
+    @GET("api/ingredients/{id}")
+    Call<IngredientResponse> buscarIngrediente(@Path("id") long id);
 
     @GET("api/scoring-models/active")
     Call<ScoringModelResponse> modeloAtivo();

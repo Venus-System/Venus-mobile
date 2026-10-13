@@ -4,12 +4,15 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -21,6 +24,7 @@ import coil.request.ImageRequest;
 
 import com.google.android.material.tabs.TabLayout;
 import com.venussystem.venusmobile.R;
+import com.venussystem.venusmobile.model.IngredienteProduto;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.repository.ProdutoRepository;
 import com.venussystem.venusmobile.view.adapter.AlternativaAdapter;
@@ -52,6 +56,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
     private View carregandoIngredientes;
     private TextView textIngredientes;
+    private LinearLayout listaIngredientes;
     private ImageView imgProduto;
 
     private Produto produto;
@@ -133,6 +138,11 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         textIngredientes =
                 findViewById(
                         R.id.textIngredientes
+                );
+
+        listaIngredientes =
+                findViewById(
+                        R.id.listaIngredientes
                 );
     }
 
@@ -544,25 +554,78 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 .getItemCount() == 0;
     }
 
+    @SuppressWarnings("unchecked")
     private void carregarIngredientes() {
 
         ingredientesCarregados = true;
 
         carregandoIngredientes.setVisibility(View.VISIBLE);
         textIngredientes.setVisibility(View.GONE);
+        listaIngredientes.setVisibility(View.GONE);
+
+        // Duas chamadas independentes: o rotulo (texto corrido e foto) e a
+        // lista de ingredientes com descricao. A tela so se monta quando as
+        // duas voltam, para nao piscar o texto corrido antes da lista.
+        final String[] rotulo = new String[1];
+        final List<IngredienteProduto>[] lista = new List[1];
+        final int[] pendentes = {2};
+        Runnable concluida = () -> {
+            if (--pendentes[0] > 0 || isFinishing() || isDestroyed()) return;
+            mostrarIngredientes(lista[0], rotulo[0]);
+        };
+
         repository.buscarDetalheProduto(produto.getId(), (textoRotulo, urlFoto) -> {
             if (isFinishing() || isDestroyed()) return;
-            carregandoIngredientes.setVisibility(View.GONE);
-            textIngredientes.setVisibility(View.VISIBLE);
-
-            boolean temTexto = textoRotulo != null && !textoRotulo.trim().isEmpty();
-            textIngredientes.setText(temTexto
-                    ? textoRotulo : getString(R.string.produto_ingredientes_erro));
-
+            rotulo[0] = textoRotulo;
             if (urlFoto != null) {
                 carregarImagem(urlFoto);
             }
+            concluida.run();
         });
+
+        repository.buscarIngredientesDoProduto(produto.getId(), ingredientes -> {
+            lista[0] = ingredientes;
+            concluida.run();
+        });
+    }
+
+    /**
+     * Um ingrediente por item, com a descricao embaixo. Sem lista (produto sem
+     * ingredientes cadastrados ou chamada falhou) cai no texto corrido do
+     * rotulo, que era o comportamento anterior.
+     */
+    private void mostrarIngredientes(@Nullable List<IngredienteProduto> ingredientes,
+                                     @Nullable String textoRotulo) {
+        carregandoIngredientes.setVisibility(View.GONE);
+
+        if (ingredientes != null && !ingredientes.isEmpty()) {
+            listaIngredientes.removeAllViews();
+            LayoutInflater inflater = LayoutInflater.from(this);
+            for (IngredienteProduto ingrediente : ingredientes) {
+                View item = inflater.inflate(
+                        R.layout.item_ingrediente_produto, listaIngredientes, false);
+                ((TextView) item.findViewById(R.id.textNomeIngrediente))
+                        .setText(ingrediente.getNome());
+                preencherOpcional(item.findViewById(R.id.textInciIngrediente),
+                        ingrediente.getNomeInci());
+                preencherOpcional(item.findViewById(R.id.textDescricaoIngrediente),
+                        ingrediente.getDescricao());
+                listaIngredientes.addView(item);
+            }
+            listaIngredientes.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        boolean temTexto = textoRotulo != null && !textoRotulo.trim().isEmpty();
+        textIngredientes.setText(temTexto
+                ? textoRotulo : getString(R.string.produto_ingredientes_erro));
+        textIngredientes.setVisibility(View.VISIBLE);
+    }
+
+    private void preencherOpcional(TextView view, @Nullable String texto) {
+        boolean tem = texto != null && !texto.isEmpty();
+        view.setText(tem ? texto : null);
+        view.setVisibility(tem ? View.VISIBLE : View.GONE);
     }
 
     private void montarAlternativas() {

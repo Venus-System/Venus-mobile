@@ -16,6 +16,7 @@ import coil.request.ImageRequest;
 
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Produto;
+import com.venussystem.venusmobile.repository.ProdutoRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +60,8 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
     }
 
     static class ProdutoViewHolder extends RecyclerView.ViewHolder {
+        private final ProdutoRepository repository = new ProdutoRepository();
+        private Long produtoAtualId;
         private final ImageView imagem;
         private final TextView marca;
         private final TextView nome;
@@ -76,10 +79,34 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
             marca.setText(produto.getBrandName());
             nome.setText(produto.getName());
             mostrarNota(produto.getOverallScore());
+            produtoAtualId = produto.getId();
 
+            String url = produto.getImageUrl();
+            if (url == null && produto.getId() != null) {
+                String emCache = ProdutoRepository.fotoEmCache(produto.getId());
+                if (emCache != null) {
+                    url = emCache.isEmpty() ? null : emCache;
+                } else {
+                    // A lista nao traz foto: busca so deste card e preenche
+                    // quando chegar, se o card ainda mostra este produto.
+                    final Long id = produto.getId();
+                    repository.buscarFotoDoProduto(id, urlFoto -> {
+                        if (urlFoto != null && id.equals(produtoAtualId)) {
+                            carregarFoto(urlFoto);
+                        }
+                    });
+                }
+            }
+            carregarFoto(url);
+
+            itemView.setOnClickListener(v -> aoClicar.noProduto(produto));
+            verNota.setOnClickListener(v -> aoClicar.noProduto(produto));
+        }
+
+        private void carregarFoto(String url) {
             ImageLoader carregador = Coil.imageLoader(itemView.getContext());
             carregador.enqueue(new ImageRequest.Builder(itemView.getContext())
-                    .data(produto.getImageUrl())
+                    .data(url)
                     .target(imagem)
 
                     .placeholder(R.drawable.bg_card_produto)
@@ -89,9 +116,6 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
                     // o card fica com o espaco da foto vazio.
                     .fallback(R.drawable.bg_card_produto)
                     .build());
-
-            itemView.setOnClickListener(v -> aoClicar.noProduto(produto));
-            verNota.setOnClickListener(v -> aoClicar.noProduto(produto));
         }
 
         private void mostrarNota(Integer valor) {
