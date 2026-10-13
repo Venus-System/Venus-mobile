@@ -76,7 +76,7 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
 
         void preencher(Produto produto, AoClicar aoClicar) {
             marca.setText(produto.getBrandName());
-            nome.setText(produto.getName());
+            nome.setText(semMarca(produto.getName(), produto.getBrandName()));
             mostrarNota(produto.getOverallScore());
 
             ImageLoader carregador = Coil.imageLoader(itemView.getContext());
@@ -90,6 +90,33 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
 
             itemView.setOnClickListener(v -> aoClicar.noProduto(produto));
             verNota.setOnClickListener(v -> aoClicar.noProduto(produto));
+        }
+
+        /**
+         * O nome costuma vir com a marca na frente ("Nivea Creme") e a marca
+         * ja aparece na linha de baixo, entao tira o prefixo so na exibicao.
+         * Se sobrar nada (nome igual a marca), mantem o nome inteiro.
+         */
+        private static String semMarca(String nome, String marca) {
+            if (nome == null || marca == null) {
+                return nome;
+            }
+            String nomeLimpo = nome.trim();
+            String marcaLimpa = marca.trim();
+            if (marcaLimpa.isEmpty()
+                    || !nomeLimpo.regionMatches(true, 0, marcaLimpa, 0, marcaLimpa.length())) {
+                return nome;
+            }
+
+            String depois = nomeLimpo.substring(marcaLimpa.length());
+            // "Nivea" nao deve cortar o inicio de "Niveaxyz".
+            if (!depois.isEmpty() && Character.isLetterOrDigit(depois.charAt(0))) {
+                return nome;
+            }
+
+            String resto = depois
+                    .replaceFirst("^[\\s\\-\\u2013:]+", "");
+            return resto.isEmpty() ? nome : resto;
         }
 
         /**
