@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Selo do status do produto em analise. A cor vem do SituacaoAnaliseUtil
+     (backgroundTint), uma para cada situacao. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/white" />
+    <corners android:radius="@dimen/raio_pilula" />
+</shape>

@@ -1,20 +1,145 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white">
 
     <TextView
+        android:id="@+id/textTituloPerfil"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:layout_marginTop="@dimen/espaco_medio"
         android:text="@string/nav_perfil"
-        android:textColor="@color/preto_texto"
-        android:textSize="20sp"
+        android:textColor="@color/roxo_venus"
+        android:textSize="@dimen/texto_titulo_aba"
         android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@+id/rolagemPerfil"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Abre o menu lateral (MenuLateralPerfil). Preso ao fim da coluna do
+         conteudo, para no tablet ficar alinhado com os cartoes, e nao com a
+         borda da tela. -->
+    <ImageButton
+        android:id="@+id/btnMenuPerfil"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:layout_marginEnd="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/desc_abrir_menu"
+        android:scaleType="center"
+        android:src="@drawable/ic_menu_lateral"
+        app:layout_constraintBottom_toBottomOf="@+id/textTituloPerfil"
+        app:layout_constraintEnd_toEndOf="@+id/rolagemPerfil"
+        app:layout_constraintTop_toTopOf="@+id/textTituloPerfil" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/rolagemPerfil"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/espaco_secao"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/textTituloPerfil"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/espaco_medio"
+            android:paddingEnd="@dimen/espaco_medio">
+
+            <!-- A foto num circulo por cima do escudo; sem foto, so o escudo.
+                 Troca pelo menu lateral. -->
+            <com.venussystem.venusmobile.view.componente.AvatarPerfilView
+                android:id="@+id/imgAvatar"
+                android:layout_width="@dimen/avatar_perfil"
+                android:layout_height="@dimen/avatar_perfil"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/espaco_medio"
+                android:contentDescription="@string/desc_foto_perfil" />
+
+            <TextView
+                android:id="@+id/textNome"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:textColor="@color/preto_texto"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                tools:text="Arthur maravilha" />
+
+            <TextView
+                android:id="@+id/textEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:textColor="@color/cinza_descricao"
+                android:textSize="12sp"
+                tools:text="arthur@maravilhoso.com" />
+
+            <TextView
+                style="@style/TituloSecaoPerfil"
+                android:text="@string/perfil_secao_pele" />
+
+            <TextView
+                style="@style/SubtituloSecaoPerfil"
+                android:text="@string/perfil_secao_pele_sub" />
+
+            <LinearLayout
+                android:id="@+id/listaAtributos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical" />
+
+            <TextView
+                style="@style/TituloSecaoPerfil"
+                android:text="@string/perfil_secao_alergias" />
+
+            <TextView
+                style="@style/SubtituloSecaoPerfil"
+                android:text="@string/perfil_secao_alergias_sub" />
+
+            <androidx.appcompat.widget.AppCompatAutoCompleteTextView
+                android:id="@+id/campoAlergia"
+                style="@style/CampoBuscaPerfil"
+                android:hint="@string/perfil_hint_alergia" />
+
+            <LinearLayout
+                android:id="@+id/chipsAlergias"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <TextView
+                style="@style/TituloSecaoPerfil"
+                android:text="@string/perfil_secao_valores" />
+
+            <TextView
+                style="@style/SubtituloSecaoPerfil"
+                android:text="@string/perfil_secao_valores_sub" />
+
+            <androidx.appcompat.widget.AppCompatAutoCompleteTextView
+                android:id="@+id/campoPreferencia"
+                style="@style/CampoBuscaPerfil"
+                android:hint="@string/perfil_hint_preferencia" />
+
+            <LinearLayout
+                android:id="@+id/chipsPreferencias"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

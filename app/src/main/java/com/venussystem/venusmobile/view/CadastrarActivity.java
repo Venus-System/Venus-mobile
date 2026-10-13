@@ -1,7 +1,6 @@
 package com.venussystem.venusmobile.view;
 
 import android.os.Bundle;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -30,12 +29,12 @@ public class CadastrarActivity extends AppCompatActivity {
         setContentView(R.layout.activity_cadastrar);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets teclado = insets.getInsets(WindowInsetsCompat.Type.ime());
 
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
 
-            View card = findViewById(R.id.cardCadastrar);
-            card.setPadding(card.getPaddingLeft(), card.getPaddingTop(),
-                    card.getPaddingRight(), systemBars.bottom);
+            int folga = Math.max(teclado.bottom, systemBars.bottom);
+            findViewById(R.id.cardCadastrar).setPadding(0, 0, 0, folga);
             return insets;
         });
 

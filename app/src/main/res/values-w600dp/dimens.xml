@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tablet e celular deitado: o conteudo vira uma coluna centralizada em vez
+         de esticar de borda a borda. -->
+    <dimen name="largura_max_conteudo">560dp</dimen>
+    <dimen name="largura_max_lista">720dp</dimen>
+    <dimen name="largura_max_ilustracao">400dp</dimen>
+    <dimen name="meio_espaco_grade">8dp</dimen>
+</resources>

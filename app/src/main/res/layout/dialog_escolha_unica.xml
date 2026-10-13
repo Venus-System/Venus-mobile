@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_modal_escolha"
+    android:orientation="vertical"
+    android:padding="@dimen/espaco_grande">
+
+    <TextView
+        android:id="@+id/textPergunta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/preto_texto"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        tools:text="Qual seu tipo de pele?" />
+
+    <TextView
+        android:id="@+id/textAtual"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="@color/roxo_marca"
+        android:textSize="12sp"
+        tools:text="Atual: Mista" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/grupoOpcoes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaco_grande"
+        app:chipSpacingHorizontal="8dp"
+        app:chipSpacingVertical="8dp"
+        app:selectionRequired="true"
+        app:singleLine="false"
+        app:singleSelection="true" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaco_secao"
+        android:orientation="horizontal">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnCancelarModal"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/altura_opcao"
+            android:layout_weight="1"
+            android:background="@drawable/bg_botao_cancelar_modal"
+            android:text="@string/lista_cancelar"
+            android:textAllCaps="false"
+            android:textColor="@color/roxo_venus"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="@dimen/espaco_pequeno"
+            android:layout_height="1dp" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnSalvarModal"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/altura_opcao"
+            android:layout_weight="1"
+            android:background="@drawable/bg_botao_gradiente"
+            android:text="@string/lista_salvar"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</LinearLayout>

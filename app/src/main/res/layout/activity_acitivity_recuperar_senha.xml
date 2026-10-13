@@ -17,15 +17,19 @@
 
     <ImageView
         android:id="@+id/imgBatons"
-        android:layout_width="593dp"
-        android:layout_height="628dp"
-        android:layout_marginBottom="-360dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:importantForAccessibility="no"
         android:scaleType="fitCenter"
         app:layout_constraintBottom_toTopOf="@+id/cardRecuperar"
+        app:layout_constraintDimensionRatio="H,391:667"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.51"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/cardRecuperar"
+        app:layout_constraintVertical_bias="0.427"
+        app:layout_constraintWidth_max="@dimen/largura_max_ilustracao"
+        app:layout_constraintWidth_percent="0.9"
         app:srcCompat="@drawable/recuperar_senha" />
 
     <ImageButton
@@ -50,7 +54,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guidelineCardTopo">
+        app:layout_constraintTop_toTopOf="@+id/guidelineCardTopo"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/conteudoCardRecuperar"

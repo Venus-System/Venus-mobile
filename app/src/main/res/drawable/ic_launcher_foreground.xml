@@ -5,14 +5,6 @@
     android:viewportWidth="483"
     android:viewportHeight="483">
 
-    <!--
-        O launcher recorta as bordas do icone adaptativo em circulo, quadrado
-        ou gota. Por isso o desenho e reduzido para 66% e centralizado: o que
-        passar dessa area corre risco de ser cortado.
-
-        A espessura do traco vai em 8 (e nao 5 como no SVG) para compensar a
-        reducao — em 5 a linha sumiria no tamanho do icone na tela inicial.
-    -->
     <group
         android:scaleX="0.66"
         android:scaleY="0.66"

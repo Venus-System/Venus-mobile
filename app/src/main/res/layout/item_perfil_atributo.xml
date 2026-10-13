@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/espaco_pequeno"
+    android:background="@drawable/bg_card_perfil"
+    android:paddingStart="@dimen/espaco_medio"
+    android:paddingTop="12dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="12dp">
+
+    <TextView
+        android:id="@+id/textRotulo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textColor="@color/preto_texto"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toStartOf="@+id/btnEditar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Tipo de Pele" />
+
+    <TextView
+        android:id="@+id/textValor"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="@+id/textRotulo"
+        app:layout_constraintStart_toStartOf="@+id/textRotulo"
+        app:layout_constraintTop_toBottomOf="@+id/textRotulo"
+        tools:text="Mista" />
+
+    <ImageButton
+        android:id="@+id/btnEditar"
+        android:layout_width="@dimen/botao_editar"
+        android:layout_height="@dimen/botao_editar"
+        android:background="@drawable/bg_botao_editar"
+        android:contentDescription="@string/perfil_editar"
+        android:padding="8dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_editar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

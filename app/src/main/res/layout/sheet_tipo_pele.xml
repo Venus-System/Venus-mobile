@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_bottom_sheet"
+    android:paddingStart="@dimen/espaco_grande"
+    android:paddingEnd="@dimen/espaco_grande">
+
+    <View
+        android:id="@+id/alca"
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:background="@drawable/bg_alca_sheet"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textTituloSheet"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaco_grande"
+        android:layout_marginEnd="@dimen/espaco_pequeno"
+        android:text="@string/sheet_pele_titulo"
+        android:textColor="@color/preto_texto"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@+id/btnFecharSheet"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/alca" />
+
+    <ImageButton
+        android:id="@+id/btnFecharSheet"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="@drawable/bg_botao_fechar"
+        android:contentDescription="@string/desc_fechar"
+        android:scaleType="center"
+        android:src="@drawable/ic_fechar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/textTituloSheet" />
+
+    <TextView
+        android:id="@+id/textDescricaoSheet"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:text="@string/sheet_pele_descricao"
+        android:textColor="@color/cinza_descricao"
+        android:textSize="@dimen/texto_corpo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textTituloSheet" />
+
+    <View
+        android:id="@+id/divisorSheet"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginTop="@dimen/espaco_medio"
+        android:background="@color/borda_campo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textDescricaoSheet" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollTipos"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constrainedHeight="true"
+        app:layout_constraintBottom_toTopOf="@+id/btnEntendi"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_max="380dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/divisorSheet"
+        app:layout_constraintVertical_bias="0">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="@dimen/espaco_medio">
+
+            <LinearLayout style="@style/CardTipoCabelo">
+
+                <ImageView
+                    style="@style/FioTipoCabelo"
+                    android:src="@drawable/ic_pele_normal" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/espaco_medio"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TituloTipoCabelo"
+                        android:text="@string/pele_normal" />
+
+                    <TextView
+                        style="@style/DescricaoTipoCabelo"
+                        android:layout_width="match_parent"
+                        android:text="@string/sheet_pele_desc_normal" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout style="@style/CardTipoCabelo">
+
+                <ImageView
+                    style="@style/FioTipoCabelo"
+                    android:src="@drawable/ic_pele_seca" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/espaco_medio"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TituloTipoCabelo"
+                        android:text="@string/pele_seca" />
+
+                    <TextView
+                        style="@style/DescricaoTipoCabelo"
+                        android:layout_width="match_parent"
+                        android:text="@string/sheet_pele_desc_seca" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout style="@style/CardTipoCabelo">
+
+                <ImageView
+                    style="@style/FioTipoCabelo"
+                    android:src="@drawable/ic_pele_misto" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/espaco_medio"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TituloTipoCabelo"
+                        android:text="@string/pele_misto" />
+
+                    <TextView
+                        style="@style/DescricaoTipoCabelo"
+                        android:layout_width="match_parent"
+                        android:text="@string/sheet_pele_desc_misto" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout style="@style/CardTipoCabelo">
+
+                <ImageView
+                    style="@style/FioTipoCabelo"
+                    android:src="@drawable/ic_pele_oleoso" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/espaco_medio"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TituloTipoCabelo"
+                        android:text="@string/pele_oleoso" />
+
+                    <TextView
+                        style="@style/DescricaoTipoCabelo"
+                        android:layout_width="match_parent"
+                        android:text="@string/sheet_pele_desc_oleoso" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout style="@style/CardTipoCabelo">
+
+                <ImageView
+                    style="@style/FioTipoCabelo"
+                    android:src="@drawable/ic_pele_sensivel" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/espaco_medio"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TituloTipoCabelo"
+                        android:text="@string/pele_sensivel" />
+
+                    <TextView
+                        style="@style/DescricaoTipoCabelo"
+                        android:layout_width="match_parent"
+                        android:text="@string/sheet_pele_desc_sensivel" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnEntendi"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/altura_campo"
+        android:layout_marginTop="@dimen/espaco_medio"
+        android:layout_marginBottom="@dimen/espaco_grande"
+        android:background="@drawable/bg_botao_roxo"
+        android:text="@string/sheet_entendi"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="@dimen/texto_botao"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

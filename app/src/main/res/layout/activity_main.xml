@@ -8,19 +8,6 @@
     android:background="@drawable/bg_gradiente_venus"
     tools:context=".view.BemVindoActivity">
 
-    <ImageView
-        android:id="@+id/imgFormaFundo"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:importantForAccessibility="no"
-        android:scaleType="fitCenter"
-        app:layout_constraintBottom_toBottomOf="@+id/imgPessoa"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/imgPessoa"
-        app:layout_constraintWidth_percent="0.9"
-        app:srcCompat="@drawable/vector_bem_vindo" />
-
     <TextView
         android:id="@+id/textView2"
         android:layout_width="wrap_content"
@@ -44,44 +31,89 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView2" />
 
-    <ImageView
-        android:id="@+id/imgPessoa"
-        android:layout_width="wrap_content"
+    <!-- Ilustracao inteira (forma, pessoa e plantas) num bloco de proporcao fixa:
+         tudo dentro dele e posicionado em porcentagem, entao a cena cresce junta
+         no tablet em vez de a pessoa crescer e as plantas ficarem para tras.
+         370:507 e o tamanho que o bloco tem num celular de 411dp. -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/composicaoBemVindo"
+        android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="24dp"
         android:layout_marginBottom="32dp"
-        android:adjustViewBounds="true"
-        android:importantForAccessibility="no"
-        android:scaleType="fitCenter"
         app:layout_constraintBottom_toTopOf="@+id/buttonCriarConta"
+        app:layout_constraintDimensionRatio="370:507"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.251"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView3"
-        app:layout_constraintVertical_bias="0.0"
-        app:srcCompat="@drawable/bem_vindo_mulher" />
+        app:layout_constraintTop_toBottomOf="@+id/textView3">
 
-    <ImageView
-        android:id="@+id/imgPlantaEsquerda"
-        android:layout_width="wrap_content"
-        android:layout_height="110dp"
-        android:layout_marginStart="112dp"
-        android:adjustViewBounds="true"
-        android:importantForAccessibility="no"
-        app:layout_constraintBottom_toBottomOf="@+id/imgPessoa"
-        app:layout_constraintStart_toStartOf="parent"
-        app:srcCompat="@drawable/planta_esquerda" />
+        <ImageView
+            android:id="@+id/imgFormaFundo"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/vector_bem_vindo" />
 
-    <ImageView
-        android:id="@+id/imgPlantaDireita"
-        android:layout_width="wrap_content"
-        android:layout_height="150dp"
-        android:layout_marginEnd="84dp"
-        android:adjustViewBounds="true"
-        android:importantForAccessibility="no"
-        app:layout_constraintBottom_toBottomOf="@+id/imgPessoa"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@drawable/planta_direita" />
+        <ImageView
+            android:id="@+id/imgPessoa"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:adjustViewBounds="true"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.158"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/bem_vindo_mulher" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guidelinePlantaEsquerda"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.247" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guidelinePlantaDireita"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.829" />
+
+        <ImageView
+            android:id="@+id/imgPlantaEsquerda"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:adjustViewBounds="true"
+            android:importantForAccessibility="no"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintHeight_percent="0.217"
+            app:layout_constraintStart_toStartOf="@+id/guidelinePlantaEsquerda"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0"
+            app:srcCompat="@drawable/planta_esquerda" />
+
+        <ImageView
+            android:id="@+id/imgPlantaDireita"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:adjustViewBounds="true"
+            android:importantForAccessibility="no"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@+id/guidelinePlantaDireita"
+            app:layout_constraintHeight_percent="0.296"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0"
+            app:srcCompat="@drawable/planta_direita" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <Button
         android:id="@+id/buttonCriarConta"
@@ -94,7 +126,8 @@
         android:textSize="20sp"
         app:layout_constraintBottom_toTopOf="@+id/ButtonEntrar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
     <Button
         android:id="@+id/ButtonEntrar"
@@ -107,6 +140,7 @@
         android:textSize="20sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -10,18 +10,14 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import coil.Coil;
-import coil.ImageLoader;
-import coil.request.ImageRequest;
-
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Produto;
+import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoViewHolder> {
-
     public interface AoClicar {
         void noProduto(Produto produto);
     }
@@ -60,7 +56,6 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
     }
 
     static class ProdutoViewHolder extends RecyclerView.ViewHolder {
-
         private final ImageView imagem;
         private final TextView marca;
         private final TextView nome;
@@ -79,14 +74,8 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
             nome.setText(semMarca(produto.getName(), produto.getBrandName()));
             mostrarNota(produto.getOverallScore());
 
-            ImageLoader carregador = Coil.imageLoader(itemView.getContext());
-            carregador.enqueue(new ImageRequest.Builder(itemView.getContext())
-                    .data(produto.getImageUrl())
-                    .target(imagem)
-                    // Enquanto baixa mostra o placeholder; se falhar, fica nele.
-                    .placeholder(R.drawable.bg_card_produto)
-                    .error(R.drawable.bg_card_produto)
-                    .build());
+            ProdutoImagemLoader.carregar(
+                    itemView.getContext(), imagem, produto, R.drawable.bg_card_produto);
 
             itemView.setOnClickListener(v -> aoClicar.noProduto(produto));
             verNota.setOnClickListener(v -> aoClicar.noProduto(produto));
@@ -119,10 +108,6 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
             return resto.isEmpty() ? nome : resto;
         }
 
-        /**
-         * A cor comunica a nota antes do usuario ler o numero.
-         * A regra fica aqui para as outras telas com nota usarem a mesma.
-         */
         private void mostrarNota(Integer valor) {
             if (valor == null) {
                 verNota.setText(R.string.nota_indisponivel);
@@ -143,6 +128,5 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
             verNota.setText(String.valueOf(valor));
             verNota.setTextColor(ContextCompat.getColor(itemView.getContext(), cor));
         }
-
     }
 }

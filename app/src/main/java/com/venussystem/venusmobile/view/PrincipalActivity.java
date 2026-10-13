@@ -17,8 +17,9 @@ import androidx.fragment.app.Fragment;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
 import com.venussystem.venusmobile.R;
-import com.venussystem.venusmobile.repository.AutenticacaoRepository;
-import com.venussystem.venusmobile.repository.PerfilRepository;
+import com.venussystem.venusmobile.repository.FotoPerfilRepository;
+import com.venussystem.venusmobile.repository.SincronizacaoListas;
+import com.venussystem.venusmobile.repository.SincronizacaoRepository;
 import com.venussystem.venusmobile.view.fragment.BuscaFragment;
 import com.venussystem.venusmobile.view.fragment.HistoricoFragment;
 import com.venussystem.venusmobile.view.fragment.ListasFragment;
@@ -27,13 +28,7 @@ import com.venussystem.venusmobile.view.fragment.PerfilFragment;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Hospeda as abas. A barra e montada a mao em vez de BottomNavigationView
- * porque o design pede um traco que desliza ate o item escolhido — o
- * componente do Material so oferece uma pilula estatica atras do icone.
- */
 public class PrincipalActivity extends AppCompatActivity {
-
     private static final long DURACAO_ANIMACAO = 260L;
     private static final float ESCALA_ATIVO = 1.18f;
 
@@ -47,8 +42,7 @@ public class PrincipalActivity extends AppCompatActivity {
         setContentView(R.layout.activity_principal);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            // Sem padding embaixo na raiz: a barra precisa encostar na borda
-            // da tela. O respiro da barra do sistema vai dentro dela.
+
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
             findViewById(R.id.barraNavegacao).setPadding(0, 0, 0, systemBars.bottom);
             return insets;
@@ -62,15 +56,33 @@ public class PrincipalActivity extends AppCompatActivity {
         montarItem(R.id.navPerfil, R.drawable.ic_nav_perfil, PerfilFragment.class);
 
         findViewById(R.id.btnAssistente).setOnClickListener(v ->
-                Toast.makeText(this, R.string.em_breve, Toast.LENGTH_SHORT).show());
+                startActivity(new Intent(this, AssistenteActivity.class)));
 
-        findViewById(R.id.btnReiniciarTeste).setOnClickListener(v -> reiniciarTeste());
+        findViewById(R.id.btnScan).setOnClickListener(v -> iniciarScan());
 
-        // Nulo = primeira abertura. Sem a checagem, o Fragment seria criado
-        // por cima do que o sistema ja restaurou ao girar a tela.
         if (savedInstanceState == null) {
-            selecionar(findViewById(R.id.navBusca), new BuscaFragment(), false);
+            selecionar(findViewById(R.id.navInicio), new HistoricoFragment(), false);
+
+            // Toda entrada no app passa por aqui (fim do questionario, login ou
+            // app reaberto): e o ponto para cadastrar a pessoa na API e mandar o
+            // que ficou pendente. Roda em segundo plano, sem segurar a tela.
+            new SincronizacaoRepository(this).sincronizarEmSegundoPlano();
+            // As listas vao depois, na mesma fila: sobe o que ficou pendente e
+            // vem o que mudou no servidor. Num celular novo ou depois de
+            // reinstalar, e aqui que as listas que a pessoa ja tinha voltam.
+            new SincronizacaoListas(this).atualizarEmSegundoPlano(null);
+            // Foto de perfil que ficou sem enviar (sem rede, API dormindo).
+            new FotoPerfilRepository(this).enviarEmSegundoPlano();
         }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        // O scan retorna para a mesma PrincipalActivity. Reabre a casinha para
+        // que o item recém-enviado apareça sem exigir um toque na navegação.
+        selecionar(findViewById(R.id.navInicio), new HistoricoFragment(), true);
     }
 
     private void montarItem(int id, @DrawableRes int icone, Class<? extends Fragment> tela) {
@@ -93,7 +105,7 @@ public class PrincipalActivity extends AppCompatActivity {
             ImageView icone = item.findViewById(R.id.iconeNav);
 
             icone.setColorFilter(ContextCompat.getColor(
-                    this, ativo ? R.color.magenta_nav : R.color.preto_texto));
+                    this, ativo ? R.color.magenta_nav : R.color.cinza_nav));
 
             float escala = ativo ? ESCALA_ATIVO : 1f;
             if (animar) {
@@ -117,30 +129,20 @@ public class PrincipalActivity extends AppCompatActivity {
                 .commit();
     }
 
-    /**
-     * PROVISORIO: encerra a sessao e libera o questionario, para testar o
-     * fluxo desde o login sem precisar limpar os dados do app.
-     */
-    private void reiniciarTeste() {
-        new PerfilRepository(this).limpar();
-        new AutenticacaoRepository().sair();
-
-        Intent intent = new Intent(this, LoginActivity.class);
-        // CLEAR_TASK limpa a pilha: o botao voltar nao deve trazer de volta
-        // o app ja deslogado.
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
+    private void iniciarScan() {
+        boolean onboardingCompleto = ScanTutorialState.isCompleted(this);
+        startActivity(new Intent(
+                this,
+                onboardingCompleto ? ScanCameraFrontActivity.class : ScanTutorial1Activity.class
+        ));
     }
 
-    /**
-     * Desliza o traco ate o centro do item escolhido.
-     *
-     * O post() e necessario na primeira chamada: antes do layout terminar,
-     * getX() e getWidth() ainda valem zero e o traco iria para o canto.
-     */
     private void moverIndicador(View item, boolean animar) {
         indicador.post(() -> {
-            float destino = item.getX() + (item.getWidth() - indicador.getWidth()) / 2f;
+            // No tablet a linha de itens fica centralizada dentro da barra, entao o
+            // deslocamento dela entra na conta (no celular ele e zero).
+            View linha = (View) item.getParent();
+            float destino = linha.getX() + item.getX() + (item.getWidth() - indicador.getWidth()) / 2f;
             if (animar) {
                 indicador.animate()
                         .translationX(destino)

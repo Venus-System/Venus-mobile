@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Arte dos cosmeticos que fica dentro do circulo rosa da lista: um batom a
+     esquerda e um frasco redondo sobre a base a direita. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Batom: a ponta inclinada, com o canto de cima arredondado. -->
+    <path
+        android:fillColor="@color/magenta_arte"
+        android:pathData="M20,10 A6,6 0 0 1 32,10 L34,36 L20,36 Z" />
+
+    <!-- Batom: o tubo, com a base arredondada. -->
+    <path
+        android:fillColor="@color/magenta_arte"
+        android:pathData="M18,40 L36,40 L36,74 A9,9 0 0 1 18,74 Z" />
+
+    <!-- Frasco: o corpo redondo. -->
+    <path
+        android:fillColor="@color/magenta_arte"
+        android:pathData="M72,14 A22,22 0 1 1 72,58 A22,22 0 1 1 72,14 Z" />
+
+    <!-- Frasco: o pescoco que liga o corpo a base. -->
+    <path
+        android:fillColor="@color/magenta_arte"
+        android:pathData="M68,58 L76,58 L76,72 L68,72 Z" />
+
+    <!-- Frasco: a base apoiada. -->
+    <path
+        android:fillColor="@color/magenta_arte"
+        android:pathData="M52,74 L92,74 A4,4 0 0 1 92,82 L52,82 A4,4 0 0 1 52,74 Z" />
+
+</vector>

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:fillViewport="true"
+    tools:context=".view.CriarListaActivity">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        style="@style/ColunaConteudo"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/espaco_grande"
+        android:paddingEnd="@dimen/espaco_grande"
+        android:paddingBottom="@dimen/espaco_grande">
+
+        <ImageButton
+            android:id="@+id/btnVoltar"
+            android:layout_width="@dimen/area_toque_minima"
+            android:layout_height="@dimen/area_toque_minima"
+            android:layout_marginStart="-12dp"
+            android:layout_marginTop="@dimen/espaco_pequeno"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/desc_voltar"
+            android:scaleType="center"
+            android:src="@drawable/ic_chevron"
+            android:rotation="180"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/textTituloLista"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/lista_titulo"
+            android:textColor="@color/roxo_venus"
+            android:textSize="@dimen/texto_titulo_aba"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@+id/btnVoltar"
+            app:layout_constraintStart_toEndOf="@+id/btnVoltar"
+            app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/avatarLista"
+            android:layout_width="@dimen/avatar_lista_capa"
+            android:layout_height="@dimen/avatar_lista_capa"
+            android:layout_marginTop="@dimen/espaco_pequeno"
+            android:background="@drawable/bg_avatar_lista"
+            android:contentDescription="@string/lista_escolher_capa"
+            android:padding="56dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_produtos_lista"
+            app:shapeAppearanceOverlay="@style/AvatarRedondo"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btnVoltar" />
+
+        <ImageButton
+            android:id="@+id/btnEscolherCapa"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:background="@drawable/bg_lupa_avatar"
+            android:contentDescription="@string/lista_escolher_capa"
+            android:scaleType="center"
+            android:src="@drawable/ic_lupa"
+            app:layout_constraintBottom_toBottomOf="@+id/avatarLista"
+            app:layout_constraintEnd_toEndOf="@+id/avatarLista"
+            app:layout_constraintHorizontal_bias="0.86"
+            app:layout_constraintStart_toStartOf="@+id/avatarLista"
+            app:layout_constraintTop_toTopOf="@+id/avatarLista"
+            app:layout_constraintVertical_bias="0.86" />
+
+        <TextView
+            android:id="@+id/labelNomeLista"
+            style="@style/LabelCampo"
+            android:layout_marginTop="@dimen/espaco_grande"
+            android:text="@string/lista_label_nome"
+            android:textColor="@color/roxo_secao"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/avatarLista" />
+
+        <EditText
+            android:id="@+id/editNomeLista"
+            style="@style/CampoVenus"
+            android:layout_marginTop="6dp"
+            android:autofillHints="name"
+            android:hint="@string/lista_hint_nome"
+            android:inputType="text"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/labelNomeLista" />
+
+        <TextView
+            android:id="@+id/labelDescricao"
+            style="@style/LabelCampo"
+            android:layout_marginTop="@dimen/espaco_medio"
+            android:text="@string/lista_label_descricao"
+            android:textColor="@color/roxo_secao"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/editNomeLista" />
+
+        <EditText
+            android:id="@+id/editDescricaoLista"
+            style="@style/CampoVenus"
+            android:layout_marginTop="6dp"
+            android:autofillHints="name"
+            android:hint="@string/lista_hint_descricao"
+            android:inputType="text"
+            android:maxLength="@integer/limite_descricao_lista"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/labelDescricao" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnSalvarLista"
+            style="@style/BotaoGradiente"
+            android:layout_marginTop="@dimen/espaco_secao"
+            android:text="@string/lista_salvar"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/editDescricaoLista" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnCancelarLista"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/altura_campo"
+            android:layout_marginTop="@dimen/espaco_pequeno"
+            android:background="@drawable/bg_botao_cancelar"
+            android:text="@string/lista_cancelar"
+            android:textAllCaps="false"
+            android:textColor="@color/preto_texto"
+            android:textSize="@dimen/texto_botao"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btnSalvarLista" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.core.widget.NestedScrollView>
