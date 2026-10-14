@@ -1,5 +1,7 @@
 package com.venussystem.venusmobile.repository;
 
+import android.content.Context;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -87,7 +89,13 @@ public class AutenticacaoRepository {
         return resultado;
     }
 
-    public void sair() {
+    /**
+     * Sai da conta. Antes, apaga a conversa com a Venus guardada no aparelho:
+     * ela costuma ter pele, alergias e saude, e nao deve ficar para tras. O
+     * resto (questionario, listas) fica guardado por conta, ver DadosDaConta.
+     */
+    public void sair(Context context) {
+        new ConversaSalvaRepository(context).apagar();
         auth.signOut();
     }
 

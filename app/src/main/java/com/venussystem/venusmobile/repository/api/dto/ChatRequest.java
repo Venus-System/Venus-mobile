@@ -9,11 +9,11 @@ import com.google.gson.annotations.SerializedName;
 public class ChatRequest {
     public String mensagem;
 
+    // Fica de fora na primeira mensagem (o Gson nao escreve null): a API usa o
+    // UID como conversa e devolve o id, que o app reenvia nas seguintes.
     @SerializedName("conversation_id")
     public String conversationId;
 
-    // Id numerico do usuario no Venus-CRUD. Sem ele a Venus ainda conversa,
-    // mas nao consegue consultar perfil, alergias nem favoritos da pessoa.
-    @SerializedName("usuario_id_postgres")
-    public Long usuarioIdPostgres;
+    // Nao existe mais "usuario_id_postgres": a API acha a pessoa no banco pelo
+    // UID do token e ignora qualquer id mandado no corpo.
 }

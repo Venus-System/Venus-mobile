@@ -5,10 +5,12 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
-// Endereco da API de IA (Venus-AI-api). Fica fora do codigo porque muda entre
-// quem testa: a API rodando no PC (http://localhost:8080/ com adb reverse) ou
-// o servidor publicado. Vem de -PVENUS_IA_URL=... ou do local.properties;
-// vazio deixa o chat avisando que ainda nao esta conectado, em vez de quebrar.
+// Endereco da API de IA (Venus-AI-api). O padrao e o servidor publicado no
+// Render, para todo APK ja sair com o chat ligado. Quem testa a API rodando no
+// PC (http://localhost:8000/ com adb reverse) troca por -PVENUS_IA_URL=... ou
+// no local.properties; um valor vazio de proposito deixa o chat avisando que
+// nao esta conectado, em vez de quebrar.
+val urlVenusIaPadrao = "https://venus-ai-api.onrender.com/"
 val propriedadesLocais = Properties().apply {
     val arquivo = rootProject.file("local.properties")
     if (arquivo.exists()) {
@@ -17,7 +19,7 @@ val propriedadesLocais = Properties().apply {
 }
 val urlVenusIa: String = (findProperty("VENUS_IA_URL") as String?)
     ?: propriedadesLocais.getProperty("VENUS_IA_URL")
-    ?: ""
+    ?: urlVenusIaPadrao
 
 android {
     namespace = "com.venussystem.venusmobile"
