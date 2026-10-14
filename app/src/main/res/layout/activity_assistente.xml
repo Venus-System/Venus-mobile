@@ -34,6 +34,19 @@
         app:layout_constraintStart_toEndOf="@+id/btnVoltar"
         app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
 
+    <ImageButton
+        android:id="@+id/btnNovaConversa"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:layout_marginEnd="@dimen/espaco_pequeno"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/assistente_nova_conversa"
+        android:scaleType="center"
+        android:src="@drawable/ic_mais"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/btnVoltar"
+        app:tint="@color/roxo_venus" />
+
     <!-- So aparece quando a conversa foi aberta a partir de um produto. -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/cardProduto"
@@ -148,7 +161,7 @@
         android:id="@+id/linhaEntrada"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
+        android:gravity="bottom"
         android:orientation="horizontal"
         android:paddingStart="@dimen/espaco_medio"
         android:paddingTop="@dimen/espaco_pequeno"
@@ -159,19 +172,27 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintWidth_max="@dimen/largura_max_lista">
 
+        <!-- Quebra a linha em ate 4 sem virar campo multilinha: assim o teclado
+             continua com o botao de enviar (ver AssistenteActivity). O limite
+             deixa folga para o nome do produto dentro dos 4000 da API. -->
         <EditText
             android:id="@+id/campoMensagem"
             android:layout_width="0dp"
-            android:layout_height="@dimen/altura_opcao"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:autofillHints="name"
             android:background="@drawable/bg_busca_topo"
+            android:gravity="center_vertical"
             android:hint="@string/assistente_hint"
             android:imeOptions="actionSend"
+            android:importantForAutofill="no"
             android:inputType="textCapSentences"
-            android:maxLines="1"
+            android:maxLength="3500"
+            android:maxLines="4"
+            android:minHeight="@dimen/altura_opcao"
             android:paddingStart="@dimen/espaco_medio"
+            android:paddingTop="@dimen/espaco_pequeno"
             android:paddingEnd="@dimen/espaco_medio"
+            android:paddingBottom="@dimen/espaco_pequeno"
             android:textColor="@color/preto_texto"
             android:textColorHint="@color/cinza_hint"
             android:textSize="@dimen/texto_corpo" />

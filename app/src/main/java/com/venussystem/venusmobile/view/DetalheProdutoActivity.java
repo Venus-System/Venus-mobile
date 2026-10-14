@@ -82,6 +82,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     private LinearLayout listaIngredientes;
     private ImageView imgProduto;
     private ImageButton btnSalvarNaLista;
+    private ImageButton btnPerguntarVenus;
 
     private ColecaoRepository colecaoRepository;
     private ListaItemRepository itemRepository;
@@ -122,6 +123,15 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         btnSalvarNaLista.setOnClickListener(
                 this::mostrarListasParaSalvar
+        );
+
+        btnPerguntarVenus.setOnClickListener(
+                v -> startActivity(
+                        AssistenteActivity.paraProduto(
+                                this,
+                                produto
+                        )
+                )
         );
 
         produtoIdRecebido =
@@ -177,6 +187,11 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         btnSalvarNaLista =
                 findViewById(
                         R.id.btnSalvarNaLista
+                );
+
+        btnPerguntarVenus =
+                findViewById(
+                        R.id.btnPerguntarVenus
                 );
 
         conteudoAvaliacao =
@@ -396,8 +411,12 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         preencherCabecalho();
         prepararAbas();
 
-        // Escondido ate aqui: antes de achar o produto nao ha o que salvar.
+        // Escondidos ate aqui: antes de achar o produto nao ha o que salvar
+        // nem sobre o que perguntar.
         btnSalvarNaLista.setVisibility(
+                View.VISIBLE
+        );
+        btnPerguntarVenus.setVisibility(
                 View.VISIBLE
         );
         atualizarIconeDoMarcador();

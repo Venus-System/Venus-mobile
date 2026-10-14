@@ -16,6 +16,7 @@ import org.robolectric.annotation.Config;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -26,6 +27,7 @@ import static com.venussystem.venusmobile.testutil.LiveDataEspera.TIMEOUT_PADRAO
 import static com.venussystem.venusmobile.testutil.LiveDataEspera.aguardarLatch;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(RobolectricTestRunner.class)
@@ -36,17 +38,18 @@ public class ConversaRepositoryTest {
 
     private MockWebServer server;
     private SessaoFalsa sessao;
-    private Long idUsuario;
 
     /** Guarda o que o callback recebeu, para o teste conferir depois. */
     private static class Retorno implements ConversaRepository.AoResponder {
         final CountDownLatch chegou = new CountDownLatch(1);
         String resposta;
+        String conversationId;
         ConversaRepository.Falha falha;
 
         @Override
-        public void aoResponder(String resposta) {
+        public void aoResponder(String resposta, String conversationId) {
             this.resposta = resposta;
+            this.conversationId = conversationId;
             chegou.countDown();
         }
 
@@ -62,7 +65,6 @@ public class ConversaRepositoryTest {
         server = new MockWebServer();
         server.start();
         sessao = new SessaoFalsa();
-        idUsuario = 42L;
     }
 
     @After
@@ -75,12 +77,16 @@ public class ConversaRepositoryTest {
     }
 
     private ConversaRepository repositorio(VenusIaApi api) {
-        return new ConversaRepository(api, sessao, () -> idUsuario);
+        return new ConversaRepository(api, sessao);
     }
 
     private Retorno enviar(ConversaRepository repositorio, String mensagem) {
+        return enviar(repositorio, mensagem, CONVERSA);
+    }
+
+    private Retorno enviar(ConversaRepository repositorio, String mensagem, String conversationId) {
         Retorno retorno = new Retorno();
-        repositorio.enviar(mensagem, CONVERSA, retorno);
+        repositorio.enviar(mensagem, conversationId, retorno);
         aguardarLatch(retorno.chegou, TIMEOUT_PADRAO_MS);
         return retorno;
     }
@@ -93,7 +99,12 @@ public class ConversaRepositoryTest {
     }
 
     private static MockResponse respostaDaVenus(String texto) {
-        return resposta(200, "{\"resposta\":\"" + texto + "\",\"conversation_id\":\"" + CONVERSA + "\"}");
+        return respostaDaVenus(texto, CONVERSA);
+    }
+
+    private static MockResponse respostaDaVenus(String texto, String conversationId) {
+        return resposta(200, "{\"resposta\":\"" + texto + "\",\"conversation_id\":\""
+                + conversationId + "\",\"expressao\":\"neutra\"}");
     }
 
     private static JsonObject corpo(RecordedRequest pedido) {
@@ -103,12 +114,13 @@ public class ConversaRepositoryTest {
     // ---- Sucesso ----
 
     @Test
-    public void mensagem_chegaComTokenConversaEIdDoUsuario() throws InterruptedException {
+    public void mensagem_chegaComTokenEConversa() throws InterruptedException {
         server.enqueue(respostaDaVenus("Oi! Posso ajudar."));
 
         Retorno retorno = enviar(repositorio(), "oi");
 
         assertEquals("Oi! Posso ajudar.", retorno.resposta);
+        assertEquals(CONVERSA, retorno.conversationId);
         assertNull(retorno.falha);
 
         RecordedRequest pedido = server.takeRequest();
@@ -119,19 +131,28 @@ public class ConversaRepositoryTest {
         JsonObject json = corpo(pedido);
         assertEquals("oi", json.get("mensagem").getAsString());
         assertEquals(CONVERSA, json.get("conversation_id").getAsString());
-        assertEquals(42L, json.get("usuario_id_postgres").getAsLong());
+        // A API acha a pessoa pelo token; id no corpo e coisa de app antigo.
+        assertFalse(json.has("usuario_id_postgres"));
     }
 
     @Test
-    public void semIdDoUsuarioAinda_mandaSoAMensagem() throws InterruptedException {
-        idUsuario = null;
-        server.enqueue(respostaDaVenus("Oi!"));
+    public void primeiraMensagem_vaiSemIdEVoltaOIdDaApi() throws InterruptedException {
+        server.enqueue(respostaDaVenus("Oi!", "uid-ana"));
 
-        enviar(repositorio(), "oi");
+        Retorno retorno = enviar(repositorio(), "oi", null);
 
-        JsonObject json = corpo(server.takeRequest());
-        assertFalse(json.has("usuario_id_postgres"));
-        assertEquals(CONVERSA, json.get("conversation_id").getAsString());
+        assertFalse(corpo(server.takeRequest()).has("conversation_id"));
+        assertEquals("uid-ana", retorno.conversationId);
+    }
+
+    @Test
+    public void respostaSemId_continuaComOIdEnviado() {
+        server.enqueue(resposta(200, "{\"resposta\":\"Oi!\"}"));
+
+        Retorno retorno = enviar(repositorio(), "oi");
+
+        assertEquals("Oi!", retorno.resposta);
+        assertEquals(CONVERSA, retorno.conversationId);
     }
 
     // ---- Token ----
@@ -182,6 +203,26 @@ public class ConversaRepositoryTest {
     // ---- Falhas da API ----
 
     @Test
+    public void limiteDeMensagens_eMuitasMensagens() {
+        server.enqueue(resposta(429, "{\"detail\":\"Muitas mensagens em pouco tempo.\"}")
+                .setHeader("Retry-After", "30"));
+
+        Retorno retorno = enviar(repositorio(), "oi");
+
+        assertEquals(ConversaRepository.Falha.MUITAS_MENSAGENS, retorno.falha);
+        assertEquals(1, server.getRequestCount());
+    }
+
+    @Test
+    public void mensagemRecusada_eMensagemInvalida() {
+        server.enqueue(resposta(422, "{\"detail\":[{\"type\":\"string_too_long\"}]}"));
+
+        Retorno retorno = enviar(repositorio(), "oi");
+
+        assertEquals(ConversaRepository.Falha.MENSAGEM_INVALIDA, retorno.falha);
+    }
+
+    @Test
     public void erroDoServidor_eFalhaDoServidor() {
         server.enqueue(resposta(502, "{\"detail\":\"Falha ao processar a mensagem\"}"));
 
@@ -227,5 +268,28 @@ public class ConversaRepositoryTest {
         assertEquals(ConversaRepository.Falha.NAO_CONFIGURADO, retorno.falha);
         assertEquals(0, server.getRequestCount());
         assertEquals(0, sessao.pedidosDeToken.size());
+    }
+
+    // ---- Acordar o servidor ----
+
+    @Test
+    public void acordar_chamaOHealthSemToken() throws InterruptedException {
+        server.enqueue(resposta(200, "{\"status\":\"ok\"}"));
+
+        repositorio().acordar();
+
+        RecordedRequest pedido = server.takeRequest(TIMEOUT_PADRAO_MS, TimeUnit.MILLISECONDS);
+        assertNotNull(pedido);
+        assertEquals("GET", pedido.getMethod());
+        assertEquals("/v1/health", pedido.getPath());
+        assertNull(pedido.getHeader("Authorization"));
+        assertEquals(0, sessao.pedidosDeToken.size());
+    }
+
+    @Test
+    public void acordar_semUrlConfigurada_naoFazNada() {
+        repositorio(null).acordar();
+
+        assertEquals(0, server.getRequestCount());
     }
 }

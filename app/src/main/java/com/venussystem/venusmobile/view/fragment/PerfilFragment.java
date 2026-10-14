@@ -358,9 +358,10 @@ public class PerfilFragment extends Fragment {
      * limpando a pilha para o voltar do celular nao trazer o perfil de volta.
      * As respostas do questionario continuam no aparelho, guardadas por conta
      * (ver DadosDaConta): entrar de novo com a mesma conta traz tudo de volta.
+     * So a conversa com a Venus e apagada (ver AutenticacaoRepository.sair).
      */
     private void voltarAoLogin() {
-        new AutenticacaoRepository().sair();
+        new AutenticacaoRepository().sair(requireContext());
 
         Intent intent = new Intent(requireContext(), BemVindoActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
