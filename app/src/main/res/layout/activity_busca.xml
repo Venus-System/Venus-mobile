@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context=".view.BuscaActivity">
+
+    <LinearLayout
+        android:id="@+id/linhaTopo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_pequeno"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:layout_marginEnd="@dimen/espaco_medio"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista">
+
+        <ImageButton
+            android:id="@+id/btnVoltar"
+            android:layout_width="@dimen/area_toque_minima"
+            android:layout_height="@dimen/area_toque_minima"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/desc_voltar"
+            android:rotation="180"
+            android:scaleType="center"
+            android:src="@drawable/ic_chevron" />
+
+        <EditText
+            android:id="@+id/campoBuscaProduto"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/altura_opcao"
+            android:layout_marginStart="@dimen/espaco_pequeno"
+            android:layout_weight="1"
+            android:autofillHints="name"
+            android:background="@drawable/bg_busca_topo"
+            android:drawableStart="@drawable/ic_lupa"
+            android:drawablePadding="@dimen/espaco_pequeno"
+            android:hint="@string/hint_buscar_produto"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:maxLines="1"
+            android:paddingStart="@dimen/espaco_medio"
+            android:paddingEnd="@dimen/espaco_medio"
+            android:textColor="@color/preto_texto"
+            android:textColorHint="@color/cinza_hint"
+            android:textSize="@dimen/texto_corpo" />
+
+        <ImageButton
+            android:id="@+id/btnFiltro"
+            android:layout_width="@dimen/altura_opcao"
+            android:layout_height="@dimen/altura_opcao"
+            android:layout_marginStart="@dimen/espaco_pequeno"
+            android:background="@drawable/bg_busca_topo"
+            android:contentDescription="@string/desc_filtro"
+            android:scaleType="center"
+            android:src="@drawable/ic_filtro" />
+
+    </LinearLayout>
+
+    <!-- Antes de digitar: o historico de produtos acessados e escaneados. O
+         filtro nao se aplica a ele. -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/grupoHistorico"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linhaTopo"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista">
+
+        <TextView
+            android:id="@+id/textTituloHistorico"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/espaco_medio"
+            android:layout_marginTop="@dimen/espaco_medio"
+            android:text="@string/historico_titulo"
+            android:textColor="@color/roxo_venus"
+            android:textSize="@dimen/texto_titulo_aba"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/listaHistorico"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="@dimen/espaco_medio"
+            android:layout_marginEnd="@dimen/espaco_medio"
+            android:clipToPadding="false"
+            android:paddingBottom="@dimen/espaco_secao"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textTituloHistorico"
+            tools:itemCount="5"
+            tools:listitem="@layout/item_historico_produto" />
+
+        <TextView
+            android:id="@+id/textHistoricoVazio"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/espaco_secao"
+            android:layout_marginEnd="@dimen/espaco_secao"
+            android:gravity="center"
+            android:text="@string/historico_vazio"
+            android:textColor="@color/cinza_descricao"
+            android:textSize="@dimen/texto_corpo"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/listaHistorico"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/listaHistorico" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Depois de digitar: os resultados, no card novo. -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/listaResultados"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:clipToPadding="false"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="@dimen/espaco_secao"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linhaTopo"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista"
+        tools:itemCount="4"
+        tools:listitem="@layout/item_produto_card" />
+
+    <include
+        android:id="@+id/painelEstado"
+        layout="@layout/include_estado_catalogo"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="@+id/listaResultados"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/listaResultados" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

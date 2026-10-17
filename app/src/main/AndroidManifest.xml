@@ -107,9 +107,12 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".view.EscolherProdutoActivity"
+            android:name=".view.BuscaActivity"
             android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="stateVisible|adjustResize" />
+        <activity
+            android:name=".view.FiltroActivity"
+            android:exported="false" />
         <activity
             android:name=".view.DetalheListaActivity"
             android:exported="false" />
@@ -122,7 +125,8 @@
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".view.PrincipalActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".view.MenuActivity"
             android:exported="false" />

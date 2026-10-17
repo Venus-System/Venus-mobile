@@ -37,7 +37,7 @@
                 layout="@layout/item_nav" />
 
             <include
-                android:id="@+id/navBusca"
+                android:id="@+id/navChat"
                 layout="@layout/item_nav" />
 
             <Space
@@ -82,18 +82,5 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/barraNavegacao" />
-
-    <ImageButton
-        android:id="@+id/btnAssistente"
-        android:layout_width="@dimen/botao_circular"
-        android:layout_height="@dimen/botao_circular"
-        android:layout_marginEnd="@dimen/espaco_medio"
-        android:layout_marginBottom="@dimen/espaco_medio"
-        android:background="@drawable/bg_botao_scan"
-        android:contentDescription="@string/nav_assistente"
-        android:scaleType="center"
-        android:src="@drawable/ic_chat"
-        app:layout_constraintBottom_toTopOf="@+id/barraNavegacao"
-        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

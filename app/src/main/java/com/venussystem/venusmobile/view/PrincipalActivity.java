@@ -20,8 +20,8 @@ import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.repository.FotoPerfilRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.repository.SincronizacaoRepository;
-import com.venussystem.venusmobile.view.fragment.BuscaFragment;
-import com.venussystem.venusmobile.view.fragment.HistoricoFragment;
+import com.venussystem.venusmobile.view.fragment.AssistenteFragment;
+import com.venussystem.venusmobile.view.fragment.InicioFragment;
 import com.venussystem.venusmobile.view.fragment.ListasFragment;
 import com.venussystem.venusmobile.view.fragment.PerfilFragment;
 
@@ -42,26 +42,33 @@ public class PrincipalActivity extends AppCompatActivity {
         setContentView(R.layout.activity_principal);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets teclado = insets.getInsets(WindowInsetsCompat.Type.ime());
+            boolean tecladoAberto = teclado.bottom > 0;
 
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
+            // Com o teclado aberto (o campo de mensagem do chat) o rodape sai da
+            // frente e a tela acaba logo acima do teclado: assim o campo
+            // continua visivel, em vez de espremido entre o teclado e o rodape.
+            int rodape = tecladoAberto ? View.GONE : View.VISIBLE;
+            findViewById(R.id.barraNavegacao).setVisibility(rodape);
+            findViewById(R.id.btnScan).setVisibility(rodape);
+
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right,
+                    tecladoAberto ? teclado.bottom : 0);
             findViewById(R.id.barraNavegacao).setPadding(0, 0, 0, systemBars.bottom);
             return insets;
         });
 
         indicador = findViewById(R.id.indicadorAtivo);
 
-        montarItem(R.id.navInicio, R.drawable.ic_nav_inicio, HistoricoFragment.class);
-        montarItem(R.id.navBusca, R.drawable.ic_nav_busca, BuscaFragment.class);
+        montarItem(R.id.navInicio, R.drawable.ic_nav_inicio, InicioFragment.class);
+        montarItem(R.id.navChat, R.drawable.ic_chat, AssistenteFragment.class);
         montarItem(R.id.navListas, R.drawable.ic_nav_listas, ListasFragment.class);
         montarItem(R.id.navPerfil, R.drawable.ic_nav_perfil, PerfilFragment.class);
-
-        findViewById(R.id.btnAssistente).setOnClickListener(v ->
-                startActivity(new Intent(this, AssistenteActivity.class)));
 
         findViewById(R.id.btnScan).setOnClickListener(v -> iniciarScan());
 
         if (savedInstanceState == null) {
-            selecionar(findViewById(R.id.navInicio), new HistoricoFragment(), false);
+            selecionar(findViewById(R.id.navInicio), new InicioFragment(), false);
 
             // Toda entrada no app passa por aqui (fim do questionario, login ou
             // app reaberto): e o ponto para cadastrar a pessoa na API e mandar o
@@ -80,9 +87,10 @@ public class PrincipalActivity extends AppCompatActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        // O scan retorna para a mesma PrincipalActivity. Reabre a casinha para
-        // que o item recém-enviado apareça sem exigir um toque na navegação.
-        selecionar(findViewById(R.id.navInicio), new HistoricoFragment(), true);
+        // O scan retorna para a mesma PrincipalActivity. Reabre a casinha, para
+        // a pessoa voltar ao ponto de partida; o produto enviado aparece no
+        // historico da tela de busca.
+        selecionar(findViewById(R.id.navInicio), new InicioFragment(), true);
     }
 
     private void montarItem(int id, @DrawableRes int icone, Class<? extends Fragment> tela) {
