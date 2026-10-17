@@ -175,8 +175,7 @@
     <string name="desc_entrar_google">Entrar com o Google</string>
     <string name="desc_cadastrar_google">Cadastrar com o Google</string>
 
-    <string name="nav_inicio">Histórico</string>
-    <string name="nav_busca">Busca</string>
+    <string name="nav_inicio">Início</string>
     <string name="nav_scan">Escanear</string>
     <string name="nav_listas">Minhas listas</string>
     <string name="nav_perfil">Perfil</string>
@@ -184,11 +183,20 @@
     <string name="em_breve">Em breve</string>
     <string name="hint_buscar_produto">Buscar produtos, ingredientes, marcas…</string>
     <string name="busca_sem_resultado">Nenhum produto encontrado</string>
-    <string name="busca_secao_recentes">Recentes</string>
-    <string name="busca_secao_categorias">Categorias</string>
-    <string name="busca_limpar_filtro">Limpar filtro de categoria</string>
-    <string name="busca_ver_todas">Ver todas (%1$d)</string>
-    <string name="busca_ver_menos">Ver menos</string>
+    <string name="home_sugestoes">Sugestões</string>
+    <string name="home_sem_resultado_filtro">Nenhum produto com esse filtro</string>
+    <string name="busca_hint_escolher">Buscar produto para adicionar</string>
+    <string name="desc_filtro">Filtrar produtos</string>
+    <string name="filtro_titulo">Filtros</string>
+    <string name="filtro_limpar">Limpar</string>
+    <string name="filtro_aplicar">Aplicar</string>
+    <string name="filtro_grupo_nota">Nota geral</string>
+    <string name="filtro_nota_boa">Boa (70 ou mais)</string>
+    <string name="filtro_nota_media">Média (40 a 69)</string>
+    <string name="filtro_nota_ruim">Ruim (abaixo de 40)</string>
+    <string name="filtro_so_brasileiras">Só marcas brasileiras</string>
+    <string name="filtro_grupo_categoria">Categoria</string>
+    <string name="filtro_grupo_marca">Marca</string>
     <string name="nota_indisponivel">—</string>
 
     <string name="sheet_couro_titulo">Como é o seu couro cabeludo?</string>

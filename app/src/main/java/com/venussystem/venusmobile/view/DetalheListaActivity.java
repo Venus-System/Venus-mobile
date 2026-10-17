@@ -97,7 +97,7 @@ public class DetalheListaActivity extends AppCompatActivity {
                     return;
                 }
                 long produtoId = resultado.getData()
-                        .getLongExtra(EscolherProdutoActivity.EXTRA_PRODUTO_ID, -1);
+                        .getLongExtra(BuscaActivity.EXTRA_PRODUTO_ID, -1);
                 if (produtoId != -1) {
                     itemRepository.adicionar(listaId, produtoId);
                     carregarItens();
@@ -128,7 +128,7 @@ public class DetalheListaActivity extends AppCompatActivity {
         findViewById(R.id.btnMaisOpcoes).setOnClickListener(this::mostrarMenuOpcoes);
         findViewById(R.id.btnEscolherCapa).setOnClickListener(v -> abrirEscolhaDeCapa());
         findViewById(R.id.btnAdicionarProduto).setOnClickListener(v ->
-                escolherProdutoLauncher.launch(new Intent(this, EscolherProdutoActivity.class)));
+                escolherProdutoLauncher.launch(BuscaActivity.paraEscolherProduto(this)));
 
         findViewById(R.id.btnEscanearVazio).setOnClickListener(v -> {
             boolean onboardingCompleto = ScanTutorialState.isCompleted(this);

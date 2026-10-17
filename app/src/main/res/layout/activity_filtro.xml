@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context=".view.FiltroActivity">
+
+    <ImageButton
+        android:id="@+id/btnVoltar"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:layout_marginStart="@dimen/espaco_pequeno"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/desc_voltar"
+        android:rotation="180"
+        android:scaleType="center"
+        android:src="@drawable/ic_chevron"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textTituloFiltro"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_pequeno"
+        android:text="@string/filtro_titulo"
+        android:textColor="@color/roxo_venus"
+        android:textSize="@dimen/texto_titulo_aba"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/btnVoltar"
+        app:layout_constraintStart_toEndOf="@+id/btnVoltar"
+        app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
+
+    <ScrollView
+        android:id="@+id/rolagemFiltro"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/espaco_medio"
+        app:layout_constraintBottom_toTopOf="@+id/barraAcoes"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnVoltar"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/espaco_medio"
+            android:paddingTop="@dimen/espaco_pequeno"
+            android:paddingEnd="@dimen/espaco_medio">
+
+            <TextView
+                style="@style/TituloGrupoFiltro"
+                android:text="@string/filtro_grupo_nota" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/grupoNota"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                app:chipSpacingHorizontal="8dp"
+                app:chipSpacingVertical="8dp"
+                app:singleLine="false"
+                app:singleSelection="false">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipNotaBoa"
+                    style="@style/CategoriaBuscaChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:text="@string/filtro_nota_boa" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipNotaMedia"
+                    style="@style/CategoriaBuscaChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:text="@string/filtro_nota_media" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipNotaRuim"
+                    style="@style/CategoriaBuscaChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:text="@string/filtro_nota_ruim" />
+
+            </com.google.android.material.chip.ChipGroup>
+
+            <!-- So aparece quando o catalogo tem alguma marca brasileira. -->
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switchBrasileiras"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_grande"
+                android:minHeight="@dimen/area_toque_minima"
+                android:text="@string/filtro_so_brasileiras"
+                android:textColor="@color/preto_texto"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <LinearLayout
+                android:id="@+id/secaoCategorias"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_grande"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    style="@style/TituloGrupoFiltro"
+                    android:text="@string/filtro_grupo_categoria" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/grupoCategorias"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_pequeno"
+                    app:chipSpacingHorizontal="8dp"
+                    app:chipSpacingVertical="8dp"
+                    app:singleLine="false"
+                    app:singleSelection="false" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/secaoMarcas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_grande"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    style="@style/TituloGrupoFiltro"
+                    android:text="@string/filtro_grupo_marca" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/grupoMarcas"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_pequeno"
+                    app:chipSpacingHorizontal="8dp"
+                    app:chipSpacingVertical="8dp"
+                    app:singleLine="false"
+                    app:singleSelection="false" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <ProgressBar
+        android:id="@+id/carregando"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminateTint="@color/roxo_venus"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/rolagemFiltro"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/rolagemFiltro" />
+
+    <LinearLayout
+        android:id="@+id/barraAcoes"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/espaco_medio"
+        android:paddingTop="@dimen/espaco_pequeno"
+        android:paddingEnd="@dimen/espaco_medio"
+        android:paddingBottom="@dimen/espaco_pequeno"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnLimpar"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/altura_opcao"
+            android:layout_marginEnd="@dimen/espaco_pequeno"
+            android:layout_weight="1"
+            android:background="@drawable/bg_botao_outline_magenta"
+            android:text="@string/filtro_limpar"
+            android:textAllCaps="false"
+            android:textColor="@color/magenta_venus"
+            android:textSize="@dimen/texto_campo"
+            android:textStyle="bold" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnAplicar"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/altura_opcao"
+            android:layout_weight="1"
+            android:background="@drawable/bg_botao_gradiente"
+            android:text="@string/filtro_aplicar"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="@dimen/texto_campo"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
