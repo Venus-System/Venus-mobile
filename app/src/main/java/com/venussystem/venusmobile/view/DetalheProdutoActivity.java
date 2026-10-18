@@ -36,6 +36,7 @@ import com.venussystem.venusmobile.model.IngredienteProduto;
 import com.venussystem.venusmobile.domain.match.ResultadoMatch;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
+import com.venussystem.venusmobile.repository.AcessosRecentesRepository;
 import com.venussystem.venusmobile.repository.ColecaoRepository;
 import com.venussystem.venusmobile.repository.ListaItemRepository;
 import com.venussystem.venusmobile.repository.MatchProdutoRepository;
@@ -385,6 +386,10 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         produto = produtoEncontrado;
         telaInicializada = true;
 
+        registrarAcesso(
+                produto.getId()
+        );
+
         Log.d(
                 TAG,
                 "PRODUTO ABERTO"
@@ -420,6 +425,29 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 View.VISIBLE
         );
         atualizarIconeDoMarcador();
+    }
+
+    /**
+     * Anota o produto no historico da busca. Falhar aqui nao pode atrapalhar
+     * a tela: o historico e so um atalho.
+     */
+    private void registrarAcesso(
+            long produtoId
+    ) {
+
+        try {
+
+            new AcessosRecentesRepository(this)
+                    .registrar(produtoId);
+
+        } catch (RuntimeException e) {
+
+            Log.w(
+                    TAG,
+                    "Não foi possível registrar o acesso ao produto.",
+                    e
+            );
+        }
     }
 
     private void finalizarSemProduto(

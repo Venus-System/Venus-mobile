@@ -29,7 +29,7 @@ import com.venussystem.venusmobile.viewmodel.HistoricoViewModel;
 
 /**
  * A tela de busca, sem o rodape: o campo ja abre com o teclado, e embaixo fica
- * o historico de produtos acessados. Ao digitar, o historico sai e entram os
+ * o historico de produtos acessados e escaneados. Ao digitar, o historico sai e entram os
  * resultados no card novo (com o filtro escolhido na Home); apagar o texto
  * traz o historico de volta.
  *
