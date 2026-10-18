@@ -393,4 +393,32 @@
     <string name="localizacao_permitir">Permitir</string>
     <string name="localizacao_agora_nao">Agora não</string>
 
+    <string name="canal_envio_produtos">Envio de produtos</string>
+    <string name="cartao_perfil_titulo">Seu perfil Venus</string>
+    <string name="cartao_perfil_sub_sem_questionario">Você precisa responder as perguntas de análise.</string>
+    <string name="cartao_perfil_sub_incompleto">Faltam %1$d%% para completar as perguntas de análise.</string>
+    <string name="cartao_perfil_responder">Responder agora</string>
+    <string name="cartao_perfil_completar">Completar agora</string>
+    <string name="cartao_perfil_progresso_desc">Perfil %1$d%% completo</string>
+
+    <string name="canal_lembretes">Lembretes</string>
+    <string name="canal_lembretes_descricao">Lembrete para terminar o questionário e liberar o Match com você.</string>
+    <string name="lembrete_questionario_notif_titulo">Falta pouco para o seu Match</string>
+    <string name="lembrete_questionario_notif_texto">Responda o questionário e veja o Match com você nos produtos.</string>
+
+    <string name="canal_analise_produtos">Análise de produtos</string>
+    <string name="canal_analise_produtos_descricao">Avisa quando a equipe aprova ou recusa um produto que você enviou.</string>
+    <string name="canal_envio_produtos_descricao">Avisa quando um produto que ficou sem enviar é enviado para análise.</string>
+
+    <string name="avisos_agora_nao">Agora não</string>
+
+
+    <string name="envio_pendente_titulo">Vamos tentar de novo</string>
+    <string name="envio_pendente_mensagem">Quando a internet voltar, enviamos o produto sozinhos. Quer ser avisado quando isso acontecer?</string>
+    <string name="envio_pendente_avisar">Me avisar</string>
+    <string name="envio_reenviado_titulo">Produto enviado</string>
+    <string name="envio_reenviado_texto_um">%1$s foi enviado para análise.</string>
+    <string name="envio_reenviado_texto_varios">%1$d produtos foram enviados para análise.</string>
+    <string name="envio_reenviado_nome_padrao">Seu produto</string>
+
 </resources>

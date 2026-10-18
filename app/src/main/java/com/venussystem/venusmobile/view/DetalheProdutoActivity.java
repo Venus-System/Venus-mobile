@@ -34,6 +34,7 @@ import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Colecao;
 import com.venussystem.venusmobile.model.IngredienteProduto;
 import com.venussystem.venusmobile.domain.match.ResultadoMatch;
+import com.venussystem.venusmobile.domain.perfil.ProgressoPerfil;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
 import com.venussystem.venusmobile.repository.AcessosRecentesRepository;
@@ -44,6 +45,7 @@ import com.venussystem.venusmobile.repository.PerfilRepository;
 import com.venussystem.venusmobile.repository.ProdutoRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.view.adapter.AlternativaAdapter;
+import com.venussystem.venusmobile.view.componente.CartaoPerfilView;
 import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
 import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 
@@ -73,6 +75,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     private TextView textMatchMensagem;
     private TextView textMatchNota;
     private TextView textMatchAviso;
+    private CartaoPerfilView cartaoPerfilMatch;
     private LinearLayout listaMatchAlertas;
     private LinearLayout listaMatchPositivos;
     private RecyclerView listaAlternativas;
@@ -225,6 +228,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         textMatchMensagem = findViewById(R.id.textMatchMensagem);
         textMatchNota = findViewById(R.id.textMatchNota);
         textMatchAviso = findViewById(R.id.textMatchAviso);
+        cartaoPerfilMatch = findViewById(R.id.cartaoPerfilMatch);
         listaMatchAlertas = findViewById(R.id.listaMatchAlertas);
         listaMatchPositivos = findViewById(R.id.listaMatchPositivos);
 
@@ -699,6 +703,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         textMatchMensagem.setVisibility(View.GONE);
         textMatchNota.setVisibility(View.GONE);
         textMatchAviso.setVisibility(View.GONE);
+        cartaoPerfilMatch.setVisibility(View.GONE);
         listaMatchAlertas.removeAllViews();
         listaMatchPositivos.removeAllViews();
 
@@ -736,11 +741,18 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         carregandoMatch.setVisibility(View.GONE);
 
         switch (resultado.veredito) {
-            case SEM_PERFIL:
-                mostrarMensagemMatch(R.string.produto_match_sem_perfil);
+            case SEM_PERFIL: {
+                ProgressoPerfil progresso = new PerfilRepository(this).progresso();
+                if (progresso.estado == ProgressoPerfil.Estado.COMPLETO) {
+                    mostrarMensagemMatch(R.string.produto_match_sem_perfil);
+                } else {
+                    // O cartao chama para o questionario, com o botao que o texto nao tinha.
+                    cartaoPerfilMatch.atualizar(progresso);
+                }
                 // Quando a pessoa responder o questionario, a aba recalcula.
                 matchCarregado = false;
                 return;
+            }
             case NAO_RECOMENDADO:
                 mostrarVeredito(R.string.produto_match_veredito_nao_recomendado);
                 break;

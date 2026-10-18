@@ -16,16 +16,19 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.venussystem.venusmobile.R;
+import com.venussystem.venusmobile.repository.PerfilRepository;
 import com.venussystem.venusmobile.view.BuscaActivity;
 import com.venussystem.venusmobile.view.DetalheProdutoActivity;
 import com.venussystem.venusmobile.view.FiltroActivity;
 import com.venussystem.venusmobile.view.adapter.ProdutoCardAdapter;
+import com.venussystem.venusmobile.view.componente.CartaoPerfilView;
 import com.venussystem.venusmobile.view.util.EstadoCatalogo;
 import com.venussystem.venusmobile.viewmodel.BuscaViewModel;
 
 /**
  * A casinha: o campo de busca, o filtro e as sugestoes de produtos, do melhor
- * avaliado para o pior. Outras secoes vem depois.
+ * avaliado para o pior. Acima das sugestoes, o cartao "Seu perfil Venus" chama
+ * para o questionario enquanto o perfil nao esta completo. Outras secoes vem depois.
  */
 public class InicioFragment extends Fragment {
 
@@ -33,6 +36,7 @@ public class InicioFragment extends Fragment {
     private ProdutoCardAdapter adapter;
     private EstadoCatalogo estado;
     private ImageButton btnFiltro;
+    private CartaoPerfilView cartaoPerfil;
 
     @Nullable
     @Override
@@ -48,6 +52,7 @@ public class InicioFragment extends Fragment {
 
         viewModel = new ViewModelProvider(this).get(BuscaViewModel.class);
         btnFiltro = view.findViewById(R.id.btnFiltro);
+        cartaoPerfil = view.findViewById(R.id.cartaoPerfil);
 
         adapter = new ProdutoCardAdapter(produto -> {
             Intent intent = new Intent(requireContext(), DetalheProdutoActivity.class);
@@ -107,6 +112,13 @@ public class InicioFragment extends Fragment {
                 viewModel.isFiltroAtivo()
                         ? R.string.home_sem_resultado_filtro
                         : R.string.busca_sem_resultado);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Confere de novo ao voltar do questionario: o cartao some quando o perfil fecha.
+        cartaoPerfil.atualizar(new PerfilRepository(requireContext()).progresso());
     }
 
     @Override

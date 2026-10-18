@@ -107,11 +107,14 @@ dependencies {
     implementation(libs.camera.view)
     implementation(libs.mlkit.text.recognition)
     implementation(libs.play.services.location)
+    // Reenvio dos produtos que ficaram sem enviar, quando a internet volta.
+    implementation(libs.work.runtime)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.arch.core.testing)
     testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.work.testing)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 }

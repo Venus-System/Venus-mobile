@@ -246,6 +246,14 @@
                 tools:text="Responda o questionário para ver o match."
                 tools:visibility="visible" />
 
+            <!-- Sem questionario respondido o Match nao existe: o cartao chama para ele. -->
+            <com.venussystem.venusmobile.view.componente.CartaoPerfilView
+                android:id="@+id/cartaoPerfilMatch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:visibility="gone" />
+
             <LinearLayout
                 android:id="@+id/listaMatchAlertas"
                 android:layout_width="match_parent"

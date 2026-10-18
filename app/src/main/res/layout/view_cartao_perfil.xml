@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dentro do CartaoPerfilView (um LinearLayout vertical, fundo roxo). -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <TextView
+        android:id="@+id/tituloCartaoPerfil"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/cartao_perfil_titulo"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/subtituloCartaoPerfil"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:alpha="0.85"
+        android:text="@string/cartao_perfil_sub_sem_questionario"
+        android:textColor="@color/white"
+        android:textSize="12sp" />
+
+    <ProgressBar
+        android:id="@+id/barraCartaoPerfil"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:max="100"
+        android:progressBackgroundTint="@color/roxo_secao"
+        android:progressTint="@color/white"
+        android:visibility="gone" />
+
+    <!-- AppCompatButton, nao Button: no tema Material 3 um Button comum vira
+         MaterialButton, que ignora este fundo e sai translucido. -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/botaoCartaoPerfil"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:background="@drawable/bg_botao_cartao_perfil"
+        android:drawableEnd="@drawable/ic_seta_direita"
+        android:drawablePadding="6dp"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:paddingStart="16dp"
+        android:paddingTop="0dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="0dp"
+        android:textAllCaps="false"
+        android:textColor="@color/roxo_venus"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+</merge>

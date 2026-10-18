@@ -116,7 +116,7 @@ public final class ScanSubmissionMapper {
                 ? value : value.substring(0, EXTRACTED_FIELD_LIMIT);
     }
 
-    private static String bestFrontCandidate(List<String> values) {
+    static String bestFrontCandidate(List<String> values) {
         if (values == null || values.isEmpty()) return null;
         boolean hasInformativeCandidate = false;
         for (String candidate : values) {
