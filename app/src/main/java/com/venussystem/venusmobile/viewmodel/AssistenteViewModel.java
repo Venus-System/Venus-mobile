@@ -93,6 +93,21 @@ public class AssistenteViewModel extends AndroidViewModel {
     }
 
     /**
+     * Rele a conversa salva. A aba do chat chama ao abrir: a conversa pode ter
+     * andado em outra tela (a do produto) enquanto este ViewModel, que vive
+     * tanto quanto a tela principal, ficava parado.
+     *
+     * Nao faz nada enquanto a Venus responde: a resposta que esta vindo e
+     * desta conversa, e reler agora a derrubaria da tela.
+     */
+    public void sincronizarComSalva() {
+        if (Boolean.TRUE.equals(aguardando.getValue())) {
+            return;
+        }
+        mostrar(salva.carregar());
+    }
+
+    /**
      * O produto de onde o chat foi aberto, ou null no chat geral. Vale para
      * todas as perguntas desta tela.
      */

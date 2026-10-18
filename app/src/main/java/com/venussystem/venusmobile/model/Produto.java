@@ -8,9 +8,16 @@ public class Produto {
     private final String imageUrl;
     private final Long categoryId;
     private final String categoryName;
+    private final Long brandId;
+    private final Boolean brazilianBrand;
 
     public Produto(Long id, String name, String brandName, Integer overallScore, String imageUrl,
                    Long categoryId, String categoryName) {
+        this(id, name, brandName, overallScore, imageUrl, categoryId, categoryName, null, null);
+    }
+
+    public Produto(Long id, String name, String brandName, Integer overallScore, String imageUrl,
+                   Long categoryId, String categoryName, Long brandId, Boolean brazilianBrand) {
         this.id = id;
         this.name = name;
         this.brandName = brandName;
@@ -18,6 +25,8 @@ public class Produto {
         this.imageUrl = imageUrl;
         this.categoryId = categoryId;
         this.categoryName = categoryName;
+        this.brandId = brandId;
+        this.brazilianBrand = brazilianBrand;
     }
 
     public Long getId() {
@@ -46,5 +55,14 @@ public class Produto {
 
     public String getCategoryName() {
         return categoryName;
+    }
+
+    public Long getBrandId() {
+        return brandId;
+    }
+
+    /** Null quando a API nao informou (ou o produto nao veio do catalogo). */
+    public Boolean getBrazilianBrand() {
+        return brazilianBrand;
     }
 }

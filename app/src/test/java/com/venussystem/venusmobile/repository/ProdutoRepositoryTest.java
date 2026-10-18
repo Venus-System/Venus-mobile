@@ -251,6 +251,38 @@ public class ProdutoRepositoryTest {
     }
 
     @Test
+    public void montarCatalogo_guardaOIdEOPaisDaMarcaParaOFiltro() {
+        BrandResponse brasileira = marca(10L, "Natura");
+        brasileira.isBrazilian = true;
+        BrandResponse estrangeira = marca(20L, "Nivea");
+        estrangeira.isBrazilian = false;
+        BrandResponse semInformacao = marca(30L, "Cliniq");
+
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        enfileirarPadrao(dispatcher,
+                Arrays.asList(produto(1L, 10L, 100L, "A", true),
+                        produto(2L, 20L, 100L, "B", true),
+                        produto(3L, 30L, 100L, "C", true),
+                        produto(4L, 999L, 100L, "D", true)),
+                Arrays.asList(brasileira, estrangeira, semInformacao),
+                Collections.singletonList(categoria(100L, "Categoria Y")),
+                Collections.emptyList(),
+                Collections.emptyList());
+
+        List<Produto> catalogo = carregarEEsperar(dispatcher);
+
+        assertEquals(4, catalogo.size());
+        assertEquals((Long) 10L, catalogo.get(0).getBrandId());
+        assertEquals(Boolean.TRUE, catalogo.get(0).getBrazilianBrand());
+        assertEquals(Boolean.FALSE, catalogo.get(1).getBrazilianBrand());
+        assertNull(catalogo.get(2).getBrazilianBrand());
+        // Marca que a API nao lista: o id fica, mas nao ha o que dizer do pais.
+        assertEquals((Long) 999L, catalogo.get(3).getBrandId());
+        assertNull(catalogo.get(3).getBrazilianBrand());
+        assertEquals("", catalogo.get(3).getBrandName());
+    }
+
+    @Test
     public void semVersaoAtual_notaFicaNull() {
         FakeApiDispatcher dispatcher = new FakeApiDispatcher();
         enfileirarPadrao(dispatcher,

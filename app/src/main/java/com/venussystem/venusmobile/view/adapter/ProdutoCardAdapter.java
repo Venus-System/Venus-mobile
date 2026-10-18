@@ -1,5 +1,6 @@
 package com.venussystem.venusmobile.view.adapter;
 
+import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,12 +13,18 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Produto;
+import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
 import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoViewHolder> {
+/**
+ * Cards de produto em grade, usados nas sugestoes da Home e nos resultados da
+ * busca: foto no topo, marca e nome embaixo e o selo redondo da nota.
+ */
+public class ProdutoCardAdapter extends RecyclerView.Adapter<ProdutoCardAdapter.CardViewHolder> {
+
     public interface AoClicar {
         void noProduto(Produto produto);
     }
@@ -25,7 +32,7 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
     private final List<Produto> produtos = new ArrayList<>();
     private final AoClicar aoClicar;
 
-    public ProdutoAdapter(AoClicar aoClicar) {
+    public ProdutoCardAdapter(AoClicar aoClicar) {
         this.aoClicar = aoClicar;
     }
 
@@ -39,14 +46,14 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
 
     @NonNull
     @Override
-    public ProdutoViewHolder onCreateViewHolder(@NonNull ViewGroup pai, int tipo) {
+    public CardViewHolder onCreateViewHolder(@NonNull ViewGroup pai, int tipo) {
         View item = LayoutInflater.from(pai.getContext())
-                .inflate(R.layout.item_produto, pai, false);
-        return new ProdutoViewHolder(item);
+                .inflate(R.layout.item_produto_card, pai, false);
+        return new CardViewHolder(item);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ProdutoViewHolder holder, int posicao) {
+    public void onBindViewHolder(@NonNull CardViewHolder holder, int posicao) {
         holder.preencher(produtos.get(posicao), aoClicar);
     }
 
@@ -55,18 +62,18 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
         return produtos.size();
     }
 
-    static class ProdutoViewHolder extends RecyclerView.ViewHolder {
+    static class CardViewHolder extends RecyclerView.ViewHolder {
         private final ImageView imagem;
         private final TextView marca;
         private final TextView nome;
-        private final TextView verNota;
+        private final TextView nota;
 
-        ProdutoViewHolder(@NonNull View item) {
+        CardViewHolder(@NonNull View item) {
             super(item);
             imagem = item.findViewById(R.id.imgProduto);
             marca = item.findViewById(R.id.textMarca);
             nome = item.findViewById(R.id.textNome);
-            verNota = item.findViewById(R.id.btnVerNota);
+            nota = item.findViewById(R.id.textNota);
         }
 
         void preencher(Produto produto, AoClicar aoClicar) {
@@ -75,18 +82,17 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
             mostrarNota(produto.getOverallScore());
 
             ProdutoImagemLoader.carregar(
-                    itemView.getContext(), imagem, produto, R.drawable.bg_card_produto);
+                    itemView.getContext(), imagem, produto, R.drawable.bg_foto_produto);
 
             itemView.setOnClickListener(v -> aoClicar.noProduto(produto));
-            verNota.setOnClickListener(v -> aoClicar.noProduto(produto));
         }
 
         /**
          * O nome costuma vir com a marca na frente ("Nivea Creme") e a marca
-         * ja aparece na linha de baixo, entao tira o prefixo so na exibicao.
+         * ja aparece em negrito acima, entao tira o prefixo so na exibicao.
          * Se sobrar nada (nome igual a marca), mantem o nome inteiro.
          */
-        private static String semMarca(String nome, String marca) {
+        static String semMarca(String nome, String marca) {
             if (nome == null || marca == null) {
                 return nome;
             }
@@ -103,30 +109,23 @@ public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoV
                 return nome;
             }
 
-            String resto = depois
-                    .replaceFirst("^[\\s\\-\\u2013:]+", "");
+            String resto = depois.replaceFirst("^[\\s\\-\\u2013:]+", "");
             return resto.isEmpty() ? nome : resto;
         }
 
+        /**
+         * Mesmo selo das outras telas: numero na cor forte da faixa e fundo na
+         * versao clara dela (ver NotaProdutoUtil). O fundo vem do tint porque
+         * o drawable e compartilhado entre os cards.
+         */
         private void mostrarNota(Integer valor) {
-            if (valor == null) {
-                verNota.setText(R.string.nota_indisponivel);
-                verNota.setTextColor(ContextCompat.getColor(
-                        itemView.getContext(), R.color.cinza_descricao));
-                return;
-            }
-
-            int cor;
-            if (valor >= 70) {
-                cor = R.color.nota_boa;
-            } else if (valor >= 40) {
-                cor = R.color.nota_media;
-            } else {
-                cor = R.color.nota_ruim;
-            }
-
-            verNota.setText(String.valueOf(valor));
-            verNota.setTextColor(ContextCompat.getColor(itemView.getContext(), cor));
+            nota.setText(valor == null
+                    ? itemView.getContext().getString(R.string.nota_indisponivel)
+                    : String.valueOf(valor));
+            nota.setTextColor(ContextCompat.getColor(
+                    itemView.getContext(), NotaProdutoUtil.corPara(valor)));
+            nota.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(
+                    itemView.getContext(), NotaProdutoUtil.fundoPara(valor))));
         }
     }
 }

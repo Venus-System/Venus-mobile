@@ -5,17 +5,12 @@ import android.app.Application;
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 import androidx.test.core.app.ApplicationProvider;
 
-import com.google.gson.Gson;
-import com.venussystem.venusmobile.model.CategoriaContagem;
+import com.venussystem.venusmobile.model.FaixaNota;
+import com.venussystem.venusmobile.model.FiltroProdutos;
 import com.venussystem.venusmobile.model.Produto;
-import com.venussystem.venusmobile.repository.BuscaRecenteRepository;
+import com.venussystem.venusmobile.repository.FiltroRepository;
 import com.venussystem.venusmobile.repository.ProdutoRepository;
-import com.venussystem.venusmobile.repository.api.VenusApi;
-import com.venussystem.venusmobile.repository.api.dto.BrandResponse;
-import com.venussystem.venusmobile.repository.api.dto.ProductCategoryResponse;
-import com.venussystem.venusmobile.repository.api.dto.ProductResponse;
-import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
-import com.venussystem.venusmobile.repository.api.dto.ProductVersionResponse;
+import com.venussystem.venusmobile.testutil.CatalogoApi;
 import com.venussystem.venusmobile.testutil.FakeApiDispatcher;
 
 import org.junit.After;
@@ -34,11 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-import okhttp3.OkHttpClient;
-import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 import static com.venussystem.venusmobile.testutil.LiveDataEspera.aguardarValor;
 import static org.junit.Assert.assertEquals;
@@ -52,99 +43,76 @@ public class BuscaViewModelTest {
     @Rule
     public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
 
-    private final Gson gson = new Gson();
     private Locale localeOriginal;
     private MockWebServer server;
     private Application application;
+    private FiltroRepository filtros;
+    private final List<BuscaViewModel> criados = new ArrayList<>();
 
     @Before
     public void setUp() throws IOException {
         localeOriginal = Locale.getDefault();
         Locale.setDefault(new Locale("pt", "BR"));
         ProdutoRepository.resetEstadoParaTeste();
+        FiltroRepository.resetParaTeste();
         server = new MockWebServer();
         server.start();
         application = ApplicationProvider.getApplicationContext();
+        filtros = new FiltroRepository();
     }
 
     @After
     public void tearDown() throws IOException {
+        for (BuscaViewModel viewModel : criados) {
+            viewModel.onCleared();
+        }
         server.shutdown();
         ProdutoRepository.resetEstadoParaTeste();
+        FiltroRepository.resetParaTeste();
         Locale.setDefault(localeOriginal);
     }
 
-    private MockResponse json(Object corpo) {
-        return new MockResponse().setResponseCode(200)
-                .setHeader("Content-Type", "application/json").setBody(gson.toJson(corpo));
-    }
-
-    private static ProductResponse produto(long id, long brandId, Long categoryId, String nome) {
-        ProductResponse r = new ProductResponse();
-        r.id = id;
-        r.brandId = brandId;
-        r.productCategoryId = categoryId;
-        r.name = nome;
-        r.isActive = true;
-        return r;
-    }
-
-    private static BrandResponse marca(long id, String nome) {
-        BrandResponse r = new BrandResponse();
-        r.id = id;
-        r.name = nome;
-        return r;
-    }
-
-    private static ProductCategoryResponse categoria(long id, String nome) {
-        ProductCategoryResponse r = new ProductCategoryResponse();
-        r.id = id;
-        r.name = nome;
-        return r;
-    }
-
-    private VenusApi criarApi() {
-        OkHttpClient http = new OkHttpClient.Builder()
-                .connectTimeout(2, TimeUnit.SECONDS)
-                .readTimeout(2, TimeUnit.SECONDS)
-                .build();
-        return new Retrofit.Builder()
-                .baseUrl(server.url("/"))
-                .client(http)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-                .create(VenusApi.class);
+    /**
+     * Marcas: 10 Nivea, 20 Cliniq (sem informar se e brasileira), 30 Natura
+     * (brasileira). Notas: 6=90, 1=85, 4=70, 2=45, 5=20 e o 3 sem nota.
+     */
+    private FakeApiDispatcher catalogoPadrao() {
+        return CatalogoApi.novo()
+                .marca(10L, "Nivea", false)
+                .marca(20L, "Cliniq", null)
+                .marca(30L, "Natura", true)
+                .categoria(100L, "Hidratante")
+                .categoria(200L, "Shampoo")
+                .produto(1L, 10L, 100L, "Creme Hidratante Nivea", 85)
+                .produto(2L, 10L, 100L, "Locao Corporal", 45)
+                .produto(3L, 10L, 100L, "Balm Labial", null)
+                .produto(4L, 20L, 200L, "Shampoo Anticaspa", 70)
+                .produto(5L, 20L, 200L, "Condicionador", 20)
+                .produto(6L, 30L, 100L, "Sabonete Ekos", 90)
+                .dispatcher();
     }
 
     private BuscaViewModel criarViewModel(FakeApiDispatcher dispatcher) {
         server.setDispatcher(dispatcher);
-        ProdutoRepository repository = new ProdutoRepository(criarApi());
-        BuscaRecenteRepository recentes = new BuscaRecenteRepository(application);
-        BuscaViewModel viewModel = new BuscaViewModel(application, repository, recentes);
+        ProdutoRepository repository = new ProdutoRepository(CatalogoApi.criarApi(server));
+        BuscaViewModel viewModel = new BuscaViewModel(application, repository, filtros);
+        criados.add(viewModel);
         aguardarValor(repository.getCatalogo(), valor -> valor != null);
+        // Os resultados sao a ultima coisa que o catalogo recalcula: esperar por
+        // eles garante que nada mais esta rodando quando o teste continua.
+        aguardarValor(viewModel.getResultados(), valor -> valor != null);
         return viewModel;
     }
 
-    private FakeApiDispatcher dispatcherPadrao() {
-        FakeApiDispatcher d = new FakeApiDispatcher();
-        List<ProductResponse> produtos = Arrays.asList(
-                produto(1L, 10L, 100L, "Creme Hidratante Nivea"),
-                produto(2L, 10L, 100L, "Locao Corporal"),
-                produto(3L, 10L, 100L, "Balm Labial"),
-                produto(4L, 20L, 200L, "Shampoo Anticaspa"),
-                produto(5L, 20L, 200L, "Condicionador"));
-        List<BrandResponse> marcas = Arrays.asList(marca(10L, "Nivea"), marca(20L, "Cliniq"));
-        List<ProductCategoryResponse> categorias = Arrays.asList(
-                categoria(100L, "Hidratante"), categoria(200L, "Shampoo"));
-        d.em("/api/products", json(produtos));
-        d.em("/api/brands", json(marcas));
-        d.em("/api/product-categories", json(categorias));
-        d.em("/api/product-versions", json(Collections.<ProductVersionResponse>emptyList()));
-        d.em("/api/product-scores", json(Collections.<ProductScoreResponse>emptyList()));
-        return d;
+    private static List<Long> ids(List<Produto> produtos) {
+        List<Long> resultado = new ArrayList<>();
+        for (Produto p : produtos) {
+            resultado.add(p.getId());
+        }
+        return resultado;
     }
 
-    private List<String> nomes(List<Produto> produtos) {
+    private static List<String> nomes(List<Produto> produtos) {
         List<String> resultado = new ArrayList<>();
         for (Produto p : produtos) {
             resultado.add(p.getName());
@@ -152,42 +120,52 @@ public class BuscaViewModelTest {
         return resultado;
     }
 
-    private List<CategoriaContagem> categorias(BuscaViewModel viewModel) {
-        aguardarValor(viewModel.getCategorias(), valor -> valor != null);
-        return viewModel.getCategorias().getValue();
+    private static FiltroProdutos filtro() {
+        return FiltroProdutos.vazio();
     }
 
-    // ---- Landing ----
+    // ---- Sem texto: historico ----
 
     @Test
-    public void semTermoESemCategoria_ehLandingEListaVazia() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
+    public void semTermo_mostraOHistoricoEOsResultadosFicamVazios() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
 
-        assertTrue(viewModel.isLanding());
-        assertTrue(viewModel.getProdutos().getValue() == null
-                || viewModel.getProdutos().getValue().isEmpty());
+        assertTrue(viewModel.isMostrandoHistorico());
+        assertTrue(viewModel.getResultados().getValue().isEmpty());
     }
 
     @Test
-    public void termoSoComEspacos_continuaLanding() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
+    public void termoSoComEspacos_continuaMostrandoOHistorico() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
 
         viewModel.buscar("    ");
 
-        assertTrue(viewModel.isLanding());
-        assertTrue(viewModel.getProdutos().getValue().isEmpty());
+        assertTrue(viewModel.isMostrandoHistorico());
+        assertTrue(viewModel.getResultados().getValue().isEmpty());
+    }
+
+    @Test
+    public void apagarOTexto_voltaAoHistorico() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
+        viewModel.buscar("Balm");
+        assertFalse(viewModel.isMostrandoHistorico());
+
+        viewModel.buscar("");
+
+        assertTrue(viewModel.isMostrandoHistorico());
+        assertTrue(viewModel.getResultados().getValue().isEmpty());
     }
 
     // ---- Texto ----
 
     @Test
     public void buscaPorMarca_casoInsensitivoComEspacos() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
 
         viewModel.buscar("  NIVEA  ");
 
-        assertFalse(viewModel.isLanding());
-        List<String> resultado = nomes(viewModel.getProdutos().getValue());
+        assertFalse(viewModel.isMostrandoHistorico());
+        List<String> resultado = nomes(viewModel.getResultados().getValue());
         assertEquals(3, resultado.size());
         assertTrue(resultado.containsAll(Arrays.asList(
                 "Creme Hidratante Nivea", "Locao Corporal", "Balm Labial")));
@@ -195,229 +173,224 @@ public class BuscaViewModelTest {
 
     @Test
     public void buscaPorNome_encontraSoOProdutoCujoNomeBate() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
 
         viewModel.buscar("Corporal");
 
         assertEquals(Collections.singletonList("Locao Corporal"),
-                nomes(viewModel.getProdutos().getValue()));
+                nomes(viewModel.getResultados().getValue()));
     }
 
     @Test
-    public void buscaSemResultado_listaVaziaENaoEhLanding() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
+    public void buscaSemResultado_listaVaziaENaoVoltaAoHistorico() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
 
         viewModel.buscar("xyz-nao-existe");
 
-        assertFalse(viewModel.isLanding());
-        assertTrue(viewModel.getProdutos().getValue().isEmpty());
+        assertFalse(viewModel.isMostrandoHistorico());
+        assertTrue(viewModel.getResultados().getValue().isEmpty());
+    }
+
+    // ---- Sugestoes ----
+
+    @Test
+    public void sugestoes_vemDaMaiorNotaParaAMenor_eSemNotaPorUltimo() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
+
+        assertEquals(Arrays.asList(6L, 1L, 4L, 2L, 5L, 3L), ids(viewModel.getSugestoes().getValue()));
     }
 
     @Test
-    public void termoVazioComLimparCategoria_voltaAoLanding() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
-        viewModel.selecionarCategoria(100L);
+    public void sugestoes_comNotasIguais_mantemAOrdemDoCatalogo() {
+        BuscaViewModel viewModel = criarViewModel(CatalogoApi.novo()
+                .marca(10L, "Nivea", false)
+                .produto(1L, 10L, 100L, "A", 50)
+                .produto(2L, 10L, 100L, "B", 50)
+                .produto(3L, 10L, 100L, "C", 50)
+                .produto(4L, 10L, 100L, "D", null)
+                .produto(5L, 10L, 100L, "E", null)
+                .dispatcher());
+
+        assertEquals(Arrays.asList(1L, 2L, 3L, 4L, 5L), ids(viewModel.getSugestoes().getValue()));
+    }
+
+    @Test
+    public void sugestoes_naoDependemDoTextoDigitado() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
+
         viewModel.buscar("Balm");
 
-        viewModel.buscar("");
-        viewModel.limparCategoria();
-
-        assertTrue(viewModel.isLanding());
-        assertTrue(viewModel.getProdutos().getValue().isEmpty());
+        assertEquals(6, viewModel.getSugestoes().getValue().size());
     }
 
-    // ---- Categoria ----
+    // ---- Filtro ----
 
     @Test
-    public void categoriaSozinha_saiDoLandingEFiltraPorCategoria() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
+    public void filtroPorMarca_valeNasSugestoes() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
 
-        viewModel.selecionarCategoria(100L);
+        filtros.aplicar(filtro().comMarca(20L, true));
 
-        assertFalse(viewModel.isLanding());
-        List<String> resultado = nomes(viewModel.getProdutos().getValue());
-        assertEquals(3, resultado.size());
-        assertTrue(resultado.containsAll(Arrays.asList(
-                "Creme Hidratante Nivea", "Locao Corporal", "Balm Labial")));
+        assertEquals(Arrays.asList(4L, 5L), ids(viewModel.getSugestoes().getValue()));
     }
 
     @Test
-    public void textoECategoriaJuntos_filtramComE() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
+    public void filtroPorCategoria_valeNasSugestoes() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
 
-        viewModel.selecionarCategoria(100L);
+        filtros.aplicar(filtro().comCategoria(200L, true));
+
+        assertEquals(Arrays.asList(4L, 5L), ids(viewModel.getSugestoes().getValue()));
+    }
+
+    @Test
+    public void filtroPorFaixa_boaEMedia() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
+
+        filtros.aplicar(filtro().comFaixa(FaixaNota.BOA, true));
+        assertEquals(Arrays.asList(6L, 1L, 4L), ids(viewModel.getSugestoes().getValue()));
+
+        filtros.aplicar(filtro().comFaixa(FaixaNota.MEDIA, true));
+        assertEquals(Collections.singletonList(2L), ids(viewModel.getSugestoes().getValue()));
+
+        filtros.aplicar(filtro().comFaixa(FaixaNota.RUIM, true));
+        assertEquals(Collections.singletonList(5L), ids(viewModel.getSugestoes().getValue()));
+    }
+
+    @Test
+    public void filtroPorFaixa_limitesSao70e40_eSemNotaFicaFora() {
+        BuscaViewModel viewModel = criarViewModel(CatalogoApi.novo()
+                .marca(10L, "Nivea", false)
+                .produto(1L, 10L, 100L, "setenta", 70)
+                .produto(2L, 10L, 100L, "sessenta e nove", 69)
+                .produto(3L, 10L, 100L, "quarenta", 40)
+                .produto(4L, 10L, 100L, "trinta e nove", 39)
+                .produto(5L, 10L, 100L, "sem nota", null)
+                .dispatcher());
+
+        filtros.aplicar(filtro().comFaixa(FaixaNota.BOA, true));
+        assertEquals(Collections.singletonList(1L), ids(viewModel.getSugestoes().getValue()));
+
+        filtros.aplicar(filtro().comFaixa(FaixaNota.MEDIA, true));
+        assertEquals(Arrays.asList(2L, 3L), ids(viewModel.getSugestoes().getValue()));
+
+        filtros.aplicar(filtro().comFaixa(FaixaNota.RUIM, true));
+        assertEquals(Collections.singletonList(4L), ids(viewModel.getSugestoes().getValue()));
+    }
+
+    @Test
+    public void filtroSoBrasileiras_deixaSoAsMarcasQueAApiDizSerBrasileiras() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
+
+        filtros.aplicar(filtro().comSoBrasileiras(true));
+
+        // A Nivea e false e a Cliniq nao informou: as duas ficam de fora.
+        assertEquals(Collections.singletonList(6L), ids(viewModel.getSugestoes().getValue()));
+    }
+
+    @Test
+    public void dentroDeUmGrupoValeQualquerOpcao() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
+
+        filtros.aplicar(filtro().comMarca(10L, true).comMarca(30L, true));
+
+        assertEquals(Arrays.asList(6L, 1L, 2L, 3L), ids(viewModel.getSugestoes().getValue()));
+    }
+
+    @Test
+    public void entreGruposTodosPrecisamBater() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
+
+        filtros.aplicar(filtro()
+                .comCategoria(100L, true)
+                .comFaixa(FaixaNota.BOA, true));
+
+        // Hidratante e nota boa: 6 (90) e 1 (85). O 4 e boa mas e shampoo.
+        assertEquals(Arrays.asList(6L, 1L), ids(viewModel.getSugestoes().getValue()));
+    }
+
+    @Test
+    public void filtroEOTextoJuntos_filtramComE() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
+
+        filtros.aplicar(filtro().comCategoria(100L, true));
         viewModel.buscar("Balm");
 
         assertEquals(Collections.singletonList("Balm Labial"),
-                nomes(viewModel.getProdutos().getValue()));
+                nomes(viewModel.getResultados().getValue()));
+
+        viewModel.buscar("Shampoo");
+        assertTrue(viewModel.getResultados().getValue().isEmpty());
+    }
+
+    @Test
+    public void filtroNaoMexeNoEstadoDeHistorico() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
+
+        filtros.aplicar(filtro().comMarca(10L, true));
+
+        assertTrue(viewModel.isMostrandoHistorico());
+        assertTrue(viewModel.getResultados().getValue().isEmpty());
+    }
+
+    @Test
+    public void filtroAplicadoNaHome_continuaValendoNosResultadosDaBusca() {
+        FakeApiDispatcher dispatcher = catalogoPadrao();
+        BuscaViewModel home = criarViewModel(dispatcher);
+        filtros.aplicar(filtro().comCategoria(200L, true));
+
+        // A tela de busca abre depois, com o seu proprio ViewModel.
+        BuscaViewModel busca = criarViewModel(dispatcher);
+        busca.buscar("o");
+
+        // "o" bate com varios produtos, mas so os de shampoo passam no filtro.
+        assertEquals(Arrays.asList(4L, 5L), ids(busca.getResultados().getValue()));
+        assertEquals(Arrays.asList(4L, 5L), ids(home.getSugestoes().getValue()));
+        assertTrue(busca.isFiltroAtivo());
+    }
+
+    @Test
+    public void limparOFiltro_devolveOCatalogoInteiro() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
+        filtros.aplicar(filtro().comMarca(10L, true));
+        assertTrue(viewModel.isFiltroAtivo());
+
+        filtros.limpar();
+
+        assertFalse(viewModel.isFiltroAtivo());
+        assertEquals(6, viewModel.getSugestoes().getValue().size());
+    }
+
+    @Test
+    public void filtroSemProdutoNenhum_deixaAListaVazia() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
+
+        filtros.aplicar(filtro().comMarca(999L, true));
+
+        assertTrue(viewModel.getSugestoes().getValue().isEmpty());
+        assertTrue(viewModel.temCatalogo());
     }
 
     // ---- Filtrar antes do catalogo chegar ----
 
     @Test
     public void filtrarAntesDoCatalogoChegar_naoQuebra() {
-        FakeApiDispatcher dispatcher = dispatcherPadrao();
-        dispatcher.em("/api/products", json(Collections.singletonList(
-                        produto(1L, 10L, 100L, "Creme Hidratante Nivea")))
-                .setBodyDelay(500, TimeUnit.MILLISECONDS));
+        CatalogoApi catalogo = CatalogoApi.novo()
+                .marca(10L, "Nivea", false)
+                .produto(1L, 10L, 100L, "Creme Hidratante Nivea", 85);
+        FakeApiDispatcher dispatcher = catalogo.dispatcher();
+        dispatcher.em("/api/products",
+                catalogo.respostaProdutos().setBodyDelay(500, TimeUnit.MILLISECONDS));
         server.setDispatcher(dispatcher);
 
-        ProdutoRepository repository = new ProdutoRepository(criarApi());
-        BuscaRecenteRepository recentes = new BuscaRecenteRepository(application);
-        BuscaViewModel viewModel = new BuscaViewModel(application, repository, recentes);
+        ProdutoRepository repository = new ProdutoRepository(CatalogoApi.criarApi(server));
+        BuscaViewModel viewModel = new BuscaViewModel(application, repository, filtros);
+        criados.add(viewModel);
 
         viewModel.buscar("nivea");
-        viewModel.selecionarCategoria(100L);
+        filtros.aplicar(filtro().comCategoria(100L, true));
 
-        aguardarValor(viewModel.getProdutos(), valor -> valor != null && !valor.isEmpty());
-        assertEquals(1, viewModel.getProdutos().getValue().size());
-    }
-
-    // ---- Chips ----
-
-    @Test
-    public void chip_respeitaMinimoDeProdutosPorCategoria() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
-
-        List<CategoriaContagem> chips = categorias(viewModel);
-
-        List<String> nomesChips = new ArrayList<>();
-        for (CategoriaContagem c : chips) {
-            nomesChips.add(c.getNome());
-        }
-        assertTrue(nomesChips.contains("Hidratante"));
-        assertFalse(nomesChips.contains("Shampoo"));
-    }
-
-    @Test
-    public void chip_categoriaComIdNulo_ficaFora() {
-        FakeApiDispatcher d = new FakeApiDispatcher();
-        List<ProductResponse> produtos = Arrays.asList(
-                produto(1L, 10L, null, "A"), produto(2L, 10L, null, "B"), produto(3L, 10L, null, "C"));
-        d.em("/api/products", json(produtos));
-        d.em("/api/brands", json(Collections.singletonList(marca(10L, "Nivea"))));
-        d.em("/api/product-categories", json(Collections.<ProductCategoryResponse>emptyList()));
-        d.em("/api/product-versions", json(Collections.<ProductVersionResponse>emptyList()));
-        d.em("/api/product-scores", json(Collections.<ProductScoreResponse>emptyList()));
-
-        BuscaViewModel viewModel = criarViewModel(d);
-
-        assertTrue(categorias(viewModel).isEmpty());
-    }
-
-    @Test
-    public void chip_categoriaComNomeEmBranco_ficaFora() {
-        FakeApiDispatcher d = new FakeApiDispatcher();
-        List<ProductResponse> produtos = Arrays.asList(
-                produto(1L, 10L, 300L, "A"), produto(2L, 10L, 300L, "B"), produto(3L, 10L, 300L, "C"));
-        d.em("/api/products", json(produtos));
-        d.em("/api/brands", json(Collections.singletonList(marca(10L, "Nivea"))));
-        d.em("/api/product-categories", json(Collections.singletonList(categoria(300L, "   "))));
-        d.em("/api/product-versions", json(Collections.<ProductVersionResponse>emptyList()));
-        d.em("/api/product-scores", json(Collections.<ProductScoreResponse>emptyList()));
-
-        BuscaViewModel viewModel = criarViewModel(d);
-
-        assertTrue(categorias(viewModel).isEmpty());
-    }
-
-    @Test
-    public void chip_ordenaPorQuantidadeDecrescenteENomeCrescenteNoEmpate() {
-        FakeApiDispatcher d = new FakeApiDispatcher();
-        List<ProductResponse> produtos = Arrays.asList(
-                produto(1L, 10L, 1L, "A1"), produto(2L, 10L, 1L, "A2"), produto(3L, 10L, 1L, "A3"),
-                produto(4L, 10L, 2L, "B1"), produto(5L, 10L, 2L, "B2"), produto(6L, 10L, 2L, "B3"),
-                produto(7L, 10L, 3L, "C1"), produto(8L, 10L, 3L, "C2"), produto(9L, 10L, 3L, "C3"),
-                produto(10L, 10L, 3L, "C4"), produto(11L, 10L, 3L, "C5"));
-        d.em("/api/products", json(produtos));
-        d.em("/api/brands", json(Collections.singletonList(marca(10L, "Nivea"))));
-        d.em("/api/product-categories", json(Arrays.asList(
-                categoria(1L, "Zeta"), categoria(2L, "Alfa"), categoria(3L, "Beta"))));
-        d.em("/api/product-versions", json(Collections.<ProductVersionResponse>emptyList()));
-        d.em("/api/product-scores", json(Collections.<ProductScoreResponse>emptyList()));
-
-        BuscaViewModel viewModel = criarViewModel(d);
-        List<CategoriaContagem> chips = categorias(viewModel);
-
-        assertEquals(3, chips.size());
-        assertEquals("Beta", chips.get(0).getNome());
-        assertEquals("Alfa", chips.get(1).getNome());
-        assertEquals("Zeta", chips.get(2).getNome());
-    }
-
-    // ---- Recentes ----
-
-    @Test
-    public void buscar_naoGravaNoHistorico() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
-
-        viewModel.buscar("creme hidratante");
-
-        assertTrue(viewModel.getTermosRecentes().getValue().isEmpty());
-    }
-
-    @Test
-    public void confirmarBusca_gravaNoHistorico() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
-
-        viewModel.confirmarBusca("creme hidratante");
-
-        assertEquals(Collections.singletonList("creme hidratante"),
-                viewModel.getTermosRecentes().getValue());
-    }
-
-    @Test
-    public void registrarTermoAtual_comTermoVazio_naoGrava() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
-        viewModel.buscar("");
-
-        viewModel.registrarTermoAtual();
-
-        assertTrue(viewModel.getTermosRecentes().getValue().isEmpty());
-    }
-
-    @Test
-    public void removerRecente_atualizaLista() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
-        viewModel.confirmarBusca("abc");
-        viewModel.confirmarBusca("def");
-
-        viewModel.removerRecente("abc");
-
-        assertEquals(Collections.singletonList("def"), viewModel.getTermosRecentes().getValue());
-    }
-
-    @Test
-    public void termoComUmCaractere_naoEhGravado() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
-
-        viewModel.confirmarBusca("a");
-
-        assertTrue(viewModel.getTermosRecentes().getValue().isEmpty());
-    }
-
-    @Test
-    public void limiteDeOitoRecentes_removeOMaisAntigo() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
-
-        for (int i = 1; i <= 9; i++) {
-            viewModel.confirmarBusca("termo" + i);
-        }
-
-        List<String> recentes = viewModel.getTermosRecentes().getValue();
-        assertEquals(8, recentes.size());
-        assertEquals("termo9", recentes.get(0));
-        assertFalse(recentes.contains("termo1"));
-    }
-
-    @Test
-    public void termoRepetido_voltaAoTopoSemDuplicar() {
-        BuscaViewModel viewModel = criarViewModel(dispatcherPadrao());
-        viewModel.confirmarBusca("abc");
-        viewModel.confirmarBusca("def");
-
-        viewModel.confirmarBusca("ABC");
-
-        assertEquals(Arrays.asList("ABC", "def"), viewModel.getTermosRecentes().getValue());
+        aguardarValor(viewModel.getResultados(), valor -> valor != null && !valor.isEmpty());
+        assertEquals(1, viewModel.getResultados().getValue().size());
     }
 }

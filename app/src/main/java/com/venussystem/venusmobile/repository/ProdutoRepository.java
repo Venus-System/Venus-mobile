@@ -681,15 +681,15 @@ public class ProdutoRepository {
         List<ProductScoreResponse> notas = esperar(pedidoNotas);
         Long modeloAtivoId = esperarModeloAtivo(pedidoModeloAtivo);
 
-        Map<Long, String> nomeDaMarca = new HashMap<>();
+        Map<Long, BrandResponse> marcaPorId = new HashMap<>();
         for (BrandResponse marca : marcas) {
 
             if (marca != null
                     && marca.id != null) {
 
-                nomeDaMarca.put(
+                marcaPorId.put(
                         marca.id,
-                        marca.name
+                        marca
                 );
             }
         }
@@ -773,10 +773,15 @@ public class ProdutoRepository {
                             versaoAtual
                     );
 
-            String marca =
-                    nomeDaMarca.get(
+            BrandResponse dadosDaMarca =
+                    marcaPorId.get(
                             produto.brandId
                     );
+
+            String marca =
+                    dadosDaMarca == null
+                            ? null
+                            : dadosDaMarca.name;
 
             if (marca == null) {
                 marca = "";
@@ -786,7 +791,8 @@ public class ProdutoRepository {
             // foto ativa sob demanda pelo endpoint leve de fotos da versao.
             guardarVersaoAtual(produto.id, versaoAtual);
             catalogo.add(new Produto(produto.id, produto.name, marca, nota, null,
-                    produto.productCategoryId, nomeDaCategoria.get(produto.productCategoryId)));
+                    produto.productCategoryId, nomeDaCategoria.get(produto.productCategoryId),
+                    produto.brandId, dadosDaMarca == null ? null : dadosDaMarca.isBrazilian));
         }
 
         return catalogo;

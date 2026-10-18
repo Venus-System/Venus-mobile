@@ -206,6 +206,48 @@ public class AssistenteViewModelTest {
         assertEquals(1, mensagens(abrirChat()).size());
     }
 
+    // ---- Sincronizar com a conversa salva ----
+
+    @Test
+    public void sincronizarComSalva_trazOQueAndouEmOutraTela() {
+        // A tela do produto tem o seu proprio ViewModel; a aba do chat ficou parada.
+        AssistenteViewModel telaDoProduto = abrirChat();
+        telaDoProduto.perguntar("e este produto?");
+        conversa.ultimoCallback.aoResponder("Parece bom.", UID);
+        assertEquals(1, mensagens().size());
+
+        viewModel.sincronizarComSalva();
+
+        List<Mensagem> lista = mensagens();
+        assertEquals(3, lista.size());
+        assertEquals("e este produto?", lista.get(1).getTexto());
+        assertEquals("Parece bom.", lista.get(2).getTexto());
+    }
+
+    @Test
+    public void sincronizarComSalva_continuaComOIdDaConversaDaOutraTela() {
+        AssistenteViewModel telaDoProduto = abrirChat();
+        telaDoProduto.perguntar("oi");
+        conversa.ultimoCallback.aoResponder("Ola!", UID);
+
+        viewModel.sincronizarComSalva();
+        viewModel.perguntar("e agora?");
+
+        assertEquals(UID, conversa.conversas.get(1));
+    }
+
+    @Test
+    public void sincronizarComSalva_enquantoAguarda_naoDerrubaAResposta() {
+        viewModel.perguntar("oi");
+
+        viewModel.sincronizarComSalva();
+
+        assertEquals(3, mensagens().size());
+        assertTrue(viewModel.getAguardando().getValue());
+        conversa.ultimoCallback.aoResponder("Ola!", UID);
+        assertEquals("Ola!", ultima().getTexto());
+    }
+
     // ---- Nova conversa ----
 
     @Test
