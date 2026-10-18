@@ -107,6 +107,11 @@ public final class ScanDraftStore {
         return result;
     }
 
+    /** Quando o rascunho foi gravado pela ultima vez: cada etapa do envio o regrava. */
+    public long lastModifiedMs(String uid, String scanId) throws IOException {
+        return Files.getLastModifiedTime(directory(uid, scanId).resolve("draft.json")).toMillis();
+    }
+
     /**
      * Submissões já confirmadas pelo servidor. Elas funcionam como cache
      * imediato do histórico enquanto a listagem remota ainda não refletiu o

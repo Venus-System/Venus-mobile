@@ -75,4 +75,6 @@
     <dimen name="largura_menu_lateral">280dp</dimen>
     <!-- O mesmo raio dos modais do perfil (bg_modal_escolha). -->
     <dimen name="raio_menu_lateral">20dp</dimen>
+    <!-- Margem de dentro do cartao "Seu perfil Venus": mais justa que a das telas, para ele nao tomar a Home. -->
+    <dimen name="padding_cartao_perfil">12dp</dimen>
 </resources>

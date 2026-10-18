@@ -17,7 +17,10 @@ import androidx.fragment.app.Fragment;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
 import com.venussystem.venusmobile.R;
+import com.venussystem.venusmobile.lembrete.Lembretes;
+import com.venussystem.venusmobile.repository.DecisoesAgenda;
 import com.venussystem.venusmobile.repository.FotoPerfilRepository;
+import com.venussystem.venusmobile.repository.ReenvioDeScanAgenda;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.repository.SincronizacaoRepository;
 import com.venussystem.venusmobile.view.fragment.AssistenteFragment;
@@ -80,6 +83,12 @@ public class PrincipalActivity extends AppCompatActivity {
             new SincronizacaoListas(this).atualizarEmSegundoPlano(null);
             // Foto de perfil que ficou sem enviar (sem rede, API dormindo).
             new FotoPerfilRepository(this).enviarEmSegundoPlano();
+            // Arma de novo o lembrete do questionario desta conta (alarmes nao sobrevivem a tudo).
+            Lembretes.reagendarTudo(this);
+            // Produto escaneado que ficou sem enviar (sem internet, saiu da tela): termina sozinho.
+            ReenvioDeScanAgenda.agendarSePreciso(this);
+            // Produto enviado que a equipe aprovou ou recusou desde a ultima vez: avisa.
+            DecisoesAgenda.verificarAgora(this);
         }
     }
 
