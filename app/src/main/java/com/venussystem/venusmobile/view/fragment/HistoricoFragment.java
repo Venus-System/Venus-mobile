@@ -54,4 +54,12 @@ public class HistoricoFragment extends Fragment {
             textVazio.setVisibility(adapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
         });
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (viewModel != null) {
+            viewModel.recarregar();
+        }
+    }
 }

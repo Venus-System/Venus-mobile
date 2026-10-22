@@ -18,6 +18,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.ScanBackData;
 import com.venussystem.venusmobile.model.ScanOcrResult;
+import com.venussystem.venusmobile.model.ScanOcrTokenEvidence;
 import com.venussystem.venusmobile.model.ScanSubmissionDraft;
 import com.venussystem.venusmobile.view.util.ScanBackExtractor;
 import com.venussystem.venusmobile.viewmodel.ScanViewModel;
@@ -175,6 +176,9 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
 
         Log.d(TAG, "OCR_BACK_CONCLUIDO chars=" + texto.length()
                 + " lines=" + result.getLines().size());
+        Log.d(TAG, "OCR_PASSES count=" + result.getAttempts().size()
+                + " selected=" + result.getSelectedVariant()
+                + " geometry=" + result.hasSelectedSpatialGeometry());
 
         setBadge("Organizando os ingredientes...");
 
@@ -214,6 +218,13 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
         draft.setBackPhotoPath(photoPath);
         draft.setBackOcrText(texto);
         draft.setBackOcrLines(result.getLines());
+        java.util.List<ScanOcrTokenEvidence> tokenEvidence = new java.util.ArrayList<>();
+        for (com.venussystem.venusmobile.model.ScanOcrToken token : result.getTokens()) {
+            ScanOcrTokenEvidence evidence = ScanOcrTokenEvidence.from(token);
+            if (evidence != null) tokenEvidence.add(evidence);
+        }
+        draft.setBackOcrTokens(tokenEvidence);
+        draft.setBackOcrAttempts(result.getAttempts());
         draft.setBackData(backData);
         draft.setStatus(ScanSubmissionDraft.STATUS_BACK_PROCESSED);
 

@@ -1,6 +1,5 @@
 package com.venussystem.venusmobile.domain.scan;
 
-import java.text.Normalizer;
 import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
@@ -23,9 +22,7 @@ public final class ScanIngredientPolicy {
     private ScanIngredientPolicy() { }
 
     public static String normalize(String raw) {
-        return raw == null ? "" : Normalizer.normalize(raw, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}+", "").toUpperCase(Locale.ROOT).trim()
-                .replaceAll("\\s+", " ");
+        return ScanIngredientKeyNormalizer.normalize(raw);
     }
 
     public static boolean hasAdministrativeText(String raw) {

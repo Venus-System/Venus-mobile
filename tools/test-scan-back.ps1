@@ -24,6 +24,7 @@ $main = Join-Path $projectRoot 'app\src\main\java\com\venussystem\venusmobile'
 $sources = @(
     "$main\model\ScanBackData.java",
     "$main\model\ScanBackIngredientCandidate.java",
+    "$main\model\ScanOcrAttempt.java",
     "$main\model\ScanOcrResult.java",
     "$main\model\ScanPhotoQuality.java",
     "$main\model\ScanOcrToken.java",

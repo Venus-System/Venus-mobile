@@ -15,18 +15,19 @@ $libs = @('junit\junit\4.13.2', 'org.hamcrest\hamcrest-core\1.3',
 }
 $classpath = $libs -join ';'
 $main = "$projectRoot\app\src\main\java\com\venussystem\venusmobile"
-$sources = @('ScanFrontData','ScanCosmeticClassification','ScanOcrResult','ScanOcrToken') |
+$sources = @('ScanFrontData','ScanCosmeticClassification','ScanOcrResult','ScanOcrToken','ScanOcrAttempt') |
     ForEach-Object { "$main\model\$_.java" }
 $sources += Get-ChildItem "$main\view\util" -Filter '*.java' |
     Where-Object { $_.Name -match '^Scan(Front|Cosmetic|Text)' } | Select-Object -ExpandProperty FullName
 $sources += "$PSScriptRoot\scan-back-test-support\android\graphics\Rect.java",
     "$PSScriptRoot\scan-back-test-support\android\util\Log.java",
-    "$projectRoot\app\src\test\java\com\venussystem\venusmobile\view\util\ScanAnalysisCharacterizationTest.java"
+    "$projectRoot\app\src\test\java\com\venussystem\venusmobile\view\util\ScanAnalysisCharacterizationTest.java",
+    "$projectRoot\app\src\test\java\com\venussystem\venusmobile\view\util\ScanFrontExtractorTest.java"
 & "$JavaHome\bin\javac.exe" --release 11 -encoding UTF-8 -cp $classpath -d $output @sources
 if ($LASTEXITCODE -ne 0) { throw 'Scan analysis test compilation failed.' }
 if ($PrintBaseline) {
     & "$JavaHome\bin\java.exe" -cp "$output;$classpath" com.venussystem.venusmobile.view.util.ScanAnalysisCharacterizationTest
 } else {
-    & "$JavaHome\bin\java.exe" -cp "$output;$classpath" org.junit.runner.JUnitCore com.venussystem.venusmobile.view.util.ScanAnalysisCharacterizationTest
+    & "$JavaHome\bin\java.exe" -cp "$output;$classpath" org.junit.runner.JUnitCore com.venussystem.venusmobile.view.util.ScanAnalysisCharacterizationTest com.venussystem.venusmobile.view.util.ScanFrontExtractorTest
 }
 if ($LASTEXITCODE -ne 0) { throw 'Scan analysis tests failed.' }

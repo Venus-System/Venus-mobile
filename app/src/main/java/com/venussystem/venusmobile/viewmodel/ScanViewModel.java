@@ -12,6 +12,7 @@ import com.google.mlkit.vision.text.Text;
 import com.venussystem.venusmobile.model.ScanFrontData;
 import com.venussystem.venusmobile.model.ScanOcrResult;
 import com.venussystem.venusmobile.model.ScanOcrToken;
+import com.venussystem.venusmobile.model.ScanOcrAttempt;
 import com.venussystem.venusmobile.model.ScanProductMatch;
 import com.venussystem.venusmobile.repository.ScanOcrRepository;
 import com.venussystem.venusmobile.repository.ScanProductMatchRepository;
@@ -82,27 +83,31 @@ public class ScanViewModel extends AndroidViewModel {
         ocrResult.setValue(null);
         productMatch.setValue(null);
 
-        ocrRepository.recognize(
+        ocrRepository.recognizeBest(
                 getApplication(),
                 imageUri,
-                new ScanOcrRepository.Callback() {
+                new ScanOcrRepository.BestCallback() {
 
                     @Override
                     public void onSuccess(
-                            @NonNull Text result
+                            @NonNull Text result,
+                            @NonNull java.util.List<ScanOcrAttempt> attempts
                     ) {
 
                         java.util.List<String> linhas =
                                 extrairLinhas(result);
 
                         java.util.List<ScanOcrToken> tokens =
-                                extrairTokens(result);
+                                preservesSelectedGeometry(attempts)
+                                        ? extrairTokens(result)
+                                        : java.util.Collections.emptyList();
 
                         ScanOcrResult resultado =
                                 new ScanOcrResult(
                                         result.getText(),
                                         linhas,
-                                        tokens
+                                        tokens,
+                                        attempts
                                 );
 
                         ocrResult.postValue(
@@ -125,6 +130,22 @@ public class ScanViewModel extends AndroidViewModel {
                     }
                 }
         );
+    }
+
+    /**
+     * Derived OCR passes such as a crop or a rotation no longer share the
+     * source image coordinate system. Spatial tokens from those passes must
+     * not be sent to the parser as if they belonged to the original photo.
+     */
+    private boolean preservesSelectedGeometry(
+            @NonNull java.util.List<ScanOcrAttempt> attempts
+    ) {
+        for (ScanOcrAttempt attempt : attempts) {
+            if (attempt.isSelected()) {
+                return attempt.preservesSourceGeometry();
+            }
+        }
+        return true;
     }
 
     /**

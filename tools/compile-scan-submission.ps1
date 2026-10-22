@@ -22,7 +22,15 @@ $needed = 'firebase-auth-24.2.0|firebase-auth-interop-20.0.0|firebase-common-22.
 $jars += $transformed | Where-Object { $_ -match $needed } |
     Group-Object { Split-Path (Split-Path (Split-Path $_ -Parent) -Parent) -Leaf } |
     ForEach-Object { $_.Group[0] }
-$jars += "$env:LOCALAPPDATA\Android\Sdk\platforms\android-36\android.jar"
+$androidSdkPlatforms = Join-Path $env:USERPROFILE 'AppData\Local\Android\Sdk\platforms'
+$android = Get-ChildItem $androidSdkPlatforms -Directory -ErrorAction Stop |
+    Where-Object { $_.Name -match '^android-\d+$' } |
+    Sort-Object { [int]($_.Name -replace '^android-', '') } -Descending |
+    ForEach-Object { Join-Path $_.FullName 'android.jar' } |
+    Where-Object { Test-Path $_ } |
+    Select-Object -First 1
+if (!$android) { throw 'Android SDK platform android.jar not found.' }
+$jars += $android
 $jars += "$projectRoot\app\build\scan-submission-host-tests"
 $jars += "$projectRoot\app\build\intermediates\compile_app_classes_jar\debug\bundleDebugClassesToCompileJar\classes.jar"
 $jars += "$projectRoot\app\build\intermediates\compile_and_runtime_r_class_jar\debug\processDebugResources\R.jar"

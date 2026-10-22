@@ -24,11 +24,18 @@ import java.util.concurrent.Executors;
 public class ScanSubmissionRepository {
     private static final ExecutorService IO = Executors.newSingleThreadExecutor();
     private final ScanDraftStore store;
+    private final ScanIngredientCatalogCache ingredientCatalogCache;
     private final Handler main = new Handler(Looper.getMainLooper());
 
     public ScanSubmissionRepository(Context context) {
-        store = new ScanDraftStore(context.getApplicationContext().getNoBackupFilesDir().toPath()
-                .resolve("scan-submissions"));
+        java.nio.file.Path noBackup = context.getApplicationContext().getNoBackupFilesDir().toPath();
+        store = new ScanDraftStore(noBackup.resolve("scan-submissions"));
+        // The catalogue is public reference data, not user evidence. Keep one
+        // atomic app-private snapshot so a scan with many ingredients does not
+        // issue one network request per token. It is refreshed by
+        // ScanIngredientCatalog after its bounded TTL and is safe to discard.
+        ingredientCatalogCache = new ScanIngredientCatalogCache(
+                noBackup.resolve("scan-catalog").resolve("ingredients.json"));
     }
 
     public interface Callback {
@@ -70,19 +77,36 @@ public class ScanSubmissionRepository {
                 stage = "VALIDATE_LOCAL_STATE";
                 if (saved.frontUpload == null || saved.backUpload == null)
                     throw new IllegalStateException("As duas fotos precisam estar confirmadas antes do cadastro.");
-                if (saved.ingredientCatalog == null)
-                    throw new IllegalStateException("A consulta dos ingredientes precisa ser concluída antes do cadastro.");
                 saved.frontUpload.validate(scanId, "front");
                 saved.backUpload.validate(scanId, "back");
+                // A catalogue outage must not erase OCR evidence or prevent a
+                // draft from reaching the existing PENDING_REVIEW workflow.
+                // The backend will keep these raw names pending for administrative review.
+                if (saved.ingredientCatalog == null) {
+                    saved.ingredientCatalog = unresolvedCatalog(saved.draft);
+                }
+                try {
+                    ScanIngredientCatalogReportValidator.validate(
+                            saved.ingredientCatalog,
+                            saved.draft.getBackData().getIngredients()
+                    );
+                } catch (IllegalArgumentException invalidReport) {
+                    // A report from an older app/cache version must never
+                    // promote an ID against a different OCR position.
+                    Log.w("VENUS_SCAN_SUBMISSION", "CATALOG_REPORT_RESET scanId=" + scanId);
+                    saved.ingredientCatalog = unresolvedCatalog(saved.draft);
+                }
                 stage = "BUILD_REQUEST";
                 String deviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
                 if (deviceId == null || deviceId.trim().isEmpty()) deviceId = "android-" + Build.FINGERPRINT;
                 String version;
                 try { version = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName; }
                 catch (Exception ignored) { version = "unknown"; }
-                ScanSessionRequest.Device device = new ScanSessionRequest.Device(deviceId, "Android", version,
+                // Mongo's persisted contract uses lowercase platform tokens.
+                ScanSessionRequest.Device device = new ScanSessionRequest.Device(deviceId, "android", version,
                         Build.MANUFACTURER + " " + Build.MODEL);
-                ScanSessionRequest request = ScanSubmissionMapper.prepare(saved.draft, uid, device, null);
+                ScanSessionRequest request = ScanSubmissionMapper.prepare(saved.draft, uid, device, null,
+                        saved.ingredientCatalog);
                 request.images.front = saved.frontUpload.image;
                 request.images.back = saved.backUpload.image;
                 Log.d("VENUS_SCAN_SUBMISSION", "REQUEST scanId=" + scanId);
@@ -99,17 +123,44 @@ public class ScanSubmissionRepository {
                 Log.w("VENUS_SCAN_SUBMISSION", "FAILED scanId=" + scanId + " kind="
                         + (e instanceof ScanApiException ? ((ScanApiException) e).kind : "LOCAL")
                         + " stage=" + stage + " http=" + code
-                        + " error=" + e.getClass().getSimpleName()
-                        + " message=" + safeDiagnosticMessage(e.getMessage()));
+                        + " error=" + e.getClass().getSimpleName());
                 main.post(() -> callback.failed(e));
             }
         });
     }
 
-    private static String safeDiagnosticMessage(String message) {
-        if (message == null || message.trim().isEmpty()) return "none";
-        String compact = message.replace('\n', ' ').replace('\r', ' ').trim();
-        return compact.length() <= 160 ? compact : compact.substring(0, 160);
+    private static ScanIngredientCatalog.Report unresolvedCatalog(ScanSubmissionDraft draft) {
+        ScanIngredientCatalog.Report report = new ScanIngredientCatalog.Report();
+        report.checkedAt = java.time.OffsetDateTime.now().toString();
+        if (draft == null || draft.getBackData() == null) return report;
+        int position = 1;
+        for (com.venussystem.venusmobile.model.ScanBackIngredientCandidate candidate
+                : draft.getBackData().getIngredients()) {
+            ScanIngredientCatalog.Match match = new ScanIngredientCatalog.Match();
+            match.position = candidate.getPosition() > 0 ? candidate.getPosition() : position;
+            match.rawName = candidate.getRawName();
+            match.normalizedName = candidate.getNormalizedName();
+            match.status = ScanIngredientCatalog.STATUS_NOT_FOUND;
+            match.resolutionStatus = ScanIngredientCatalog.RESOLUTION_UNRESOLVED;
+            match.resolutionMethod = "CATALOG_UNAVAILABLE";
+            match.needsReview = true;
+            report.matches.add(match);
+            ScanIngredientCatalog.Issue issue = new ScanIngredientCatalog.Issue();
+            issue.position = match.position;
+            issue.rawName = match.rawName;
+            issue.normalizedName = match.normalizedName;
+            issue.type = "SOURCE_CONFLICT";
+            issue.reason = "CATALOG_UNAVAILABLE";
+            report.issues.add(issue);
+            report.notFound++;
+            report.unresolved++;
+            report.needsReview = true;
+            position++;
+        }
+        report.expectedCount = report.matches.size();
+        report.validationStatus = report.expectedCount == 0
+                ? "INVALID" : ScanIngredientCatalog.VALIDATION_NEEDS_REVIEW;
+        return report;
     }
 
     /** Read-only catalog preflight. Does not submit to Mongo or mark the product approved. */
@@ -123,7 +174,7 @@ public class ScanSubmissionRepository {
                 saved.draft.getBackData().getIngredients().forEach(i -> names.add(i.getRawName()));
                 Log.d("VENUS_SCAN_INGREDIENTS", "REQUEST scanId=" + scanId + " candidates=" + names.size());
                 ScanIngredientCatalog.Report report = new ScanIngredientCatalog(ClienteApi.ingredients(),
-                        () -> auth.requireSameUser(uid)).lookup(names);
+                        () -> auth.requireSameUser(uid), ingredientCatalogCache).lookup(names);
                 auth.requireSameUser(uid);
                 ScanDraftStore.SavedDraft result = store.recordIngredientCatalog(uid, scanId, report);
                 main.post(() -> {
@@ -132,21 +183,40 @@ public class ScanSubmissionRepository {
                     Log.d("VENUS_SCAN_INGREDIENTS", "READY scanId=" + scanId + " known=" + report.known
                             + " alias=" + report.alias + " ambiguous=" + report.ambiguous
                             + " notFound=" + report.notFound + " errors=" + report.errors + " mongo=false");
-                    for (int i = 0; i < report.matches.size(); i++) {
-                        ScanIngredientCatalog.Match match = report.matches.get(i);
-                        Log.d("VENUS_SCAN_INGREDIENTS", "MATCH position=" + (i + 1)
-                                + " status=" + match.status + " ingredientId=" + match.ingredientId
-                                + " error=" + match.errorCode);
-                    }
                     callback.saved(result);
                 });
             } catch (Exception e) {
+                if (isDeferrableCatalogFailure(e)) {
+                    try {
+                        FirebaseScanAuthSession auth = new FirebaseScanAuthSession();
+                        auth.requireSameUser(uid);
+                        ScanDraftStore.SavedDraft saved = store.read(uid, scanId);
+                        ScanIngredientCatalog.Report deferred = unresolvedCatalog(saved.draft);
+                        ScanDraftStore.SavedDraft result = store.recordIngredientCatalog(uid, scanId, deferred);
+                        Log.w("VENUS_SCAN_INGREDIENTS", "DEFERRED scanId=" + scanId + " reason=CATALOG_UNAVAILABLE");
+                        main.post(() -> callback.saved(result));
+                        return;
+                    } catch (Exception ignored) {
+                        // Fall through to the normal error callback if the
+                        // draft/account cannot be verified locally.
+                    }
+                }
                 Log.w("VENUS_SCAN_INGREDIENTS", "FAILED scanId=" + scanId
                         + " kind=" + e.getClass().getSimpleName()
                         + " http=" + (e instanceof ScanApiException ? ((ScanApiException) e).httpCode : 0));
                 main.post(() -> callback.failed(e));
             }
         });
+    }
+
+    private static boolean isDeferrableCatalogFailure(Exception error) {
+        if (error instanceof ScanApiException) {
+            ScanApiException apiError = (ScanApiException) error;
+            return apiError.kind == ScanApiException.Kind.NETWORK
+                    || apiError.kind == ScanApiException.Kind.TIMEOUT
+                    || (apiError.kind == ScanApiException.Kind.HTTP && apiError.httpCode >= 500);
+        }
+        return error instanceof java.io.IOException;
     }
 
     /** Uploads both photos and leaves the durable draft ready for the catalog/POST stages. */
@@ -204,7 +274,7 @@ public class ScanSubmissionRepository {
                     String name = profile.nome();
                     String email = profile.email();
                     auth.requireSameUser(saved.firebaseUid);
-                    Log.d("VENUS_SCAN_SIGNATURES", "CONNECT_ACCOUNT scanId=" + scanId);
+                    Log.d("VENUS_SCAN_SIGNATURES", "ACCOUNT_PROVISIONING scanId=" + scanId);
                     signatures = client.connectAccountAndGetSignatures(saved.firebaseUid, name, email, scanId);
                 } else {
                     signatures = client.signatures(saved.firebaseUid, saved.draft.getScanId());

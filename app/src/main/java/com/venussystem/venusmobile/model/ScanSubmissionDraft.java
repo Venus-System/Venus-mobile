@@ -60,8 +60,14 @@ public class ScanSubmissionDraft implements Serializable {
     }
 
     private String frontPhotoPath;
+    /** SHA-256 of the immutable local evidence copy; retained after redaction. */
+    private String frontPhotoSha256;
     private String frontOcrText;
     private List<String> frontOcrLines;
+    /** Raw spatial evidence retained locally for section/audit tooling. */
+    private List<ScanOcrTokenEvidence> frontOcrTokens;
+    /** Local OCR-pass metadata; excluded from the server request contract. */
+    private List<ScanOcrAttempt> frontOcrAttempts;
 
     private List<String> brandCandidates;
     private List<String> productCandidates;
@@ -73,8 +79,14 @@ public class ScanSubmissionDraft implements Serializable {
     private ScanCosmeticClassification classification;
 
     private String backPhotoPath;
+    /** SHA-256 of the immutable local evidence copy; retained after redaction. */
+    private String backPhotoSha256;
     private String backOcrText;
     private List<String> backOcrLines;
+    /** Raw spatial evidence retained locally for section/audit tooling. */
+    private List<ScanOcrTokenEvidence> backOcrTokens;
+    /** Local OCR-pass metadata; excluded from the server request contract. */
+    private List<ScanOcrAttempt> backOcrAttempts;
     private ScanBackData backData;
 
     public ScanSubmissionDraft() {
@@ -84,6 +96,10 @@ public class ScanSubmissionDraft implements Serializable {
         productCandidates = new ArrayList<>();
         presentationCandidates = new ArrayList<>();
         backOcrLines = new ArrayList<>();
+        frontOcrTokens = new ArrayList<>();
+        backOcrTokens = new ArrayList<>();
+        frontOcrAttempts = new ArrayList<>();
+        backOcrAttempts = new ArrayList<>();
     }
 
     @NonNull
@@ -100,6 +116,8 @@ public class ScanSubmissionDraft implements Serializable {
         draft.frontOcrText = ocr.getFullText();
         draft.frontOcrLines =
                 new ArrayList<>(ocr.getLines());
+        draft.frontOcrTokens = snapshotTokens(ocr);
+        draft.frontOcrAttempts = new ArrayList<>(ocr.getAttempts());
 
         draft.brandCandidates =
                 new ArrayList<>(
@@ -164,6 +182,15 @@ public class ScanSubmissionDraft implements Serializable {
         return frontPhotoPath == null ? "" : frontPhotoPath;
     }
 
+    @NonNull
+    public String getFrontPhotoSha256() {
+        return frontPhotoSha256 == null ? "" : frontPhotoSha256;
+    }
+
+    public void setFrontPhotoSha256(String frontPhotoSha256) {
+        this.frontPhotoSha256 = frontPhotoSha256;
+    }
+
     public void setFrontPhotoPath(String frontPhotoPath) {
         this.frontPhotoPath = frontPhotoPath;
     }
@@ -213,6 +240,15 @@ public class ScanSubmissionDraft implements Serializable {
         return backPhotoPath;
     }
 
+    @NonNull
+    public String getBackPhotoSha256() {
+        return backPhotoSha256 == null ? "" : backPhotoSha256;
+    }
+
+    public void setBackPhotoSha256(String backPhotoSha256) {
+        this.backPhotoSha256 = backPhotoSha256;
+    }
+
     public void setBackPhotoPath(String backPhotoPath) {
         this.backPhotoPath = backPhotoPath;
     }
@@ -238,6 +274,38 @@ public class ScanSubmissionDraft implements Serializable {
                 new ArrayList<>(lines);
     }
 
+    @NonNull
+    public List<ScanOcrTokenEvidence> getFrontOcrTokens() {
+        return Collections.unmodifiableList(frontOcrTokens == null
+                ? Collections.emptyList() : frontOcrTokens);
+    }
+
+    @NonNull
+    public List<ScanOcrTokenEvidence> getBackOcrTokens() {
+        return Collections.unmodifiableList(backOcrTokens == null
+                ? Collections.emptyList() : backOcrTokens);
+    }
+
+    public void setBackOcrTokens(@NonNull List<ScanOcrTokenEvidence> tokens) {
+        this.backOcrTokens = new ArrayList<>(tokens);
+    }
+
+    @NonNull
+    public List<ScanOcrAttempt> getFrontOcrAttempts() {
+        return Collections.unmodifiableList(frontOcrAttempts == null
+                ? Collections.emptyList() : frontOcrAttempts);
+    }
+
+    @NonNull
+    public List<ScanOcrAttempt> getBackOcrAttempts() {
+        return Collections.unmodifiableList(backOcrAttempts == null
+                ? Collections.emptyList() : backOcrAttempts);
+    }
+
+    public void setBackOcrAttempts(@NonNull List<ScanOcrAttempt> attempts) {
+        this.backOcrAttempts = new ArrayList<>(attempts);
+    }
+
     @Nullable
     public ScanBackData getBackData() {
         return backData;
@@ -261,6 +329,8 @@ public class ScanSubmissionDraft implements Serializable {
         frontPhotoPath = null;
         frontOcrText = "";
         if (frontOcrLines != null) frontOcrLines.clear();
+        if (frontOcrTokens != null) frontOcrTokens.clear();
+        if (frontOcrAttempts != null) frontOcrAttempts.clear();
         if (brandCandidates != null) brandCandidates.clear();
         if (productCandidates != null) productCandidates.clear();
         if (presentationCandidates != null) presentationCandidates.clear();
@@ -270,6 +340,18 @@ public class ScanSubmissionDraft implements Serializable {
         backPhotoPath = null;
         backOcrText = "";
         if (backOcrLines != null) backOcrLines.clear();
+        if (backOcrTokens != null) backOcrTokens.clear();
+        if (backOcrAttempts != null) backOcrAttempts.clear();
         backData = null;
+    }
+
+    private static List<ScanOcrTokenEvidence> snapshotTokens(ScanOcrResult ocr) {
+        List<ScanOcrTokenEvidence> result = new ArrayList<>();
+        if (ocr == null || ocr.getTokens() == null) return result;
+        for (ScanOcrToken token : ocr.getTokens()) {
+            ScanOcrTokenEvidence evidence = ScanOcrTokenEvidence.from(token);
+            if (evidence != null) result.add(evidence);
+        }
+        return result;
     }
 }

@@ -239,9 +239,9 @@
     <string name="lista_erro_nome_repetido">Você já tem uma lista com esse nome</string>
     <string name="acao_tentar_de_novo">Tentar de novo</string>
     <string name="erro_sem_conexao">Não foi possível falar com o servidor. Verifique sua conexão e tente de novo.</string>
-    <string name="historico_titulo">Histórico</string>
+    <string name="historico_titulo">Produtos acessados</string>
     <string name="historico_hoje">Hoje</string>
-    <string name="historico_vazio">Você ainda não escaneou nenhum produto.</string>
+    <string name="historico_vazio">Você ainda não acessou nenhum produto.</string>
     <string name="historico_em_analise">Em análise</string>
     <string name="historico_aprovado">Aprovado</string>
     <string name="historico_recusado">Precisa de revisão</string>

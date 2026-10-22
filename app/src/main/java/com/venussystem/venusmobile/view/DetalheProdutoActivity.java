@@ -30,6 +30,7 @@ import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Colecao;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.repository.ColecaoRepository;
+import com.venussystem.venusmobile.repository.HistoricoCatalogoRepository;
 import com.venussystem.venusmobile.repository.ListaItemRepository;
 import com.venussystem.venusmobile.repository.ProdutoRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
@@ -68,6 +69,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
     private ColecaoRepository colecaoRepository;
     private ListaItemRepository itemRepository;
+    private HistoricoCatalogoRepository historicoCatalogoRepository;
 
     private Produto produto;
     private long produtoIdRecebido = -1L;
@@ -95,6 +97,9 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         itemRepository =
                 new ListaItemRepository(this);
+
+        historicoCatalogoRepository =
+                new HistoricoCatalogoRepository(this);
 
         findViewById(
                 R.id.btnVoltar
@@ -338,6 +343,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         produto = produtoEncontrado;
         telaInicializada = true;
+        historicoCatalogoRepository.registrarAcesso(produtoEncontrado);
 
         Log.d(
                 TAG,

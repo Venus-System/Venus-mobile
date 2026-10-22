@@ -248,6 +248,12 @@ final class ScanCatalogScoring {
                     || frase.trim().isEmpty()) {
                 continue;
             }
+            // Capacity is a shared presentation field, never product
+            // identity. Do not let "150 ML" decide between variants.
+            if (frase.trim().matches(
+                    "(?i)\\d+(?:[.,]\\d+)?\\s*(?:ML|G|GR|KG|L|FLOZ)")) {
+                continue;
+            }
             int quantidadePalavras =
                     frase
                             .trim()
@@ -341,16 +347,12 @@ final class ScanCatalogScoring {
          * basta quando há diferença suficiente para o
          * segundo produto.
          */
-        if (termosFortesCasados < 2) {
-            /*
-             * Uma exceção segura:
-             * dois tokens EXATOS do nome do produto
-             * também são uma evidência forte.
-             */
-            if (tokensAlvoExatos < 2) {
-                return null;
-            }
-        }
+        /*
+         * Evidência parcial continua sendo devolvida ao matcher. Ela não
+         * abre o produto: o matcher exige cobertura/termos fortes e retorna
+         * AMBIGUOUS quando a decisão não é segura. Descartá-la aqui convertia
+         * dois produtos igualmente compatíveis em NOT_FOUND.
+         */
         String candidatoFinal =
                 melhorFrase != null
                         ? melhorFrase
@@ -362,7 +364,8 @@ final class ScanCatalogScoring {
                         termosFortesCasados,
                         tokensAlvoExatos
                 ),
-                melhorTermoScore
+                melhorTermoScore,
+                tokensAlvoExatos
         );
     }
 
@@ -561,11 +564,13 @@ final class ScanCatalogScoring {
         final String candidatoOCR;
         final int termosFortesCasados;
         final double melhorTermoScore;
+        final int tokensAlvoExatos;
         ProductEvidence(
                 double score,
                 String candidatoOCR,
                 int termosFortesCasados,
-                double melhorTermoScore
+                double melhorTermoScore,
+                int tokensAlvoExatos
         ) {
             this.score =
                     score;
@@ -575,6 +580,8 @@ final class ScanCatalogScoring {
                     termosFortesCasados;
             this.melhorTermoScore =
                     melhorTermoScore;
+            this.tokensAlvoExatos =
+                    tokensAlvoExatos;
         }
     }
 }

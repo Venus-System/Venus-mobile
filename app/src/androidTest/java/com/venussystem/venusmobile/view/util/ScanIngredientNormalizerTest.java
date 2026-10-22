@@ -55,6 +55,74 @@ public class ScanIngredientNormalizerTest {
         assertPreservedForReview(data);
     }
 
+    @Test public void rexonaClinicalCleanMenCompositionIsFullyRecognized() {
+        ScanBackData data = ScanBackExtractor.extract(Arrays.asList(
+                "INGREDIENTES: AQUA, ALUMINUM SESQUICHLOROHYDRATE, STEARYL ALCOHOL, DIMETHICONE,",
+                "GLYCERIN, GLYCERYL STEARATE, PPG-15 STEARYL ETHER, CALCIUM CHLORIDE,",
+                "STEARETH-20, STEARETH-2, PENTAERYTHRITYL TETRA-DI-T-BUTYL HYDROXYHYDROCINNAMATE,",
+                "GELATIN CROSSPOLYMER, ALPHA-ISOMETHYL IONONE, BENZYL SALICYLATE,",
+                "HEXYL CINNAMAL, LIMONENE, LINALOOL."));
+
+        List<String> expected = Arrays.asList(
+                "AQUA", "ALUMINUM SESQUICHLOROHYDRATE", "STEARYL ALCOHOL",
+                "DIMETHICONE", "GLYCERIN", "GLYCERYL STEARATE", "PPG-15 STEARYL ETHER",
+                "CALCIUM CHLORIDE", "STEARETH-20", "STEARETH-2",
+                "PENTAERYTHRITYL TETRA-DI-T-BUTYL HYDROXYHYDROCINNAMATE",
+                "GELATIN CROSSPOLYMER", "ALPHA-ISOMETHYL IONONE", "BENZYL SALICYLATE",
+                "HEXYL CINNAMAL", "LIMONENE", "LINALOOL");
+
+        assertEquals(expected, names(data));
+        data.getIngredients().forEach(candidate -> {
+            assertEquals("UNRESOLVED", candidate.getStatus());
+            assertTrue(ScanIngredientPolicy.isRecognized(candidate.getNormalizedName()));
+        });
+    }
+
+    @Test public void rexonaClinicalCleanMenRecoversBoundariesWhenCommasAreLost() {
+        ScanBackData data = ScanBackExtractor.extract(Arrays.asList(
+                "INGREDIENTES: AQUA ALUMINUM SESQUICHLOROHYDRATE STEARYL ALCOHOL DIMETHICONE",
+                "GLYCERIN GLYCERYL STEARATE PPG-15 STEARYL ETHER CALCIUM CHLORIDE",
+                "STEARETH-20 STEARETH-2 PENTAERYTHRITYL TETRA-DI-T-BUTYL HYDROXYHYDROCINNAMATE",
+                "GELATIN CROSSPOLYMER ALPHA-ISOMETHYL IONONE BENZYL SALICYLATE",
+                "HEXYL CINNAMAL LIMONENE LINALOOL."));
+
+        assertEquals(17, data.getIngredients().size());
+        assertEquals("AQUA", data.getIngredients().get(0).getNormalizedName());
+        assertEquals("PENTAERYTHRITYL TETRA-DI-T-BUTYL HYDROXYHYDROCINNAMATE",
+                data.getIngredients().get(10).getNormalizedName());
+        assertEquals("LINALOOL", data.getIngredients().get(16).getNormalizedName());
+    }
+
+    @Test public void rexonaClinicalPhotoRepairsOcrTyposAndStopsAtWarnings() {
+        ScanBackData data = ScanBackExtractor.extract(Arrays.asList(
+                "NGREDIENTES: AQUA ALUMNUM SESQUICHLOROEYDRRATE STEAYE",
+                "ALOOHOL DIMETHICONE, GLYCERIN, PPG-15 STEARYL ETHER, GLYCERYL STEARATE CALCUM",
+                "CHLORIOE STEARE TH-20 GLYCNE. PARFUM, STEARETH-2, PENTAERYTHRITYL TETRA-O--8UTYL",
+                "HYDROXYHYDROCINNAMATE, GELATIN CROSSPOLYMER ALPYA-ISOMETHYL IONONE 8ENZYL",
+                "SALUCYLATE, HEXYL CINHAMAL UMONENE LINALOOL AOVERTÉNCIAS E MODO DE USO- APLICAR",
+                "SOMENTE NAS AXILAS. CASO OCORRA ALERGIA, SUSPENDER O USO IMEDIATAMENTE.",
+                "PROCURAR ORIENTAÇÃO MÉDICA. MANTER FORA DO ALCANCE DAS CRIANÇAS."));
+
+        List<String> values = names(data);
+        assertTrue(values.contains("AQUA"));
+        assertTrue(values.contains("ALUMINUM SESQUICHLOROHYDRATE"));
+        assertTrue(values.contains("STEARYL ALCOHOL"));
+        assertTrue(values.contains("CALCIUM CHLORIDE"));
+        assertTrue(values.contains("STEARETH-20"));
+        assertTrue(values.toString(), values.contains("ALPHA-ISOMETHYL IONONE"));
+        assertTrue(values.contains("BENZYL SALICYLATE"));
+        assertTrue(values.contains("HEXYL CINNAMAL"));
+        assertTrue(values.contains("LIMONENE"));
+        assertTrue(values.contains("LINALOOL"));
+        assertTrue(values.stream().noneMatch(value -> value.contains("AOVERT")
+                || value.contains("MODO DE USO")
+                || value.contains("PROCURAR ORIENTACAO")
+                || value.contains("ALERGA")));
+        assertFalse(data.getIngredientsRawText().contains("AOVERTÉNCIAS"));
+        assertTrue(data.getFullText().contains("AOVERTÉNCIAS"));
+        assertNoAdministrativeResiduePromoted(data);
+    }
+
     @Test public void stopsOnlyAtTerminalPackagingSuffix() {
         ScanBackData data = ScanBackExtractor.extract(Arrays.asList(
                 "INGREDIENTES: AQUA, LIMONENE.", "S2ACG", "657381"));

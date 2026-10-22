@@ -1,7 +1,6 @@
 package com.venussystem.venusmobile.repository;
 
 import com.venussystem.venusmobile.repository.api.dto.ScanSessionRequest;
-import com.venussystem.venusmobile.domain.scan.ScanIngredientPolicy;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -16,8 +15,11 @@ public final class ScanSubmissionValidator {
 
     /**
      * Validates only the ingredient portion before any future Mongo POST.
-     * OCR text is preserved for audit, but obvious package/company residue
-     * must never be promoted into the ingredient array or sent downstream.
+     * OCR text is preserved for audit. Obvious package/company residue may
+     * remain as an unresolved candidate so the administrator can review it;
+     * it is never promoted automatically to a canonical ingredient. The
+     * mobile submission contains only the OCR candidate; ingredient creation
+     * is deliberately outside this flow and has no mobile API path.
      */
     public static void validateIngredientQuality(ScanSessionRequest r) {
         require(r != null, "Submissão ausente.");
@@ -36,12 +38,10 @@ public final class ScanSubmissionValidator {
             }
             String name = ingredient.rawName.trim();
             require(!name.isEmpty() && name.length() <= 300, "Nome de ingrediente inválido.");
-            if (ScanIngredientPolicy.hasAdministrativeText(name)) {
-                throw new IllegalArgumentException(
-                        "Um ingrediente contém texto administrativo; revise o verso antes do cadastro.");
-            }
-            // Unknown OCR names are valid draft candidates. The API matcher marks them NEW
-            // and the administrator can LINK, CREATE or DISCARD them during review.
+            // Unknown or administrative-looking OCR is retained as a draft
+            // candidate. It remains NEEDS_REVIEW; the administrator decides
+            // whether to link or discard it during review. The mobile flow
+            // never creates an ingredient.
         }
     }
 

@@ -301,6 +301,24 @@ public class ScanBackExtractorInstrumentedTest {
     }
 
     @Test
+    public void recoversCompositionLinesImmediatelyBeforeIngredientHeading() {
+        ScanBackData data = ScanBackExtractor.extract(Arrays.asList(
+                "WPLENE DIMETHICONOL, ALPHA-ISOMETNY",
+                "CARBONATE,",
+                "NREDENTES: BUTANE, ISOBUTANE, PROPANE, PPG-14 BUTN E",
+                "DPENTASILOXANE, ALUMINUM SESQUICHLOROHYDRATE,",
+                "HELANTHUS ANNUUS SEED OIL, AQUA, CALCIUM CHLORIDE,",
+                "HEXyl CINNAMAL, LIMONENE.",
+                "Unilever"));
+
+        String raw = data.getIngredientsRawText();
+        assertTrue(raw.indexOf("DIMETHICONOL") >= 0);
+        assertTrue(raw.indexOf("DIMETHICONOL") < raw.indexOf("BUTANE"));
+        assertTrue(raw.contains("CARBONATE"));
+        assertTrue(!raw.contains("Unilever"));
+    }
+
+    @Test
     public void recoversIngredientsAfterInterleavedMarketingColumn() {
         ScanBackData data = ScanBackExtractor.extract(Arrays.asList(
                 "INGREDIENTES: BUTANE, ISOBUTANE, PROPANE, PPG-14 BUTL ETE",
@@ -315,6 +333,33 @@ public class ScanBackExtractorInstrumentedTest {
         assertTrue(names(data).contains("LIMONENE"));
         assertTrue(data.getIngredients().size() > 4);
         assertTrue(!data.getIngredientsRawText().contains("MERCADO DE DESODORANTES"));
+    }
+
+    @Test
+    public void excludesPackagingAndManufacturerTailAfterIngredientPeriod() {
+        List<String> lines = Arrays.asList(
+                "NGREDIENTES: BUTANE, ISOBUTANE, PROPANE, PPG-14 BUTM ETR",
+                "troLOPENTASILOXANE, ALUMINUM SESQUICHLOROHYDRATE.",
+                "EJANTHUS ANNUUS SEED OIL, DISTEARDIMONIUM HECTORITE, C84",
+                "aOATE, GLYCINE, AQUA, CALCIUM CHLORIDE, 0CTYL DODECUWL,M",
+                "OPYLENE CARBONATE, DIMETHICONOL, ALPHA-ISOMETHY ON",
+                "ANOL HEYXYL CINNAMAL, LIMONENE.",
+                "T3382 4G",
+                "LA CM E M",
+                "Unilever",
+                "6965732");
+
+        ScanBackData data = ScanBackExtractor.extract(lines);
+
+        assertTrue(data.getIngredientsRawText().contains("LIMONENE"));
+        assertTrue(!data.getIngredientsRawText().contains("T3382"));
+        assertTrue(!data.getIngredientsRawText().contains("Unilever"));
+        assertTrue(!data.getIngredientsRawText().contains("6965732"));
+        assertTrue(names(data).stream().noneMatch(n -> n.contains("T3382")));
+        assertTrue(names(data).stream().noneMatch(n -> n.toUpperCase().contains("UNILEVER")));
+        assertTrue(names(data).stream().noneMatch(n -> n.contains("6965732")));
+        assertEquals(lines, data.getLines());
+        assertEquals(String.join("\n", lines), data.getFullText());
     }
 
     private static List<String> names(ScanBackData data) {
@@ -345,6 +390,38 @@ public class ScanBackExtractorInstrumentedTest {
             assertEquals(lines, data.getLines());
             assertEquals(String.join("\n", lines), data.getFullText());
             assertTrue(!data.getIngredientsRawText().contains("69657381"));
+        }
+    }
+
+    @Test
+    public void reconstructsWholeLabelCapturedAtNinetyDegrees() {
+        List<String> lines = Arrays.asList(
+                "INGREDIENTES: AQUA,",
+                "GLYCINE, PARFUM",
+                "LIMONENE, LINALOOL");
+        // Canonical rows are represented vertically in the image. The two
+        // tokens in each row keep their reading order along the image Y axis.
+        for (float angle : new float[]{-90f, 90f}) {
+            List<ScanOcrToken> tokens = Arrays.asList(
+                    rotatedToken("INGREDIENTES:", 500, 50, 520, 140, angle, 0, 0),
+                    rotatedToken("AQUA,", 500, 150, 520, 220, angle, 0, 1),
+                    rotatedToken("GLYCINE,", 300, 50, 320, 130, angle, 1, 0),
+                    rotatedToken("PARFUM", 300, 140, 320, 220, angle, 1, 1),
+                    rotatedToken("LIMONENE,", 100, 50, 120, 140, angle, 2, 0),
+                    rotatedToken("LINALOOL", 100, 150, 120, 230, angle, 2, 1));
+
+            List<List<ScanOcrToken>> rows = ScanBackSpatialLayout.rows(lines, tokens);
+            assertEquals(3, rows.size());
+            assertEquals("INGREDIENTES: AQUA,", ScanBackSpatialLayout.join(rows.get(0)));
+            assertEquals("GLYCINE, PARFUM", ScanBackSpatialLayout.join(rows.get(1)));
+            assertEquals("LIMONENE, LINALOOL", ScanBackSpatialLayout.join(rows.get(2)));
+
+            ScanBackData data = ScanBackExtractor.extract(
+                    new ScanOcrResult(String.join("\n", lines), lines, tokens));
+            assertEquals(Arrays.asList("AQUA", "GLYCINE", "PARFUM", "LIMONENE", "LINALOOL"),
+                    names(data));
+            assertEquals(lines, data.getLines());
+            assertEquals(String.join("\n", lines), data.getFullText());
         }
     }
 
@@ -422,6 +499,27 @@ public class ScanBackExtractorInstrumentedTest {
                 new Rect(left, top, right, bottom),
                 0.9f,
                 0f,
+                0,
+                lineIndex,
+                elementIndex
+        );
+    }
+
+    private static ScanOcrToken rotatedToken(
+            String text,
+            int left,
+            int top,
+            int right,
+            int bottom,
+            float angle,
+            int lineIndex,
+            int elementIndex
+    ) {
+        return new ScanOcrToken(
+                text,
+                new Rect(left, top, right, bottom),
+                0.9f,
+                angle,
                 0,
                 lineIndex,
                 elementIndex

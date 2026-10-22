@@ -74,8 +74,6 @@ final class ScanCatalogText {
             case "DRY":
             case "LONG":
             case "LASTING":
-            case "INVISIBLE":
-            case "INVISIVEL":
                 return true;
             default:
                 return false;
@@ -521,10 +519,9 @@ final class ScanCatalogText {
     ) {
         Set<String> resultado =
                 new LinkedHashSet<>();
-        for (String token :
-                tokensSignificativos(
-                        texto
-                )) {
+        String[] sourceTokens = normalizarCampo(texto).split("\\s+");
+        Set<String> source = tokensSignificativos(texto);
+        for (String token : source) {
             if (token.length() < 3) {
                 continue;
             }
@@ -551,11 +548,42 @@ final class ScanCatalogText {
             )) {
                 continue;
             }
+            // OCR/extraction may split "150 ML" into two tokens. Neither
+            // side is product identity, and keeping it makes two variants
+            // with the same capacity look artificially equivalent.
+            if (token.matches("\\d+(?:[.,]\\d+)?")
+                    && hasCapacityUnitAfter(sourceTokens, token)) {
+                continue;
+            }
+            if (token.matches("(?i)ML|G|GR|KG|L|FLOZ")
+                    && hasNumericBefore(sourceTokens, token)) {
+                continue;
+            }
             resultado.add(
                     token
             );
         }
         return resultado;
+    }
+
+    private static boolean hasCapacityUnitAfter(String[] tokens, String numeric) {
+        for (int i = 0; i + 1 < tokens.length; i++) {
+            if (tokens[i].equals(numeric)
+                    && tokens[i + 1].matches("(?i)ML|G|GR|KG|L|FLOZ")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasNumericBefore(String[] tokens, String unit) {
+        for (int i = 1; i < tokens.length; i++) {
+            if (tokens[i].equals(unit)
+                    && tokens[i - 1].matches("\\d+(?:[.,]\\d+)?")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

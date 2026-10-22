@@ -190,6 +190,9 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         Log.d(TAG_OCR, "OCR_FRONT_CONCLUIDO chars="
                 + (result.getFullText() == null ? 0 : result.getFullText().length())
                 + " lines=" + result.getLines().size());
+        Log.d(TAG_OCR, "OCR_PASSES count=" + result.getAttempts().size()
+                + " selected=" + result.getSelectedVariant()
+                + " geometry=" + result.hasSelectedSpatialGeometry());
 
         if (result.getFullText() == null
                 || result.getFullText().trim().isEmpty()) {
@@ -246,8 +249,10 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
             return;
         }
 
-        Log.d(TAG_SCAN, "PRODUTO NÃO ENCONTRADO NO CATÁLOGO");
-        setBadge("Produto não encontrado. Verificando...");
+        if (match.needsReview()) {
+            Log.d(TAG_SCAN, "MATCH_REVIEW status=" + match.getResolutionStatus());
+        }
+        setBadge("Verificando o produto...");
 
         if (ultimoOcr == null || ultimoFrontData == null) {
             Log.e(TAG_SCAN, "Resultado do OCR/extração ainda não disponível");

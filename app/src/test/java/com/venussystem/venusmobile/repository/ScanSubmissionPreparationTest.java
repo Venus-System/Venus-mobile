@@ -58,6 +58,16 @@ public class ScanSubmissionPreparationTest {
         assertNull(r.ocr.front.extracted.category);
         assertEquals("150 ML", r.ocr.back.extracted.netContent);
     }
+    @Test public void qualityStatusRemainsCompatibleWithApiForFinalSubmission() throws Exception {
+        ScanSubmissionDraft d = draft();
+        d.setPhotoQuality(new ScanPhotoQuality(.1, .5, true, "COMPLETED"));
+        ScanSessionRequest r = ScanSubmissionMapper.prepare(d, "user-a",
+                new ScanSessionRequest.Device("installation-1", "Android", "1.0", "Test device"),
+                null);
+
+        assertEquals("COMPLETED", r.qualityCheck.status);
+        ScanSubmissionValidator.validate(r, false);
+    }
     @Test public void capsDerivedBackFieldsAtApiLimitAndKeepsFullOcr() throws Exception {
         // Verso real de 2659 caracteres em que 2200 caíram no otherText: a API
         // aceita 2000 por campo extraído, e o envio parava no validador.
@@ -90,12 +100,79 @@ public class ScanSubmissionPreparationTest {
         assertEquals("GLYCINE", r.ingredients.get(0).rawName);
         assertTrue(r.ocr.back.fullText.contains("PARFUM"));
     }
+
+    @Test public void mapperUsesOnlyResolvedCatalogueNamesAndKeepsUncertainRawText() throws Exception {
+        ScanIngredientCatalog.Report report = new ScanIngredientCatalog.Report();
+        ScanIngredientCatalog.Match known = new ScanIngredientCatalog.Match();
+        known.position = 1; known.status = "KNOWN"; known.resolutionStatus = "RESOLVED";
+        known.rawName = "AQUA"; known.normalizedName = "AQUA";
+        known.inciName = "AQUA"; known.ingredientId = 2L;
+        ScanIngredientCatalog.Match uncertain = new ScanIngredientCatalog.Match();
+        uncertain.position = 2; uncertain.status = "NOT_FOUND"; uncertain.resolutionStatus = "UNRESOLVED";
+        uncertain.rawName = "PARFUM"; uncertain.normalizedName = "PARFUM"; uncertain.needsReview = true;
+        report.matches.add(known); report.matches.add(uncertain);
+        report.expectedCount = 2; report.resolved = 1; report.unresolved = 1;
+        report.validationStatus = "NEEDS_REVIEW"; report.needsReview = true;
+        ScanSessionRequest r = ScanSubmissionMapper.prepare(draft(), "user-a",
+                new ScanSessionRequest.Device("installation-1", "Android", "1.0", "Test device"),
+                new ScanSessionRequest.QualityCheck(.1, .5, true, "COMPLETED"), report);
+        assertEquals("AQUA", r.ingredients.get(0).rawName);
+        assertEquals("PARFUM", r.ingredients.get(1).rawName);
+        JsonObject uncertainWire = new Gson().toJsonTree(r.ingredients.get(1)).getAsJsonObject();
+        assertFalse("NOT_FOUND/ambiguous candidates must not carry a database id",
+                uncertainWire.has("ingredientId"));
+    }
+
+    @Test public void rejectsCatalogueEvidenceWithMissingPosition() throws Exception {
+        ScanIngredientCatalog.Report report = new ScanIngredientCatalog.Report();
+        ScanIngredientCatalog.Match known = new ScanIngredientCatalog.Match();
+        known.position = 99;
+        known.status = "KNOWN";
+        known.resolutionStatus = "RESOLVED";
+        known.rawName = "AQUA";
+        known.normalizedName = "AQUA";
+        known.inciName = "AQUA";
+        known.ingredientId = 2L;
+        report.matches.add(known);
+        assertThrows(IllegalArgumentException.class, () -> ScanSubmissionMapper.prepare(draft(), "user-a",
+                new ScanSessionRequest.Device("installation-1", "Android", "1.0", "Test device"),
+                new ScanSessionRequest.QualityCheck(.1, .5, true, "COMPLETED"), report));
+    }
+
+    @Test public void rejectsCatalogueEvidenceForDifferentOcrToken() throws Exception {
+        ScanIngredientCatalog.Report report = new ScanIngredientCatalog.Report();
+        ScanIngredientCatalog.Match match = new ScanIngredientCatalog.Match();
+        match.position = 1;
+        match.rawName = "OTHER";
+        match.normalizedName = "OTHER";
+        match.status = "KNOWN";
+        match.resolutionStatus = "RESOLVED";
+        match.inciName = "AQUA";
+        match.ingredientId = 2L;
+        report.matches.add(match);
+        ScanIngredientCatalog.Match second = new ScanIngredientCatalog.Match();
+        second.position = 2;
+        second.rawName = "PARFUM";
+        second.normalizedName = "PARFUM";
+        second.status = "NOT_FOUND";
+        second.resolutionStatus = "UNRESOLVED";
+        second.needsReview = true;
+        report.matches.add(second);
+        report.expectedCount = 2;
+        report.resolved = 1;
+        report.unresolved = 1;
+        report.validationStatus = "NEEDS_REVIEW";
+        report.needsReview = true;
+        assertThrows(IllegalArgumentException.class, () -> ScanSubmissionMapper.prepare(draft(), "user-a",
+                new ScanSessionRequest.Device("installation-1", "Android", "1.0", "Test device"),
+                new ScanSessionRequest.QualityCheck(.1, .5, true, "COMPLETED"), report));
+    }
     @Test public void promotesBestFrontCandidatesWithoutDiscardingRawOcr() throws Exception {
         ScanSubmissionDraft d = draft();
         ScanSubmissionDraft selected = ScanSubmissionDraft.fromFront(
                 d.getFrontPhotoPath(),
                 new ScanOcrResult("DOVE GO FRESH CREME", Arrays.asList("DOVE", "GO FRESH", "CREME")),
-                new ScanFrontData(Arrays.asList("DOVE", "CREME"), Arrays.asList("CREME", "GO FRESH"),
+                new ScanFrontData(Arrays.asList("DOVE", "CREME"), Arrays.asList("CUIDADO", "CREME", "GO FRESH"),
                         Arrays.asList("SPRAY"), "150 ML", ""),
                 d.getClassification());
         selected.bindToUser("user-a");
@@ -110,12 +187,11 @@ public class ScanSubmissionPreparationTest {
         assertEquals("GO FRESH", r.ocr.front.extracted.productName);
         assertTrue(r.ocr.front.fullText.contains("DOVE GO FRESH"));
     }
-    @Test public void rejectsAdministrativeResidueBeforeMongoPreparation() throws Exception {
+    @Test public void preservesAdministrativeResidueForMongoReview() throws Exception {
         ScanSessionRequest r = request();
         r.ocr.back.extracted.ingredientsText = "AQUA, iM333 2 4G Unilever";
         r.ingredients.add(new ScanSessionRequest.Ingredient(3, "iM333 2 4G Unilever"));
-        assertThrows(IllegalArgumentException.class,
-                () -> ScanSubmissionValidator.validateIngredientQuality(r));
+        ScanSubmissionValidator.validateIngredientQuality(r);
     }
 
     @Test public void preservesNewOcrCandidatesForAdministrativeReview() throws Exception {
@@ -199,6 +275,8 @@ public class ScanSubmissionPreparationTest {
         ScanDraftStore.SavedDraft restored = store.read("user-a", d.getScanId());
         assertArrayEquals(new byte[]{1, 2, 3}, Files.readAllBytes(Path.of(restored.draft.getFrontPhotoPath())));
         assertArrayEquals(new byte[]{4, 5, 6}, Files.readAllBytes(Path.of(restored.draft.getBackPhotoPath())));
+        assertEquals(64, restored.draft.getFrontPhotoSha256().length());
+        assertEquals(64, restored.draft.getBackPhotoSha256().length());
         assertEquals(saved.draft.getScanId(), restored.draft.getScanId());
         assertEquals("WAITING_UPLOAD", restored.draft.getStatus());
         assertEquals(1, store.pending("user-a").size());
@@ -287,6 +365,15 @@ public class ScanSubmissionPreparationTest {
         ScanDraftStore.SavedDraft saved = store.save("user-a", d);
         assertArrayEquals(new byte[]{1, 2, 3}, Files.readAllBytes(Path.of(saved.draft.getFrontPhotoPath())));
         assertEquals(1, store.pending("user-a").size());
+    }
+
+    @Test public void refusesTamperedEvidenceBeforeUpload() throws Exception {
+        ScanSubmissionDraft d = draft();
+        Path root = temporary.newFolder().toPath();
+        ScanDraftStore store = new ScanDraftStore(root);
+        ScanDraftStore.SavedDraft saved = store.save("user-a", d);
+        Files.write(Path.of(saved.draft.getFrontPhotoPath()), new byte[]{9, 9, 9});
+        assertThrows(java.io.IOException.class, () -> store.read("user-a", d.getScanId()));
     }
     @Test public void missingPhotoNeverPublishesReadyDraft() throws Exception {
         ScanSubmissionDraft d = draft();

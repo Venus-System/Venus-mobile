@@ -24,6 +24,17 @@ public class ScanPhotoQualityAnalyzerInstrumentedTest {
         assertFalse(ScanPhotoQualityAnalyzer.measure(blank).isBackgroundOk());
         blank.recycle();
     }
+    @Test public void aggregateUsesWorstBlurMeanBrightnessAndBothBackgrounds() {
+        com.venussystem.venusmobile.model.ScanPhotoQuality front =
+                new com.venussystem.venusmobile.model.ScanPhotoQuality(.20, .40, true, "COMPLETED");
+        com.venussystem.venusmobile.model.ScanPhotoQuality back =
+                new com.venussystem.venusmobile.model.ScanPhotoQuality(.80, .60, false, "COMPLETED");
+        com.venussystem.venusmobile.model.ScanPhotoQuality aggregate =
+                ScanPhotoQualityAnalyzer.combine(front, back);
+        assertEquals(.80, aggregate.getBlurScore(), 0.0001);
+        assertEquals(.50, aggregate.getBrightness(), 0.0001);
+        assertFalse(aggregate.isBackgroundOk());
+    }
     private static void assertBounded(com.venussystem.venusmobile.model.ScanPhotoQuality q) {
         assertTrue(q.getBlurScore() >= 0 && q.getBlurScore() <= 1);
         assertTrue(q.getBrightness() >= 0 && q.getBrightness() <= 1);

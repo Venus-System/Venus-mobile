@@ -1,6 +1,7 @@
 package com.venussystem.venusmobile.view.util;
 
 import android.util.Log;
+import com.venussystem.venusmobile.domain.scan.ScanIngredientPolicy;
 import com.venussystem.venusmobile.model.ScanBackIngredientCandidate;
 import com.venussystem.venusmobile.model.ScanOcrToken;
 import java.nio.charset.StandardCharsets;
@@ -20,18 +21,10 @@ import static com.venussystem.venusmobile.view.util.ScanBackIngredientSection.St
 import static com.venussystem.venusmobile.view.util.ScanBackIngredientSection.detectarFimIngredientes;
 import static com.venussystem.venusmobile.view.util.ScanBackIngredientSection.encontrarHeadingIngredientesRobusto;
 import static com.venussystem.venusmobile.view.util.ScanBackIngredientSection.extrairPrefixoAntesDoStop;
-import static com.venussystem.venusmobile.view.util.ScanBackRules.ADDRESS_INLINE_PATTERN;
-import static com.venussystem.venusmobile.view.util.ScanBackRules.CONTACT_CONTEXT_PATTERN;
-import static com.venussystem.venusmobile.view.util.ScanBackRules.EMAIL_PATTERN;
 import static com.venussystem.venusmobile.view.util.ScanBackRules.EMPTY;
-import static com.venussystem.venusmobile.view.util.ScanBackRules.INLINE_COMPANY_PATTERN;
-import static com.venussystem.venusmobile.view.util.ScanBackRules.PHONE_PATTERN;
 import static com.venussystem.venusmobile.view.util.ScanBackRules.TAG;
-import static com.venussystem.venusmobile.view.util.ScanBackRules.URL_PATTERN;
 import static com.venussystem.venusmobile.view.util.ScanBackText.HeadingMatch;
 import static com.venussystem.venusmobile.view.util.ScanBackText.compactarEspacos;
-import static com.venussystem.venusmobile.view.util.ScanBackText.deduplicarPreservandoOrdem;
-import static com.venussystem.venusmobile.view.util.ScanBackText.ehTextoAdministrativoObvio;
 import static com.venussystem.venusmobile.view.util.ScanBackText.limparPontosFinais;
 import static com.venussystem.venusmobile.view.util.ScanBackText.limparRestoHeading;
 import static com.venussystem.venusmobile.view.util.ScanBackText.normalizar;
@@ -86,13 +79,18 @@ final class ScanBackIngredients {
                 continue;
             }
             ScanIngredientNormalizer.Correction correction = ScanIngredientNormalizer.correct(cleaned);
+            String status = ScanIngredientPolicy.hasAdministrativeText(cleaned)
+                    ? "ADMINISTRATIVE_NOISE"
+                    : cleaned.trim().length() < 2 || cleaned.matches("^[0-9 .:/-]+$")
+                    ? "TRUNCATED_TOKEN" : "UNRESOLVED";
             result.add(
                     new ScanBackIngredientCandidate(
                             position++,
                             cleaned,
                             correction.normalized,
                             // Correction improves matching but does not confirm the ingredient.
-                            "UNRESOLVED"
+                            status,
+                            "UNRESOLVED".equals(status) ? null : status
                     )
             );
             if (correction.corrected) {
@@ -244,6 +242,24 @@ final class ScanBackIngredients {
         s = s.replaceAll("(?i)\\bONN\\s+INIO\\b", "IONONE");
         // The OCR commonly reads the C12-15 alkyl benzoate line as CI2494 + OATE.
         s = s.replaceAll("(?i)\\bCI2494\\s+TOATE\\b", "C12-15 ALKYL BENZOATE,");
+        // Rexona Clinical capture: restore only spellings evidenced by the
+        // label. Unknown fragments remain intact for administrative review.
+        s = s.replaceAll("(?i)\\bALUMNUM\\s+SESQUICHLOROEYDRRATE\\b",
+                "ALUMINUM SESQUICHLOROHYDRATE,");
+        s = s.replaceAll("(?i)\\bSTEAYE\\s+ALOOHOL\\b",
+                "STEARYL ALCOHOL,");
+        s = s.replaceAll("(?i)\\bCALCUM\\s+CHLORIOE\\b",
+                "CALCIUM CHLORIDE,");
+        s = s.replaceAll("(?i)\\bSTEARE\\s+TH-20\\b",
+                "STEARETH-20,");
+        s = s.replaceAll("(?i)\\bTETRA-O--8UTYL\\b",
+                "TETRA-DI-T-BUTYL");
+        s = s.replaceAll("(?i)\\bALPYA-ISOMETHYL\\b",
+                "ALPHA-ISOMETHYL");
+        s = s.replaceAll("(?i)\\b8ENZYL\\s+SALUCYLATE\\b",
+                "BENZYL SALICYLATE,");
+        s = s.replaceAll("(?i)\\bCINHAMAL\\b", "CINNAMAL");
+        s = s.replaceAll("(?i)\\bUMONENE\\b", "LIMONENE,");
         return s;
     }
 
@@ -311,9 +327,9 @@ final class ScanBackIngredients {
                 consolidarFragmentos(
                         result
                 );
-        return deduplicarPreservandoOrdem(
-                result
-        );
+        // Repeated occurrences are evidence and retain their original order;
+        // the backend/admin review can decide whether they are semantically duplicate.
+        return result;
     }
 
     private static List<String> segmentarPorINCIConhecido(
@@ -569,12 +585,8 @@ final class ScanBackIngredients {
                     normalizar(
                             s
                     );
-            /*
-             * Letras isoladas são ruído frequente do OCR.
-             */
-            if (n.length() == 1) {
-                continue;
-            }
+            // Preserve short fragments as TRUNCATED_TOKEN evidence instead of
+            // silently losing OCR text.
             /*
              * CI pode ser prefixo de Color Index.
              */
@@ -678,44 +690,7 @@ final class ScanBackIngredients {
                 "\\s+",
                 " "
         ).trim();
-        if (
-                s.isEmpty()
-                        || s.length() < 2
-        ) {
-            return EMPTY;
-        }
-        if (
-                ehTextoAdministrativoObvio(
-                        s
-                )
-        ) {
-            return EMPTY;
-        }
-        if (
-                ADDRESS_INLINE_PATTERN.matcher(s).find()
-                        || INLINE_COMPANY_PATTERN.matcher(s).find()
-        ) {
-            return EMPTY;
-        }
-        /*
-         * Proteção adicional contra telefone/e-mail/site.
-         */
-        if (
-                PHONE_PATTERN
-                        .matcher(
-                                s
-                        )
-                        .find()
-                        || EMAIL_PATTERN
-                        .matcher(
-                                s
-                        )
-                        .find()
-                        || URL_PATTERN
-                        .matcher(s)
-                        .find()
-                        || CONTACT_CONTEXT_PATTERN.matcher(s).find()
-        ) {
+        if (s.isEmpty()) {
             return EMPTY;
         }
         return s;

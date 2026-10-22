@@ -181,6 +181,12 @@ final class ScanBackIngredientSection {
      */
     private static final int MAX_INGREDIENT_SECTION_RECOVERIES = 2;
     private static final int INGREDIENT_CONTINUATION_LOOKAHEAD = 24;
+    /**
+     * OCR espacial pode ordenar as últimas linhas da composição antes do
+     * título "INGREDIENTES". Limitamos a recuperação a um bloco pequeno e
+     * contíguo para não transformar marketing ou fabricante em INCI.
+     */
+    private static final int INGREDIENT_PRE_HEADING_LOOKBACK = 6;
 
     /*
      * ================================================================
@@ -269,6 +275,18 @@ final class ScanBackIngredientSection {
         }
         List<String> collected =
                 new ArrayList<>();
+        List<String> preHeading =
+                localizarIngredientesAntesDoHeading(lines, start);
+        for (String line : preHeading) {
+            String clean = limparLinhaIngredientes(line);
+            if (!clean.isEmpty()) {
+                collected.add(clean);
+            }
+        }
+        if (!preHeading.isEmpty()) {
+            Log.d(TAG, "INGREDIENT_PREFIX_RECOVERED lines=" + preHeading.size());
+        }
+        int sectionStart = start - preHeading.size();
         /*
          * ============================================================
          * PRIMEIRA LINHA
@@ -479,7 +497,7 @@ final class ScanBackIngredientSection {
                 "Secao ingredientes: heading="
                         + heading
                         + " start="
-                        + start
+                        + sectionStart
                         + " end="
                         + end
                         + " found=true stop="
@@ -489,11 +507,59 @@ final class ScanBackIngredientSection {
         );
         return new IngredientSection(
                 true,
-                start,
+                sectionStart,
                 end,
                 raw,
                 stopReason
         );
+    }
+
+    /**
+     * Recovers a short INCI continuation that appears immediately before a
+     * detected heading. This occurs when the OCR geometry orders the bottom
+     * of a narrow/curved label before the word "INGREDIENTES". The first
+     * recovered line must carry INCI evidence; punctuation-only fragments are
+     * accepted only after that first line. Administrative lines and another
+     * heading always terminate the look-back.
+     */
+    private static List<String> localizarIngredientesAntesDoHeading(
+            List<String> lines,
+            int headingIndex
+    ) {
+        if (lines == null || headingIndex <= 0) {
+            return Collections.emptyList();
+        }
+        List<String> recovered = new ArrayList<>();
+        boolean captured = false;
+        int first = Math.max(0, headingIndex - INGREDIENT_PRE_HEADING_LOOKBACK);
+        for (int i = headingIndex - 1; i >= first; i--) {
+            String line = lines.get(i);
+            if (line == null || line.trim().isEmpty()) {
+                break;
+            }
+            String normalized = normalizar(line);
+            if (normalized.isEmpty()
+                    || encontrarHeadingIngredientesRobusto(line) != null
+                    || pareceAdministrativoForte(normalized)) {
+                break;
+            }
+            int signals = contarSinaisINCI(normalized);
+            boolean startsWithKnown = linhaComecaComInciConhecido(normalized);
+            boolean hasSeparator = normalized.matches(".*[,;].*");
+            if (!captured) {
+                // The line nearest to the heading cannot be punctuation-only;
+                // this prevents a marketing sentence ending in a comma from
+                // opening a composition section by accident.
+                if (signals == 0 && !startsWithKnown) {
+                    break;
+                }
+            } else if (signals == 0 && !startsWithKnown && !hasSeparator) {
+                break;
+            }
+            recovered.add(0, line);
+            captured = true;
+        }
+        return recovered;
     }
 
     private static boolean isRecoverableIngredientBarrier(StopMatch stop) {
@@ -544,11 +610,29 @@ final class ScanBackIngredientSection {
     }
 
     private static boolean isPackagingSuffix(List<String> lines, int start) {
+        boolean packagingMarkerFound = false;
         for (int i = start; i < lines.size(); i++) {
             if (lines.get(i) == null || lines.get(i).trim().isEmpty()) continue;
-            if (!ScanIngredientPolicy.isPackagingTailLine(lines.get(i))) return false;
+            String line = lines.get(i);
+            String normalized = normalizar(line);
+            if (!packagingMarkerFound) {
+                if (!ScanIngredientPolicy.isPackagingTailLine(line)) return false;
+                packagingMarkerFound = true;
+                continue;
+            }
+            /*
+             * Depois de um código de embalagem, o OCR costuma separar o
+             * fabricante e outros fragmentos em linhas independentes. Eles
+             * continuam sendo sufixo administrativo, mas uma linha que
+             * pareça claramente um ingrediente deve manter a seção aberta.
+             */
+            if (ScanIngredientPolicy.isRecognized(normalized)
+                    || linhaComecaComInciConhecido(normalized)
+                    || contarSinaisINCI(normalized) >= 2) {
+                return false;
+            }
         }
-        return true;
+        return packagingMarkerFound;
     }
 
     static HeadingMatch encontrarHeadingIngredientesRobusto(
@@ -910,7 +994,10 @@ final class ScanBackIngredientSection {
             return null;
         }
         Matcher safety = Pattern.compile(
-                "(?i)\\b(?:PROCURAR\\s+ORIENTA[ÇC][ÃA]O\\s+M[EÉ]DICA|"
+                "(?i)\\b(?:A[DO]VERT[EÉ]NCIAS?|"
+                        + "M[O0][D0][O0]\\s+DE\\s+US[O0]|"
+                        + "MODO\\s+DE\\s+USAR|"
+                        + "PROCURAR\\s+ORIENTA[ÇC][ÃA]O\\s+M[EÉ]DICA|"
                         + "N[ÃA]O\\s+CONT[EÉ]M\\s+CFC|(?:MAIS|M[AÁ]S)\\s+VENDIDO|"
                         + "MERCADO\\s+DE\\s+DESODORANTES|ALERGIA|PRURIDO|"
                         + "IRRITA[ÇC][ÃA]O|VIDE\\s+FUNDO)\\b").matcher(line);
@@ -920,7 +1007,14 @@ final class ScanBackIngredientSection {
             int start = explicitSafety == null ? safety.start()
                     : Math.min(safety.start(), explicitSafety.positionInLine);
             if (!linhaComecaComInciConhecido(prefix)
-                    && encontrarHeadingIngredientesRobusto(prefix) == null) start = 0;
+                    && encontrarHeadingIngredientesRobusto(prefix) == null
+                    && contarSinaisINCI(prefix) == 0) {
+                // A line can begin with an OCR-corrupted continuation
+                // (for example "SALUCYLATE, HEXYL...") and still be part
+                // of the formula. Keep it only when it carries an INCI
+                // signal; pure safety prose remains excluded.
+                start = 0;
+            }
             return new StopMatch("SAFETY_OR_MARKETING", start);
         }
         /*

@@ -18,9 +18,9 @@ Foram removidas classes sem referências no código de produção ou nos testes 
 
 ## Proteções
 
-- `tools/test-scan-back.ps1` compila os colaboradores do verso e executa 35 regressões do parser, incluindo os textos reais fornecidos, preservação de fragmentos incertos e geometria sintética com baixa confiança textual, perspectiva e códigos verticais periféricos. Os logs reais não incluem coordenadas; esses testes não substituem a câmera no aparelho.
+- `tools/test-scan-back.ps1` compila os colaboradores do verso e executa 42 regressões do parser, incluindo os textos reais fornecidos, preservação de fragmentos incertos e geometria sintética com baixa confiança textual, perspectiva e códigos verticais periféricos. Os logs reais não incluem coordenadas; esses testes não substituem a câmera no aparelho.
 - `tools/test-scan-analysis.ps1` executa 16 rótulos sintéticos e compara um digest dos campos de frente/classificação capturados antes da separação.
-- `tools/test-scan-submission.ps1` cobre 67 testes de envio/armazenamento, incluindo o matcher do catálogo, consultas exatas ao PostgreSQL e a preservação de candidatos incertos para revisão no mapper e na entrada do cliente POST. Resíduos administrativos e composição vazia continuam protegidos. Esses testes usam serviços simulados, sem envio real.
+- `tools/test-scan-submission.ps1` cobre 88 testes de envio/armazenamento, incluindo o matcher do catálogo, consultas exatas ao PostgreSQL e a preservação de candidatos incertos para revisão no mapper e na entrada do cliente POST. Resíduos administrativos e composição vazia continuam protegidos. Esses testes usam serviços simulados, sem envio real.
 - O matcher de catálogo também é compilável isoladamente com os modelos e as quatro classes de catálogo; seus valores de pontuação continuam encapsulados em `ScanCatalogScoring.ProductEvidence`, com campos package-private apenas para o consumidor direto.
 
 A separação não muda o contrato das fachadas públicas nem habilita o `POST /api/scan-sessions`: as imagens continuam no Cloudinary e o cadastro no Mongo permanece como próxima etapa.
