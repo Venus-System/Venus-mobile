@@ -1,9 +1,9 @@
 package com.venussystem.venusmobile.repository;
 
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
@@ -17,8 +17,9 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Supplier;
 
+import retrofit2.Call;
+import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
@@ -36,11 +37,19 @@ public class ConversaRepository {
         SEM_CONEXAO,
         DEMOROU,
         SESSAO_EXPIRADA,
+        /** 429: passou do limite de mensagens por minuto ou por dia da API. */
+        MUITAS_MENSAGENS,
+        /** 422: a API recusou a mensagem (vazia ou longa demais). */
+        MENSAGEM_INVALIDA,
         FALHA_SERVIDOR
     }
 
     public interface AoResponder {
-        void aoResponder(String resposta);
+        /**
+         * @param conversationId o id que a API usou nesta conversa; e ele que
+         *                       vai nas proximas mensagens.
+         */
+        void aoResponder(String resposta, @Nullable String conversationId);
 
         void aoFalhar(Falha falha);
     }
@@ -52,33 +61,52 @@ public class ConversaRepository {
 
     private static final String PREFIXO_BEARER = "Bearer ";
     private static final int NAO_AUTORIZADO = 401;
+    private static final int NAO_PROCESSAVEL = 422;
+    private static final int MUITOS_PEDIDOS = 429;
 
     @Nullable
     private final VenusIaApi api;
     private final SessaoUsuario sessao;
-    private final Supplier<Long> idUsuario;
 
-    public ConversaRepository(Context context) {
-        this(ClienteIa.get(), new SessaoFirebase(), new UsuarioApiRepository(context)::idEmCache);
+    public ConversaRepository() {
+        this(ClienteIa.get(), new SessaoFirebase());
+    }
+
+    @VisibleForTesting
+    public ConversaRepository(@Nullable VenusIaApi api, SessaoUsuario sessao) {
+        this.api = api;
+        this.sessao = sessao;
     }
 
     /**
-     * @param idUsuario id da pessoa no Venus-CRUD, ou null se ainda nao se sabe.
+     * Acorda o servidor sem esperar resposta. A primeira mensagem depois de o
+     * Render dormir leva mais de um minuto; disparado ao abrir a tela, esse
+     * tempo corre enquanto a pessoa ainda escreve.
      */
-    @VisibleForTesting
-    public ConversaRepository(@Nullable VenusIaApi api, SessaoUsuario sessao,
-                              Supplier<Long> idUsuario) {
-        this.api = api;
-        this.sessao = sessao;
-        this.idUsuario = idUsuario;
+    public void acordar() {
+        if (api == null) {
+            return;
+        }
+        api.acordar().enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                // So interessava o servidor de pe.
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                // Sem rede aqui, a mensagem de verdade avisa quando for enviada.
+            }
+        });
     }
 
     /**
      * @param conversationId o mesmo em todas as mensagens de uma conversa; a
-     *                       API guarda o historico por ele.
+     *                       API guarda o historico por ele. Null na primeira:
+     *                       a API escolhe e devolve no callback.
      * @param callback       sempre chamado na thread principal.
      */
-    public void enviar(String mensagem, String conversationId, AoResponder callback) {
+    public void enviar(String mensagem, @Nullable String conversationId, AoResponder callback) {
         if (api == null) {
             PRINCIPAL.post(() -> callback.aoFalhar(Falha.NAO_CONFIGURADO));
             return;
@@ -88,7 +116,7 @@ public class ConversaRepository {
             Resultado resultado = conversar(api, mensagem, conversationId);
             PRINCIPAL.post(() -> {
                 if (resultado.resposta != null) {
-                    callback.aoResponder(resultado.resposta);
+                    callback.aoResponder(resultado.resposta, resultado.conversationId);
                 } else {
                     callback.aoFalhar(resultado.falha);
                 }
@@ -97,11 +125,10 @@ public class ConversaRepository {
     }
 
     @WorkerThread
-    private Resultado conversar(VenusIaApi api, String mensagem, String conversationId) {
+    private Resultado conversar(VenusIaApi api, String mensagem, @Nullable String conversationId) {
         ChatRequest corpo = new ChatRequest();
         corpo.mensagem = mensagem;
         corpo.conversationId = conversationId;
-        corpo.usuarioIdPostgres = idUsuario.get();
 
         try {
             String token = sessao.token(false);
@@ -121,15 +148,27 @@ public class ConversaRepository {
                 resposta = api.conversar(PREFIXO_BEARER + token, corpo).execute();
             }
 
-            if (resposta.code() == NAO_AUTORIZADO) {
-                return Resultado.falha(Falha.SESSAO_EXPIRADA);
+            switch (resposta.code()) {
+                case NAO_AUTORIZADO:
+                    return Resultado.falha(Falha.SESSAO_EXPIRADA);
+                case MUITOS_PEDIDOS:
+                    return Resultado.falha(Falha.MUITAS_MENSAGENS);
+                case NAO_PROCESSAVEL:
+                    return Resultado.falha(Falha.MENSAGEM_INVALIDA);
+                default:
+                    break;
             }
             ChatResponse corpoResposta = resposta.body();
             if (!resposta.isSuccessful() || corpoResposta == null
                     || corpoResposta.resposta == null || corpoResposta.resposta.trim().isEmpty()) {
                 return Resultado.falha(Falha.FALHA_SERVIDOR);
             }
-            return Resultado.sucesso(corpoResposta.resposta.trim());
+            // A API sempre devolve o id; se um dia vier vazio, segue o enviado.
+            String idUsado = corpoResposta.conversationId == null
+                    || corpoResposta.conversationId.trim().isEmpty()
+                    ? conversationId
+                    : corpoResposta.conversationId;
+            return Resultado.sucesso(corpoResposta.resposta.trim(), idUsado);
         } catch (SocketTimeoutException e) {
             // Estourar o tempo NAO e repetido: a API pode ter recebido a mensagem
             // e ainda estar respondendo, e a pergunta entraria duas vezes.
@@ -143,19 +182,23 @@ public class ConversaRepository {
         @Nullable
         final String resposta;
         @Nullable
+        final String conversationId;
+        @Nullable
         final Falha falha;
 
-        private Resultado(@Nullable String resposta, @Nullable Falha falha) {
+        private Resultado(@Nullable String resposta, @Nullable String conversationId,
+                          @Nullable Falha falha) {
             this.resposta = resposta;
+            this.conversationId = conversationId;
             this.falha = falha;
         }
 
-        static Resultado sucesso(String resposta) {
-            return new Resultado(resposta, null);
+        static Resultado sucesso(String resposta, @Nullable String conversationId) {
+            return new Resultado(resposta, conversationId, null);
         }
 
         static Resultado falha(Falha falha) {
-            return new Resultado(null, falha);
+            return new Resultado(null, null, falha);
         }
     }
 }

@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import com.venussystem.venusmobile.domain.perfil.ProgressoPerfil;
 import com.venussystem.venusmobile.repository.api.MapeadorPerfilApi;
 
 import java.util.ArrayList;
@@ -86,6 +87,22 @@ public class PerfilRepository implements MapeadorPerfilApi.Respostas {
 
     public boolean jaRespondeuQuestionario() {
         return prefs.getBoolean(CHAVE_RESPONDEU, false);
+    }
+
+    // Os 9 campos que o site conta no "Seu perfil Venus" (utils/progressoPerfil.ts):
+    // as respostas de escolha unica e as duas que aceitam varias (gestacao e condicoes).
+    private static final List<String> CAMPOS_DO_PROGRESSO = Arrays.asList(
+            FAIXA_ETARIA, GENERO, TIPO_PELE, FOTOTIPO, SENSIBILIDADE, TIPO_CABELO,
+            COURO_CABELUDO, GESTACAO, CONDICOES_PELE);
+    private static final Set<String> CAMPOS_DE_LISTA =
+            new HashSet<>(Arrays.asList(GESTACAO, CONDICOES_PELE));
+
+    /** Quanto do perfil ja foi respondido, para o cartao que chama para o questionario. */
+    public ProgressoPerfil progresso() {
+        return ProgressoPerfil.calcular(jaRespondeuQuestionario(), CAMPOS_DO_PROGRESSO,
+                chave -> CAMPOS_DE_LISTA.contains(chave)
+                        ? !getLista(chave).isEmpty()
+                        : getTag(chave) != null);
     }
 
     public void marcarQuestionarioRespondido() {

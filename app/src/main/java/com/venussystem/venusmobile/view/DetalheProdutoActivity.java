@@ -5,16 +5,20 @@ import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -28,13 +32,21 @@ import coil.request.ImageRequest;
 import com.google.android.material.tabs.TabLayout;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Colecao;
+import com.venussystem.venusmobile.model.IngredienteProduto;
+import com.venussystem.venusmobile.domain.match.ResultadoMatch;
+import com.venussystem.venusmobile.domain.perfil.ProgressoPerfil;
 import com.venussystem.venusmobile.model.Produto;
+import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
+import com.venussystem.venusmobile.repository.AcessosRecentesRepository;
 import com.venussystem.venusmobile.repository.ColecaoRepository;
 import com.venussystem.venusmobile.repository.HistoricoCatalogoRepository;
 import com.venussystem.venusmobile.repository.ListaItemRepository;
+import com.venussystem.venusmobile.repository.MatchProdutoRepository;
+import com.venussystem.venusmobile.repository.PerfilRepository;
 import com.venussystem.venusmobile.repository.ProdutoRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.view.adapter.AlternativaAdapter;
+import com.venussystem.venusmobile.view.componente.CartaoPerfilView;
 import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
 import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 
@@ -59,13 +71,23 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
     private View conteudoAvaliacao;
     private View conteudoMatch;
+    private View carregandoMatch;
+    private TextView textMatchVeredito;
+    private TextView textMatchMensagem;
+    private TextView textMatchNota;
+    private TextView textMatchAviso;
+    private CartaoPerfilView cartaoPerfilMatch;
+    private LinearLayout listaMatchAlertas;
+    private LinearLayout listaMatchPositivos;
     private RecyclerView listaAlternativas;
     private TextView textSemAlternativas;
 
     private View carregandoIngredientes;
     private TextView textIngredientes;
+    private LinearLayout listaIngredientes;
     private ImageView imgProduto;
     private ImageButton btnSalvarNaLista;
+    private ImageButton btnPerguntarVenus;
 
     private ColecaoRepository colecaoRepository;
     private ListaItemRepository itemRepository;
@@ -76,6 +98,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
     private boolean ingredientesCarregados = false;
     private boolean alternativasMontadas = false;
+    private boolean matchCarregado = false;
     private boolean telaInicializada = false;
     private boolean mensagemErroMostrada = false;
 
@@ -109,6 +132,15 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         btnSalvarNaLista.setOnClickListener(
                 this::mostrarListasParaSalvar
+        );
+
+        btnPerguntarVenus.setOnClickListener(
+                v -> startActivity(
+                        AssistenteActivity.paraProduto(
+                                this,
+                                produto
+                        )
+                )
         );
 
         produtoIdRecebido =
@@ -166,6 +198,11 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                         R.id.btnSalvarNaLista
                 );
 
+        btnPerguntarVenus =
+                findViewById(
+                        R.id.btnPerguntarVenus
+                );
+
         conteudoAvaliacao =
                 findViewById(
                         R.id.conteudoAvaliacao
@@ -191,9 +228,23 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                         R.id.carregandoIngredientes
                 );
 
+        carregandoMatch = findViewById(R.id.carregandoMatch);
+        textMatchVeredito = findViewById(R.id.textMatchVeredito);
+        textMatchMensagem = findViewById(R.id.textMatchMensagem);
+        textMatchNota = findViewById(R.id.textMatchNota);
+        textMatchAviso = findViewById(R.id.textMatchAviso);
+        cartaoPerfilMatch = findViewById(R.id.cartaoPerfilMatch);
+        listaMatchAlertas = findViewById(R.id.listaMatchAlertas);
+        listaMatchPositivos = findViewById(R.id.listaMatchPositivos);
+
         textIngredientes =
                 findViewById(
                         R.id.textIngredientes
+                );
+
+        listaIngredientes =
+                findViewById(
+                        R.id.listaIngredientes
                 );
     }
 
@@ -345,6 +396,10 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         telaInicializada = true;
         historicoCatalogoRepository.registrarAcesso(produtoEncontrado);
 
+        registrarAcesso(
+                produto.getId()
+        );
+
         Log.d(
                 TAG,
                 "PRODUTO ABERTO"
@@ -371,11 +426,38 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         preencherCabecalho();
         prepararAbas();
 
-        // Escondido ate aqui: antes de achar o produto nao ha o que salvar.
+        // Escondidos ate aqui: antes de achar o produto nao ha o que salvar
+        // nem sobre o que perguntar.
         btnSalvarNaLista.setVisibility(
                 View.VISIBLE
         );
+        btnPerguntarVenus.setVisibility(
+                View.VISIBLE
+        );
         atualizarIconeDoMarcador();
+    }
+
+    /**
+     * Anota o produto no historico da busca. Falhar aqui nao pode atrapalhar
+     * a tela: o historico e so um atalho.
+     */
+    private void registrarAcesso(
+            long produtoId
+    ) {
+
+        try {
+
+            new AcessosRecentesRepository(this)
+                    .registrar(produtoId);
+
+        } catch (RuntimeException e) {
+
+            Log.w(
+                    TAG,
+                    "Não foi possível registrar o acesso ao produto.",
+                    e
+            );
+        }
     }
 
     private void finalizarSemProduto(
@@ -601,11 +683,206 @@ public class DetalheProdutoActivity extends AppCompatActivity {
             carregarIngredientes();
         }
 
+        if (aba == ABA_MATCH
+                && !matchCarregado) {
+
+            carregarMatch();
+        }
+
         if (naAlternativas
                 && !alternativasMontadas) {
 
             montarAlternativas();
         }
+    }
+
+    private void carregarMatch() {
+
+        if (produto == null || produto.getId() == null) {
+            return;
+        }
+
+        matchCarregado = true;
+
+        carregandoMatch.setVisibility(View.VISIBLE);
+        textMatchVeredito.setVisibility(View.GONE);
+        textMatchMensagem.setVisibility(View.GONE);
+        textMatchNota.setVisibility(View.GONE);
+        textMatchAviso.setVisibility(View.GONE);
+        cartaoPerfilMatch.setVisibility(View.GONE);
+        listaMatchAlertas.removeAllViews();
+        listaMatchPositivos.removeAllViews();
+
+        new MatchProdutoRepository(new PerfilRepository(this)).calcular(
+                produto.getId(),
+                new MatchProdutoRepository.AoCalcular() {
+                    @Override
+                    public void aoConcluir(
+                            @NonNull ResultadoMatch resultado,
+                            ProductScoreResponse nota,
+                            @NonNull List<String> consideradas
+                    ) {
+                        if (isFinishing() || isDestroyed()) return;
+                        mostrarMatch(resultado, nota, consideradas);
+                    }
+
+                    @Override
+                    public void aoFalhar() {
+                        if (isFinishing() || isDestroyed()) return;
+                        // Deixa tentar de novo ao reabrir a aba.
+                        matchCarregado = false;
+                        carregandoMatch.setVisibility(View.GONE);
+                        mostrarMensagemMatch(R.string.produto_match_indisponivel);
+                    }
+                }
+        );
+    }
+
+    private void mostrarMatch(
+            ResultadoMatch resultado,
+            ProductScoreResponse nota,
+            List<String> consideradas
+    ) {
+
+        carregandoMatch.setVisibility(View.GONE);
+
+        switch (resultado.veredito) {
+            case SEM_PERFIL: {
+                ProgressoPerfil progresso = new PerfilRepository(this).progresso();
+                if (progresso.estado == ProgressoPerfil.Estado.COMPLETO) {
+                    mostrarMensagemMatch(R.string.produto_match_sem_perfil);
+                } else {
+                    // O cartao chama para o questionario, com o botao que o texto nao tinha.
+                    cartaoPerfilMatch.atualizar(progresso);
+                }
+                // Quando a pessoa responder o questionario, a aba recalcula.
+                matchCarregado = false;
+                return;
+            }
+            case NAO_RECOMENDADO:
+                mostrarVeredito(R.string.produto_match_veredito_nao_recomendado);
+                break;
+            case ATENCAO:
+                mostrarVeredito(R.string.produto_match_veredito_atencao);
+                break;
+            case COMBINA:
+                mostrarVeredito(R.string.produto_match_veredito_combina);
+                break;
+            default:
+                if (consideradas.isEmpty()) {
+                    mostrarMensagemMatch(R.string.produto_match_sem_pontos);
+                } else {
+                    textMatchMensagem.setText(getString(
+                            R.string.produto_match_sem_pontos_considerado,
+                            String.join(", ", consideradas)
+                    ));
+                    textMatchMensagem.setVisibility(View.VISIBLE);
+                }
+                break;
+        }
+
+        adicionarAchados(
+                listaMatchAlertas,
+                R.string.produto_match_titulo_alertas,
+                resultado.alertas
+        );
+        adicionarAchados(
+                listaMatchPositivos,
+                R.string.produto_match_titulo_positivos,
+                resultado.positivos
+        );
+
+        if (nota != null && nota.overallScore != null) {
+            textMatchNota.setText(
+                    getString(R.string.produto_match_nota, nota.overallScore)
+            );
+            textMatchNota.setVisibility(View.VISIBLE);
+        }
+        textMatchAviso.setVisibility(View.VISIBLE);
+    }
+
+    private void mostrarVeredito(int texto) {
+        textMatchVeredito.setText(texto);
+        textMatchVeredito.setVisibility(View.VISIBLE);
+    }
+
+    private void mostrarMensagemMatch(int texto) {
+        textMatchMensagem.setText(texto);
+        textMatchMensagem.setVisibility(View.VISIBLE);
+    }
+
+    private void adicionarAchados(
+            LinearLayout destino,
+            int titulo,
+            List<ResultadoMatch.Achado> achados
+    ) {
+
+        if (achados.isEmpty()) {
+            return;
+        }
+
+        destino.addView(
+                novoTexto(getString(titulo), 15, true, R.color.preto_texto, 24)
+        );
+
+        for (ResultadoMatch.Achado achado : achados) {
+
+            destino.addView(
+                    novoTexto(
+                            achado.titulo,
+                            14,
+                            true,
+                            achado.grave
+                                    ? R.color.amarelo_aviso_texto
+                                    : R.color.preto_texto,
+                            12
+                    )
+            );
+
+            if (!achado.descricao.isEmpty()) {
+                destino.addView(
+                        novoTexto(achado.descricao, 13, false,
+                                R.color.cinza_descricao, 2)
+                );
+            }
+
+            destino.addView(
+                    novoTexto(
+                            getString(
+                                    R.string.produto_match_ingredientes,
+                                    String.join(", ", achado.ingredientes)
+                            ),
+                            12, false, R.color.cinza_descricao, 2
+                    )
+            );
+        }
+    }
+
+    private TextView novoTexto(
+            String texto,
+            int tamanhoSp,
+            boolean negrito,
+            int cor,
+            int margemTopoDp
+    ) {
+
+        TextView view = new TextView(this);
+        view.setText(texto);
+        view.setTextSize(tamanhoSp);
+        view.setTextColor(ContextCompat.getColor(this, cor));
+        if (negrito) {
+            view.setTypeface(view.getTypeface(), android.graphics.Typeface.BOLD);
+        }
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        params.topMargin = Math.round(
+                margemTopoDp * getResources().getDisplayMetrics().density
+        );
+        view.setLayoutParams(params);
+        return view;
     }
 
     private boolean listaVazia() {
@@ -616,25 +893,78 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 .getItemCount() == 0;
     }
 
+    @SuppressWarnings("unchecked")
     private void carregarIngredientes() {
 
         ingredientesCarregados = true;
 
         carregandoIngredientes.setVisibility(View.VISIBLE);
         textIngredientes.setVisibility(View.GONE);
+        listaIngredientes.setVisibility(View.GONE);
+
+        // Duas chamadas independentes: o rotulo (texto corrido e foto) e a
+        // lista de ingredientes com descricao. A tela so se monta quando as
+        // duas voltam, para nao piscar o texto corrido antes da lista.
+        final String[] rotulo = new String[1];
+        final List<IngredienteProduto>[] lista = new List[1];
+        final int[] pendentes = {2};
+        Runnable concluida = () -> {
+            if (--pendentes[0] > 0 || isFinishing() || isDestroyed()) return;
+            mostrarIngredientes(lista[0], rotulo[0]);
+        };
+
         repository.buscarDetalheProduto(produto.getId(), (textoRotulo, urlFoto) -> {
             if (isFinishing() || isDestroyed()) return;
-            carregandoIngredientes.setVisibility(View.GONE);
-            textIngredientes.setVisibility(View.VISIBLE);
-
-            boolean temTexto = textoRotulo != null && !textoRotulo.trim().isEmpty();
-            textIngredientes.setText(temTexto
-                    ? textoRotulo : getString(R.string.produto_ingredientes_erro));
-
+            rotulo[0] = textoRotulo;
             if (urlFoto != null) {
                 carregarImagem(urlFoto);
             }
+            concluida.run();
         });
+
+        repository.buscarIngredientesDoProduto(produto.getId(), ingredientes -> {
+            lista[0] = ingredientes;
+            concluida.run();
+        });
+    }
+
+    /**
+     * Um ingrediente por item, com a descricao embaixo. Sem lista (produto sem
+     * ingredientes cadastrados ou chamada falhou) cai no texto corrido do
+     * rotulo, que era o comportamento anterior.
+     */
+    private void mostrarIngredientes(@Nullable List<IngredienteProduto> ingredientes,
+                                     @Nullable String textoRotulo) {
+        carregandoIngredientes.setVisibility(View.GONE);
+
+        if (ingredientes != null && !ingredientes.isEmpty()) {
+            listaIngredientes.removeAllViews();
+            LayoutInflater inflater = LayoutInflater.from(this);
+            for (IngredienteProduto ingrediente : ingredientes) {
+                View item = inflater.inflate(
+                        R.layout.item_ingrediente_produto, listaIngredientes, false);
+                ((TextView) item.findViewById(R.id.textNomeIngrediente))
+                        .setText(ingrediente.getNome());
+                preencherOpcional(item.findViewById(R.id.textInciIngrediente),
+                        ingrediente.getNomeInci());
+                preencherOpcional(item.findViewById(R.id.textDescricaoIngrediente),
+                        ingrediente.getDescricao());
+                listaIngredientes.addView(item);
+            }
+            listaIngredientes.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        boolean temTexto = textoRotulo != null && !textoRotulo.trim().isEmpty();
+        textIngredientes.setText(temTexto
+                ? textoRotulo : getString(R.string.produto_ingredientes_erro));
+        textIngredientes.setVisibility(View.VISIBLE);
+    }
+
+    private void preencherOpcional(TextView view, @Nullable String texto) {
+        boolean tem = texto != null && !texto.isEmpty();
+        view.setText(tem ? texto : null);
+        view.setVisibility(tem ? View.VISIBLE : View.GONE);
     }
 
     private void montarAlternativas() {

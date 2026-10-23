@@ -175,8 +175,7 @@
     <string name="desc_entrar_google">Entrar com o Google</string>
     <string name="desc_cadastrar_google">Cadastrar com o Google</string>
 
-    <string name="nav_inicio">Histórico</string>
-    <string name="nav_busca">Busca</string>
+    <string name="nav_inicio">Início</string>
     <string name="nav_scan">Escanear</string>
     <string name="nav_listas">Minhas listas</string>
     <string name="nav_perfil">Perfil</string>
@@ -184,11 +183,20 @@
     <string name="em_breve">Em breve</string>
     <string name="hint_buscar_produto">Buscar produtos, ingredientes, marcas…</string>
     <string name="busca_sem_resultado">Nenhum produto encontrado</string>
-    <string name="busca_secao_recentes">Recentes</string>
-    <string name="busca_secao_categorias">Categorias</string>
-    <string name="busca_limpar_filtro">Limpar filtro de categoria</string>
-    <string name="busca_ver_todas">Ver todas (%1$d)</string>
-    <string name="busca_ver_menos">Ver menos</string>
+    <string name="home_sugestoes">Sugestões</string>
+    <string name="home_sem_resultado_filtro">Nenhum produto com esse filtro</string>
+    <string name="busca_hint_escolher">Buscar produto para adicionar</string>
+    <string name="desc_filtro">Filtrar produtos</string>
+    <string name="filtro_titulo">Filtros</string>
+    <string name="filtro_limpar">Limpar</string>
+    <string name="filtro_aplicar">Aplicar</string>
+    <string name="filtro_grupo_nota">Nota geral</string>
+    <string name="filtro_nota_boa">Boa (70 ou mais)</string>
+    <string name="filtro_nota_media">Média (40 a 69)</string>
+    <string name="filtro_nota_ruim">Ruim (abaixo de 40)</string>
+    <string name="filtro_so_brasileiras">Só marcas brasileiras</string>
+    <string name="filtro_grupo_categoria">Categoria</string>
+    <string name="filtro_grupo_marca">Marca</string>
     <string name="nota_indisponivel">—</string>
 
     <string name="sheet_couro_titulo">Como é o seu couro cabeludo?</string>
@@ -239,9 +247,9 @@
     <string name="lista_erro_nome_repetido">Você já tem uma lista com esse nome</string>
     <string name="acao_tentar_de_novo">Tentar de novo</string>
     <string name="erro_sem_conexao">Não foi possível falar com o servidor. Verifique sua conexão e tente de novo.</string>
-    <string name="historico_titulo">Produtos acessados</string>
+    <string name="historico_titulo">Histórico</string>
     <string name="historico_hoje">Hoje</string>
-    <string name="historico_vazio">Você ainda não acessou nenhum produto.</string>
+    <string name="historico_vazio">Você ainda não acessou nem escaneou nenhum produto.</string>
     <string name="historico_em_analise">Em análise</string>
     <string name="historico_aprovado">Aprovado</string>
     <string name="historico_recusado">Precisa de revisão</string>
@@ -259,18 +267,28 @@
     <string name="perfil_hint_preferencia">Pesquisar preferência</string>
     <string name="perfil_sem_nome">Perfil Venus</string>
     <string name="assistente_titulo">Assistente</string>
-    <string name="assistente_hint">Pergunte sobre um produto…</string>
+    <string name="assistente_hint">Pergunte à Vênus…</string>
     <string name="assistente_enviar">Enviar</string>
-    <string name="assistente_saudacao">Oi! Sou a Vênus. Posso explicar os ingredientes e a nota de um produto pra você.</string>
-    <string name="assistente_offline">Ainda não estou conectada ao servidor de conversas, então não consigo responder de verdade. Assim que a API do chat entrar no ar, eu respondo aqui mesmo.</string>
+    <string name="assistente_saudacao">Oi! Sou a Vênus. Pode me perguntar sobre produtos, ingredientes e cuidados com a pele e o cabelo.</string>
+    <string name="assistente_offline">Esta versão do app foi gerada sem o endereço do servidor de conversas, então não consigo responder de verdade.</string>
     <string name="assistente_digitando">Digitando…</string>
     <string name="assistente_erro_conexao">Não consegui falar com o servidor. Confira sua internet e tente de novo.</string>
     <string name="assistente_erro_demora">Demorei demais pra responder e acabei desistindo. Pode perguntar de novo?</string>
     <string name="assistente_erro_sessao">Sua sessão expirou. Saia e entre de novo na sua conta pra continuar a conversa.</string>
     <string name="assistente_erro_servidor">Tive um problema pra responder agora. Tenta de novo em instantes?</string>
-    <string name="assistente_sugestao_um">Ver as opções</string>
-    <string name="assistente_sugestao_dois">Tem álcool?</string>
-    <string name="assistente_sugestao_tres">É vegano?</string>
+    <string name="assistente_erro_limite">Foram muitas mensagens em pouco tempo. Espera um pouquinho e tenta de novo?</string>
+    <string name="assistente_erro_mensagem">Não consegui ler essa mensagem. Tenta escrever de um jeito mais curto?</string>
+    <string name="assistente_nova_conversa">Nova conversa</string>
+    <string name="assistente_nova_conversa_titulo">Começar uma conversa nova?</string>
+    <string name="assistente_nova_conversa_texto">As mensagens de agora saem da tela. O que a Vênus já sabe sobre você continua valendo.</string>
+    <string name="assistente_nova_conversa_confirmar">Começar</string>
+    <string name="assistente_sugestao_geral_um">Monte uma rotina pra mim</string>
+    <string name="assistente_sugestao_geral_dois">O que faz a niacinamida?</string>
+    <string name="assistente_sugestao_geral_tres">Como cuidar de cabelo seco?</string>
+    <string name="assistente_sugestao_produto_um">Tem álcool?</string>
+    <string name="assistente_sugestao_produto_dois">É vegano?</string>
+    <string name="assistente_sugestao_produto_tres">Combina com a minha pele?</string>
+    <string name="desc_perguntar_venus">Perguntar à Vênus sobre este produto</string>
     <string name="perfil_genero">Gênero</string>
     <string name="perfil_tipo_pele">Tipo de Pele</string>
     <string name="perfil_fototipo">Fototipo de Pele</string>
@@ -336,7 +354,18 @@
     <string name="produto_titulo_ingredientes">Ingredientes</string>
     <string name="produto_ingredientes_erro">Não foi possível carregar os ingredientes agora.</string>
     <string name="produto_relatar_erro">Encontrou algo errado no cadastro deste produto? Clique aqui e informe a gente. Obrigado.</string>
-    <string name="produto_match_indisponivel">Ainda não conseguimos calcular como este produto combina com o seu perfil. Assim que esse cálculo existir, ele aparece aqui.</string>
+    <string name="produto_match_indisponivel">Não foi possível calcular o match deste produto agora. Tente de novo em instantes.</string>
+    <string name="produto_match_sem_perfil">Responda o questionário do seu perfil para ver como este produto combina com você.</string>
+    <string name="produto_match_sem_pontos">Não encontramos nada na composição que se relacione com o seu perfil.</string>
+    <string name="produto_match_sem_pontos_considerado">Não encontramos nada na composição que se relacione com o que consideramos do seu perfil: %1$s.</string>
+    <string name="produto_match_veredito_nao_recomendado">Não recomendado para você</string>
+    <string name="produto_match_veredito_atencao">Atenção para o seu perfil</string>
+    <string name="produto_match_veredito_combina">Combina com você</string>
+    <string name="produto_match_titulo_alertas">Pontos de atenção</string>
+    <string name="produto_match_titulo_positivos">O que ajuda no seu perfil</string>
+    <string name="produto_match_ingredientes">Ingredientes: %1$s</string>
+    <string name="produto_match_nota">Nota geral do produto: %1$d/100</string>
+    <string name="produto_match_aviso">Indicativo com base nos efeitos de ingredientes do catálogo da Venus, que ainda estão em revisão. Não substitui orientação médica ou dermatológica.</string>
     <string name="produto_sem_alternativas">Não encontramos outros produtos desta categoria ainda.</string>
     <string name="scan_passo_1_titulo">Passo 1:</string>
     <string name="scan_passo_1_descricao"><b>Fotografe</b> a frente.</string>
@@ -358,5 +387,38 @@
     <string name="scan_produto_nao_cadastrado_titulo">Produto não encontrado</string>
     <string name="scan_produto_nao_cadastrado_descricao">Ainda não está no nosso catálogo.</string>
     <string name="scan_produto_nao_cadastrado_ajuda">Fotografe o verso com os ingredientes visíveis.</string>
+
+    <string name="localizacao_titulo">Usar sua localização?</string>
+    <string name="localizacao_mensagem">Usamos sua localização aproximada (cidade e estado) para entender melhor as necessidades da sua região e melhorar as análises. Você pode negar e continuar usando o app normalmente.</string>
+    <string name="localizacao_permitir">Permitir</string>
+    <string name="localizacao_agora_nao">Agora não</string>
+
+    <string name="canal_envio_produtos">Envio de produtos</string>
+    <string name="cartao_perfil_titulo">Seu perfil Venus</string>
+    <string name="cartao_perfil_sub_sem_questionario">Você precisa responder as perguntas de análise.</string>
+    <string name="cartao_perfil_sub_incompleto">Faltam %1$d%% para completar as perguntas de análise.</string>
+    <string name="cartao_perfil_responder">Responder agora</string>
+    <string name="cartao_perfil_completar">Completar agora</string>
+    <string name="cartao_perfil_progresso_desc">Perfil %1$d%% completo</string>
+
+    <string name="canal_lembretes">Lembretes</string>
+    <string name="canal_lembretes_descricao">Lembrete para terminar o questionário e liberar o Match com você.</string>
+    <string name="lembrete_questionario_notif_titulo">Falta pouco para o seu Match</string>
+    <string name="lembrete_questionario_notif_texto">Responda o questionário e veja o Match com você nos produtos.</string>
+
+    <string name="canal_analise_produtos">Análise de produtos</string>
+    <string name="canal_analise_produtos_descricao">Avisa quando a equipe aprova ou recusa um produto que você enviou.</string>
+    <string name="canal_envio_produtos_descricao">Avisa quando um produto que ficou sem enviar é enviado para análise.</string>
+
+    <string name="avisos_agora_nao">Agora não</string>
+
+
+    <string name="envio_pendente_titulo">Vamos tentar de novo</string>
+    <string name="envio_pendente_mensagem">Quando a internet voltar, enviamos o produto sozinhos. Quer ser avisado quando isso acontecer?</string>
+    <string name="envio_pendente_avisar">Me avisar</string>
+    <string name="envio_reenviado_titulo">Produto enviado</string>
+    <string name="envio_reenviado_texto_um">%1$s foi enviado para análise.</string>
+    <string name="envio_reenviado_texto_varios">%1$d produtos foram enviados para análise.</string>
+    <string name="envio_reenviado_nome_padrao">Seu produto</string>
 
 </resources>

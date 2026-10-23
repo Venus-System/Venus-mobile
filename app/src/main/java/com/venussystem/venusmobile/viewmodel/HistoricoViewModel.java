@@ -10,7 +10,8 @@ import androidx.lifecycle.MediatorLiveData;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.ItemHistorico;
 import com.venussystem.venusmobile.model.LinhaHistorico;
-import com.venussystem.venusmobile.repository.HistoricoCatalogoRepository;
+import com.venussystem.venusmobile.repository.HistoricoRepository;
+import com.venussystem.venusmobile.repository.ProdutoRepository;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -22,22 +23,24 @@ public class HistoricoViewModel extends AndroidViewModel {
     private static final DateTimeFormatter FORMATO =
             DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    private final HistoricoCatalogoRepository repository;
+    private final HistoricoRepository repository;
     private final MediatorLiveData<List<LinhaHistorico>> linhas = new MediatorLiveData<>();
 
     public HistoricoViewModel(@NonNull Application application) {
         super(application);
-        repository = new HistoricoCatalogoRepository(application);
+        repository = new HistoricoRepository(application);
         linhas.addSource(repository.getHistorico(), this::montarLinhas);
+        // Quem abre a busca logo no inicio do app chega antes do catalogo: os
+        // produtos acessados so entram quando ele chega. Quem carrega o
+        // catalogo e o BuscaViewModel da mesma tela.
+        linhas.addSource(new ProdutoRepository().getCatalogo(), catalogo -> {
+            if (catalogo != null) repository.recombinar();
+        });
         repository.carregar();
     }
 
     public LiveData<List<LinhaHistorico>> getLinhas() {
         return linhas;
-    }
-
-    public void recarregar() {
-        repository.carregar();
     }
 
     /**

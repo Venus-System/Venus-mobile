@@ -3,6 +3,7 @@ package com.venussystem.venusmobile.repository.api;
 import com.venussystem.venusmobile.repository.api.dto.AllergyResponse;
 import com.venussystem.venusmobile.repository.api.dto.BrandResponse;
 import com.venussystem.venusmobile.repository.api.dto.FatiaResponse;
+import com.venussystem.venusmobile.repository.api.dto.IngredientEffectResponse;
 import com.venussystem.venusmobile.repository.api.dto.IngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.MediaAssetResponse;
 import com.venussystem.venusmobile.repository.api.dto.PreferenceCatalogResponse;
@@ -19,6 +20,7 @@ import com.venussystem.venusmobile.repository.api.dto.ScanSessionResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserAllergyRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserAllergyResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserListItemRequest;
+import com.venussystem.venusmobile.repository.api.dto.UserLocationRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserListItemResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserListRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserListResponse;
@@ -88,6 +90,15 @@ public interface VenusApi {
     @GET("api/ingredients/{id}")
     Call<IngredientResponse> buscarIngrediente(@Path("id") long id);
 
+    /** Efeitos do ingrediente sobre cada etiqueta de perfil (catalogo aberto). */
+    @GET("api/ingredient-effects/ingredient/{ingredientId}")
+    Call<List<IngredientEffectResponse>> listarEfeitosDoIngrediente(
+            @Path("ingredientId") long ingredientId);
+
+    /** Catalogo inteiro de etiquetas de perfil (pele, cabelo, valores...). */
+    @GET("api/profile-tags")
+    Call<List<PreferenceCatalogResponse>> listarEtiquetas(@Query("size") int tamanho);
+
     /** Scans recentes da própria conta; a API aplica a regra de ownership. */
     @GET("api/scan-sessions/user/{userId}")
     Call<FatiaResponse<ScanSessionResponse>> listarScansDoUsuario(
@@ -103,6 +114,13 @@ public interface VenusApi {
 
     @POST("api/users")
     Call<UserResponse> criarUsuario(@Body UserRequest usuario);
+
+    // PATCH: so os campos de localizacao seguem no corpo, o resto do usuario nao
+    // muda. ATENCAO: o contrato disso no Venus-CRUD ainda precisa ser confirmado
+    // com o backend (nome da rota e dos campos).
+    @PATCH("api/users/{userId}")
+    Call<Void> atualizarLocalizacao(@Path("userId") long userId,
+                                    @Body UserLocationRequest localizacao);
 
     // ---- Perfil do questionario ----
     // O PUT responde 404 quando a pessoa ainda nao tem perfil; ai vale o POST.

@@ -183,6 +183,15 @@
         <item name="android:textSize">13sp</item>
     </style>
 
+    <!-- Titulo de cada grupo da tela de filtro (Nota geral, Categoria, Marca). -->
+    <style name="TituloGrupoFiltro">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/preto_texto</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
     <style name="BotaoVoltar">
         <item name="android:layout_width">@dimen/area_toque_minima</item>
         <item name="android:layout_height">@dimen/area_toque_minima</item>

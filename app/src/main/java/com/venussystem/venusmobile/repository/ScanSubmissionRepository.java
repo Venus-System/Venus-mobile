@@ -59,6 +59,15 @@ public class ScanSubmissionRepository {
         void failed(Exception exception);
     }
 
+    /** Envios desta conta que ficaram pela metade (ver ReenvioDeScan). */
+    public java.util.List<ScanDraftStore.SavedDraft> pendentes(String uid) throws java.io.IOException {
+        return store.pending(uid);
+    }
+
+    public long ultimaAlteracaoMs(String uid, String scanId) throws java.io.IOException {
+        return store.lastModifiedMs(uid, scanId);
+    }
+
     /** Sends the durable, uploaded draft to MongoDB exactly once from the app's perspective. */
     public void submitToMongo(String uid, String scanId, Context context, SubmissionCallback callback) {
         IO.execute(() -> {

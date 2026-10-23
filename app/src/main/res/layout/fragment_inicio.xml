@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <!-- O campo so abre a tela de busca: quem digita la e a BuscaActivity. -->
+    <LinearLayout
+        android:id="@+id/linhaBusca"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:layout_marginTop="@dimen/espaco_medio"
+        android:layout_marginEnd="@dimen/espaco_medio"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista">
+
+        <TextView
+            android:id="@+id/campoBusca"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/altura_opcao"
+            android:layout_weight="1"
+            android:background="@drawable/bg_busca_topo"
+            android:clickable="true"
+            android:drawableStart="@drawable/ic_lupa"
+            android:drawablePadding="@dimen/espaco_pequeno"
+            android:ellipsize="end"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:maxLines="1"
+            android:paddingStart="@dimen/espaco_medio"
+            android:paddingEnd="@dimen/espaco_medio"
+            android:text="@string/hint_buscar_produto"
+            android:textColor="@color/cinza_hint"
+            android:textSize="@dimen/texto_corpo" />
+
+        <ImageButton
+            android:id="@+id/btnFiltro"
+            android:layout_width="@dimen/altura_opcao"
+            android:layout_height="@dimen/altura_opcao"
+            android:layout_marginStart="@dimen/espaco_pequeno"
+            android:background="@drawable/bg_busca_topo"
+            android:contentDescription="@string/desc_filtro"
+            android:scaleType="center"
+            android:src="@drawable/ic_filtro" />
+
+    </LinearLayout>
+
+    <!-- "Seu perfil Venus": chama para o questionario. Gone ate o fragmento
+         conferir o progresso (e de novo quando o perfil esta completo). -->
+    <com.venussystem.venusmobile.view.componente.CartaoPerfilView
+        android:id="@+id/cartaoPerfil"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:layout_marginTop="@dimen/espaco_medio"
+        android:layout_marginEnd="@dimen/espaco_medio"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linhaBusca"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista" />
+
+    <TextView
+        android:id="@+id/textTituloSugestoes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaco_medio"
+        android:text="@string/home_sugestoes"
+        android:textColor="@color/roxo_venus"
+        android:textSize="@dimen/texto_titulo_aba"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@+id/linhaBusca"
+        app:layout_constraintTop_toBottomOf="@+id/cartaoPerfil" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/listaSugestoes"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:clipToPadding="false"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="@dimen/espaco_secao"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textTituloSugestoes"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista"
+        tools:itemCount="4"
+        tools:listitem="@layout/item_produto_card" />
+
+    <include
+        android:id="@+id/painelEstado"
+        layout="@layout/include_estado_catalogo"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="@+id/listaSugestoes"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/listaSugestoes" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

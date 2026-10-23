@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Os avisos do catalogo (carregando, servidor acordando, erro, vazio) que a
+     Home e a busca mostram no lugar da grade. Quem liga isto tudo e o
+     EstadoCatalogo. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/blocoCarregando"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:indeterminateTint="@color/roxo_venus" />
+
+        <!-- O servidor gratuito hiberna, e acordar ele foi medido em ~100s. Sem
+             aviso, esse tempo parado passa impressao de travamento. -->
+        <TextView
+            android:id="@+id/textAcordando"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/espaco_secao"
+            android:layout_marginTop="@dimen/espaco_medio"
+            android:layout_marginEnd="@dimen/espaco_secao"
+            android:gravity="center"
+            android:text="@string/busca_acordando"
+            android:textColor="@color/cinza_descricao"
+            android:textSize="@dimen/texto_corpo"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/blocoErro"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginStart="@dimen/espaco_secao"
+        android:layout_marginEnd="@dimen/espaco_secao"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <TextView
+            android:id="@+id/textErro"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/cinza_descricao"
+            android:textSize="@dimen/texto_corpo"
+            tools:text="@string/erro_sem_conexao" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnTentarDeNovo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaco_medio"
+            android:background="@drawable/bg_botao_gradiente"
+            android:paddingStart="@dimen/espaco_grande"
+            android:paddingEnd="@dimen/espaco_grande"
+            android:text="@string/acao_tentar_de_novo"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="@dimen/texto_campo" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/textVazio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginStart="@dimen/espaco_secao"
+        android:layout_marginEnd="@dimen/espaco_secao"
+        android:gravity="center"
+        android:textColor="@color/cinza_descricao"
+        android:textSize="@dimen/texto_corpo"
+        android:visibility="gone"
+        tools:text="@string/busca_sem_resultado"
+        tools:visibility="visible" />
+
+</FrameLayout>

@@ -1,5 +1,7 @@
 package com.venussystem.venusmobile.repository;
 
+import android.content.Context;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -14,7 +16,9 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.auth.UserProfileChangeRequest;
 import com.venussystem.venusmobile.model.ResultadoAuth;
+import com.venussystem.venusmobile.lembrete.Lembretes;
 import com.venussystem.venusmobile.model.Usuario;
+import com.venussystem.venusmobile.view.Notificador;
 
 public class AutenticacaoRepository {
     private final FirebaseAuth auth = FirebaseAuth.getInstance();
@@ -87,7 +91,22 @@ public class AutenticacaoRepository {
         return resultado;
     }
 
-    public void sair() {
+    /**
+     * Sai da conta. Antes, apaga a conversa com a Venus guardada no aparelho:
+     * ela costuma ter pele, alergias e saude, e nao deve ficar para tras. O
+     * resto (questionario, listas) fica guardado por conta, ver DadosDaConta.
+     *
+     * O alarme do lembrete do questionario, as conferencias em segundo plano e as
+     * notificacoes na barra tambem saem: quem entrar depois neste aparelho nao pode
+     * receber aviso da conta anterior. O estado do lembrete fica guardado e volta
+     * quando a conta voltar.
+     */
+    public void sair(Context context) {
+        new ConversaSalvaRepository(context).apagar();
+        // Antes do signOut: o alarme a cancelar depende de saber qual e a conta.
+        Lembretes.cancelarDaContaAtual(context);
+        DecisoesAgenda.cancelar(context);
+        Notificador.cancelarTodas(context);
         auth.signOut();
     }
 

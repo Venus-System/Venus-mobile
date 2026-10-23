@@ -5,6 +5,7 @@ import com.venussystem.venusmobile.repository.api.dto.ChatResponse;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.POST;
 
@@ -22,4 +23,11 @@ public interface VenusIaApi {
     @POST("v1/chat")
     Call<ChatResponse> conversar(@Header("Authorization") String autorizacao,
                                  @Body ChatRequest corpo);
+
+    /**
+     * Rota publica e leve. Serve so para acordar o servidor (o Render dorme
+     * depois de 15 minutos parado) enquanto a pessoa ainda esta digitando.
+     */
+    @GET("v1/health")
+    Call<Void> acordar();
 }

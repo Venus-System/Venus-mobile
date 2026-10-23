@@ -90,13 +90,6 @@ public class DadosDaContaTest {
     }
 
     @Test
-    public void buscasRecentes_saoPorConta() {
-        new BuscaRecenteRepository(context, ANA).registrar("protetor solar");
-
-        assertTrue(new BuscaRecenteRepository(context, BIA).getRecentes().isEmpty());
-    }
-
-    @Test
     public void questionario_ePorConta() {
         PerfilRepository daAna = new PerfilRepository(context, ANA);
         daAna.salvarResposta(PerfilRepository.TIPO_PELE, "OILY", "Oleosa");
@@ -144,7 +137,6 @@ public class DadosDaContaTest {
         DadosDaConta.migrarDadosAntigos(context, ANA);
 
         assertTrue(antigo(BUSCAS_ANTIGAS).getAll().isEmpty());
-        assertTrue(new BuscaRecenteRepository(context, ANA).getRecentes().isEmpty());
     }
 
     @Test

@@ -5,6 +5,7 @@ import android.app.Application;
 import androidx.appcompat.app.AppCompatDelegate;
 
 import com.venussystem.venusmobile.repository.DadosDaConta;
+import com.venussystem.venusmobile.view.Notificador;
 
 /**
  * Trava o app no modo claro, e da destino aos dados guardados antes de o app
@@ -32,5 +33,8 @@ public class VenusApplication extends Application {
         // nao na tela de boas-vindas, porque o Android pode reabrir o app
         // direto numa tela do meio.
         DadosDaConta.migrarDadosAntigos(this);
+
+        // Os canais precisam existir antes de qualquer alarme disparar com o app fechado.
+        Notificador.criarCanais(this);
     }
 }

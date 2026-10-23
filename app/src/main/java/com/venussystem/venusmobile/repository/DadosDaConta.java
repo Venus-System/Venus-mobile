@@ -26,6 +26,11 @@ public final class DadosDaConta {
 
     private static final String TAG = "DadosDaConta";
 
+    // O arquivo das buscas recentes, de quando elas existiam e eram um arquivo
+    // so por aparelho. As buscas recentes sairam do app; o arquivo antigo
+    // continua sendo apagado na migracao.
+    private static final String ARQUIVO_BUSCAS_ANTIGAS = "venus_busca";
+
     // So para ter um nome quando ninguem esta logado; nenhuma tela que grava
     // dados abre sem conta.
     private static final String SEM_CONTA = "sem_conta";
@@ -97,7 +102,7 @@ public final class DadosDaConta {
         // nao foi publicado, sao dados de teste).
         ColecaoRepository.descartarListasSemDono(app);
         app.deleteSharedPreferences(ListaItemRepository.ARQUIVO);
-        app.deleteSharedPreferences(BuscaRecenteRepository.ARQUIVO);
+        app.deleteSharedPreferences(ARQUIVO_BUSCAS_ANTIGAS);
     }
 
     private static void copiar(SharedPreferences origem, SharedPreferences destino) {

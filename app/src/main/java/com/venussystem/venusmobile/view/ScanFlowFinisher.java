@@ -9,10 +9,13 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
+import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.ScanSubmissionDraft;
 import com.venussystem.venusmobile.model.Usuario;
 import com.venussystem.venusmobile.repository.AutenticacaoRepository;
 import com.venussystem.venusmobile.repository.ScanDraftStore;
+import com.venussystem.venusmobile.repository.DecisoesAgenda;
+import com.venussystem.venusmobile.repository.ReenvioDeScanAgenda;
 import com.venussystem.venusmobile.repository.ScanSubmissionRepository;
 import com.venussystem.venusmobile.repository.api.ScanApiException;
 import com.venussystem.venusmobile.repository.api.dto.ScanUploadSignaturesResponse;
@@ -23,6 +26,9 @@ import com.venussystem.venusmobile.view.dialog.ScanStatusDialog;
  * Persiste a coleta, envia as fotos e cadastra o scan para análise administrativa.
  */
 public final class ScanFlowFinisher {
+
+    // Espera antes da primeira tentativa do reenvio: o envio da tela pode ainda estar terminando.
+    private static final long ATRASO_DO_REENVIO_MS = 60_000L;
 
     private ScanFlowFinisher() {
     }
@@ -98,7 +104,7 @@ public final class ScanFlowFinisher {
         AlertDialog progress = ScanStatusDialog.create(activity,
                 "Preparando scan",
                 "Aguarde um instante.",
-                true, null, null, () -> abrirPrincipal(activity));
+                true, null, null, () -> sairDeixandoPendente(activity));
         showWhileAlive(activity, progress);
         ScanSubmissionRepository.SignaturesCallback callback = new ScanSubmissionRepository.SignaturesCallback() {
                     @Override public void ready(ScanUploadSignaturesResponse signatures) {
@@ -127,7 +133,7 @@ public final class ScanFlowFinisher {
                                                   "Envio não concluído", "Tente novamente. Fotos confirmadas serão mantidas.",
                                                 false, "Tentar novamente", () -> solicitarAssinaturas(activity, repository, saved,
                                                         false, accountAttempted || connectAccount),
-                                                () -> abrirPrincipal(activity));
+                                                () -> sairDeixandoPendente(activity));
                                         showWhileAlive(activity, failure);
                                     }
                                 });
@@ -140,13 +146,10 @@ public final class ScanFlowFinisher {
                         boolean forbidden = failureInfo != null && failureInfo.kind == ScanApiException.Kind.FORBIDDEN;
                         boolean alreadyAttempted = accountAttempted || connectAccount;
 
-                        // A Firebase session is not automatically a Venus CRUD
-                        // account. Provision the authenticated user's own CRUD
-                        // record once, silently, when the API reports that it is
-                        // missing. The registration endpoint validates the bearer
-                        // token and the client never sends a password. Any second
-                        // 403 is treated as a real authorization/configuration
-                        // problem and is shown to the user without retry loops.
+                        // A sessão Firebase não garante que o usuário já tenha um
+                        // registro no Venus CRUD. Quando a API responde 403,
+                        // provisionamos a própria conta uma única vez, sem pedir
+                        // nome, e-mail ou qualquer ação manual ao usuário.
                         if (forbidden && !alreadyAttempted) {
                             solicitarAssinaturas(activity, repository, saved, true, true);
                             return;
@@ -175,7 +178,7 @@ public final class ScanFlowFinisher {
                                 "Verificar novamente",
                                 authError ? null : () -> solicitarAssinaturas(activity, repository, saved,
                                         retryAccountProvisioning, true),
-                                () -> abrirPrincipal(activity));
+                                () -> sairDeixandoPendente(activity));
                         showWhileAlive(activity, failure);
                     }
                 };
@@ -188,7 +191,7 @@ public final class ScanFlowFinisher {
         if (activity.isFinishing() || activity.isDestroyed()) return;
         android.util.Log.d("VENUS_SCAN_PIPELINE", "CATALOG_REQUEST scanId=" + saved.draft.getScanId());
         AlertDialog progress = ScanStatusDialog.create(activity, "Consultando ingredientes",
-                "Conferindo os nomes no catálogo.", true, null, null, () -> abrirPrincipal(activity));
+                "Conferindo os nomes no catálogo.", true, null, null, () -> sairDeixandoPendente(activity));
         showWhileAlive(activity, progress);
         repository.checkIngredients(saved.firebaseUid, saved.draft.getScanId(), new ScanSubmissionRepository.Callback() {
             @Override public void saved(ScanDraftStore.SavedDraft result) {
@@ -213,7 +216,7 @@ public final class ScanFlowFinisher {
                     message = "Catálogo indisponível. Tente mais tarde.";
                 showWhileAlive(activity, ScanStatusDialog.create(activity, "Consulta não concluída", message,
                         false, "Tentar novamente", () -> consultarIngredientes(activity, repository, saved),
-                        () -> abrirPrincipal(activity)));
+                        () -> sairDeixandoPendente(activity)));
             }
         });
     }
@@ -223,7 +226,7 @@ public final class ScanFlowFinisher {
         if (activity.isFinishing() || activity.isDestroyed()) return;
         AlertDialog progress = ScanStatusDialog.create(activity, "Enviando para análise",
                 "Salvando fotos e dados do rótulo.", true, null, null,
-                () -> abrirPrincipal(activity));
+                () -> sairDeixandoPendente(activity));
         showWhileAlive(activity, progress);
         repository.submitToMongo(saved.firebaseUid, saved.draft.getScanId(), activity.getApplicationContext(),
                 new ScanSubmissionRepository.SubmissionCallback() {
@@ -231,11 +234,11 @@ public final class ScanFlowFinisher {
                         if (activity.isFinishing() || activity.isDestroyed()) return;
                         progress.dismiss();
                         ScanTutorialState.markCompleted(activity);
-                        // A successful Mongo acknowledgement is the terminal state of
-                        // the capture flow. Return to Home immediately instead of
-                        // leaving the user on the last scan screen with a dialog that
-                        // requires a second manual action. The local receipt remains
-                        // persisted by ScanDraftStore, so retry/idempotency is kept.
+                        // O app confere sozinho se a equipe aprovou ou recusou o produto.
+                        DecisoesAgenda.verificarAgora(activity);
+                        // O ACK do Mongo encerra o fluxo. O recibo continua salvo
+                        // localmente para manter retry/idempotência, mas o usuário
+                        // volta imediatamente para a Home.
                         Toast.makeText(activity,
                                 "Scan enviado para análise administrativa.",
                                 Toast.LENGTH_LONG).show();
@@ -253,7 +256,7 @@ public final class ScanFlowFinisher {
                                 : "Não foi possível confirmar o envio. Tente novamente.";
                         showWhileAlive(activity, ScanStatusDialog.create(activity, "Envio não concluído", message,
                                 false, "Tentar novamente", () -> enviarParaMongo(activity, repository, saved, true),
-                                () -> abrirPrincipal(activity)));
+                                () -> sairDeixandoPendente(activity)));
                     }
                 });
     }
@@ -269,6 +272,29 @@ public final class ScanFlowFinisher {
             dialog.setOnDismissListener(ignored -> owner.getLifecycle().removeObserver(observer));
         }
         dialog.show();
+    }
+
+    /**
+     * "Voltar" no meio do envio ou depois de uma falha. O rascunho (fotos e leitura)
+     * fica guardado e o reenvio termina o trabalho quando houver internet. Como o
+     * aviso de que o produto foi enviado depende da permissao de notificacao, ela
+     * e oferecida aqui, uma vez por conta.
+     */
+    private static void sairDeixandoPendente(@NonNull Activity activity) {
+        ReenvioDeScanAgenda.agendar(activity, ATRASO_DO_REENVIO_MS);
+        if (!PedidoDeAvisos.deveOferecer(activity) || activity.isFinishing() || activity.isDestroyed()) {
+            abrirPrincipal(activity);
+            return;
+        }
+        PedidoDeAvisos.marcarPerguntou(activity);
+        new AlertDialog.Builder(activity)
+                .setTitle(R.string.envio_pendente_titulo)
+                .setMessage(R.string.envio_pendente_mensagem)
+                .setCancelable(false)
+                .setPositiveButton(R.string.envio_pendente_avisar, (d, w) ->
+                        PedidoDeAvisos.pedir(activity, concedida -> abrirPrincipal(activity)))
+                .setNegativeButton(R.string.avisos_agora_nao, (d, w) -> abrirPrincipal(activity))
+                .show();
     }
 
     private static void abrirPrincipal(@NonNull Activity activity) {

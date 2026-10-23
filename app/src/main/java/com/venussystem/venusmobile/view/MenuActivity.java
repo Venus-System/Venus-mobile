@@ -29,7 +29,7 @@ public class MenuActivity extends AppCompatActivity {
 
     private void reiniciarTeste() {
         new PerfilRepository(this).limpar();
-        autenticacao.sair();
+        autenticacao.sair(this);
         Toast.makeText(this, R.string.questionario_reiniciado, Toast.LENGTH_SHORT).show();
 
         Intent intent = new Intent(this, LoginActivity.class);
@@ -49,7 +49,7 @@ public class MenuActivity extends AppCompatActivity {
     }
 
     private void sair() {
-        autenticacao.sair();
+        autenticacao.sair(this);
 
         Intent intent = new Intent(this, BemVindoActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

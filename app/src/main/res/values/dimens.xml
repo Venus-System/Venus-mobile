@@ -51,6 +51,9 @@
     <dimen name="miniatura_chat">44dp</dimen>
     <dimen name="nota_circular">44dp</dimen>
     <dimen name="nota_circular_cabecalho">52dp</dimen>
+    <!-- Card de produto da Home e da busca: altura da foto e respiro entre cards. -->
+    <dimen name="altura_foto_card">120dp</dimen>
+    <dimen name="espaco_card_grade">6dp</dimen>
 
     <!-- Largura maxima das colunas de conteudo. 0dp = sem limite (e assim que o
          ConstraintLayout trata layout_constraintWidth_max), entao no celular em pe
@@ -72,4 +75,6 @@
     <dimen name="largura_menu_lateral">280dp</dimen>
     <!-- O mesmo raio dos modais do perfil (bg_modal_escolha). -->
     <dimen name="raio_menu_lateral">20dp</dimen>
+    <!-- Margem de dentro do cartao "Seu perfil Venus": mais justa que a das telas, para ele nao tomar a Home. -->
+    <dimen name="padding_cartao_perfil">12dp</dimen>
 </resources>

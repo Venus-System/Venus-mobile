@@ -11,6 +11,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.venussystem.venusmobile.BuildConfig;
+import com.venussystem.venusmobile.model.IngredienteProduto;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.repository.api.ClienteApi;
 import com.venussystem.venusmobile.repository.api.VenusApi;
@@ -139,6 +140,11 @@ public class ProdutoRepository {
         }
     }
 
+    public interface AoObterIngredientes {
+        /** Lista vazia quando o produto nao tem ingredientes ou algo falhou. */
+        void aoConcluir(List<IngredienteProduto> ingredientes);
+    }
+
     public interface AoObterDetalhe {
         void aoConcluir(@Nullable String textoRotulo, @Nullable String urlFoto);
     }
@@ -249,6 +255,65 @@ public class ProdutoRepository {
             guardarImagem(produtoId, detalhe.urlFoto);
             PRINCIPAL.post(() -> callback.aoConcluir(detalhe.textoRotulo, detalhe.urlFoto));
         });
+    }
+
+    /**
+     * Ingredientes do produto na ordem do rotulo, cada um com nome e
+     * descricao (a tela mostra um item por ingrediente). Reaproveita a mesma
+     * composicao do texto corrido: versao atual -> product-ingredients -> um
+     * GET por ingrediente. Se qualquer passo falhar devolve lista vazia, e nao
+     * uma lista parcial: omitir ingrediente em silencio enganaria quem confere
+     * o rotulo, e a tela cai no texto corrido.
+     */
+    public void buscarIngredientesDoProduto(long produtoId, AoObterIngredientes callback) {
+        REDE.execute(() -> {
+            List<IngredienteProduto> lista = obterIngredientesDoProduto(produtoId);
+            PRINCIPAL.post(() -> callback.aoConcluir(lista));
+        });
+    }
+
+    private List<IngredienteProduto> obterIngredientesDoProduto(long produtoId) {
+        Long versaoId = buscarVersaoAtual(produtoId);
+        if (versaoId == null) {
+            return Collections.emptyList();
+        }
+        try {
+            Response<List<ProductIngredientResponse>> resposta =
+                    api.listarIngredientesDaVersao(versaoId).execute();
+            if (!resposta.isSuccessful() || resposta.body() == null) {
+                return Collections.emptyList();
+            }
+
+            List<ProductIngredientResponse> vinculos = new ArrayList<>();
+            for (ProductIngredientResponse v : resposta.body()) {
+                if (v != null && v.ingredientId != null && v.ingredientId > 0) {
+                    vinculos.add(v);
+                }
+            }
+            vinculos.sort((esquerda, direita) -> Integer.compare(
+                    posicaoDoIngrediente(esquerda), posicaoDoIngrediente(direita)));
+
+            List<Future<IngredientResponse>> consultas = new ArrayList<>();
+            for (ProductIngredientResponse v : vinculos) {
+                long id = v.ingredientId;
+                consultas.add(REDE_INGREDIENTES.submit(() -> obterIngrediente(id)));
+            }
+
+            List<IngredienteProduto> resultado = new ArrayList<>();
+            for (Future<IngredientResponse> consulta : consultas) {
+                IngredienteProduto item = IngredienteProduto.de(consulta.get(30, TimeUnit.SECONDS));
+                if (item == null) {
+                    return Collections.emptyList();
+                }
+                resultado.add(item);
+            }
+            return resultado;
+        } catch (IOException | ExecutionException | TimeoutException | RuntimeException e) {
+            return Collections.emptyList();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Collections.emptyList();
+        }
     }
 
     /**
@@ -616,15 +681,15 @@ public class ProdutoRepository {
         List<ProductScoreResponse> notas = esperar(pedidoNotas);
         Long modeloAtivoId = esperarModeloAtivo(pedidoModeloAtivo);
 
-        Map<Long, String> nomeDaMarca = new HashMap<>();
+        Map<Long, BrandResponse> marcaPorId = new HashMap<>();
         for (BrandResponse marca : marcas) {
 
             if (marca != null
                     && marca.id != null) {
 
-                nomeDaMarca.put(
+                marcaPorId.put(
                         marca.id,
-                        marca.name
+                        marca
                 );
             }
         }
@@ -708,10 +773,15 @@ public class ProdutoRepository {
                             versaoAtual
                     );
 
-            String marca =
-                    nomeDaMarca.get(
+            BrandResponse dadosDaMarca =
+                    marcaPorId.get(
                             produto.brandId
                     );
+
+            String marca =
+                    dadosDaMarca == null
+                            ? null
+                            : dadosDaMarca.name;
 
             if (marca == null) {
                 marca = "";
@@ -721,7 +791,8 @@ public class ProdutoRepository {
             // foto ativa sob demanda pelo endpoint leve de fotos da versao.
             guardarVersaoAtual(produto.id, versaoAtual);
             catalogo.add(new Produto(produto.id, produto.name, marca, nota, null,
-                    produto.productCategoryId, nomeDaCategoria.get(produto.productCategoryId)));
+                    produto.productCategoryId, nomeDaCategoria.get(produto.productCategoryId),
+                    produto.brandId, dadosDaMarca == null ? null : dadosDaMarca.isBrazilian));
         }
 
         return catalogo;
