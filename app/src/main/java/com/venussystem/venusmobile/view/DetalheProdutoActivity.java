@@ -1,7 +1,6 @@
 package com.venussystem.venusmobile.view;
 
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -39,6 +38,7 @@ import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
 import com.venussystem.venusmobile.repository.AcessosRecentesRepository;
 import com.venussystem.venusmobile.repository.ColecaoRepository;
+import com.venussystem.venusmobile.repository.HistoricoCatalogoRepository;
 import com.venussystem.venusmobile.repository.ListaItemRepository;
 import com.venussystem.venusmobile.repository.MatchProdutoRepository;
 import com.venussystem.venusmobile.repository.PerfilRepository;
@@ -46,7 +46,6 @@ import com.venussystem.venusmobile.repository.ProdutoRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.view.adapter.AlternativaAdapter;
 import com.venussystem.venusmobile.view.componente.CartaoPerfilView;
-import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
 import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 
 import java.util.ArrayList;
@@ -90,6 +89,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
     private ColecaoRepository colecaoRepository;
     private ListaItemRepository itemRepository;
+    private HistoricoCatalogoRepository historicoCatalogoRepository;
 
     private Produto produto;
     private long produtoIdRecebido = -1L;
@@ -118,6 +118,9 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         itemRepository =
                 new ListaItemRepository(this);
+
+        historicoCatalogoRepository =
+                new HistoricoCatalogoRepository(this);
 
         findViewById(
                 R.id.btnVoltar
@@ -389,6 +392,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         produto = produtoEncontrado;
         telaInicializada = true;
+        historicoCatalogoRepository.registrarAcesso(produtoEncontrado);
 
         registrarAcesso(
                 produto.getId()
@@ -505,49 +509,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 temCategoria
                         ? View.VISIBLE
                         : View.GONE
-        );
-
-        TextView nota =
-                findViewById(
-                        R.id.textNotaProduto
-                );
-
-        if (produto.getOverallScore() == null) {
-
-            nota.setText(
-                    R.string.nota_indisponivel
-            );
-
-        } else {
-
-            nota.setText(
-                    String.valueOf(
-                            produto.getOverallScore()
-                    )
-            );
-        }
-
-        Integer valorNota =
-                produto.getOverallScore();
-
-        nota.setTextColor(
-                ContextCompat.getColor(
-                        this,
-                        NotaProdutoUtil.corPara(
-                                valorNota
-                        )
-                )
-        );
-
-        nota.setBackgroundTintList(
-                ColorStateList.valueOf(
-                        ContextCompat.getColor(
-                                this,
-                                NotaProdutoUtil.fundoPara(
-                                        valorNota
-                                )
-                        )
-                )
         );
 
         // A foto é independente da leitura dos ingredientes. Resolve-a logo

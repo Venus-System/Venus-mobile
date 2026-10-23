@@ -102,7 +102,7 @@ public final class ScanFlowFinisher {
             ScanDraftStore.SavedDraft saved, boolean connectAccount, boolean accountAttempted) {
         if (activity.isFinishing() || activity.isDestroyed()) return;
         AlertDialog progress = ScanStatusDialog.create(activity,
-                connectAccount ? "Conectando conta" : "Preparando scan",
+                "Preparando scan",
                 "Aguarde um instante.",
                 true, null, null, () -> sairDeixandoPendente(activity));
         showWhileAlive(activity, progress);
@@ -145,14 +145,21 @@ public final class ScanFlowFinisher {
                                 ? (ScanApiException) exception : null;
                         boolean forbidden = failureInfo != null && failureInfo.kind == ScanApiException.Kind.FORBIDDEN;
                         boolean alreadyAttempted = accountAttempted || connectAccount;
-                        boolean offerConnection = forbidden && !alreadyAttempted;
+
+                        // A sessão Firebase não garante que o usuário já tenha um
+                        // registro no Venus CRUD. Quando a API responde 403,
+                        // provisionamos a própria conta uma única vez, sem pedir
+                        // nome, e-mail ou qualquer ação manual ao usuário.
+                        if (forbidden && !alreadyAttempted) {
+                            solicitarAssinaturas(activity, repository, saved, true, true);
+                            return;
+                        }
+
                         String title = "Não conseguimos continuar";
                         String message = "Tente novamente em instantes.";
                         if (forbidden) {
-                            title = offerConnection ? "Vamos conectar sua conta?" : "Sua conta precisa de atenção";
-                            message = offerConnection
-                                    ? "Informe nome e e-mail para continuar."
-                                    : "Peça ao responsável para verificar seu acesso.";
+                            title = "Sua conta precisa de atenção";
+                            message = "Não foi possível habilitar o envio automaticamente. Tente novamente mais tarde.";
                         } else if (failureInfo != null && failureInfo.kind == ScanApiException.Kind.AUTH) {
                             title = "Entre novamente na sua conta";
                             message = "Entre novamente com a conta deste scan.";
@@ -162,10 +169,15 @@ public final class ScanFlowFinisher {
                             message = "Verifique a internet e tente novamente.";
                         }
                         boolean authError = failureInfo != null && failureInfo.kind == ScanApiException.Kind.AUTH;
+                        boolean retryAccountProvisioning = connectAccount && failureInfo != null
+                                && (failureInfo.kind == ScanApiException.Kind.NETWORK
+                                || failureInfo.kind == ScanApiException.Kind.TIMEOUT
+                                || (failureInfo.kind == ScanApiException.Kind.HTTP
+                                && failureInfo.httpCode >= 500));
                         AlertDialog failure = ScanStatusDialog.create(activity, title, message, false,
-                                offerConnection ? "Conectar minha conta" : "Verificar novamente",
+                                "Verificar novamente",
                                 authError ? null : () -> solicitarAssinaturas(activity, repository, saved,
-                                        offerConnection, alreadyAttempted || offerConnection),
+                                        retryAccountProvisioning, true),
                                 () -> sairDeixandoPendente(activity));
                         showWhileAlive(activity, failure);
                     }
@@ -224,19 +236,13 @@ public final class ScanFlowFinisher {
                         ScanTutorialState.markCompleted(activity);
                         // O app confere sozinho se a equipe aprovou ou recusou o produto.
                         DecisoesAgenda.verificarAgora(activity);
-                        if (PedidoDeAvisos.deveOferecer(activity)) {
-                            PedidoDeAvisos.marcarPerguntou(activity);
-                            showWhileAlive(activity, ScanStatusDialog.create(activity, "Scan enviado",
-                                    "Enviado para análise administrativa. "
-                                            + "Quer ser avisado quando analisarmos o produto?", false,
-                                    "Me avisar",
-                                    () -> PedidoDeAvisos.pedir(activity, concedida -> abrirPrincipal(activity)),
-                                    () -> abrirPrincipal(activity)));
-                            return;
-                        }
-                        showWhileAlive(activity, ScanStatusDialog.create(activity, "Scan enviado",
-                                "Enviado para análise administrativa.", false,
-                                null, null, () -> abrirPrincipal(activity)));
+                        // O ACK do Mongo encerra o fluxo. O recibo continua salvo
+                        // localmente para manter retry/idempotência, mas o usuário
+                        // volta imediatamente para a Home.
+                        Toast.makeText(activity,
+                                "Scan enviado para análise administrativa.",
+                                Toast.LENGTH_LONG).show();
+                        abrirPrincipal(activity);
                     }
                     @Override public void failed(Exception error) {
                         if (activity.isFinishing() || activity.isDestroyed()) return;

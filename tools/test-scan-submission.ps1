@@ -14,11 +14,19 @@ $libs = @('junit\junit\4.13.2', 'org.hamcrest\hamcrest-core\1.3',
     if (!$jar) { throw "Missing dependency: $_" }
     $jar.FullName
 }
-$android = "$env:LOCALAPPDATA\Android\Sdk\platforms\android-36\android.jar"
+$androidSdkPlatforms = Join-Path $env:USERPROFILE 'AppData\Local\Android\Sdk\platforms'
+$android = Get-ChildItem $androidSdkPlatforms -Directory -ErrorAction Stop |
+    Where-Object { $_.Name -match '^android-\d+$' } |
+    Sort-Object { [int]($_.Name -replace '^android-', '') } -Descending |
+    ForEach-Object { Join-Path $_.FullName 'android.jar' } |
+    Where-Object { Test-Path $_ } |
+    Select-Object -First 1
+if (!$android) { throw 'Android SDK platform android.jar not found.' }
 $classpath = (@($android) + $libs) -join ';'
 $main = Join-Path $projectRoot 'app\src\main\java\com\venussystem\venusmobile'
 $sources = @('ScanSubmissionDraft','ScanPhotoQuality','ScanBackData','ScanBackIngredientCandidate',
-    'ScanCosmeticClassification','ScanFrontData','ScanOcrResult','ScanOcrToken') | ForEach-Object { "$main\model\$_.java" }
+    'ScanCosmeticClassification','ScanFrontData','ScanOcrResult','ScanOcrToken',
+    'ScanOcrAttempt','ScanOcrTokenEvidence') | ForEach-Object { "$main\model\$_.java" }
 $sources += @('ScanSubmissionMapper','ScanSubmissionValidator','ScanDraftStore','ScanPhotoUploadCoordinator') |
     ForEach-Object { "$main\repository\$_.java" }
 $sources += @('ScanAuthSession','ScanSubmissionApi','ScanApiException','AuthenticatedScanClient','CloudinaryUploadClient','ScanUploadException') |
@@ -30,11 +38,16 @@ $sources += "$testRoot\ScanSubmissionPreparationTest.java", "$testRoot\Authentic
     "$testRoot\ScanCatalogCharacterizationTest.java"
 $sources += "$main\model\Produto.java", "$main\model\ScanFrontData.java", "$main\model\ScanProductMatch.java",
     "$main\view\util\ScanTextNormalizer.java"
+$sources += Get-ChildItem -LiteralPath "$main\view\util" -Filter 'ScanFront*.java' |
+    Select-Object -ExpandProperty FullName
+$sources += "$main\view\util\ScanCosmeticEvidence.java",
+    "$main\view\util\ScanCosmeticText.java"
 $sources += @('ScanCatalogRules','ScanCatalogText','ScanCatalogScoring','ScanCatalogMatcher') |
     ForEach-Object { "$main\repository\$_.java" }
 $sources += "$PSScriptRoot\scan-back-test-support\android\util\Log.java"
 $sources += "$testRoot\CloudinaryUploadTest.java", "$testRoot\ScanIngredientCatalogTest.java",
-    "$main\repository\ScanIngredientCatalog.java", "$main\repository\api\ScanIngredientApi.java"
+    "$main\repository\ScanIngredientCatalog.java", "$main\repository\ScanIngredientCatalogCache.java",
+    "$main\repository\ScanIngredientCatalogReportValidator.java", "$main\repository\api\ScanIngredientApi.java"
 $sources += Get-ChildItem -LiteralPath "$main\domain\scan" -Filter '*.java' |
     Select-Object -ExpandProperty FullName
 & "$JavaHome\bin\javac.exe" --release 11 -encoding UTF-8 -cp $classpath -d $output @sources

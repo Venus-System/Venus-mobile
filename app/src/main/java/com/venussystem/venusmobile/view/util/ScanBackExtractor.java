@@ -151,6 +151,15 @@ public final class ScanBackExtractor {
                             t.getConfidence(), t.getRotation(), t.getBlockIndex(), rowIndex, element));
                 }
             }
+            // A geometric layout is usable only when it carries every source
+            // token. If a future layout change drops or duplicates one, use
+            // the untouched text fallback instead of silently losing OCR.
+            if (orderedTokens.size() != spatialTokens.size()) {
+                Log.d(TAG, "BACK_LAYOUT_FALLBACK_REASON=TOKEN_COVERAGE_MISMATCH");
+                visualRows = Collections.emptyList();
+                lines = originalLines;
+                orderedTokens.clear();
+            }
         }
         Log.d(TAG, "BACK_LAYOUT=" + (visualRows.isEmpty() ? "TEXT_FALLBACK" : "GEOMETRIC_ROWS")
                 + " rows=" + lines.size());
@@ -251,48 +260,6 @@ public final class ScanBackExtractor {
                 gerarAssinaturaOCR(
                         ingredients
                 );
-        /*
-         * ============================================================
-         * LOG
-         * ============================================================
-         */
-        Log.d(
-                TAG,
-                "========================================"
-        );
-        Log.d(
-                TAG,
-                "V7.2 PARSER / BACK SCAN"
-        );
-        Log.d(
-                TAG,
-                "========================================"
-        );
-        Log.d(
-                TAG,
-                "SECAO INGREDIENTES ENCONTRADA: "
-                        + section.found
-        );
-        Log.d(
-                TAG,
-                "INGREDIENTES START: "
-                        + section.startIndex
-        );
-        Log.d(
-                TAG,
-                "INGREDIENTES END: "
-                        + section.endIndex
-        );
-        Log.d(
-                TAG,
-                "INGREDIENTES STOP: "
-                        + section.stopReason
-        );
-        Log.d(
-                TAG,
-                "QUANTIDADE INGREDIENTES: "
-                        + ingredients.size()
-        );
         long uncertain = ingredients.stream().filter(i ->
                 !ScanIngredientPolicy.isRecognized(i.getNormalizedName())).count();
         Log.d(TAG, "INGREDIENT_REVIEW_REQUIRED="

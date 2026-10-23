@@ -24,6 +24,7 @@ final class ScanCatalogMatcher {
     private ScanCatalogMatcher() { }
 
     private static final double MIN_BRAND_SCORE = 0.80;
+    private static final double MIN_BRAND_SCORE_GAP = 0.05;
 
     /*
      * Com marca encontrada, usamos um threshold de produto
@@ -86,6 +87,16 @@ final class ScanCatalogMatcher {
          * =========================================================
          */
         if (marcaEncontrada != null) {
+            if (marcaEncontrada.segundoScore > 0.0
+                    && marcaEncontrada.score - marcaEncontrada.segundoScore
+                    < MIN_BRAND_SCORE_GAP) {
+                return ScanProductMatch.ambiguo(
+                        marcaEncontrada.score,
+                        marcaEncontrada.score - marcaEncontrada.segundoScore,
+                        marcaEncontrada.candidatoOCR,
+                        null
+                );
+            }
             /*
              * Restringe o catálogo somente aos produtos
              * pertencentes à marca identificada.
@@ -130,8 +141,9 @@ final class ScanCatalogMatcher {
             boolean produtoConfiavel =
                     produtoEncontrado.score
                             >= MIN_PRODUCT_SCORE_WITH_BRAND
-                            && produtoEncontrado
-                            .termosFortesCasados >= 2;
+                            && (produtoEncontrado.termosFortesCasados >= 2
+                            || (produtoEncontrado.tokensAlvoExatos >= 1
+                            && produtoEncontrado.segundoScore <= 0.0));
             boolean ambiguo =
                     produtoEncontrado.segundoScore > 0.0
                             && (
@@ -139,6 +151,20 @@ final class ScanCatalogMatcher {
                                     - produtoEncontrado
                                     .segundoScore
                     ) < MIN_SCORE_GAP_WITH_BRAND;
+            /*
+             * Um nome mais específico pode saturar o mesmo score do nome
+             * curto. Ex.: "CLINICAL CLEAN MEN" e "CLINICAL CLEAN" recebem
+             * as mesmas evidências de uma leitura que contém os três termos,
+             * embora o primeiro explique mais texto identificado. O matcher
+             * guarda essa evidência como desempate; não é uma autorização
+             * para aceitar dois candidatos com a mesma especificidade.
+             */
+            if (ambiguo
+                    && produtoEncontrado.tokensAlvoExatos
+                    > produtoEncontrado.segundoTokensAlvoExatos
+                    && produtoEncontrado.tokensAlvoExatos >= 2) {
+                ambiguo = false;
+            }
             if (marcaEncontrada.score
                     < MIN_BRAND_SCORE) {
                 return ScanProductMatch
@@ -146,8 +172,15 @@ final class ScanCatalogMatcher {
             }
             if (!produtoConfiavel
                     || ambiguo) {
-                return ScanProductMatch
-                        .semMatch();
+                double gap = produtoEncontrado.segundoScore > 0.0
+                        ? produtoEncontrado.score - produtoEncontrado.segundoScore
+                        : produtoEncontrado.score;
+                return ScanProductMatch.ambiguo(
+                        produtoEncontrado.score,
+                        gap,
+                        marcaEncontrada.candidatoOCR,
+                        produtoEncontrado.candidatoOCR
+                );
             }
             /*
              * =====================================================
@@ -166,7 +199,8 @@ final class ScanCatalogMatcher {
                     produtoEncontrado.produto,
                     produtoEncontrado.score,
                     marcaEncontrada.candidatoOCR,
-                    produtoEncontrado.candidatoOCR
+                    produtoEncontrado.candidatoOCR,
+                    produtoEncontrado.score - produtoEncontrado.segundoScore
             );
         }
         /*
@@ -197,14 +231,22 @@ final class ScanCatalogMatcher {
                 ) < MIN_SCORE_GAP_WITHOUT_BRAND;
         if (!confiavel
                 || ambiguo) {
-            return ScanProductMatch
-                    .semMatch();
+            double gap = fallback.segundoScore > 0.0
+                    ? fallback.score - fallback.segundoScore
+                    : fallback.score;
+            return ScanProductMatch.ambiguo(
+                    fallback.score,
+                    gap,
+                    null,
+                    fallback.candidatoOCR
+            );
         }
         return ScanProductMatch.encontrado(
                 fallback.produto,
                 fallback.score,
                 null,
-                fallback.candidatoOCR
+                fallback.candidatoOCR,
+                fallback.score - fallback.segundoScore
         );
     }
 
@@ -250,14 +292,13 @@ final class ScanCatalogMatcher {
                 if (score < MIN_BRAND_SCORE) {
                     continue;
                 }
-                if (melhor == null
-                        || score > melhor.score) {
-                    melhor =
-                            new BrandMatch(
-                                    marcaBanco,
-                                    candidatoOCR,
-                                    score
-                            );
+                if (melhor == null) {
+                    melhor = new BrandMatch(marcaBanco, candidatoOCR, score, 0.0);
+                } else if (score > melhor.score) {
+                    melhor = new BrandMatch(marcaBanco, candidatoOCR, score, melhor.score);
+                } else if (!marcaBanco.equals(melhor.nome)
+                        && score > melhor.segundoScore) {
+                    melhor.segundoScore = score;
                 }
             }
         }
@@ -371,23 +412,35 @@ final class ScanCatalogMatcher {
                                 evidencia.score,
                                 0.0,
                                 evidencia.candidatoOCR,
-                                evidencia.termosFortesCasados
+                                evidencia.termosFortesCasados,
+                                evidencia.tokensAlvoExatos,
+                                0
                         );
                 continue;
             }
-            if (evidencia.score
-                    > melhor.score) {
+            boolean scoreMaior = evidencia.score > melhor.score;
+            boolean mesmoScoreMaisEspecifico =
+                    Math.abs(evidencia.score - melhor.score) < 0.0001
+                            && evidencia.tokensAlvoExatos
+                            > melhor.tokensAlvoExatos;
+            if (scoreMaior || mesmoScoreMaisEspecifico) {
                 melhor =
                         new ProductMatch(
                                 produto,
                                 evidencia.score,
                                 melhor.score,
                                 evidencia.candidatoOCR,
-                                evidencia.termosFortesCasados
+                                evidencia.termosFortesCasados,
+                                evidencia.tokensAlvoExatos,
+                                melhor.tokensAlvoExatos
                         );
             } else if (
                     evidencia.score
                             > melhor.segundoScore
+                            || (Math.abs(evidencia.score - melhor.segundoScore)
+                            < 0.0001
+                            && evidencia.tokensAlvoExatos
+                            > melhor.segundoTokensAlvoExatos)
             ) {
                 melhor =
                         new ProductMatch(
@@ -395,7 +448,9 @@ final class ScanCatalogMatcher {
                                 melhor.score,
                                 evidencia.score,
                                 melhor.candidatoOCR,
-                                melhor.termosFortesCasados
+                                melhor.termosFortesCasados,
+                                melhor.tokensAlvoExatos,
+                                evidencia.tokensAlvoExatos
                         );
             }
         }
@@ -406,10 +461,12 @@ final class ScanCatalogMatcher {
         private final String nome;
         private final String candidatoOCR;
         private final double score;
+        private double segundoScore;
         BrandMatch(
                 String nome,
                 String candidatoOCR,
-                double score
+                double score,
+                double segundoScore
         ) {
             this.nome =
                     nome;
@@ -417,6 +474,7 @@ final class ScanCatalogMatcher {
                     candidatoOCR;
             this.score =
                     score;
+            this.segundoScore = segundoScore;
         }
     }
 
@@ -426,12 +484,16 @@ final class ScanCatalogMatcher {
         private final double segundoScore;
         private final String candidatoOCR;
         private final int termosFortesCasados;
+        private final int tokensAlvoExatos;
+        private final int segundoTokensAlvoExatos;
         ProductMatch(
                 Produto produto,
                 double score,
                 double segundoScore,
                 String candidatoOCR,
-                int termosFortesCasados
+                int termosFortesCasados,
+                int tokensAlvoExatos,
+                int segundoTokensAlvoExatos
         ) {
             this.produto =
                     produto;
@@ -443,6 +505,10 @@ final class ScanCatalogMatcher {
                     candidatoOCR;
             this.termosFortesCasados =
                     termosFortesCasados;
+            this.tokensAlvoExatos =
+                    tokensAlvoExatos;
+            this.segundoTokensAlvoExatos =
+                    segundoTokensAlvoExatos;
         }
     }
 }

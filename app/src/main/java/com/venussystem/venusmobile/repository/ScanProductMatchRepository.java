@@ -58,31 +58,10 @@ public class ScanProductMatchRepository {
             @NonNull ScanFrontData frontData,
             @NonNull Callback callback
     ) {
-        Log.d(
-                TAG,
-                "IDENTIFICAR() CHAMADO"
-        );
         executor.execute(() -> {
-            Log.d(
-                    TAG,
-                    "THREAD DO MATCH INICIADA"
-            );
             try {
-                Log.d(
-                        TAG,
-                        "BUSCANDO CATALOGO..."
-                );
                 List<Produto> catalogo =
                         obterCatalogo();
-                Log.d(
-                        TAG,
-                        "CATALOGO RECEBIDO: "
-                                + (
-                                catalogo == null
-                                        ? "NULL"
-                                        : catalogo.size()
-                        )
-                );
                 if (catalogo == null
                         || catalogo.isEmpty()) {
                     postarResultado(
@@ -96,10 +75,7 @@ public class ScanProductMatchRepository {
                                 frontData,
                                 catalogo
                         );
-                Log.d(
-                        TAG,
-                        criarLogResultado(resultado)
-                );
+                Log.d(TAG, criarLogResultado(resultado));
                 postarResultado(
                         callback,
                         resultado
@@ -185,12 +161,13 @@ public class ScanProductMatchRepository {
                                 + resultado
                                 .getErrorMessage();
             }
-            return
-                    "MATCH: nenhum produto encontrado";
+            return "MATCH status=" + resultado.getResolutionStatus()
+                    + " needsReview=" + resultado.needsReview();
         }
         Produto produto =
                 resultado.getProduto();
-        return "MATCH_ENCONTRADO idPresent=" + (produto != null && produto.getId() != null)
+        return "MATCH status=" + resultado.getResolutionStatus()
+                + " idPresent=" + (produto != null && produto.getId() != null)
                 + " score=" + resultado.getScore();
     }
 

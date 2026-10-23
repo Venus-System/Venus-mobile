@@ -17,6 +17,9 @@ final class ScanBackSpatialLayout {
     private ScanBackSpatialLayout() { }
     private static final double MAX_TEXT_ROTATION = 25.0;
     private static final double MAX_PERSPECTIVE_SPREAD = 20.0;
+    private static final double MAX_VERTICAL_ROTATION_SPREAD = 12.0;
+    private static final int MIN_GLOBAL_ROTATED_LINES = 3;
+    private static final int MIN_GLOBAL_ROTATED_TOKENS = 6;
 
     // Empty means uncertain/incomplete geometry: the caller must use the source text.
     static List<List<ScanOcrToken>> rows(List<String> source, List<ScanOcrToken> tokens) {
@@ -53,21 +56,34 @@ final class ScanBackSpatialLayout {
         }
         List<ScanOcrToken> primary = new ArrayList<>();
         List<List<ScanOcrToken>> peripheral = new ArrayList<>();
-        for (List<ScanOcrToken> line : original.values()) {
-            boolean horizontal = line.stream().allMatch(t -> Math.abs(t.getRotation()) <= MAX_TEXT_ROTATION);
-            if (horizontal) {
-                primary.addAll(line);
-            } else {
-                // Separate complete lines only. Never lose an ingredient by filtering tokens.
-                float orientation = line.get(0).getRotation();
-                String text = ScanIngredientPolicy.normalize(join(line));
-                boolean code = text.matches("[A-Z0-9 ]+") && text.matches(".*[0-9].*")
-                        && ScanIngredientPolicy.isPackagingTailLine(text);
-                boolean vertical = Math.abs(Math.abs(orientation) - 90) <= 12
-                        && line.stream().allMatch(t -> Math.abs(t.getRotation() - orientation) <= 12);
-                if (!code || !vertical) return fallback("AMBIGUOUS_ORIENTATION line="
-                        + line.get(0).getLineIndex());
-                peripheral.add(line);
+        List<List<ScanOcrToken>> completeLines = new ArrayList<>(original.values());
+        boolean globalVertical = isGlobalVerticalLayout(completeLines);
+        if (globalVertical) {
+            // A whole label can be captured rotated by 90 degrees. Treat that
+            // as one coherent coordinate system; do not mistake it for a
+            // vertical package code. A minimum amount of evidence is required
+            // so a single rotated unknown token still falls back safely.
+            for (List<ScanOcrToken> line : completeLines) primary.addAll(line);
+            Log.d("VENUS_BACK_PARSE", "BACK_LAYOUT_ORIENTATION=GLOBAL_VERTICAL lines="
+                    + completeLines.size() + " tokens=" + primary.size());
+        } else {
+            for (List<ScanOcrToken> line : completeLines) {
+                boolean horizontal = line.stream().allMatch(t -> Math.abs(t.getRotation()) <= MAX_TEXT_ROTATION);
+                if (horizontal) {
+                    primary.addAll(line);
+                } else {
+                    // Separate complete lines only. Never lose an ingredient by filtering tokens.
+                    float orientation = line.get(0).getRotation();
+                    String text = ScanIngredientPolicy.normalize(join(line));
+                    boolean code = text.matches("[A-Z0-9 ]+") && text.matches(".*[0-9].*")
+                            && ScanIngredientPolicy.isPackagingTailLine(text);
+                    boolean vertical = Math.abs(Math.abs(orientation) - 90) <= MAX_VERTICAL_ROTATION_SPREAD
+                            && line.stream().allMatch(t -> Math.abs(t.getRotation() - orientation)
+                            <= MAX_VERTICAL_ROTATION_SPREAD);
+                    if (!code || !vertical) return fallback("AMBIGUOUS_ORIENTATION line="
+                            + line.get(0).getLineIndex());
+                    peripheral.add(line);
+                }
             }
         }
         if (primary.isEmpty()) return fallback("NO_PRIMARY_ORIENTATION");
@@ -87,7 +103,10 @@ final class ScanBackSpatialLayout {
         Collections.sort(heights);
         double angle = angles.get(angles.size() / 2);
         for (double a : angles) {
-            if (Math.abs(a - angle) > MAX_PERSPECTIVE_SPREAD)
+            double allowedSpread = globalVertical
+                    ? MAX_VERTICAL_ROTATION_SPREAD
+                    : MAX_PERSPECTIVE_SPREAD;
+            if (Math.abs(a - angle) > allowedSpread)
                 return fallback("INCONSISTENT_ROTATION angle=" + a + " median=" + angle);
         }
         double radians = Math.toRadians(angle);
@@ -97,7 +116,16 @@ final class ScanBackSpatialLayout {
             points.add(new Point(t, t.getCenterX() * cos + t.getCenterY() * sin,
                     t.getCenterY() * cos - t.getCenterX() * sin));
         }
-        points.sort(Comparator.comparingDouble((Point p) -> p.y).thenComparingDouble(p -> p.x));
+        Comparator<Point> projectedOrder = Comparator.comparingDouble((Point p) -> p.y)
+                .thenComparingDouble(p -> p.x);
+        // A counter-clockwise 90-degree capture reverses both projected axes
+        // relative to the clockwise case. Apply the same correction to row
+        // order and token order so the canonical reading direction is stable.
+        if (globalVertical && angle < 0) {
+            projectedOrder = Comparator.comparingDouble((Point p) -> p.y).reversed()
+                    .thenComparing(Comparator.comparingDouble((Point p) -> p.x).reversed());
+        }
+        points.sort(projectedOrder);
         List<List<Point>> groups = new ArrayList<>();
         for (Point p : points) {
             List<Point> best = null;
@@ -120,7 +148,9 @@ final class ScanBackSpatialLayout {
         }
         List<List<ScanOcrToken>> result = new ArrayList<>();
         for (List<Point> group : groups) {
-            group.sort(Comparator.comparingDouble(p -> p.x));
+            Comparator<Point> rowOrder = Comparator.comparingDouble(p -> p.x);
+            if (globalVertical && angle < 0) rowOrder = rowOrder.reversed();
+            group.sort(rowOrder);
             List<ScanOcrToken> row = new ArrayList<>();
             for (Point p : group) row.add(p.token);
             result.add(row);
@@ -132,6 +162,44 @@ final class ScanBackSpatialLayout {
                 "BACK_ORIENTATION_GROUPS primaryTokens=" + primary.size()
                         + " peripheralLines=" + peripheral.size());
         return result;
+    }
+
+    /**
+     * Distinguishes a complete 90-degree capture from an isolated vertical
+     * code. The latter must remain a peripheral line so it cannot reorder the
+     * ingredient paragraph; the former can safely be projected into the
+     * canonical horizontal coordinate system below.
+     */
+    private static boolean isGlobalVerticalLayout(List<List<ScanOcrToken>> lines) {
+        if (lines.size() < MIN_GLOBAL_ROTATED_LINES) return false;
+        int tokenCount = 0;
+        boolean hasCompositionEvidence = false;
+        double reference = Double.NaN;
+        for (List<ScanOcrToken> line : lines) {
+            if (line == null || line.isEmpty()) return false;
+            float lineAngle = line.get(0).getRotation();
+            if (Math.abs(Math.abs(lineAngle) - 90) > MAX_VERTICAL_ROTATION_SPREAD) {
+                return false;
+            }
+            String lineText = ScanIngredientPolicy.normalize(join(line));
+            if (lineText.contains("INGREDIENT") || lineText.contains("INGREDIENTE")
+                    || lineText.matches(".*[,;].*")) {
+                hasCompositionEvidence = true;
+            }
+            for (ScanOcrToken token : line) {
+                tokenCount++;
+                if (Math.abs(Math.abs(token.getRotation()) - 90)
+                        > MAX_VERTICAL_ROTATION_SPREAD) return false;
+                if (Float.isNaN(token.getRotation()) || Float.isInfinite(token.getRotation())) {
+                    return false;
+                }
+                if (Double.isNaN(reference)) reference = token.getRotation();
+                if (Math.abs(token.getRotation() - reference) > MAX_VERTICAL_ROTATION_SPREAD) {
+                    return false;
+                }
+            }
+        }
+        return tokenCount >= MIN_GLOBAL_ROTATED_TOKENS && hasCompositionEvidence;
     }
 
     private static boolean overlaps(ScanOcrToken a, ScanOcrToken b) {

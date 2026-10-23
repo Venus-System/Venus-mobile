@@ -9,12 +9,23 @@ import androidx.annotation.Nullable;
  */
 public class ScanProductMatch {
 
+    /** Decision produced by the local catalogue resolver. */
+    public enum ResolutionStatus {
+        RESOLVED,
+        NOT_FOUND,
+        AMBIGUOUS,
+        ERROR
+    }
+
     private final boolean found;
     private final Produto produto;
     private final double score;
     private final String matchedBrand;
     private final String matchedProduct;
     private final String errorMessage;
+    private final ResolutionStatus resolutionStatus;
+    private final boolean needsReview;
+    private final double scoreGap;
 
     private ScanProductMatch(
             boolean found,
@@ -22,7 +33,10 @@ public class ScanProductMatch {
             double score,
             @Nullable String matchedBrand,
             @Nullable String matchedProduct,
-            @Nullable String errorMessage
+            @Nullable String errorMessage,
+            @NonNull ResolutionStatus resolutionStatus,
+            boolean needsReview,
+            double scoreGap
     ) {
         this.found = found;
         this.produto = produto;
@@ -30,6 +44,9 @@ public class ScanProductMatch {
         this.matchedBrand = matchedBrand;
         this.matchedProduct = matchedProduct;
         this.errorMessage = errorMessage;
+        this.resolutionStatus = resolutionStatus;
+        this.needsReview = needsReview;
+        this.scoreGap = scoreGap;
     }
 
     /**
@@ -42,13 +59,27 @@ public class ScanProductMatch {
             @Nullable String matchedBrand,
             @Nullable String matchedProduct
     ) {
+        return encontrado(produto, score, matchedBrand, matchedProduct, 1.0);
+    }
+
+    @NonNull
+    public static ScanProductMatch encontrado(
+            @NonNull Produto produto,
+            double score,
+            @Nullable String matchedBrand,
+            @Nullable String matchedProduct,
+            double scoreGap
+    ) {
         return new ScanProductMatch(
                 true,
                 produto,
                 score,
                 matchedBrand,
                 matchedProduct,
-                null
+                null,
+                ResolutionStatus.RESOLVED,
+                false,
+                Math.max(0.0, scoreGap)
         );
     }
 
@@ -63,7 +94,36 @@ public class ScanProductMatch {
                 0.0,
                 null,
                 null,
-                null
+                null,
+                ResolutionStatus.NOT_FOUND,
+                true,
+                0.0
+        );
+    }
+
+    /**
+     * Creates an explicit unresolved result when the best catalogue candidate
+     * is too weak or too close to a second candidate. It is intentionally not
+     * considered found, so the UI can continue the review/new-product flow
+     * without opening the wrong catalogue item.
+     */
+    @NonNull
+    public static ScanProductMatch ambiguo(
+            double score,
+            double scoreGap,
+            @Nullable String matchedBrand,
+            @Nullable String matchedProduct
+    ) {
+        return new ScanProductMatch(
+                false,
+                null,
+                score,
+                matchedBrand,
+                matchedProduct,
+                null,
+                ResolutionStatus.AMBIGUOUS,
+                true,
+                Math.max(0.0, scoreGap)
         );
     }
 
@@ -80,7 +140,10 @@ public class ScanProductMatch {
                 0.0,
                 null,
                 null,
-                mensagem
+                mensagem,
+                ResolutionStatus.ERROR,
+                true,
+                0.0
         );
     }
 
@@ -115,5 +178,19 @@ public class ScanProductMatch {
     public boolean hasError() {
         return errorMessage != null
                 && !errorMessage.trim().isEmpty();
+    }
+
+    @NonNull
+    public ResolutionStatus getResolutionStatus() {
+        return resolutionStatus;
+    }
+
+    public boolean needsReview() {
+        return needsReview;
+    }
+
+    /** Difference between the best and second-best candidate, when available. */
+    public double getScoreGap() {
+        return scoreGap;
     }
 }

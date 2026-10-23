@@ -887,4 +887,24 @@ final class ScanFrontBrandExtractor {
                 resultado
         );
     }
+
+    /**
+     * OCR can expose a short artefact before the actual brand. Prefer an
+     * exact known cosmetic brand while retaining every other candidate for
+     * catalog matching and audit.
+     */
+    static void priorizarMarcaCosmeticaConhecida(
+            @NonNull List<String> marcas
+    ) {
+        for (int i = 0; i < marcas.size(); i++) {
+            String candidata = marcas.get(i);
+            if (ScanCosmeticEvidence.ehMarcaCosmeticaConhecida(candidata)) {
+                if (i > 0) {
+                    marcas.remove(i);
+                    marcas.add(0, candidata);
+                }
+                return;
+            }
+        }
+    }
 }

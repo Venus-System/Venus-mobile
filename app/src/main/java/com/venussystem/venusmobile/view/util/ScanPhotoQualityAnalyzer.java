@@ -8,11 +8,15 @@ import java.io.IOException;
 import com.venussystem.venusmobile.model.ScanPhotoQuality;
 
 /**
- * Small deterministic quality check executed locally. It never rejects OCR data.
- * blurScore is normalized to [0,1], where higher means more blur; brightness is [0,1].
+ * Small deterministic quality check executed locally. It never mutates or
+ * discards OCR evidence; the separate quality policy decides whether capture
+ * should be retried. blurScore is normalized to [0,1], where higher means
+ * more blur; brightness is [0,1].
  */
 public final class ScanPhotoQualityAnalyzer {
     private static final int MAX_SIDE = 640;
+    private static final int MIN_LONG_SIDE = 720;
+    private static final int MIN_SHORT_SIDE = 480;
     private ScanPhotoQualityAnalyzer() { }
 
     public static ScanPhotoQuality aggregate(String frontPath, String backPath) throws IOException {
@@ -20,6 +24,18 @@ public final class ScanPhotoQualityAnalyzer {
         logQuality("FRONT", front);
         ScanPhotoQuality back = analyze(backPath);
         logQuality("BACK", back);
+        return combine(front, back);
+    }
+
+    /**
+     * Combines both sides conservatively: blur uses the worst side, while
+     * brightness is descriptive (mean) and background validity requires both
+     * sides. A background warning remains advisory in ScanPhotoQualityPolicy.
+     */
+    static ScanPhotoQuality combine(ScanPhotoQuality front, ScanPhotoQuality back) {
+        if (front == null || back == null) {
+            throw new IllegalArgumentException("As duas medições são obrigatórias.");
+        }
         return new ScanPhotoQuality(
                 Math.max(front.getBlurScore(), back.getBlurScore()),
                 (front.getBrightness() + back.getBrightness()) / 2d,
@@ -43,6 +59,11 @@ public final class ScanPhotoQualityAnalyzer {
         bounds.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(path, bounds);
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) throw new IOException("Foto inválida.");
+        int longSide = Math.max(bounds.outWidth, bounds.outHeight);
+        int shortSide = Math.min(bounds.outWidth, bounds.outHeight);
+        if (longSide < MIN_LONG_SIDE || shortSide < MIN_SHORT_SIDE) {
+            throw new IOException("RESOLUTION_TOO_LOW");
+        }
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight);
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;

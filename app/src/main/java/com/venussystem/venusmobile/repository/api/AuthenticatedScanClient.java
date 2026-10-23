@@ -1,5 +1,8 @@
 package com.venussystem.venusmobile.repository.api;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.venussystem.venusmobile.repository.api.dto.ScanSessionRequest;
 import com.venussystem.venusmobile.repository.api.dto.ScanSessionResponse;
 import com.venussystem.venusmobile.repository.api.dto.ScanUploadSignaturesResponse;
@@ -7,9 +10,12 @@ import com.venussystem.venusmobile.repository.api.dto.UserRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserResponse;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import retrofit2.Call;
 import retrofit2.Response;
+import okhttp3.ResponseBody;
 
 /** Synchronous worker-thread client with one bounded refresh on HTTP 401. */
 public final class AuthenticatedScanClient {
@@ -87,17 +93,52 @@ public final class AuthenticatedScanClient {
                 throw invalidResponse();
             }
             if (response.isSuccessful() && response.body() != null) return response.body();
-            if (response.errorBody() != null) response.errorBody().close();
+            String diagnostic = readSafeDiagnostic(response.errorBody());
             if (response.code() == 401 && attempt == 0) continue;
             if (response.code() == 401) throw new ScanApiException(ScanApiException.Kind.AUTH, 401,
-                    "A sessão não foi aceita pela API (401). Entre novamente e tente outra vez.");
+                    "A sessão não foi aceita pela API (401). Entre novamente e tente outra vez.", diagnostic);
             if (response.code() == 403) throw new ScanApiException(ScanApiException.Kind.FORBIDDEN, 403,
-                    "A API não autorizou o envio. A conta Firebase também precisa estar cadastrada e habilitada no backend (403).");
+                    "A API não autorizou o envio. A conta Firebase também precisa estar cadastrada e habilitada no backend (403).", diagnostic);
             if (response.isSuccessful()) throw invalidResponse();
             throw new ScanApiException(ScanApiException.Kind.HTTP, response.code(),
-                    "A API não confirmou a operação (HTTP " + response.code() + "). Tente novamente mais tarde.");
+                    "A API não confirmou a operação (HTTP " + response.code() + "). Tente novamente mais tarde.", diagnostic);
         }
         throw new IOException("A sessão expirou. Entre novamente.");
+    }
+
+    /**
+     * Reads only the generic error fields emitted by the API. OCR, identifiers,
+     * tokens and image data are deliberately ignored and never enter the log.
+     */
+    private static String readSafeDiagnostic(ResponseBody body) {
+        if (body == null) return null;
+        try (ResponseBody closable = body) {
+            String raw = closable.string();
+            if (raw == null || raw.trim().isEmpty()) return null;
+            JsonElement parsed = JsonParser.parseString(raw);
+            if (!parsed.isJsonObject()) return null;
+            JsonObject object = parsed.getAsJsonObject();
+            List<String> parts = new ArrayList<>();
+            addPrimitive(parts, object.get("message"));
+            JsonElement details = object.get("details");
+            if (details != null && details.isJsonArray()) {
+                for (JsonElement detail : details.getAsJsonArray()) addPrimitive(parts, detail);
+            }
+            if (parts.isEmpty()) return null;
+            String compact = String.join(" | ", parts)
+                    .replaceAll("[\\r\\n\\t]+", " ")
+                    .replaceAll("\\s{2,}", " ")
+                    .trim();
+            return compact.length() <= 320 ? compact : compact.substring(0, 320);
+        } catch (RuntimeException | IOException ignored) {
+            return null;
+        }
+    }
+
+    private static void addPrimitive(List<String> parts, JsonElement value) {
+        if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) return;
+        String text = value.getAsString().trim();
+        if (!text.isEmpty()) parts.add(text.length() <= 160 ? text : text.substring(0, 160));
     }
     private static boolean blank(String value) { return value == null || value.trim().isEmpty(); }
     private static boolean validSide(ScanUploadSignaturesResponse.Signature side, String id, String name) {

@@ -55,6 +55,8 @@ public final class ScanDraftStore {
             copyPhoto(draft.getBackPhotoPath(), back);
             snapshot.draft.setFrontPhotoPath(front.toString());
             snapshot.draft.setBackPhotoPath(back.toString());
+            snapshot.draft.setFrontPhotoSha256(sha256(front));
+            snapshot.draft.setBackPhotoSha256(sha256(back));
             snapshot.draft.setStatus(ScanSubmissionDraft.STATUS_WAITING_UPLOAD);
             Path temporary = Files.createTempFile(directory, "draft-", ".tmp");
             try {
@@ -79,8 +81,18 @@ public final class ScanDraftStore {
                     throw new IOException("Rascunho incompatível ou de outra conta.");
                 // Do not trust serialized absolute paths; derive from the validated identity.
                 if (saved.submission == null && !"SUBMITTED".equals(saved.state)) {
-                    saved.draft.setFrontPhotoPath(directory.resolve("front.photo").toString());
-                    saved.draft.setBackPhotoPath(directory.resolve("back.photo").toString());
+                    Path front = directory.resolve("front.photo");
+                    Path back = directory.resolve("back.photo");
+                    saved.draft.setFrontPhotoPath(front.toString());
+                    saved.draft.setBackPhotoPath(back.toString());
+                    if (!saved.draft.getFrontPhotoSha256().isEmpty()
+                            && !saved.draft.getFrontPhotoSha256().equals(sha256(front))) {
+                        throw new IOException("Evidência da frente foi alterada.");
+                    }
+                    if (!saved.draft.getBackPhotoSha256().isEmpty()
+                            && !saved.draft.getBackPhotoSha256().equals(sha256(back))) {
+                        throw new IOException("Evidência do verso foi alterada.");
+                    }
                 } else {
                     saved.draft.setFrontPhotoPath("");
                     saved.draft.setBackPhotoPath("");
@@ -238,5 +250,21 @@ public final class ScanDraftStore {
     }
     private static void force(Path file) throws IOException {
         try (FileChannel channel = FileChannel.open(file, StandardOpenOption.WRITE)) { channel.force(true); }
+    }
+
+    private static String sha256(Path file) throws IOException {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            try (java.io.InputStream input = Files.newInputStream(file)) {
+                byte[] buffer = new byte[8192];
+                int read;
+                while ((read = input.read(buffer)) != -1) digest.update(buffer, 0, read);
+            }
+            StringBuilder hex = new StringBuilder(64);
+            for (byte value : digest.digest()) hex.append(String.format(java.util.Locale.ROOT, "%02x", value & 255));
+            return hex.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IOException("SHA-256 indisponível.", e);
+        }
     }
 }

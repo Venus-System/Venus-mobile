@@ -6,7 +6,6 @@ import com.venussystem.venusmobile.model.ScanBackIngredientCandidate;
 import com.venussystem.venusmobile.model.ScanSubmissionDraft;
 import com.venussystem.venusmobile.model.ScanPhotoQuality;
 import com.venussystem.venusmobile.repository.api.dto.ScanSessionRequest;
-import android.util.Log;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -26,12 +25,24 @@ public final class ScanSubmissionMapper {
             "CREME", "LOCAO", "GEL", "SPRAY", "AEROSOL", "FRESH", "ORIGINAL",
             "PROTECAO", "ANTITRANSPIRANTE", "ANTIPERSPIRANTE", "PERFUME", "MASCULINO",
             "FEMININO", "INFANTIL", "DESODORANTE", "HIDRATANTE", "NOVO", "NOVA",
-            "SHAMPOO", "CONDICIONADOR", "SABONETE", "LOÇÃO", "CREME", "BODY",
-            "LOTION", "DEODORANT", "PERFUME", "KIT", "PRODUTO"
+            "SHAMPOO", "CONDICIONADOR", "SABONETE", "LOÇÃO", "BODY", "LOTION",
+            "DEODORANT", "KIT", "PRODUTO", "CUIDADO", "CUIDADOS",
+            "CONTROLE", "INTELIGENTE", "ODOR", "ODORE", "SUOR", "INVISIBLE"
     ));
 
     public static ScanSessionRequest prepare(ScanSubmissionDraft draft, String uid,
             ScanSessionRequest.Device device, ScanSessionRequest.QualityCheck quality) {
+        return prepare(draft, uid, device, quality, null);
+    }
+
+    /**
+     * Builds the wire request using the catalogue preflight when available.
+     * Only a unique resolved match is promoted to the canonical INCI name;
+     * uncertain tokens remain as their original OCR text for admin review.
+     */
+    public static ScanSessionRequest prepare(ScanSubmissionDraft draft, String uid,
+            ScanSessionRequest.Device device, ScanSessionRequest.QualityCheck quality,
+            ScanIngredientCatalog.Report ingredientCatalog) {
         if (draft == null || draft.getBackData() == null)
             throw new IllegalArgumentException("A leitura da frente e do verso precisa ser concluída.");
         if (uid == null || !uid.equals(draft.getOwnerUid()))
@@ -46,7 +57,13 @@ public final class ScanSubmissionMapper {
         if (request.qualityCheck == null && draft.getPhotoQuality() != null) {
             ScanPhotoQuality q = draft.getPhotoQuality();
             request.qualityCheck = new ScanSessionRequest.QualityCheck(q.getBlurScore(),
-                    q.getBrightness(), q.isBackgroundOk(), q.getStatus());
+                    q.getBrightness(), q.isBackgroundOk(), qualityStatusForApi(q.getStatus()));
+        } else if (request.qualityCheck != null) {
+            request.qualityCheck = new ScanSessionRequest.QualityCheck(
+                    request.qualityCheck.blurScore,
+                    request.qualityCheck.brightness,
+                    request.qualityCheck.backgroundOk,
+                    qualityStatusForApi(request.qualityCheck.status));
         }
         request.images = new ScanSessionRequest.Images();
         request.ocr = new ScanSessionRequest.Ocr();
@@ -83,17 +100,15 @@ public final class ScanSubmissionMapper {
         back.claims = new ArrayList<>(data.getClaims());
         request.ocr.back.extracted = back;
         request.ingredients = new ArrayList<>();
-        int dropped = 0;
-        for (ScanBackIngredientCandidate i : data.getIngredients()) {
-            String wireName = ingredientNameForWire(i);
-            if (ScanIngredientPolicy.hasAdministrativeText(wireName)) {
-                dropped++;
-                continue;
-            }
-            request.ingredients.add(new ScanSessionRequest.Ingredient(i.getPosition(), wireName));
+        if (ingredientCatalog != null) {
+            ScanIngredientCatalogReportValidator.validate(
+                    ingredientCatalog,
+                    data.getIngredients()
+            );
         }
-        if (dropped > 0) {
-            Log.d("VENUS_SCAN_SUBMISSION", "INGREDIENTS_FILTERED count=" + dropped);
+        for (ScanBackIngredientCandidate i : data.getIngredients()) {
+            String wireName = ingredientNameForWire(i, ingredientCatalog);
+            request.ingredients.add(new ScanSessionRequest.Ingredient(i.getPosition(), wireName));
         }
         ScanSubmissionValidator.validateIngredientQuality(request);
         return request;
@@ -104,7 +119,21 @@ public final class ScanSubmissionMapper {
      * For high-confidence OCR corrections, send the canonical value so Mongo matching
      * can resolve it; the original OCR remains in fullText/ingredientsText for audit.
      */
-    private static String ingredientNameForWire(ScanBackIngredientCandidate candidate) {
+    private static String ingredientNameForWire(ScanBackIngredientCandidate candidate,
+                                                ScanIngredientCatalog.Report report) {
+        if (report != null && report.matches != null) {
+            for (ScanIngredientCatalog.Match match : report.matches) {
+                if (match != null && match.position == candidate.getPosition()) {
+                    if (ScanIngredientCatalog.RESOLUTION_RESOLVED.equals(match.resolutionStatus)
+                            && match.inciName != null && !match.inciName.trim().isEmpty()) {
+                        return match.inciName.trim();
+                    }
+                    // Do not apply a local guess after the catalogue report
+                    // has classified the token as uncertain.
+                    return candidate.getRawName();
+                }
+            }
+        }
         // Re-evaluate saved candidates too; do not trust old aggressive corrections.
         String raw = candidate.getRawName();
         String corrected = ScanIngredientPolicy.correct(raw);
@@ -114,6 +143,11 @@ public final class ScanSubmissionMapper {
     private static String capped(String value) {
         return value == null || value.length() <= EXTRACTED_FIELD_LIMIT
                 ? value : value.substring(0, EXTRACTED_FIELD_LIMIT);
+    }
+
+    /** Preserve the API enum contract for the quality check payload. */
+    private static String qualityStatusForApi(String status) {
+        return status;
     }
 
     static String bestFrontCandidate(List<String> values) {

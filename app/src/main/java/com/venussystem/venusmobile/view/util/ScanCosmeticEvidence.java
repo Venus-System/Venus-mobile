@@ -368,7 +368,7 @@ final class ScanCosmeticEvidence {
         return false;
     }
 
-    private static boolean ehMarcaCosmeticaConhecida(
+    static boolean ehMarcaCosmeticaConhecida(
             String candidato
     ) {
         String valor =

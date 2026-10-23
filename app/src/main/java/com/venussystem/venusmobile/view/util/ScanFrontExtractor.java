@@ -9,6 +9,7 @@ import static com.venussystem.venusmobile.view.util.ScanFrontBrandExtractor.comp
 import static com.venussystem.venusmobile.view.util.ScanFrontBrandExtractor.extrairMarcaCompostaNasLinhas;
 import static com.venussystem.venusmobile.view.util.ScanFrontBrandExtractor.extrairPossivelMarca;
 import static com.venussystem.venusmobile.view.util.ScanFrontBrandExtractor.limparMarcas;
+import static com.venussystem.venusmobile.view.util.ScanFrontBrandExtractor.priorizarMarcaCosmeticaConhecida;
 import static com.venussystem.venusmobile.view.util.ScanFrontProductExtractor.adicionarDescritoresDetectados;
 import static com.venussystem.venusmobile.view.util.ScanFrontProductExtractor.adicionarReferenciasExpandidas;
 import static com.venussystem.venusmobile.view.util.ScanFrontProductExtractor.adicionarTokensProduto;
@@ -301,6 +302,9 @@ public final class ScanFrontExtractor {
          * -----------------------------------------------------
          */
         limparMarcas(
+                brandCandidates
+        );
+        priorizarMarcaCosmeticaConhecida(
                 brandCandidates
         );
         limparProdutos(

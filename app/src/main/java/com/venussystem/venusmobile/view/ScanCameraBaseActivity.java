@@ -34,9 +34,15 @@ import androidx.core.content.ContextCompat;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.ScanSubmissionDraft;
+import com.venussystem.venusmobile.domain.scan.ScanPhotoQualityPolicy;
+import com.venussystem.venusmobile.model.ScanPhotoQuality;
+import com.venussystem.venusmobile.view.util.ScanPhotoQualityAnalyzer;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -57,6 +63,12 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
     private TextView instructionText;
     private Camera camera;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final ExecutorService captureQualityExecutor =
+            Executors.newSingleThreadExecutor(runnable -> {
+                Thread thread = new Thread(runnable, "venus-capture-quality");
+                thread.setDaemon(true);
+                return thread;
+            });
 
     private boolean cameraInicializando = false;
     private boolean capturando = false;
@@ -143,6 +155,7 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         mainHandler.removeCallbacksAndMessages(null);
+        captureQualityExecutor.shutdownNow();
 
         if (camera != null) {
             try {
@@ -416,9 +429,8 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                 new ImageCapture.OnImageSavedCallback() {
                     @Override
                     public void onImageSaved(ImageCapture.OutputFileResults outputFileResults) {
-                        capturando = false;
-
                         if (!photoFile.exists() || photoFile.length() <= 0) {
+                            capturando = false;
                             if (captureButton != null) {
                                 captureButton.setEnabled(true);
                             }
@@ -432,18 +444,20 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                             return;
                         }
 
-                        android.util.Log.d("VENUS_CAMERA", "FOTO_SALVA");
-
-                        // Um pequeno atraso permite ao usuário perceber a mensagem
-                        // antes da transição para a tela de processamento.
-                        mainHandler.postDelayed(
-                                () -> {
-                                    if (!isFinishing() && !isDestroyed()) {
-                                        goToSuccess(photoFile.getAbsolutePath());
-                                    }
-                                },
-                                180L
-                        );
+                        // A validação usa uma cópia reduzida em memória, mas mantém
+                        // o JPEG original intacto para OCR, Cloudinary e auditoria.
+                        // Ela roda fora da UI para não travar aparelhos mais lentos.
+                        if (captureQualityExecutor.isShutdown()) {
+                            return;
+                        }
+                        try {
+                            captureQualityExecutor.execute(
+                                    () -> validateCapturedPhoto(photoFile)
+                            );
+                        } catch (RuntimeException ignored) {
+                            // A Activity encerrada pode concluir a captura depois
+                            // do shutdown do executor; não reabre o fluxo nesse caso.
+                        }
                     }
 
                     @Override
@@ -470,6 +484,82 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                     }
                 }
         );
+    }
+
+    private void validateCapturedPhoto(File photoFile) {
+        ScanPhotoQuality quality = null;
+        String failureMessage = null;
+        try {
+            quality = ScanPhotoQualityAnalyzer.analyze(photoFile.getAbsolutePath());
+            if (ScanPhotoQualityPolicy.shouldBlock(quality)) {
+                failureMessage = captureQualityMessage(
+                        ScanPhotoQualityPolicy.blockReason(quality)
+                );
+            }
+        } catch (IOException exception) {
+            failureMessage = captureQualityMessage(exception.getMessage());
+            android.util.Log.w("VENUS_CAMERA", "QUALITY_CHECK_FAILED");
+        } catch (RuntimeException exception) {
+            failureMessage = "Não foi possível verificar a foto. Tente novamente.";
+            android.util.Log.w("VENUS_CAMERA", "QUALITY_CHECK_FAILED");
+        }
+
+        final ScanPhotoQuality measuredQuality = quality;
+        final String message = failureMessage;
+        mainHandler.post(() -> {
+            if (isFinishing() || isDestroyed()) {
+                return;
+            }
+
+            capturando = false;
+            if (message != null) {
+                // Uma captura recusada não deve ser enviada nem reaproveitada numa
+                // tentativa posterior. O original aceito nunca é sobrescrito aqui.
+                if (photoFile.exists() && !photoFile.delete()) {
+                    android.util.Log.w("VENUS_CAMERA", "QUALITY_REJECT_DELETE_FAILED");
+                }
+                if (captureButton != null) {
+                    captureButton.setEnabled(true);
+                }
+                setInstruction(message);
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            if (captureButton != null) {
+                captureButton.setEnabled(true);
+            }
+            if (measuredQuality != null
+                    && ScanPhotoQualityPolicy.backgroundIsAdvisory(measuredQuality)) {
+                setInstruction("Rótulo legível. Evite sombras e reflexos se puder.");
+            }
+
+            // Um pequeno atraso permite ao usuário perceber que a foto foi aceita.
+            mainHandler.postDelayed(
+                    () -> {
+                        if (!isFinishing() && !isDestroyed()) {
+                            goToSuccess(photoFile.getAbsolutePath());
+                        }
+                    },
+                    180L
+            );
+        });
+    }
+
+    private String captureQualityMessage(String reason) {
+        if ("BLUR_TOO_HIGH".equals(reason)) {
+            return "Foto desfocada. Segure firme e toque para focar.";
+        }
+        if ("TOO_DARK".equals(reason)) {
+            return "Foto escura. Use mais luz e evite sombras.";
+        }
+        if ("TOO_BRIGHT".equals(reason)) {
+            return "Reflexo forte. Mude o ângulo e tente novamente.";
+        }
+        if ("RESOLUTION_TOO_LOW".equals(reason)) {
+            return "A foto ficou pequena. Aproxime o rótulo e tente novamente.";
+        }
+        return "Não foi possível verificar a foto. Tente novamente.";
     }
 
     private void setInstruction(String message) {

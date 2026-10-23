@@ -13,3 +13,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Local build/test diagnostics; never ship or commit them with the app.
+/.gradle-user-home/
+/diag_tmp/
+/.codex/
