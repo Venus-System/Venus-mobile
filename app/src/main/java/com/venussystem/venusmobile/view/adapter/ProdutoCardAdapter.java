@@ -18,7 +18,7 @@ import java.util.List;
 
 /**
  * Cards de produto em grade, usados nas sugestões da Home e nos resultados da
- * busca: foto no topo e nome do produto embaixo.
+ * busca: foto no topo, marca e nome embaixo.
  */
 public class ProdutoCardAdapter extends RecyclerView.Adapter<ProdutoCardAdapter.CardViewHolder> {
 
@@ -61,21 +61,50 @@ public class ProdutoCardAdapter extends RecyclerView.Adapter<ProdutoCardAdapter.
 
     static class CardViewHolder extends RecyclerView.ViewHolder {
         private final ImageView imagem;
+        private final TextView marca;
         private final TextView nome;
 
         CardViewHolder(@NonNull View item) {
             super(item);
             imagem = item.findViewById(R.id.imgProduto);
+            marca = item.findViewById(R.id.textMarca);
             nome = item.findViewById(R.id.textNome);
         }
 
         void preencher(Produto produto, AoClicar aoClicar) {
-            nome.setText(produto.getName());
+            marca.setText(produto.getBrandName());
+            nome.setText(semMarca(produto.getName(), produto.getBrandName()));
 
             ProdutoImagemLoader.carregar(
                     itemView.getContext(), imagem, produto, R.drawable.bg_foto_produto);
 
             itemView.setOnClickListener(v -> aoClicar.noProduto(produto));
+        }
+
+        /**
+         * O nome costuma vir com a marca na frente ("Nivea Creme") e a marca
+         * ja aparece em negrito acima, entao tira o prefixo so na exibicao.
+         * Se sobrar nada (nome igual a marca), mantem o nome inteiro.
+         */
+        static String semMarca(String nome, String marca) {
+            if (nome == null || marca == null) {
+                return nome;
+            }
+            String nomeLimpo = nome.trim();
+            String marcaLimpa = marca.trim();
+            if (marcaLimpa.isEmpty()
+                    || !nomeLimpo.regionMatches(true, 0, marcaLimpa, 0, marcaLimpa.length())) {
+                return nome;
+            }
+
+            String depois = nomeLimpo.substring(marcaLimpa.length());
+            // "Nivea" nao deve cortar o inicio de "Niveaxyz".
+            if (!depois.isEmpty() && Character.isLetterOrDigit(depois.charAt(0))) {
+                return nome;
+            }
+
+            String resto = depois.replaceFirst("^[\\s\\-\\u2013:]+", "");
+            return resto.isEmpty() ? nome : resto;
         }
 
     }
