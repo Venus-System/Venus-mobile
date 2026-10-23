@@ -119,6 +119,8 @@ public class ScanSubmissionRepository {
                 request.images.front = saved.frontUpload.image;
                 request.images.back = saved.backUpload.image;
                 Log.d("VENUS_SCAN_SUBMISSION", "REQUEST scanId=" + scanId);
+                stage = "VALIDATE_REQUEST";
+                ScanSubmissionValidator.validate(request, true);
                 stage = "POST_SCAN_SESSION";
                 ScanSessionResponse response = new AuthenticatedScanClient(ClienteApi.scans(), auth).submit(request);
                 stage = "ACKNOWLEDGE_RESPONSE";
@@ -132,10 +134,31 @@ public class ScanSubmissionRepository {
                 Log.w("VENUS_SCAN_SUBMISSION", "FAILED scanId=" + scanId + " kind="
                         + (e instanceof ScanApiException ? ((ScanApiException) e).kind : "LOCAL")
                         + " stage=" + stage + " http=" + code
-                        + " error=" + e.getClass().getSimpleName());
+                        + " error=" + e.getClass().getSimpleName()
+                        + " reason=" + safeLocalReason(e));
                 main.post(() -> callback.failed(e));
             }
         });
+    }
+
+    /**
+     * Local validation messages are fixed contract errors and contain no OCR,
+     * image path, token or user identifier. Network/API errors keep only their
+     * typed kind so backend diagnostics never enter production logs.
+     */
+    private static String safeLocalReason(Exception error) {
+        if (error instanceof ScanApiException) {
+            return ((ScanApiException) error).kind.name();
+        }
+        if (!(error instanceof IllegalArgumentException)
+                && !(error instanceof IllegalStateException)) {
+            return "UNAVAILABLE";
+        }
+        String message = error.getMessage();
+        if (message == null || message.trim().isEmpty()) return "UNAVAILABLE";
+        return message.replaceAll("[\\r\\n\\t]+", " ")
+                .replaceAll("\\s{2,}", " ")
+                .trim();
     }
 
     private static ScanIngredientCatalog.Report unresolvedCatalog(ScanSubmissionDraft draft) {
