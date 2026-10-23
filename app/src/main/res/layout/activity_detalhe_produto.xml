@@ -92,19 +92,6 @@
         app:layout_constraintTop_toBottomOf="@+id/textNomeProduto"
         tools:text="Hidratante" />
 
-    <TextView
-        android:id="@+id/textNotaProduto"
-        android:layout_width="@dimen/nota_circular_cabecalho"
-        android:layout_height="@dimen/nota_circular_cabecalho"
-        android:layout_marginTop="@dimen/espaco_pequeno"
-        android:background="@drawable/bg_nota_circular"
-        android:gravity="center"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="@+id/textNomeProduto"
-        app:layout_constraintTop_toBottomOf="@+id/textCategoriaProduto"
-        tools:text="87" />
-
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/abasProduto"
         android:layout_width="0dp"
@@ -113,7 +100,7 @@
         android:background="@color/white"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textNotaProduto"
+        app:layout_constraintTop_toBottomOf="@+id/textCategoriaProduto"
         app:layout_constraintWidth_max="@dimen/largura_max_lista"
         app:tabIndicatorColor="@color/roxo_venus"
         app:tabIndicatorHeight="3dp"

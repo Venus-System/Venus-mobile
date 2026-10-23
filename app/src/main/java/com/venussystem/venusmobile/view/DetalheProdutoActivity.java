@@ -1,7 +1,6 @@
 package com.venussystem.venusmobile.view;
 
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -47,7 +46,6 @@ import com.venussystem.venusmobile.repository.ProdutoRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.view.adapter.AlternativaAdapter;
 import com.venussystem.venusmobile.view.componente.CartaoPerfilView;
-import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
 import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 
 import java.util.ArrayList;
@@ -511,49 +509,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 temCategoria
                         ? View.VISIBLE
                         : View.GONE
-        );
-
-        TextView nota =
-                findViewById(
-                        R.id.textNotaProduto
-                );
-
-        if (produto.getOverallScore() == null) {
-
-            nota.setText(
-                    R.string.nota_indisponivel
-            );
-
-        } else {
-
-            nota.setText(
-                    String.valueOf(
-                            produto.getOverallScore()
-                    )
-            );
-        }
-
-        Integer valorNota =
-                produto.getOverallScore();
-
-        nota.setTextColor(
-                ContextCompat.getColor(
-                        this,
-                        NotaProdutoUtil.corPara(
-                                valorNota
-                        )
-                )
-        );
-
-        nota.setBackgroundTintList(
-                ColorStateList.valueOf(
-                        ContextCompat.getColor(
-                                this,
-                                NotaProdutoUtil.fundoPara(
-                                        valorNota
-                                )
-                        )
-                )
         );
 
         // A foto é independente da leitura dos ingredientes. Resolve-a logo
