@@ -23,51 +23,20 @@
         app:shapeAppearanceOverlay="@style/FotoProdutoArredondada"
         tools:src="@drawable/ic_launcher_foreground" />
 
-    <TextView
-        android:id="@+id/textMarca"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="@dimen/espaco_pequeno"
-        android:ellipsize="end"
-        android:lines="1"
-        android:textColor="@color/preto_texto"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toStartOf="@+id/textNota"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imgProduto"
-        tools:text="Nivea" />
-
-    <!-- Duas linhas fixas: os cards de uma mesma fileira da grade ficam da
-         mesma altura, tenha o nome uma linha ou duas. -->
+    <!-- Duas linhas fixas mantêm os cards da mesma fileira alinhados. -->
     <TextView
         android:id="@+id/textNome"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
+        android:layout_marginTop="10dp"
         android:ellipsize="end"
         android:lines="2"
         android:textColor="@color/cinza_descricao"
         android:textSize="13sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/textMarca"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textMarca"
-        tools:text="Creme Hidratante Firmador" />
-
-    <TextView
-        android:id="@+id/textNota"
-        android:layout_width="@dimen/nota_circular"
-        android:layout_height="@dimen/nota_circular"
-        android:layout_marginTop="10dp"
-        android:background="@drawable/bg_nota_circular"
-        android:gravity="center"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/imgProduto"
-        tools:text="90" />
+        tools:text="Creme Hidratante Firmador" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
