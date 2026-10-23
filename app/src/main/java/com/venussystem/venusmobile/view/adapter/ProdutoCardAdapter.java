@@ -70,38 +70,12 @@ public class ProdutoCardAdapter extends RecyclerView.Adapter<ProdutoCardAdapter.
         }
 
         void preencher(Produto produto, AoClicar aoClicar) {
-            nome.setText(semMarca(produto.getName(), produto.getBrandName()));
+            nome.setText(produto.getName());
 
             ProdutoImagemLoader.carregar(
                     itemView.getContext(), imagem, produto, R.drawable.bg_foto_produto);
 
             itemView.setOnClickListener(v -> aoClicar.noProduto(produto));
-        }
-
-        /**
-         * O nome costuma vir com a marca na frente ("Nivea Creme"). Como o
-         * card exibe somente o nome, tira o prefixo da marca na exibicao.
-         * Se sobrar nada (nome igual a marca), mantem o nome inteiro.
-         */
-        static String semMarca(String nome, String marca) {
-            if (nome == null || marca == null) {
-                return nome;
-            }
-            String nomeLimpo = nome.trim();
-            String marcaLimpa = marca.trim();
-            if (marcaLimpa.isEmpty()
-                    || !nomeLimpo.regionMatches(true, 0, marcaLimpa, 0, marcaLimpa.length())) {
-                return nome;
-            }
-
-            String depois = nomeLimpo.substring(marcaLimpa.length());
-            // "Nivea" nao deve cortar o inicio de "Niveaxyz".
-            if (!depois.isEmpty() && Character.isLetterOrDigit(depois.charAt(0))) {
-                return nome;
-            }
-
-            String resto = depois.replaceFirst("^[\\s\\-\\u2013:]+", "");
-            return resto.isEmpty() ? nome : resto;
         }
 
     }
