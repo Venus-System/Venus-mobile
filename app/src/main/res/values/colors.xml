@@ -50,4 +50,8 @@
     <color name="amarelo_aviso_fundo">#FFFCF0CE</color>
     <color name="amarelo_aviso_texto">#FF7A5B00</color>
     <color name="fundo_chip_categoria">#FFEDE3F7</color>
+    <!-- Texto sobre fundo claro nas faixas da nota (aba Match): mais escuro que nota_boa/media/ruim para ler bem. -->
+    <color name="nota_boa_texto">#FF1F6E4A</color>
+    <color name="nota_media_texto">#FF8A5A12</color>
+    <color name="nota_ruim_texto">#FFB23A5A</color>
 </resources>

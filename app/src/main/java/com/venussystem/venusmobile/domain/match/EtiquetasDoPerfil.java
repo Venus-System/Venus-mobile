@@ -7,6 +7,7 @@ import com.venussystem.venusmobile.repository.api.MapeadorPerfilApi;
 
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,14 @@ import java.util.Set;
  * So entram as respostas que tem etiqueta equivalente.
  */
 public final class EtiquetasDoPerfil {
+
+    /**
+     * Etiquetas com aviso no catalogo (silicone, sulfato, gestacao...). Quando a
+     * pessoa tem uma delas e nada da formula bate, a tela diz isso: "Sem silicones".
+     */
+    public static final List<String> ETIQUETAS_DE_AVISO = Arrays.asList(
+            "gravidez", "amamentacao", "reativa", "sem-silicone", "sem-sulfato",
+            "sem-parabenos");
 
     // preferencia da tela (em slug) -> slug da etiqueta
     private static final Map<String, String> PREFERENCIAS = new HashMap<>();
@@ -64,6 +73,7 @@ public final class EtiquetasDoPerfil {
         ROTULOS.put("reativa", "pele sensível");
         ROTULOS.put("hiperpigmentacao", "hiperpigmentação");
         ROTULOS.put("amamentacao", "amamentação");
+        ROTULOS.put("controle-de-frizz", "cabelo ondulado, cacheado ou crespo");
         ROTULOS.put("couro-cabeludo-sensivel", "couro cabeludo sensível");
         ROTULOS.put("couro-cabeludo-seco", "couro cabeludo seco");
         ROTULOS.put("couro-cabeludo-oleoso", "couro cabeludo oleoso");
@@ -116,6 +126,12 @@ public final class EtiquetasDoPerfil {
             slugs.add("reativa");
         }
 
+        // Ondulado, cacheado e crespo: o catalogo liga o antifrizz a eles.
+        String cabelo = respostas.getTag(PerfilRepository.TIPO_CABELO);
+        if (cabelo != null && cabelo.matches("TYPE_[234][ABC]")) {
+            slugs.add("controle-de-frizz");
+        }
+
         String couro = respostas.getTag(PerfilRepository.COURO_CABELUDO);
         if ("DANDRUFF".equals(couro)) slugs.add("caspa");
         if ("SENSITIVE".equals(couro)) slugs.add("couro-cabeludo-sensivel");
@@ -127,11 +143,25 @@ public final class EtiquetasDoPerfil {
     /** Alergias escolhidas, em slug, para comparar com o nome do ingrediente. */
     public static Set<String> alergias(MapeadorPerfilApi.Respostas respostas) {
         Set<String> slugs = new HashSet<>();
-        for (String alergia : respostas.getLista(PerfilRepository.ALERGIAS)) {
+        for (String alergia : alergiasEmTexto(respostas)) {
             String slug = Slug.de(alergia);
             if (!slug.isEmpty()) slugs.add(slug);
         }
         return slugs;
+    }
+
+    /** Alergias como a pessoa escolheu, sem as respostas "nenhuma" e "prefiro nao dizer". */
+    public static List<String> alergiasEmTexto(MapeadorPerfilApi.Respostas respostas) {
+        List<String> alergias = new ArrayList<>();
+        for (String alergia : respostas.getLista(PerfilRepository.ALERGIAS)) {
+            if (alergia == null || alergia.trim().isEmpty()
+                    || PerfilRepository.NENHUMA.equals(alergia)
+                    || PerfilRepository.PREFIRO_NAO_DIZER.equals(alergia)) {
+                continue;
+            }
+            alergias.add(alergia.trim());
+        }
+        return alergias;
     }
 
     private static void adicionar(Set<String> destino, @Nullable String slug) {

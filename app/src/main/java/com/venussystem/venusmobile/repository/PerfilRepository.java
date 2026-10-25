@@ -40,6 +40,9 @@ public class PerfilRepository implements MapeadorPerfilApi.Respostas {
     // antigo nao consegue marcar como enviada uma resposta que ele nem leu.
     private static final String CHAVE_VERSAO = "versao_perfil";
     private static final String CHAVE_VERSAO_ENVIADA = "versao_enviada";
+    // Quando a pessoa mudou alguma resposta: a aba Match compara com a data da
+    // ultima classificacao salva para saber se precisa calcular de novo.
+    private static final String CHAVE_ALTERADO_EM = "perfil_alterado_em";
 
     // Comeca em 1 (e nao em 0, o padrao da enviada) para que quem ja tinha
     // respondido antes desta versao do app tambem tenha as respostas enviadas.
@@ -114,6 +117,7 @@ public class PerfilRepository implements MapeadorPerfilApi.Respostas {
                 .putString(chave + SUFIXO_TAG, tag)
                 .putString(chave + SUFIXO_ROTULO, rotulo)
                 .putLong(CHAVE_VERSAO, versaoAtual() + 1)
+                .putLong(CHAVE_ALTERADO_EM, System.currentTimeMillis())
                 .apply();
     }
 
@@ -135,6 +139,7 @@ public class PerfilRepository implements MapeadorPerfilApi.Respostas {
         prefs.edit()
                 .putString(chave, String.join(SEPARADOR, itens))
                 .putLong(CHAVE_VERSAO, versaoAtual() + 1)
+                .putLong(CHAVE_ALTERADO_EM, System.currentTimeMillis())
                 .apply();
     }
 
@@ -149,6 +154,11 @@ public class PerfilRepository implements MapeadorPerfilApi.Respostas {
 
     public long versaoAtual() {
         return prefs.getLong(CHAVE_VERSAO, VERSAO_INICIAL);
+    }
+
+    /** Momento da ultima resposta mudada, em ms; 0 quando ainda nao ha registro. */
+    public long alteradoEm() {
+        return prefs.getLong(CHAVE_ALTERADO_EM, 0L);
     }
 
     public boolean temAlteracaoParaEnviar() {

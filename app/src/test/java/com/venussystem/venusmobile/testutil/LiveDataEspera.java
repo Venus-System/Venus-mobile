@@ -3,10 +3,8 @@ package com.venussystem.venusmobile.testutil;
 import android.os.Looper;
 
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.Observer;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 
@@ -20,38 +18,31 @@ public final class LiveDataEspera {
     }
 
     /**
-     * Espera um LiveData satisfazer uma condicao, sem busy-wait: o
-     * InstantTaskExecutorRule faz postValue()/setValue() entregarem pro
-     * Observer de forma sincrona (em qualquer thread), entao um
-     * CountDownLatch normal e suficiente - nao precisa girar o Looper.
+     * Espera um LiveData satisfazer uma condicao lendo getValue() ate dar certo.
+     *
+     * Nao registra Observer de proposito: com o InstantTaskExecutorRule o
+     * repositorio entrega o valor na propria thread de fundo, e um
+     * removeObserver() na thread do teste ao mesmo tempo dava, as vezes,
+     * ConcurrentModificationException dentro do LiveData (SafeIterableMap).
+     * Todas as condicoes usadas sao estados finais (erro, catalogo pronto,
+     * carregando false), entao ler o valor atual basta.
      */
     public static <T> void aguardarValor(LiveData<T> liveData, Predicate<T> condicao) {
         aguardarValor(liveData, condicao, TIMEOUT_PADRAO_MS);
     }
 
     public static <T> void aguardarValor(LiveData<T> liveData, Predicate<T> condicao, long timeoutMs) {
-        if (condicao.test(liveData.getValue())) {
-            return;
-        }
-        CountDownLatch latch = new CountDownLatch(1);
-        Observer<T> observer = valor -> {
-            if (condicao.test(valor)) {
-                latch.countDown();
-            }
-        };
-        liveData.observeForever(observer);
-        try {
-            if (condicao.test(liveData.getValue())) {
-                return;
-            }
-            if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
+        long prazo = System.currentTimeMillis() + timeoutMs;
+        while (!condicao.test(liveData.getValue())) {
+            if (System.currentTimeMillis() >= prazo) {
                 throw new AssertionError("Timeout esperando LiveData satisfazer condicao.");
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new AssertionError("Interrompido esperando LiveData.", e);
-        } finally {
-            liveData.removeObserver(observer);
+            try {
+                Thread.sleep(2L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError("Interrompido esperando LiveData.", e);
+            }
         }
     }
 
