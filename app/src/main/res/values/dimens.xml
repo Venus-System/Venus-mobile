@@ -49,6 +49,9 @@
     <dimen name="avatar_perfil">200dp</dimen>
     <dimen name="botao_editar">34dp</dimen>
     <dimen name="miniatura_chat">44dp</dimen>
+    <!-- Veninha no topo do chat; menor com o teclado aberto, para sobrar conversa. -->
+    <dimen name="veninha_chat">120dp</dimen>
+    <dimen name="veninha_chat_teclado">64dp</dimen>
     <dimen name="nota_circular">44dp</dimen>
     <dimen name="nota_circular_cabecalho">52dp</dimen>
     <!-- Card de produto da Home e da busca: altura da foto e respiro entre cards. -->

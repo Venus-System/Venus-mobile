@@ -6,6 +6,7 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 import androidx.test.core.app.ApplicationProvider;
 
 import com.venussystem.venusmobile.R;
+import com.venussystem.venusmobile.model.HumorDaVeninha;
 import com.venussystem.venusmobile.model.Mensagem;
 import com.venussystem.venusmobile.repository.ConversaRepository;
 import com.venussystem.venusmobile.repository.ConversaSalvaRepository;
@@ -95,7 +96,7 @@ public class AssistenteViewModelTest {
 
     private void conversarUmaVez(String pergunta, String resposta, String idDaApi) {
         viewModel.perguntar(pergunta);
-        conversa.ultimoCallback.aoResponder(resposta, idDaApi);
+        conversa.ultimoCallback.aoResponder(resposta, idDaApi, null);
     }
 
     // ---- Abrir ----
@@ -123,6 +124,8 @@ public class AssistenteViewModelTest {
         assertEquals(Mensagem.DO_USUARIO, lista.get(1).getAutor());
         assertEquals("tem álcool?", lista.get(1).getTexto());
         assertEquals(app.getString(R.string.assistente_digitando), lista.get(2).getTexto());
+        assertTrue(lista.get(2).isDigitando());
+        assertFalse(lista.get(1).isDigitando());
         assertTrue(viewModel.getAguardando().getValue());
         assertEquals("tem álcool?", conversa.mensagens.get(0));
     }
@@ -134,6 +137,7 @@ public class AssistenteViewModelTest {
         assertEquals(3, mensagens().size());
         assertEquals(Mensagem.DO_ASSISTENTE, ultima().getAutor());
         assertEquals("Oi! Como posso ajudar?", ultima().getTexto());
+        assertFalse(ultima().isDigitando());
         assertFalse(viewModel.getAguardando().getValue());
     }
 
@@ -191,7 +195,7 @@ public class AssistenteViewModelTest {
         ConversaRepository.AoResponder chegando = conversa.ultimoCallback;
         viewModel = null;
 
-        chegando.aoResponder("Olá!", UID);
+        chegando.aoResponder("Olá!", UID, null);
 
         List<Mensagem> lista = mensagens(abrirChat());
         assertEquals(3, lista.size());
@@ -213,7 +217,7 @@ public class AssistenteViewModelTest {
         // A tela do produto tem o seu proprio ViewModel; a aba do chat ficou parada.
         AssistenteViewModel telaDoProduto = abrirChat();
         telaDoProduto.perguntar("e este produto?");
-        conversa.ultimoCallback.aoResponder("Parece bom.", UID);
+        conversa.ultimoCallback.aoResponder("Parece bom.", UID, null);
         assertEquals(1, mensagens().size());
 
         viewModel.sincronizarComSalva();
@@ -228,7 +232,7 @@ public class AssistenteViewModelTest {
     public void sincronizarComSalva_continuaComOIdDaConversaDaOutraTela() {
         AssistenteViewModel telaDoProduto = abrirChat();
         telaDoProduto.perguntar("oi");
-        conversa.ultimoCallback.aoResponder("Ola!", UID);
+        conversa.ultimoCallback.aoResponder("Ola!", UID, null);
 
         viewModel.sincronizarComSalva();
         viewModel.perguntar("e agora?");
@@ -244,7 +248,7 @@ public class AssistenteViewModelTest {
 
         assertEquals(3, mensagens().size());
         assertTrue(viewModel.getAguardando().getValue());
-        conversa.ultimoCallback.aoResponder("Ola!", UID);
+        conversa.ultimoCallback.aoResponder("Ola!", UID, null);
         assertEquals("Ola!", ultima().getTexto());
     }
 
@@ -281,7 +285,7 @@ public class AssistenteViewModelTest {
         // Outra tela do chat comecou uma conversa nova enquanto a resposta vinha.
         AssistenteViewModel outraTela = abrirChat();
         outraTela.novaConversa();
-        antigo.aoResponder("Olá!", UID);
+        antigo.aoResponder("Olá!", UID, null);
 
         assertEquals(1, mensagens(abrirChat()).size());
     }
@@ -293,7 +297,7 @@ public class AssistenteViewModelTest {
         viewModel.definirProduto("Hidratante Firmador", "Nivea");
 
         viewModel.perguntar("Tem álcool?");
-        conversa.ultimoCallback.aoResponder("Não tem.", UID);
+        conversa.ultimoCallback.aoResponder("Não tem.", UID, null);
 
         assertEquals("Sobre o produto \"Hidratante Firmador\" da marca Nivea: Tem álcool?",
                 conversa.mensagens.get(0));
@@ -371,5 +375,87 @@ public class AssistenteViewModelTest {
         conversa.ultimoCallback.aoFalhar(ConversaRepository.Falha.MENSAGEM_INVALIDA);
 
         assertEquals(app.getString(R.string.assistente_erro_mensagem), ultima().getTexto());
+    }
+
+    // ---- Cara da Veninha ----
+
+    @Test
+    public void abrir_comecaFeliz() {
+        assertEquals(HumorDaVeninha.FELIZ, viewModel.getHumor().getValue());
+        assertNull(viewModel.getFala().getValue());
+    }
+
+    @Test
+    public void enquantoAguarda_ficaPensando() {
+        viewModel.perguntar("oi");
+
+        assertEquals(HumorDaVeninha.PENSANDO, viewModel.getHumor().getValue());
+    }
+
+    @Test
+    public void respostaNeutra_voltaAFicarFeliz() {
+        viewModel.perguntar("oi");
+        conversa.ultimoCallback.aoResponder("Oi!", UID, "neutra");
+
+        assertEquals(HumorDaVeninha.FELIZ, viewModel.getHumor().getValue());
+    }
+
+    @Test
+    public void respostaMagoada_ficaChorando() {
+        viewModel.perguntar("você é inútil");
+        conversa.ultimoCallback.aoResponder("Poxa, isso me magoou.", UID, "magoada");
+
+        assertEquals(HumorDaVeninha.CHORANDO, viewModel.getHumor().getValue());
+    }
+
+    @Test
+    public void expressaoDesconhecida_ficaFeliz() {
+        viewModel.perguntar("oi");
+        conversa.ultimoCallback.aoResponder("Oi!", UID, "surpresa");
+
+        assertEquals(HumorDaVeninha.FELIZ, viewModel.getHumor().getValue());
+    }
+
+    @Test
+    public void falha_ficaConfusa() {
+        viewModel.perguntar("oi");
+        conversa.ultimoCallback.aoFalhar(ConversaRepository.Falha.DEMOROU);
+
+        assertEquals(HumorDaVeninha.CONFUSA, viewModel.getHumor().getValue());
+    }
+
+    @Test
+    public void novaConversa_voltaAFicarFeliz() {
+        viewModel.perguntar("oi");
+        conversa.ultimoCallback.aoFalhar(ConversaRepository.Falha.SEM_CONEXAO);
+
+        viewModel.novaConversa();
+
+        assertEquals(HumorDaVeninha.FELIZ, viewModel.getHumor().getValue());
+    }
+
+    @Test
+    public void resposta_viraFalaUmaVez() {
+        conversarUmaVez("oi", "Oi! Como posso ajudar?", UID);
+
+        assertEquals("Oi! Como posso ajudar?", viewModel.getFala().getValue());
+
+        viewModel.esquecerFala();
+        assertNull(viewModel.getFala().getValue());
+    }
+
+    @Test
+    public void falha_tambemViraFala() {
+        viewModel.perguntar("oi");
+        conversa.ultimoCallback.aoFalhar(ConversaRepository.Falha.SEM_CONEXAO);
+
+        assertEquals(app.getString(R.string.assistente_erro_conexao), viewModel.getFala().getValue());
+    }
+
+    @Test
+    public void reabrirAConversaSalva_naoFala() {
+        conversarUmaVez("oi", "Olá!", UID);
+
+        assertNull(abrirChat().getFala().getValue());
     }
 }

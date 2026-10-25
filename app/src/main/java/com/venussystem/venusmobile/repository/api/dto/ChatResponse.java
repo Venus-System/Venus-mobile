@@ -7,4 +7,7 @@ public class ChatResponse {
 
     @SerializedName("conversation_id")
     public String conversationId;
+
+    // "neutra" ou "magoada": a cara da Veninha junto da resposta.
+    public String expressao;
 }

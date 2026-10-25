@@ -132,18 +132,28 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <!-- Encolhe para veninha_chat_teclado com o teclado aberto (ver AssistenteFragment). -->
+    <com.venussystem.venusmobile.view.componente.VeninhaView
+        android:id="@+id/veninha"
+        android:layout_width="@dimen/veninha_chat"
+        android:layout_height="@dimen/veninha_chat"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/cardProduto" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/listaMensagens"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginStart="@dimen/espaco_medio"
-        android:layout_marginTop="@dimen/espaco_medio"
+        android:layout_marginTop="@dimen/espaco_pequeno"
         android:layout_marginEnd="@dimen/espaco_medio"
         android:clipToPadding="false"
         app:layout_constraintBottom_toTopOf="@+id/rolagemSugestoes"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cardProduto"
+        app:layout_constraintTop_toBottomOf="@+id/veninha"
         app:layout_constraintWidth_max="@dimen/largura_max_lista"
         tools:itemCount="3"
         tools:listitem="@layout/item_mensagem_assistente" />
