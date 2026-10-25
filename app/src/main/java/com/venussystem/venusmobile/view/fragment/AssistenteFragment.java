@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -15,6 +16,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -23,6 +26,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.view.adapter.ConversaAdapter;
+import com.venussystem.venusmobile.view.componente.VeninhaView;
 import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
 import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 import com.venussystem.venusmobile.viewmodel.AssistenteViewModel;
@@ -86,6 +90,9 @@ public class AssistenteFragment extends Fragment {
     private View botaoEnviar;
     private View botaoNovaConversa;
     private LinearLayout linhaSugestoes;
+    private VeninhaView veninha;
+    @Nullable
+    private ViewTreeObserver.OnGlobalLayoutListener aoMudarLayout;
 
     // A primeira lista pode ter a conversa salva inteira: pula direto para o
     // fim em vez de rolar mensagem por mensagem.
@@ -108,6 +115,12 @@ public class AssistenteFragment extends Fragment {
         botaoEnviar = view.findViewById(R.id.btnEnviar);
         botaoNovaConversa = view.findViewById(R.id.btnNovaConversa);
         linhaSugestoes = view.findViewById(R.id.linhaSugestoes);
+        veninha = view.findViewById(R.id.veninha);
+
+        // O teclado abre e fecha sem avisar o fragment; cada vez a tela refaz o
+        // layout, e e ai que a Veninha confere se precisa encolher.
+        aoMudarLayout = () -> ajustarVeninhaAoTeclado(view);
+        view.getViewTreeObserver().addOnGlobalLayoutListener(aoMudarLayout);
 
         // Pergunta longa quebra a linha, mas o campo continua de uma linha so
         // para o teclado: um campo multilinha troca o "enviar" por "nova linha".
@@ -161,6 +174,18 @@ public class AssistenteFragment extends Fragment {
         });
         viewModel.getAguardando().observe(getViewLifecycleOwner(), this::mostrarAguardando);
         viewModel.getPerguntaQueFalhou().observe(getViewLifecycleOwner(), this::devolverAoCampo);
+        viewModel.getHumor().observe(getViewLifecycleOwner(), veninha::setHumor);
+        viewModel.getFala().observe(getViewLifecycleOwner(), this::falar);
+    }
+
+    @Override
+    public void onDestroyView() {
+        View raiz = getView();
+        if (raiz != null && aoMudarLayout != null) {
+            raiz.getViewTreeObserver().removeOnGlobalLayoutListener(aoMudarLayout);
+        }
+        aoMudarLayout = null;
+        super.onDestroyView();
     }
 
     @NonNull
@@ -259,6 +284,29 @@ public class AssistenteFragment extends Fragment {
             campo.setSelection(campo.getText().length());
         }
         viewModel.esquecerPerguntaQueFalhou();
+    }
+
+    private void falar(@Nullable String texto) {
+        if (texto == null) {
+            return;
+        }
+        veninha.falar(texto);
+        viewModel.esquecerFala();
+    }
+
+    private void ajustarVeninhaAoTeclado(View raiz) {
+        WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(raiz);
+        boolean comTeclado = insets != null && insets.isVisible(WindowInsetsCompat.Type.ime());
+        int tamanho = raiz.getResources().getDimensionPixelSize(
+                comTeclado ? R.dimen.veninha_chat_teclado : R.dimen.veninha_chat);
+        ViewGroup.LayoutParams params = veninha.getLayoutParams();
+        // Trocar o tamanho refaz o layout e chama de novo: so mexe se mudou.
+        if (params.height == tamanho) {
+            return;
+        }
+        params.width = tamanho;
+        params.height = tamanho;
+        veninha.setLayoutParams(params);
     }
 
     private void confirmarNovaConversa() {

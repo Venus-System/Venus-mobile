@@ -7,18 +7,25 @@ public class Mensagem {
 
     private final int autor;
     private final String texto;
+    private final boolean digitando;
 
-    private Mensagem(int autor, String texto) {
+    private Mensagem(int autor, String texto, boolean digitando) {
         this.autor = autor;
         this.texto = texto;
+        this.digitando = digitando;
     }
 
     public static Mensagem doAssistente(String texto) {
-        return new Mensagem(DO_ASSISTENTE, texto);
+        return new Mensagem(DO_ASSISTENTE, texto, false);
     }
 
     public static Mensagem doUsuario(String texto) {
-        return new Mensagem(DO_USUARIO, texto);
+        return new Mensagem(DO_USUARIO, texto, false);
+    }
+
+    /** A bolha da Venus enquanto a resposta nao chega; a tela anima os pontos. */
+    public static Mensagem digitando(String texto) {
+        return new Mensagem(DO_ASSISTENTE, texto, true);
     }
 
     public int getAutor() {
@@ -27,5 +34,9 @@ public class Mensagem {
 
     public String getTexto() {
         return texto;
+    }
+
+    public boolean isDigitando() {
+        return digitando;
     }
 }

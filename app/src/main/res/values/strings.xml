@@ -272,6 +272,8 @@
     <string name="assistente_saudacao">Oi! Sou a Vênus. Pode me perguntar sobre produtos, ingredientes e cuidados com a pele e o cabelo.</string>
     <string name="assistente_offline">Esta versão do app foi gerada sem o endereço do servidor de conversas, então não consigo responder de verdade.</string>
     <string name="assistente_digitando">Digitando…</string>
+    <!-- Os três pontos que vão aparecendo são somados pelo ConversaAdapter. -->
+    <string name="assistente_digitando_sem_pontos">Digitando</string>
     <string name="assistente_erro_conexao">Não consegui falar com o servidor. Confira sua internet e tente de novo.</string>
     <string name="assistente_erro_demora">Demorei demais pra responder e acabei desistindo. Pode perguntar de novo?</string>
     <string name="assistente_erro_sessao">Sua sessão expirou. Saia e entre de novo na sua conta pra continuar a conversa.</string>

@@ -1,12 +1,18 @@
 package com.venussystem.venusmobile.view.adapter;
 
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
+import android.graphics.Color;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.venussystem.venusmobile.R;
@@ -16,6 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ConversaAdapter extends RecyclerView.Adapter<ConversaAdapter.MensagemViewHolder> {
+
+    // "Digitando", "Digitando.", "Digitando.." e "Digitando...", em volta.
+    private static final String PONTOS = "...";
+    private static final long INTERVALO_PONTOS_MS = 400;
 
     private final List<Mensagem> mensagens = new ArrayList<>();
 
@@ -28,6 +38,12 @@ public class ConversaAdapter extends RecyclerView.Adapter<ConversaAdapter.Mensag
         mensagens.clear();
         mensagens.addAll(novas);
         notifyDataSetChanged();
+    }
+
+    /** Quantos dos tres pontos do "Digitando" aparecem neste passo. */
+    @VisibleForTesting
+    static int pontosVisiveis(int passo) {
+        return passo % (PONTOS.length() + 1);
     }
 
     @Override
@@ -51,12 +67,20 @@ public class ConversaAdapter extends RecyclerView.Adapter<ConversaAdapter.Mensag
     }
 
     @Override
+    public void onViewRecycled(@NonNull MensagemViewHolder holder) {
+        holder.pararPontos();
+        super.onViewRecycled(holder);
+    }
+
+    @Override
     public int getItemCount() {
         return mensagens.size();
     }
 
     static class MensagemViewHolder extends RecyclerView.ViewHolder {
         private final TextView texto;
+        private final Runnable proximosPontos = this::andarPontos;
+        private int passo;
 
         MensagemViewHolder(@NonNull View item) {
             super(item);
@@ -64,7 +88,41 @@ public class ConversaAdapter extends RecyclerView.Adapter<ConversaAdapter.Mensag
         }
 
         void preencher(Mensagem mensagem) {
-            texto.setText(mensagem.getTexto());
+            pararPontos();
+            // Com as animacoes do sistema desligadas, fica o "Digitando…" parado.
+            if (mensagem.isDigitando() && ValueAnimator.areAnimatorsEnabled()) {
+                // O leitor de tela le a frase uma vez, e nao a cada ponto.
+                texto.setContentDescription(mensagem.getTexto());
+                passo = 0;
+                mostrarPontos();
+                texto.postDelayed(proximosPontos, INTERVALO_PONTOS_MS);
+            } else {
+                texto.setContentDescription(null);
+                texto.setText(mensagem.getTexto());
+            }
+        }
+
+        void pararPontos() {
+            texto.removeCallbacks(proximosPontos);
+        }
+
+        private void andarPontos() {
+            passo++;
+            mostrarPontos();
+            texto.postDelayed(proximosPontos, INTERVALO_PONTOS_MS);
+        }
+
+        private void mostrarPontos() {
+            String base = texto.getContext().getString(R.string.assistente_digitando_sem_pontos);
+            SpannableString frase = new SpannableString(base + PONTOS);
+            // Os pontos que ainda nao apareceram ficam la, transparentes: assim a
+            // bolha nao muda de largura a cada passo.
+            int inicioEscondido = base.length() + pontosVisiveis(passo);
+            if (inicioEscondido < frase.length()) {
+                frase.setSpan(new ForegroundColorSpan(Color.TRANSPARENT),
+                        inicioEscondido, frase.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            texto.setText(frase);
         }
     }
 }

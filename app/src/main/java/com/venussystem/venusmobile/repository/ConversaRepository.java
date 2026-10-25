@@ -48,8 +48,11 @@ public class ConversaRepository {
         /**
          * @param conversationId o id que a API usou nesta conversa; e ele que
          *                       vai nas proximas mensagens.
+         * @param expressao      a cara da Veninha que a API mandou com a
+         *                       resposta ("neutra" ou "magoada"); null se nao veio.
          */
-        void aoResponder(String resposta, @Nullable String conversationId);
+        void aoResponder(String resposta, @Nullable String conversationId,
+                         @Nullable String expressao);
 
         void aoFalhar(Falha falha);
     }
@@ -116,7 +119,8 @@ public class ConversaRepository {
             Resultado resultado = conversar(api, mensagem, conversationId);
             PRINCIPAL.post(() -> {
                 if (resultado.resposta != null) {
-                    callback.aoResponder(resultado.resposta, resultado.conversationId);
+                    callback.aoResponder(resultado.resposta, resultado.conversationId,
+                            resultado.expressao);
                 } else {
                     callback.aoFalhar(resultado.falha);
                 }
@@ -168,7 +172,7 @@ public class ConversaRepository {
                     || corpoResposta.conversationId.trim().isEmpty()
                     ? conversationId
                     : corpoResposta.conversationId;
-            return Resultado.sucesso(corpoResposta.resposta.trim(), idUsado);
+            return Resultado.sucesso(corpoResposta.resposta.trim(), idUsado, corpoResposta.expressao);
         } catch (SocketTimeoutException e) {
             // Estourar o tempo NAO e repetido: a API pode ter recebido a mensagem
             // e ainda estar respondendo, e a pergunta entraria duas vezes.
@@ -184,21 +188,25 @@ public class ConversaRepository {
         @Nullable
         final String conversationId;
         @Nullable
+        final String expressao;
+        @Nullable
         final Falha falha;
 
         private Resultado(@Nullable String resposta, @Nullable String conversationId,
-                          @Nullable Falha falha) {
+                          @Nullable String expressao, @Nullable Falha falha) {
             this.resposta = resposta;
             this.conversationId = conversationId;
+            this.expressao = expressao;
             this.falha = falha;
         }
 
-        static Resultado sucesso(String resposta, @Nullable String conversationId) {
-            return new Resultado(resposta, conversationId, null);
+        static Resultado sucesso(String resposta, @Nullable String conversationId,
+                                 @Nullable String expressao) {
+            return new Resultado(resposta, conversationId, expressao, null);
         }
 
         static Resultado falha(Falha falha) {
-            return new Resultado(null, null, falha);
+            return new Resultado(null, null, null, falha);
         }
     }
 }

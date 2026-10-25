@@ -11,6 +11,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.venussystem.venusmobile.R;
+import com.venussystem.venusmobile.model.HumorDaVeninha;
 import com.venussystem.venusmobile.model.Mensagem;
 import com.venussystem.venusmobile.repository.ConversaRepository;
 import com.venussystem.venusmobile.repository.ConversaSalvaRepository;
@@ -57,6 +58,8 @@ public class AssistenteViewModel extends AndroidViewModel {
     private final MutableLiveData<List<Mensagem>> mensagensVisiveis = new MutableLiveData<>();
     private final MutableLiveData<Boolean> aguardando = new MutableLiveData<>(false);
     private final MutableLiveData<String> perguntaQueFalhou = new MutableLiveData<>();
+    private final MutableLiveData<HumorDaVeninha> humor = new MutableLiveData<>(HumorDaVeninha.FELIZ);
+    private final MutableLiveData<String> fala = new MutableLiveData<>();
 
     public AssistenteViewModel(@NonNull Application application) {
         this(application, new ConversaRepository(), new ConversaSalvaRepository(application));
@@ -90,6 +93,23 @@ public class AssistenteViewModel extends AndroidViewModel {
 
     public void esquecerPerguntaQueFalhou() {
         perguntaQueFalhou.setValue(null);
+    }
+
+    public LiveData<HumorDaVeninha> getHumor() {
+        return humor;
+    }
+
+    /**
+     * O texto da bolha que a Veninha acabou de mandar (resposta ou aviso de
+     * falha), para a tela mexer a boca dela uma vez. Null depois de usada: a
+     * conversa salva, relida ao abrir ou ao girar a tela, nao e falada de novo.
+     */
+    public LiveData<String> getFala() {
+        return fala;
+    }
+
+    public void esquecerFala() {
+        fala.setValue(null);
     }
 
     /**
@@ -130,23 +150,27 @@ public class AssistenteViewModel extends AndroidViewModel {
         }
 
         adicionar(Mensagem.doUsuario(pergunta));
-        adicionar(Mensagem.doAssistente(getApplication().getString(R.string.assistente_digitando)));
+        adicionar(Mensagem.digitando(getApplication().getString(R.string.assistente_digitando)));
         aguardando.setValue(true);
         perguntaQueFalhou.setValue(null);
+        humor.setValue(HumorDaVeninha.PENSANDO);
 
         String idEnviado = conversationId;
         conversa.enviar(paraApi(pergunta), idEnviado, new ConversaRepository.AoResponder() {
             @Override
-            public void aoResponder(String resposta, @Nullable String idUsado) {
+            public void aoResponder(String resposta, @Nullable String idUsado,
+                                    @Nullable String expressao) {
                 // Grava antes de mostrar, e mesmo se a tela ja fechou: a resposta
                 // aparece quando a pessoa reabrir o chat.
                 salva.adicionarPar(idEnviado, pergunta, resposta, idUsado);
                 conversationId = idUsado;
+                humor.setValue(HumorDaVeninha.daExpressao(expressao));
                 trocarDigitando(resposta);
             }
 
             @Override
             public void aoFalhar(ConversaRepository.Falha falha) {
+                humor.setValue(HumorDaVeninha.CONFUSA);
                 trocarDigitando(getApplication().getString(textoDaFalha(falha)));
                 perguntaQueFalhou.setValue(pergunta);
             }
@@ -166,6 +190,7 @@ public class AssistenteViewModel extends AndroidViewModel {
         }
         salva.novaConversa();
         perguntaQueFalhou.setValue(null);
+        humor.setValue(HumorDaVeninha.FELIZ);
         mostrar(salva.carregar());
         return true;
     }
@@ -193,6 +218,7 @@ public class AssistenteViewModel extends AndroidViewModel {
         // Enquanto aguarda nao entra mensagem nova, entao o "digitando" e sempre
         // a ultima da lista.
         mensagens.set(mensagens.size() - 1, Mensagem.doAssistente(texto));
+        fala.setValue(texto);
         publicar();
         aguardando.setValue(false);
     }

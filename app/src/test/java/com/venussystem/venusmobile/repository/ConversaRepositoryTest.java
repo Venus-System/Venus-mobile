@@ -44,12 +44,14 @@ public class ConversaRepositoryTest {
         final CountDownLatch chegou = new CountDownLatch(1);
         String resposta;
         String conversationId;
+        String expressao;
         ConversaRepository.Falha falha;
 
         @Override
-        public void aoResponder(String resposta, String conversationId) {
+        public void aoResponder(String resposta, String conversationId, String expressao) {
             this.resposta = resposta;
             this.conversationId = conversationId;
+            this.expressao = expressao;
             chegou.countDown();
         }
 
@@ -153,6 +155,26 @@ public class ConversaRepositoryTest {
 
         assertEquals("Oi!", retorno.resposta);
         assertEquals(CONVERSA, retorno.conversationId);
+    }
+
+    @Test
+    public void respostaMagoada_chegaComAExpressao() {
+        server.enqueue(resposta(200, "{\"resposta\":\"Poxa.\",\"conversation_id\":\""
+                + CONVERSA + "\",\"expressao\":\"magoada\"}"));
+
+        Retorno retorno = enviar(repositorio(), "oi");
+
+        assertEquals("magoada", retorno.expressao);
+    }
+
+    @Test
+    public void respostaSemExpressao_chegaSemExpressao() {
+        server.enqueue(resposta(200, "{\"resposta\":\"Oi!\",\"conversation_id\":\"x\"}"));
+
+        Retorno retorno = enviar(repositorio(), "oi");
+
+        assertEquals("Oi!", retorno.resposta);
+        assertNull(retorno.expressao);
     }
 
     // ---- Token ----
