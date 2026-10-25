@@ -209,17 +209,6 @@
                 android:indeterminateTint="@color/roxo_venus" />
 
             <TextView
-                android:id="@+id/textMatchVeredito"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@color/preto_texto"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:visibility="gone"
-                tools:text="Combina com você"
-                tools:visibility="visible" />
-
-            <TextView
                 android:id="@+id/textMatchMensagem"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -230,8 +219,7 @@
                 android:textColor="@color/cinza_descricao"
                 android:textSize="@dimen/texto_corpo"
                 android:visibility="gone"
-                tools:text="Responda o questionário para ver o match."
-                tools:visibility="visible" />
+                tools:text="Responda o questionário para ver o match." />
 
             <!-- Sem questionario respondido o Match nao existe: o cartao chama para ele. -->
             <com.venussystem.venusmobile.view.componente.CartaoPerfilView
@@ -241,40 +229,263 @@
                 android:layout_marginTop="@dimen/espaco_pequeno"
                 android:visibility="gone" />
 
+            <!-- Cartao "Para voce" do Figma, com lilas claro no lugar do degrade roxo:
+                 a nota geral em destaque no anel e os pontos do perfil em uma linha cada. -->
             <LinearLayout
-                android:id="@+id/listaMatchAlertas"
+                android:id="@+id/cartaoMatch"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical" />
-
-            <LinearLayout
-                android:id="@+id/listaMatchPositivos"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
-
-            <TextView
-                android:id="@+id/textMatchNota"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/espaco_grande"
-                android:lineSpacingExtra="3dp"
-                android:textColor="@color/cinza_descricao"
-                android:textSize="13sp"
+                android:background="@drawable/bg_cartao_match"
+                android:orientation="vertical"
                 android:visibility="gone"
-                tools:text="Nota geral do produto: 63/100"
-                tools:visibility="visible" />
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="1dp"
+                    android:background="@drawable/bg_cabecalho_match"
+                    android:orientation="vertical"
+                    android:padding="@dimen/espaco_medio">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/textMatchTitulo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/roxo_avatar_borda"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            tools:text="Para você, Rafael" />
+
+                        <TextView
+                            android:id="@+id/textMatchCruzado"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:textColor="@color/cinza_descricao"
+                            android:textSize="12sp"
+                            tools:text="Cruzado com seu perfil: pele seca, sem silicones" />
+
+                        <TextView
+                            android:id="@+id/textMatchVeredito"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/espaco_pequeno"
+                            android:background="@drawable/bg_selo_veredito"
+                            android:paddingStart="10dp"
+                            android:paddingTop="4dp"
+                            android:paddingEnd="10dp"
+                            android:paddingBottom="4dp"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            tools:text="Combina com você" />
+
+                    </LinearLayout>
+
+                    <!-- O numero que mais importa na aba: a nota pessoal da Venus-Classificacao,
+                         ou a nota geral do produto quando ela nao responde. -->
+                    <!-- O anel enche so a parte da volta que corresponde a nota (60 enche 60%). -->
+                    <FrameLayout
+                        android:id="@+id/anelNotaMatch"
+                        android:layout_width="84dp"
+                        android:layout_height="84dp"
+                        android:layout_marginStart="@dimen/espaco_pequeno"
+                        android:background="@drawable/bg_anel_nota">
+
+                        <com.google.android.material.progressindicator.CircularProgressIndicator
+                            android:id="@+id/progressoNotaMatch"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:importantForAccessibility="no"
+                            android:max="100"
+                            app:indicatorColor="@color/cinza_fechar"
+                            app:indicatorInset="0dp"
+                            app:indicatorSize="84dp"
+                            app:trackColor="@color/cinza_fechar"
+                            app:trackCornerRadius="3dp"
+                            app:trackThickness="6dp"
+                            tools:progress="63" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+
+                            <ProgressBar
+                                android:id="@+id/carregandoNotaMatch"
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:indeterminateTint="@color/roxo_venus"
+                                android:visibility="gone" />
+
+                            <TextView
+                                android:id="@+id/textMatchNota"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:importantForAccessibility="no"
+                                android:includeFontPadding="false"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                tools:text="63" />
+
+                            <TextView
+                                android:id="@+id/textMatchNotaRotulo"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:importantForAccessibility="no"
+                                android:includeFontPadding="false"
+                                android:maxLines="1"
+                                android:textColor="@color/cinza_descricao"
+                                android:textSize="10sp"
+                                tools:text="para você" />
+
+                        </LinearLayout>
+
+                    </FrameLayout>
+
+                </LinearLayout>
+
+                    <!-- De onde vem a nota pessoal: qualidade do produto + combinacao com o perfil. -->
+                    <TextView
+                        android:id="@+id/textMatchConta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:textColor="@color/roxo_avatar_borda"
+                        android:textSize="12sp"
+                        android:visibility="gone"
+                        tools:text="Qualidade 74 · combina 71% com você"
+                        tools:visibility="visible" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/listaMatchPontos"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="@dimen/espaco_pequeno" />
+
+                <TextView
+                    android:id="@+id/textMatchSemEfeitos"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="@dimen/espaco_medio"
+                    android:paddingTop="@dimen/espaco_pequeno"
+                    android:paddingEnd="@dimen/espaco_medio"
+                    android:text="@string/produto_match_sem_efeitos"
+                    android:textColor="@color/cinza_descricao"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <!-- Destaques da composicao fora do perfil, so como chips. -->
+                <LinearLayout
+                    android:id="@+id/secaoMatchDestaques"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="@dimen/espaco_medio"
+                    android:paddingTop="@dimen/espaco_pequeno"
+                    android:paddingEnd="@dimen/espaco_medio"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/produto_match_na_formula"
+                        android:textColor="@color/cinza_descricao"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/grupoMatchDestaques"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        app:chipSpacingHorizontal="6dp"
+                        app:chipSpacingVertical="6dp"
+                        app:singleLine="false" />
+
+                </LinearLayout>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/espaco_medio" />
+
+            </LinearLayout>
+
+            <!-- Alergias tem cartao proprio, com o atalho para as alternativas. -->
+            <LinearLayout
+                android:id="@+id/cartaoMatchAlergias"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_medio"
+                android:background="@drawable/bg_cartao_alergia"
+                android:orientation="vertical"
+                android:padding="@dimen/espaco_medio"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:id="@+id/textMatchAlergiaTitulo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/roxo_avatar_borda"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="Sem alérgenos seus" />
+
+                <TextView
+                    android:id="@+id/textMatchAlergiaTexto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/cinza_descricao"
+                    android:textSize="13sp"
+                    tools:text="Não contém lanolina nem óleo de amêndoas, da sua lista de alergias." />
+
+                <TextView
+                    android:id="@+id/botaoMatchAlternativas"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_botao_outline_magenta"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:minHeight="40dp"
+                    android:paddingStart="18dp"
+                    android:paddingEnd="18dp"
+                    android:text="@string/produto_match_ver_alternativas"
+                    android:textColor="@color/magenta_venus"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/textMatchAviso"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/espaco_grande"
-                android:background="@drawable/bg_aviso_amarelo"
-                android:padding="@dimen/espaco_medio"
+                android:layout_marginTop="@dimen/espaco_medio"
                 android:text="@string/produto_match_aviso"
-                android:textColor="@color/amarelo_aviso_texto"
-                android:textSize="12sp"
+                android:textColor="@color/cinza_hint"
+                android:textSize="11sp"
                 android:visibility="gone"
                 tools:visibility="visible" />
 

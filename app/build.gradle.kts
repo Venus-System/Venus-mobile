@@ -21,6 +21,14 @@ val urlVenusIa: String = (findProperty("VENUS_IA_URL") as String?)
     ?: propriedadesLocais.getProperty("VENUS_IA_URL")
     ?: urlVenusIaPadrao
 
+// Endereco da Venus-Classificacao (nota pessoal da aba "Match com voce"). Tambem
+// fica no Render, fora da EC2 do CRUD; troca do mesmo jeito que a da IA. Vazio
+// deixa a aba so com o calculo feito no aparelho.
+val urlVenusClassificacaoPadrao = "https://venus-classificacao.onrender.com/"
+val urlVenusClassificacao: String = (findProperty("VENUS_CLASSIFICACAO_URL") as String?)
+    ?: propriedadesLocais.getProperty("VENUS_CLASSIFICACAO_URL")
+    ?: urlVenusClassificacaoPadrao
+
 android {
     namespace = "com.venussystem.venusmobile"
     compileSdk {
@@ -37,6 +45,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "VENUS_IA_URL", "\"$urlVenusIa\"")
+        buildConfigField("String", "VENUS_CLASSIFICACAO_URL", "\"$urlVenusClassificacao\"")
     }
 
     buildTypes {

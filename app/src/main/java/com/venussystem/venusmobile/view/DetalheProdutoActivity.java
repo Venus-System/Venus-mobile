@@ -1,6 +1,7 @@
 package com.venussystem.venusmobile.view;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -13,6 +14,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,15 +30,24 @@ import coil.Coil;
 import coil.ImageLoader;
 import coil.request.ImageRequest;
 
+import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.tabs.TabLayout;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Colecao;
 import com.venussystem.venusmobile.model.IngredienteProduto;
+import com.venussystem.venusmobile.domain.match.ContaDaNota;
+import com.venussystem.venusmobile.domain.match.EtiquetasDoPerfil;
+import com.venussystem.venusmobile.domain.match.PontosDaClassificacao;
 import com.venussystem.venusmobile.domain.match.ResultadoMatch;
 import com.venussystem.venusmobile.domain.perfil.ProgressoPerfil;
 import com.venussystem.venusmobile.model.Produto;
+import com.venussystem.venusmobile.model.Usuario;
+import com.venussystem.venusmobile.repository.api.dto.ClassificationResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
 import com.venussystem.venusmobile.repository.AcessosRecentesRepository;
+import com.venussystem.venusmobile.repository.AutenticacaoRepository;
+import com.venussystem.venusmobile.repository.ClassificacaoRepository;
 import com.venussystem.venusmobile.repository.ColecaoRepository;
 import com.venussystem.venusmobile.repository.HistoricoCatalogoRepository;
 import com.venussystem.venusmobile.repository.ListaItemRepository;
@@ -46,7 +57,9 @@ import com.venussystem.venusmobile.repository.ProdutoRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.view.adapter.AlternativaAdapter;
 import com.venussystem.venusmobile.view.componente.CartaoPerfilView;
+import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
 import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
+import com.venussystem.venusmobile.view.util.TextosMatch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +76,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     private static final int ABA_AVALIACAO = 0;
     private static final int ABA_MATCH = 1;
     private static final int ABA_ALTERNATIVAS = 2;
+    private static final int MAXIMO_CHIPS_MATCH = 6;
 
     private final ProdutoRepository repository =
             new ProdutoRepository();
@@ -70,13 +84,26 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     private View conteudoAvaliacao;
     private View conteudoMatch;
     private View carregandoMatch;
-    private TextView textMatchVeredito;
     private TextView textMatchMensagem;
-    private TextView textMatchNota;
-    private TextView textMatchAviso;
     private CartaoPerfilView cartaoPerfilMatch;
-    private LinearLayout listaMatchAlertas;
-    private LinearLayout listaMatchPositivos;
+    private View cartaoMatch;
+    private TextView textMatchTitulo;
+    private TextView textMatchCruzado;
+    private TextView textMatchVeredito;
+    private View anelNotaMatch;
+    private CircularProgressIndicator progressoNotaMatch;
+    private ProgressBar carregandoNotaMatch;
+    private TextView textMatchNota;
+    private TextView textMatchNotaRotulo;
+    private TextView textMatchConta;
+    private LinearLayout listaMatchPontos;
+    private TextView textMatchSemEfeitos;
+    private View secaoMatchDestaques;
+    private ChipGroup grupoMatchDestaques;
+    private View cartaoMatchAlergias;
+    private TextView textMatchAlergiaTitulo;
+    private TextView textMatchAlergiaTexto;
+    private TextView textMatchAviso;
     private RecyclerView listaAlternativas;
     private TextView textSemAlternativas;
 
@@ -97,6 +124,18 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     private boolean ingredientesCarregados = false;
     private boolean alternativasMontadas = false;
     private boolean matchCarregado = false;
+
+    // A aba junta duas respostas que chegam em qualquer ordem: o cruzamento feito
+    // no aparelho e a nota pessoal da Venus-Classificacao. O contador descarta a
+    // resposta de um pedido antigo quando a aba e aberta de novo.
+    private int pedidoMatch = 0;
+    @Nullable
+    private ResultadoMatch resultadoMatch;
+    @Nullable
+    private ProductScoreResponse notaGeralMatch;
+    @Nullable
+    private ClassificationResponse classificacaoMatch;
+    private boolean classificacaoRespondeu = false;
     private boolean telaInicializada = false;
     private boolean mensagemErroMostrada = false;
 
@@ -227,13 +266,27 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 );
 
         carregandoMatch = findViewById(R.id.carregandoMatch);
-        textMatchVeredito = findViewById(R.id.textMatchVeredito);
         textMatchMensagem = findViewById(R.id.textMatchMensagem);
-        textMatchNota = findViewById(R.id.textMatchNota);
-        textMatchAviso = findViewById(R.id.textMatchAviso);
         cartaoPerfilMatch = findViewById(R.id.cartaoPerfilMatch);
-        listaMatchAlertas = findViewById(R.id.listaMatchAlertas);
-        listaMatchPositivos = findViewById(R.id.listaMatchPositivos);
+        cartaoMatch = findViewById(R.id.cartaoMatch);
+        textMatchTitulo = findViewById(R.id.textMatchTitulo);
+        textMatchCruzado = findViewById(R.id.textMatchCruzado);
+        textMatchVeredito = findViewById(R.id.textMatchVeredito);
+        anelNotaMatch = findViewById(R.id.anelNotaMatch);
+        progressoNotaMatch = findViewById(R.id.progressoNotaMatch);
+        carregandoNotaMatch = findViewById(R.id.carregandoNotaMatch);
+        textMatchNota = findViewById(R.id.textMatchNota);
+        textMatchNotaRotulo = findViewById(R.id.textMatchNotaRotulo);
+        textMatchConta = findViewById(R.id.textMatchConta);
+        listaMatchPontos = findViewById(R.id.listaMatchPontos);
+        textMatchSemEfeitos = findViewById(R.id.textMatchSemEfeitos);
+        secaoMatchDestaques = findViewById(R.id.secaoMatchDestaques);
+        grupoMatchDestaques = findViewById(R.id.grupoMatchDestaques);
+        cartaoMatchAlergias = findViewById(R.id.cartaoMatchAlergias);
+        textMatchAlergiaTitulo = findViewById(R.id.textMatchAlergiaTitulo);
+        textMatchAlergiaTexto = findViewById(R.id.textMatchAlergiaTexto);
+        textMatchAviso = findViewById(R.id.textMatchAviso);
+        findViewById(R.id.botaoMatchAlternativas).setOnClickListener(v -> abrirAlternativas());
 
         textIngredientes =
                 findViewById(
@@ -658,15 +711,18 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         }
 
         matchCarregado = true;
+        int pedido = ++pedidoMatch;
+        resultadoMatch = null;
+        notaGeralMatch = null;
+        classificacaoMatch = null;
+        classificacaoRespondeu = false;
 
         carregandoMatch.setVisibility(View.VISIBLE);
-        textMatchVeredito.setVisibility(View.GONE);
         textMatchMensagem.setVisibility(View.GONE);
-        textMatchNota.setVisibility(View.GONE);
-        textMatchAviso.setVisibility(View.GONE);
         cartaoPerfilMatch.setVisibility(View.GONE);
-        listaMatchAlertas.removeAllViews();
-        listaMatchPositivos.removeAllViews();
+        cartaoMatch.setVisibility(View.GONE);
+        cartaoMatchAlergias.setVisibility(View.GONE);
+        textMatchAviso.setVisibility(View.GONE);
 
         new MatchProdutoRepository(new PerfilRepository(this)).calcular(
                 produto.getId(),
@@ -677,17 +733,39 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                             ProductScoreResponse nota,
                             @NonNull List<String> consideradas
                     ) {
-                        if (isFinishing() || isDestroyed()) return;
+                        if (isFinishing() || isDestroyed() || pedido != pedidoMatch) return;
                         mostrarMatch(resultado, nota, consideradas);
                     }
 
                     @Override
                     public void aoFalhar() {
-                        if (isFinishing() || isDestroyed()) return;
+                        if (isFinishing() || isDestroyed() || pedido != pedidoMatch) return;
                         // Deixa tentar de novo ao reabrir a aba.
                         matchCarregado = false;
                         carregandoMatch.setVisibility(View.GONE);
                         mostrarMensagemMatch(R.string.produto_match_indisponivel);
+                    }
+                }
+        );
+
+        // A nota pessoal vem de outro servidor (Render, que pode estar dormindo):
+        // corre em paralelo e so troca o anel e o selo quando chega.
+        new ClassificacaoRepository(this).classificar(
+                produto.getId(),
+                new ClassificacaoRepository.AoClassificar() {
+                    @Override
+                    public void aoConcluir(@NonNull ClassificationResponse classificacao) {
+                        if (isFinishing() || isDestroyed() || pedido != pedidoMatch) return;
+                        classificacaoMatch = classificacao;
+                        classificacaoRespondeu = true;
+                        atualizarNotaESelo();
+                    }
+
+                    @Override
+                    public void aoFalhar() {
+                        if (isFinishing() || isDestroyed() || pedido != pedidoMatch) return;
+                        classificacaoRespondeu = true;
+                        atualizarNotaESelo();
                     }
                 }
         );
@@ -701,143 +779,318 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         carregandoMatch.setVisibility(View.GONE);
 
-        switch (resultado.veredito) {
-            case SEM_PERFIL: {
-                ProgressoPerfil progresso = new PerfilRepository(this).progresso();
-                if (progresso.estado == ProgressoPerfil.Estado.COMPLETO) {
-                    mostrarMensagemMatch(R.string.produto_match_sem_perfil);
-                } else {
-                    // O cartao chama para o questionario, com o botao que o texto nao tinha.
-                    cartaoPerfilMatch.atualizar(progresso);
-                }
-                // Quando a pessoa responder o questionario, a aba recalcula.
-                matchCarregado = false;
-                return;
+        if (resultado.veredito == ResultadoMatch.Veredito.SEM_PERFIL) {
+            ProgressoPerfil progresso = new PerfilRepository(this).progresso();
+            if (progresso.estado == ProgressoPerfil.Estado.COMPLETO) {
+                mostrarMensagemMatch(R.string.produto_match_sem_perfil);
+            } else {
+                // O cartao chama para o questionario, com o botao que o texto nao tinha.
+                cartaoPerfilMatch.atualizar(progresso);
             }
-            case NAO_RECOMENDADO:
-                mostrarVeredito(R.string.produto_match_veredito_nao_recomendado);
-                break;
-            case ATENCAO:
-                mostrarVeredito(R.string.produto_match_veredito_atencao);
-                break;
-            case COMBINA:
-                mostrarVeredito(R.string.produto_match_veredito_combina);
-                break;
-            default:
-                if (consideradas.isEmpty()) {
-                    mostrarMensagemMatch(R.string.produto_match_sem_pontos);
-                } else {
-                    textMatchMensagem.setText(getString(
-                            R.string.produto_match_sem_pontos_considerado,
-                            String.join(", ", consideradas)
-                    ));
-                    textMatchMensagem.setVisibility(View.VISIBLE);
-                }
-                break;
+            // Quando a pessoa responder o questionario, a aba recalcula.
+            matchCarregado = false;
+            return;
         }
 
-        adicionarAchados(
-                listaMatchAlertas,
-                R.string.produto_match_titulo_alertas,
-                resultado.alertas
-        );
-        adicionarAchados(
-                listaMatchPositivos,
-                R.string.produto_match_titulo_positivos,
-                resultado.positivos
-        );
+        resultadoMatch = resultado;
+        notaGeralMatch = nota;
 
-        if (nota != null && nota.overallScore != null) {
-            textMatchNota.setText(
-                    getString(R.string.produto_match_nota, nota.overallScore)
-            );
-            textMatchNota.setVisibility(View.VISIBLE);
-        }
+        String nome = primeiroNome();
+        textMatchTitulo.setText(nome.isEmpty()
+                ? getString(R.string.produto_match_para_voce_sem_nome)
+                : getString(R.string.produto_match_para_voce, nome));
+        textMatchCruzado.setText(consideradas.isEmpty()
+                ? getString(R.string.produto_match_perfil_sem_etiquetas)
+                : getString(R.string.produto_match_cruzado, String.join(", ", consideradas)));
+        // Tambem desenha os pontos: com a nota pessoal, eles ganham os motivos dela.
+        atualizarNotaESelo();
+        textMatchSemEfeitos.setVisibility(resultado.catalogoCobre ? View.GONE : View.VISIBLE);
+        mostrarDestaques(resultado.destaques);
+        cartaoMatch.setVisibility(View.VISIBLE);
+
+        mostrarAlergias(resultado.alergiasEncontradas);
         textMatchAviso.setVisibility(View.VISIBLE);
     }
 
-    private void mostrarVeredito(int texto) {
+    /**
+     * Anel e selo do cabecalho. Com a Venus-Classificacao: a nota pessoal e a
+     * faixa dela. Enquanto ela nao responde, o anel fica carregando; se falhar,
+     * volta para a nota geral do produto e o veredito do calculo no aparelho.
+     */
+    private void atualizarNotaESelo() {
+        if (resultadoMatch == null) return;
+
+        ClassificationResponse pessoal = classificacaoMatch;
+        FaixaPessoal faixa = pessoal == null ? null : FaixaPessoal.de(pessoal.recommendationLevel);
+        if (pessoal != null && pessoal.finalScore != null && faixa != null) {
+            mostrarConta(pessoal);
+            mostrarPontos(PontosDaClassificacao.mesclar(resultadoMatch.pontos, motivosDe(pessoal)));
+            mostrarSelo(faixa.texto, faixa.corTexto, faixa.fundo);
+            mostrarAnel(pessoal.finalScore, faixa.corAnel, faixa.fundo, faixa.corTexto,
+                    R.string.produto_match_rotulo_para_voce,
+                    getString(R.string.produto_match_nota_pessoal_descricao, pessoal.finalScore));
+            return;
+        }
+
+        textMatchConta.setVisibility(View.GONE);
+        mostrarPontos(resultadoMatch.pontos);
+        mostrarSeloLocal(resultadoMatch.veredito);
+        if (!classificacaoRespondeu) {
+            carregandoNotaMatch.setVisibility(View.VISIBLE);
+            textMatchNota.setVisibility(View.GONE);
+            textMatchNotaRotulo.setText(R.string.produto_match_rotulo_para_voce);
+            preencherAnel(0, R.color.cinza_fechar, R.color.cinza_fechar);
+            anelNotaMatch.setContentDescription(
+                    getString(R.string.produto_match_calculando_descricao));
+            anelNotaMatch.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        Integer geral = notaGeralMatch == null ? null : notaGeralMatch.overallScore;
+        if (geral == null) {
+            anelNotaMatch.setVisibility(View.GONE);
+            return;
+        }
+        mostrarAnel(geral, NotaProdutoUtil.corPara(geral), NotaProdutoUtil.fundoPara(geral),
+                NotaProdutoUtil.textoPara(geral), R.string.produto_match_rotulo_nota_geral,
+                getString(R.string.produto_match_nota_descricao, geral));
+    }
+
+    /** "Qualidade 74 · combina 71% com voce": de onde vem a nota pessoal. */
+    private void mostrarConta(ClassificationResponse pessoal) {
+        Integer qualidade = notaGeralMatch == null ? null : notaGeralMatch.overallScore;
+        ContaDaNota conta = ContaDaNota.de(qualidade, pessoal.compatibilityPercentage,
+                pessoal.finalScore);
+        String texto;
+        if (conta.qualidade != null && conta.combinacao != null) {
+            texto = getString(conta.limitada
+                            ? R.string.produto_match_conta_limitada
+                            : R.string.produto_match_conta,
+                    conta.qualidade, conta.combinacao);
+        } else if (conta.qualidade != null) {
+            texto = getString(conta.limitada
+                            ? R.string.produto_match_conta_so_qualidade_limitada
+                            : R.string.produto_match_conta_so_qualidade,
+                    conta.qualidade);
+        } else if (conta.combinacao != null) {
+            texto = getString(R.string.produto_match_conta_so_combinacao, conta.combinacao);
+        } else {
+            textMatchConta.setVisibility(View.GONE);
+            return;
+        }
+        textMatchConta.setText(texto);
+        textMatchConta.setVisibility(View.VISIBLE);
+    }
+
+    /** Motivos de regra de ingrediente da Classificacao, sem o texto do banco. */
+    private static List<PontosDaClassificacao.Motivo> motivosDe(ClassificationResponse c) {
+        List<PontosDaClassificacao.Motivo> motivos = new ArrayList<>();
+        if (c.reasons == null) return motivos;
+        for (ClassificationResponse.Reason r : c.reasons) {
+            if (r == null || !"INGREDIENT_RULE".equals(r.source) || r.profileTagSlug == null) {
+                continue;
+            }
+            motivos.add(new PontosDaClassificacao.Motivo(r.profileTagSlug, r.ingredientName,
+                    Boolean.TRUE.equals(r.warning)));
+        }
+        return motivos;
+    }
+
+    private void mostrarSeloLocal(ResultadoMatch.Veredito veredito) {
+        switch (veredito) {
+            case NAO_RECOMENDADO:
+                mostrarSelo(R.string.produto_match_veredito_nao_recomendado,
+                        R.color.nota_ruim_texto, R.color.nota_ruim_fundo);
+                break;
+            case ATENCAO:
+                mostrarSelo(R.string.produto_match_veredito_atencao,
+                        R.color.nota_media_texto, R.color.nota_media_fundo);
+                break;
+            case COMBINA:
+                mostrarSelo(R.string.produto_match_veredito_combina,
+                        R.color.nota_boa_texto, R.color.nota_boa_fundo);
+                break;
+            default:
+                mostrarSelo(R.string.produto_match_veredito_sem_alertas,
+                        R.color.nota_boa_texto, R.color.nota_boa_fundo);
+                break;
+        }
+    }
+
+    private void mostrarSelo(int texto, int corTexto, int fundo) {
         textMatchVeredito.setText(texto);
-        textMatchVeredito.setVisibility(View.VISIBLE);
+        textMatchVeredito.setTextColor(ContextCompat.getColor(this, corTexto));
+        textMatchVeredito.setBackgroundTintList(
+                ColorStateList.valueOf(ContextCompat.getColor(this, fundo)));
+    }
+
+    private void mostrarAnel(int valor, int corAnel, int trilho, int corTexto, int rotulo,
+                             String descricao) {
+        carregandoNotaMatch.setVisibility(View.GONE);
+        textMatchNota.setText(String.valueOf(valor));
+        textMatchNota.setTextColor(ContextCompat.getColor(this, corTexto));
+        textMatchNota.setVisibility(View.VISIBLE);
+        textMatchNotaRotulo.setText(rotulo);
+        preencherAnel(valor, corAnel, trilho);
+        anelNotaMatch.setContentDescription(descricao);
+        anelNotaMatch.setVisibility(View.VISIBLE);
+    }
+
+    /** Enche so a parte da volta que corresponde a nota (60 enche 60%), na cor da faixa. */
+    private void preencherAnel(int valor, int cor, int trilho) {
+        progressoNotaMatch.setIndicatorColor(ContextCompat.getColor(this, cor));
+        progressoNotaMatch.setTrackColor(ContextCompat.getColor(this, trilho));
+        progressoNotaMatch.setProgressCompat(Math.max(0, Math.min(100, valor)), true);
+    }
+
+    /** Faixa da nota pessoal (recommendationLevel da Classificacao) em texto e cor. */
+    private static final class FaixaPessoal {
+        final int texto;
+        final int corAnel;
+        final int corTexto;
+        final int fundo;
+
+        private FaixaPessoal(int texto, int corAnel, int corTexto, int fundo) {
+            this.texto = texto;
+            this.corAnel = corAnel;
+            this.corTexto = corTexto;
+            this.fundo = fundo;
+        }
+
+        @Nullable
+        static FaixaPessoal de(@Nullable String nivel) {
+            if (nivel == null) return null;
+            switch (nivel) {
+                case "IDEAL":
+                    return boa(R.string.produto_match_faixa_ideal);
+                case "RECOMMENDED":
+                    return boa(R.string.produto_match_faixa_recomendado);
+                case "ACCEPTABLE":
+                    return new FaixaPessoal(R.string.produto_match_faixa_aceitavel,
+                            R.color.nota_media, R.color.nota_media_texto, R.color.nota_media_fundo);
+                case "NOT_RECOMMENDED":
+                    return ruim(R.string.produto_match_veredito_nao_recomendado);
+                case "CONTRAINDICATED":
+                    return ruim(R.string.produto_match_faixa_contraindicado);
+                default:
+                    return null;
+            }
+        }
+
+        private static FaixaPessoal boa(int texto) {
+            return new FaixaPessoal(texto, R.color.nota_boa, R.color.nota_boa_texto,
+                    R.color.nota_boa_fundo);
+        }
+
+        private static FaixaPessoal ruim(int texto) {
+            return new FaixaPessoal(texto, R.color.nota_ruim, R.color.nota_ruim_texto,
+                    R.color.nota_ruim_fundo);
+        }
+    }
+
+    private void mostrarPontos(List<ResultadoMatch.Ponto> pontos) {
+        listaMatchPontos.removeAllViews();
+        LayoutInflater inflater = LayoutInflater.from(this);
+        TextosMatch.Recursos recursos = this::getString;
+
+        for (ResultadoMatch.Ponto ponto : pontos) {
+            View item = inflater.inflate(R.layout.item_ponto_match, listaMatchPontos, false);
+            TextView titulo = item.findViewById(R.id.textPontoTitulo);
+            TextView linha = item.findViewById(R.id.textPontoLinha);
+
+            titulo.setText(TextosMatch.titulo(recursos, ponto));
+            String texto = TextosMatch.linha(recursos, ponto);
+            linha.setText(texto);
+            linha.setVisibility(texto.isEmpty() ? View.GONE : View.VISIBLE);
+
+            int bolinha;
+            int cor;
+            switch (ponto.tipo) {
+                case GRAVE:
+                    bolinha = R.drawable.bg_ponto_grave;
+                    cor = R.color.nota_ruim_texto;
+                    break;
+                case ALERTA:
+                    bolinha = R.drawable.bg_ponto_alerta;
+                    cor = R.color.nota_media_texto;
+                    break;
+                default:
+                    bolinha = R.drawable.bg_ponto_positivo;
+                    cor = R.color.nota_boa_texto;
+                    break;
+            }
+            item.findViewById(R.id.pontoMatch).setBackgroundResource(bolinha);
+            titulo.setTextColor(ContextCompat.getColor(this, cor));
+            listaMatchPontos.addView(item);
+        }
+        listaMatchPontos.setVisibility(pontos.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    /** Destaques gerais so como chips curtos: a descricao do catalogo era texto demais. */
+    private void mostrarDestaques(List<ResultadoMatch.Destaque> destaques) {
+        grupoMatchDestaques.removeAllViews();
+        List<String> rotulos = TextosMatch.chips(this::getString, destaques, MAXIMO_CHIPS_MATCH);
+
+        for (String rotulo : rotulos) {
+            TextView chip = new TextView(this);
+            chip.setText(rotulo);
+            chip.setTextSize(12);
+            chip.setTextColor(ContextCompat.getColor(this, R.color.roxo_avatar_borda));
+            chip.setBackgroundResource(R.drawable.bg_chip_match);
+            chip.setPadding(dp(10), dp(4), dp(10), dp(4));
+            grupoMatchDestaques.addView(chip);
+        }
+        secaoMatchDestaques.setVisibility(rotulos.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    private void mostrarAlergias(List<String> encontradas) {
+        List<String> alergias = EtiquetasDoPerfil.alergiasEmTexto(new PerfilRepository(this));
+        TextosMatch.Recursos recursos = this::getString;
+
+        if (!encontradas.isEmpty()) {
+            textMatchAlergiaTitulo.setText(R.string.produto_match_contem_alergeno);
+            textMatchAlergiaTitulo.setTextColor(
+                    ContextCompat.getColor(this, R.color.nota_ruim_texto));
+            textMatchAlergiaTexto.setText(getString(R.string.match_linha_encontrado,
+                    TextosMatch.ingredientes(recursos, encontradas)));
+        } else if (!alergias.isEmpty()) {
+            textMatchAlergiaTitulo.setText(R.string.produto_match_sem_alergenos);
+            textMatchAlergiaTitulo.setTextColor(
+                    ContextCompat.getColor(this, R.color.roxo_avatar_borda));
+            textMatchAlergiaTexto.setText(TextosMatch.alergiasAusentes(recursos, alergias));
+        } else {
+            textMatchAlergiaTitulo.setText(R.string.produto_match_sem_alergias_marcadas);
+            textMatchAlergiaTitulo.setTextColor(
+                    ContextCompat.getColor(this, R.color.roxo_avatar_borda));
+            textMatchAlergiaTexto.setText(R.string.produto_match_marque_alergias);
+        }
+        cartaoMatchAlergias.setVisibility(View.VISIBLE);
+    }
+
+    private void abrirAlternativas() {
+        TabLayout abas = findViewById(R.id.abasProduto);
+        TabLayout.Tab aba = abas.getTabAt(ABA_ALTERNATIVAS);
+        if (aba != null) {
+            aba.select();
+        }
+    }
+
+    private String primeiroNome() {
+        Usuario usuario = new AutenticacaoRepository().usuarioLogado();
+        String nome = usuario == null ? null : usuario.getNome();
+        if (nome == null || nome.trim().isEmpty()) {
+            return "";
+        }
+        return nome.trim().split("\\s+")[0];
+    }
+
+    private int dp(int valor) {
+        return Math.round(valor * getResources().getDisplayMetrics().density);
     }
 
     private void mostrarMensagemMatch(int texto) {
         textMatchMensagem.setText(texto);
         textMatchMensagem.setVisibility(View.VISIBLE);
-    }
-
-    private void adicionarAchados(
-            LinearLayout destino,
-            int titulo,
-            List<ResultadoMatch.Achado> achados
-    ) {
-
-        if (achados.isEmpty()) {
-            return;
-        }
-
-        destino.addView(
-                novoTexto(getString(titulo), 15, true, R.color.preto_texto, 24)
-        );
-
-        for (ResultadoMatch.Achado achado : achados) {
-
-            destino.addView(
-                    novoTexto(
-                            achado.titulo,
-                            14,
-                            true,
-                            achado.grave
-                                    ? R.color.amarelo_aviso_texto
-                                    : R.color.preto_texto,
-                            12
-                    )
-            );
-
-            if (!achado.descricao.isEmpty()) {
-                destino.addView(
-                        novoTexto(achado.descricao, 13, false,
-                                R.color.cinza_descricao, 2)
-                );
-            }
-
-            destino.addView(
-                    novoTexto(
-                            getString(
-                                    R.string.produto_match_ingredientes,
-                                    String.join(", ", achado.ingredientes)
-                            ),
-                            12, false, R.color.cinza_descricao, 2
-                    )
-            );
-        }
-    }
-
-    private TextView novoTexto(
-            String texto,
-            int tamanhoSp,
-            boolean negrito,
-            int cor,
-            int margemTopoDp
-    ) {
-
-        TextView view = new TextView(this);
-        view.setText(texto);
-        view.setTextSize(tamanhoSp);
-        view.setTextColor(ContextCompat.getColor(this, cor));
-        if (negrito) {
-            view.setTypeface(view.getTypeface(), android.graphics.Typeface.BOLD);
-        }
-
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-        );
-        params.topMargin = Math.round(
-                margemTopoDp * getResources().getDisplayMetrics().density
-        );
-        view.setLayoutParams(params);
-        return view;
     }
 
     private boolean listaVazia() {

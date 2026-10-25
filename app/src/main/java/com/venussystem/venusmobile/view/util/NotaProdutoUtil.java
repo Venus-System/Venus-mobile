@@ -28,6 +28,23 @@ public final class NotaProdutoUtil {
         }
     }
 
+    /** Para o numero da nota sobre fundo claro: a versao escura da banda, que le melhor. */
+    @ColorRes
+    public static int textoPara(@Nullable Integer nota) {
+        FaixaNota faixa = FaixaNota.de(nota);
+        if (faixa == null) {
+            return R.color.cinza_descricao;
+        }
+        switch (faixa) {
+            case BOA:
+                return R.color.nota_boa_texto;
+            case MEDIA:
+                return R.color.nota_media_texto;
+            default:
+                return R.color.nota_ruim_texto;
+        }
+    }
+
     /** Fundo do selo circular - sempre a versao clara da mesma banda de corPara(). */
     @ColorRes
     public static int fundoPara(@Nullable Integer nota) {

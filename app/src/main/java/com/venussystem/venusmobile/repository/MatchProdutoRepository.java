@@ -22,6 +22,7 @@ import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -91,8 +92,8 @@ public class MatchProdutoRepository {
         ProductScoreResponse nota = produto.score;
 
         if (!questionarioRespondido) {
-            return new Resultado(CalculadoraMatch.calcular(false, new HashSet<>(),
-                    new HashSet<>(), new ArrayList<>()), nota, new ArrayList<>());
+            return new Resultado(CalculadoraMatch.calcular(false, new HashMap<>(),
+                    new HashSet<>(), new HashSet<>(), new ArrayList<>()), nota, new ArrayList<>());
         }
 
         Long versaoId = produto.currentVersion == null ? null : produto.currentVersion.id;
@@ -106,7 +107,7 @@ public class MatchProdutoRepository {
         }
 
         Set<String> slugsDoPerfil = EtiquetasDoPerfil.slugs(respostas);
-        Set<Long> etiquetas = idsDasEtiquetas(slugsDoPerfil);
+        Map<Long, String> catalogo = catalogoDeEtiquetas();
         Set<String> alergias = EtiquetasDoPerfil.alergias(respostas);
 
         Response<List<ProductIngredientResponse>> composicao =
@@ -119,7 +120,8 @@ public class MatchProdutoRepository {
         for (ProductIngredientResponse item : composicao.body()) {
             if (item == null || item.ingredientId == null) continue;
             long ingredienteId = item.ingredientId;
-            pedidos.add(REDE.submit(() -> analisar(ingredienteId, !etiquetas.isEmpty())));
+            // Os efeitos sao buscados mesmo sem etiqueta do perfil: viram os destaques.
+            pedidos.add(REDE.submit(() -> analisar(ingredienteId)));
         }
 
         List<IngredienteAnalisado> ingredientes = new ArrayList<>();
@@ -137,31 +139,32 @@ public class MatchProdutoRepository {
             throw new IOException("ingredientes sem resposta");
         }
 
-        List<String> consideradas = EtiquetasDoPerfil.rotulos(slugsDoPerfil, alergias);
+        // As alergias tem cartao proprio na tela; aqui so o que entrou no cruzamento.
+        List<String> consideradas =
+                EtiquetasDoPerfil.rotulos(slugsDoPerfil, Collections.emptySet());
         return new Resultado(
-                CalculadoraMatch.calcular(true, etiquetas, alergias, ingredientes), nota,
-                consideradas);
+                CalculadoraMatch.calcular(true, catalogo, slugsDoPerfil, alergias, ingredientes),
+                nota, consideradas);
     }
 
-    private Set<Long> idsDasEtiquetas(Set<String> slugs) throws IOException {
-        Set<Long> ids = new HashSet<>();
-        if (slugs.isEmpty()) return ids;
-
+    /** id -> slug de todas as profile-tags: os destaques precisam do slug de cada efeito. */
+    private Map<Long, String> catalogoDeEtiquetas() throws IOException {
         Response<List<PreferenceCatalogResponse>> catalogo = api.listarEtiquetas(500).execute();
         if (!catalogo.isSuccessful() || catalogo.body() == null) {
             throw new IOException("etiquetas " + catalogo.code());
         }
+        Map<Long, String> slugs = new HashMap<>();
         for (PreferenceCatalogResponse etiqueta : catalogo.body()) {
-            if (etiqueta != null && etiqueta.id != null && slugs.contains(etiqueta.slug)) {
-                ids.add(etiqueta.id);
+            if (etiqueta != null && etiqueta.id != null && etiqueta.slug != null) {
+                slugs.put(etiqueta.id, etiqueta.slug);
             }
         }
-        return ids;
+        return slugs;
     }
 
     /** null quando a API nao respondeu para este ingrediente. */
     @Nullable
-    private IngredienteAnalisado analisar(long ingredienteId, boolean buscarEfeitos) {
+    private IngredienteAnalisado analisar(long ingredienteId) {
         try {
             Response<IngredientResponse> dados = api.buscarIngrediente(ingredienteId).execute();
             if (!dados.isSuccessful() || dados.body() == null) return null;
@@ -170,21 +173,19 @@ public class MatchProdutoRepository {
             String nome = ingrediente.inciName != null && !ingrediente.inciName.trim().isEmpty()
                     ? ingrediente.inciName : ingrediente.commonName;
 
-            List<IngredienteAnalisado.Efeito> efeitos = new ArrayList<>();
-            if (buscarEfeitos) {
-                Response<List<IngredientEffectResponse>> lista =
-                        api.listarEfeitosDoIngrediente(ingredienteId).execute();
-                if (!lista.isSuccessful() || lista.body() == null) return null;
+            Response<List<IngredientEffectResponse>> lista =
+                    api.listarEfeitosDoIngrediente(ingredienteId).execute();
+            if (!lista.isSuccessful() || lista.body() == null) return null;
 
-                Map<Long, Boolean> vistos = new HashMap<>();
-                for (IngredientEffectResponse e : lista.body()) {
-                    if (e == null || e.id == null || e.profileTagId == null
-                            || vistos.put(e.id, true) != null) {
-                        continue;
-                    }
-                    efeitos.add(new IngredienteAnalisado.Efeito(e.profileTagId,
-                            e.effectCategory, e.effectName, e.effectDescription));
+            List<IngredienteAnalisado.Efeito> efeitos = new ArrayList<>();
+            Map<Long, Boolean> vistos = new HashMap<>();
+            for (IngredientEffectResponse e : lista.body()) {
+                if (e == null || e.id == null || e.profileTagId == null
+                        || vistos.put(e.id, true) != null) {
+                    continue;
                 }
+                efeitos.add(new IngredienteAnalisado.Efeito(e.profileTagId,
+                        e.effectCategory, e.effectName, e.effectDescription));
             }
             return new IngredienteAnalisado(nome, efeitos);
         } catch (IOException | RuntimeException e) {

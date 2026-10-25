@@ -1,8 +1,14 @@
 package com.venussystem.venusmobile.domain.match;
 
+import androidx.annotation.Nullable;
+
 import java.util.List;
 
-/** O que a aba "Match com voce" mostra, ja separado em alertas e pontos positivos. */
+/**
+ * O que a aba "Match com voce" mostra: os pontos do perfil, os destaques da
+ * composicao que valem para qualquer pessoa e as alergias encontradas.
+ * Os textos ficam na tela (TextosMatch); aqui vao so slug e tipo.
+ */
 public final class ResultadoMatch {
 
     public enum Veredito {
@@ -12,33 +18,62 @@ public final class ResultadoMatch {
         NAO_RECOMENDADO,
         ATENCAO,
         COMBINA,
-        /** Perfil preenchido, mas o catalogo nao tem efeito que o toque. */
-        SEM_PONTOS
+        /** Perfil preenchido e nada na composicao vai contra ele. */
+        SEM_ALERTAS
     }
 
-    /** Um ponto do resultado; ingredientes iguais no mesmo efeito vem agrupados. */
-    public static final class Achado {
-        public final String titulo;
-        public final String descricao;
-        public final List<String> ingredientes;
-        public final boolean grave;
+    /** Na ordem em que aparecem na tela. */
+    public enum Tipo {
+        GRAVE,
+        ALERTA,
+        BENEFICIO,
+        /** Etiqueta de aviso da pessoa sem nada na composicao: "Sem silicones". */
+        AUSENCIA
+    }
 
-        public Achado(String titulo, String descricao, List<String> ingredientes,
-                      boolean grave) {
-            this.titulo = titulo;
-            this.descricao = descricao;
+    /** Um ponto do perfil; ingredientes iguais no mesmo efeito vem agrupados. */
+    public static final class Ponto {
+        public final Tipo tipo;
+        /** Etiqueta do catalogo (profile-tags) que ligou o efeito a pessoa. */
+        public final String slug;
+        /** Nome do efeito no catalogo, para quando a tela nao tem texto do slug. */
+        public final String efeito;
+        public final List<String> ingredientes;
+
+        public Ponto(Tipo tipo, String slug, String efeito, List<String> ingredientes) {
+            this.tipo = tipo;
+            this.slug = slug;
+            this.efeito = efeito;
             this.ingredientes = ingredientes;
-            this.grave = grave;
+        }
+    }
+
+    /** Efeito da composicao fora do perfil da pessoa, mostrado como chip. */
+    public static final class Destaque {
+        @Nullable
+        public final String slug;
+        public final String efeito;
+
+        public Destaque(@Nullable String slug, String efeito) {
+            this.slug = slug;
+            this.efeito = efeito;
         }
     }
 
     public final Veredito veredito;
-    public final List<Achado> alertas;
-    public final List<Achado> positivos;
+    public final List<Ponto> pontos;
+    public final List<Destaque> destaques;
+    /** Ingredientes que batem com a lista de alergias da pessoa. */
+    public final List<String> alergiasEncontradas;
+    /** false quando nenhum ingrediente tem efeito no catalogo. */
+    public final boolean catalogoCobre;
 
-    public ResultadoMatch(Veredito veredito, List<Achado> alertas, List<Achado> positivos) {
+    public ResultadoMatch(Veredito veredito, List<Ponto> pontos, List<Destaque> destaques,
+                          List<String> alergiasEncontradas, boolean catalogoCobre) {
         this.veredito = veredito;
-        this.alertas = alertas;
-        this.positivos = positivos;
+        this.pontos = pontos;
+        this.destaques = destaques;
+        this.alergiasEncontradas = alergiasEncontradas;
+        this.catalogoCobre = catalogoCobre;
     }
 }
