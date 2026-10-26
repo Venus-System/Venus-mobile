@@ -35,9 +35,7 @@ import com.venussystem.venusmobile.repository.FotoPerfilRepository;
 import com.venussystem.venusmobile.repository.PerfilRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoRepository;
 import com.venussystem.venusmobile.view.BemVindoActivity;
-import com.venussystem.venusmobile.view.ProdutosEmAnaliseActivity;
 import com.venussystem.venusmobile.view.componente.AvatarPerfilView;
-import com.venussystem.venusmobile.view.dialog.MenuLateralPerfil;
 import com.venussystem.venusmobile.view.dialog.ModalEscolhaMultipla;
 import com.venussystem.venusmobile.view.dialog.ModalEscolhaUnica;
 import com.venussystem.venusmobile.view.dialog.ModalFaixaEtaria;
@@ -176,10 +174,6 @@ public class PerfilFragment extends Fragment {
     private FotoPerfilRepository fotoPerfil;
     private LinearLayout listaAtributos;
 
-    // O que o cabecalho mostra; o menu lateral repete o mesmo nome e e-mail.
-    private String nomeExibido = "";
-    private String emailExibido = "";
-
     // Onde a camera vai gravar a foto. Guardado no estado da tela porque o
     // sistema pode fechar o app enquanto a camera esta aberta.
     @Nullable
@@ -231,7 +225,10 @@ public class PerfilFragment extends Fragment {
         mostrarUsuario(view);
         montarAtributos();
 
-        view.findViewById(R.id.btnMenuPerfil).setOnClickListener(v -> abrirMenuLateral());
+        // Trocar a foto: pela camera na borda ou tocando na propria foto.
+        view.findViewById(R.id.btnTrocarFoto).setOnClickListener(v -> escolherFoto());
+        view.findViewById(R.id.imgAvatar).setOnClickListener(v -> escolherFoto());
+        view.findViewById(R.id.btnSairDaConta).setOnClickListener(v -> voltarAoLogin());
 
         // A foto guardada aparece na hora; sem foto no aparelho, a API e
         // consultada (foto posta pelo site ou em outro celular).
@@ -272,20 +269,11 @@ public class PerfilFragment extends Fragment {
 
         boolean semNome = usuario == null
                 || usuario.getNome() == null || usuario.getNome().trim().isEmpty();
-        nomeExibido = semNome ? getString(R.string.perfil_sem_nome) : usuario.getNome();
-        emailExibido = usuario == null || usuario.getEmail() == null ? "" : usuario.getEmail();
+        String nome = semNome ? getString(R.string.perfil_sem_nome) : usuario.getNome();
+        String email = usuario == null || usuario.getEmail() == null ? "" : usuario.getEmail();
 
-        ((TextView) view.findViewById(R.id.textNome)).setText(nomeExibido);
-        ((TextView) view.findViewById(R.id.textEmail)).setText(emailExibido);
-    }
-
-    private void abrirMenuLateral() {
-        MenuLateralPerfil.mostrar(requireContext(), nomeExibido, emailExibido,
-                this::escolherFoto, this::abrirProdutosEmAnalise, this::voltarAoLogin);
-    }
-
-    private void abrirProdutosEmAnalise() {
-        startActivity(new Intent(requireContext(), ProdutosEmAnaliseActivity.class));
+        ((TextView) view.findViewById(R.id.textNome)).setText(nome);
+        ((TextView) view.findViewById(R.id.textEmail)).setText(email);
     }
 
     private void escolherFoto() {

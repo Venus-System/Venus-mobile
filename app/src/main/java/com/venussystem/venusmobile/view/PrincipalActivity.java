@@ -21,6 +21,7 @@ import com.venussystem.venusmobile.lembrete.Lembretes;
 import com.venussystem.venusmobile.repository.DecisoesAgenda;
 import com.venussystem.venusmobile.repository.FotoPerfilRepository;
 import com.venussystem.venusmobile.repository.ReenvioDeScanAgenda;
+import com.venussystem.venusmobile.repository.SincronizacaoCurtidos;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.repository.SincronizacaoRepository;
 import com.venussystem.venusmobile.view.fragment.AssistenteFragment;
@@ -81,6 +82,9 @@ public class PrincipalActivity extends AppCompatActivity {
             // vem o que mudou no servidor. Num celular novo ou depois de
             // reinstalar, e aqui que as listas que a pessoa ja tinha voltam.
             new SincronizacaoListas(this).atualizarEmSegundoPlano(null);
+            // Os curtidos tambem: o coracao aparece cheio nos produtos ja
+            // curtidos em outro aparelho ou pelo site.
+            new SincronizacaoCurtidos(this).atualizarEmSegundoPlano(null);
             // Foto de perfil que ficou sem enviar (sem rede, API dormindo).
             new FotoPerfilRepository(this).enviarEmSegundoPlano();
             // Arma de novo o lembrete do questionario desta conta (alarmes nao sobrevivem a tudo).

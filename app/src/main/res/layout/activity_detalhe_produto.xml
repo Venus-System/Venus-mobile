@@ -35,6 +35,20 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
 
+    <!-- Curtir: o produto vai para a lista fixa "Produtos curtidos". Escondido
+         ate o produto carregar, como o marcador ao lado. -->
+    <ImageButton
+        android:id="@+id/btnCurtir"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/desc_curtir"
+        android:scaleType="center"
+        android:src="@drawable/ic_coracao"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toStartOf="@+id/btnSalvarNaLista"
+        app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
+
     <!-- Abre o chat ja falando deste produto. Escondido ate o produto carregar,
          como o marcador ao lado. -->
     <ImageButton
@@ -46,7 +60,7 @@
         android:scaleType="center"
         android:src="@drawable/ic_chat"
         android:visibility="invisible"
-        app:layout_constraintEnd_toStartOf="@+id/btnSalvarNaLista"
+        app:layout_constraintEnd_toStartOf="@+id/btnCurtir"
         app:layout_constraintTop_toTopOf="@+id/btnVoltar"
         app:tint="@color/roxo_venus" />
 

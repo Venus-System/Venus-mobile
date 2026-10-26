@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Aviso da aba Listas quando a conta ainda nao tem listas (AvisoListasVazioAdapter).
+     Fica dentro da lista, embaixo do cartao fixo de Produtos em analise. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/textListasVazio"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/meio_espaco_grade"
+    android:layout_marginEnd="@dimen/meio_espaco_grade"
+    android:background="@drawable/bg_lista_vazia"
+    android:gravity="center"
+    android:padding="@dimen/espaco_grande"
+    android:text="@string/listas_vazio"
+    android:textColor="@color/preto_texto"
+    android:textSize="@dimen/texto_corpo" />
