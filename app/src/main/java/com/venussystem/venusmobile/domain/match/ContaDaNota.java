@@ -3,48 +3,50 @@ package com.venussystem.venusmobile.domain.match;
 import androidx.annotation.Nullable;
 
 /**
- * De onde vem a nota pessoal, para a linha do cartao "Qualidade 74 · combina 71%".
- * A Venus-Classificacao soma ate 35 pontos de qualidade do produto e ate 65 de
- * combinacao com o perfil; alergia e bloqueio depois limitam a nota. A analise
- * salva (GET) nao traz os pontos, entao a conta e refeita aqui com a nota geral
- * do produto, que e a mesma nota de qualidade.
+ * De onde vem a nota pessoal, para a linha do cartao "A nota soma duas partes:
+ * 25,9 de 35 pela qualidade do produto e 15,3 de 65 por combinar com o seu perfil".
+ * Os numeros sao os da Venus-Classificacao (breakdown do POST, guardado para o
+ * GET); o app nao refaz a conta. Sem perguntas do perfil, a nota e a propria
+ * qualidade. Alergia e bloqueio depois limitam a nota.
  */
 public final class ContaDaNota {
 
-    static final double PESO_QUALIDADE = 0.35;
-    static final double PESO_PERFIL = 0.65;
     // Arredondamentos da API somam no maximo 1 ponto; abaixo disso foi trava.
     private static final double FOLGA = 1.5;
 
+    /** Nota de qualidade de 0 a 100 (qualityScore). */
     @Nullable
     public final Integer qualidade;
-    /** Porcentagem de combinacao com o perfil, ja arredondada; null quando nao entrou na conta. */
+    /** Ate 35 pontos (qualityPoints). */
     @Nullable
-    public final Integer combinacao;
+    public final Double pontosQualidade;
+    /** Ate 65 pontos (profilePoints); null quando o perfil nao entrou na conta. */
+    @Nullable
+    public final Double pontosPerfil;
     /** A nota final ficou abaixo da soma: uma alergia ou um bloqueio a derrubou. */
     public final boolean limitada;
 
-    private ContaDaNota(@Nullable Integer qualidade, @Nullable Integer combinacao,
-                        boolean limitada) {
+    private ContaDaNota(@Nullable Integer qualidade, @Nullable Double pontosQualidade,
+                        @Nullable Double pontosPerfil, boolean limitada) {
         this.qualidade = qualidade;
-        this.combinacao = combinacao;
+        this.pontosQualidade = pontosQualidade;
+        this.pontosPerfil = pontosPerfil;
         this.limitada = limitada;
     }
 
-    public static ContaDaNota de(@Nullable Integer qualidade, @Nullable Double combinacao,
-                                 int notaFinal) {
-        Integer porcentagem = combinacao == null ? null : (int) Math.round(combinacao);
-        boolean limitada = false;
-        if (qualidade != null) {
-            double esperada = combinacao == null
-                    ? qualidade
-                    : PESO_QUALIDADE * qualidade + PESO_PERFIL * combinacao;
-            limitada = notaFinal < esperada - FOLGA;
+    public static ContaDaNota de(@Nullable Integer qualidade, @Nullable Double pontosQualidade,
+                                 @Nullable Double pontosPerfil, int notaFinal) {
+        Double soma = null;
+        if (pontosQualidade != null && pontosPerfil != null) {
+            soma = pontosQualidade + pontosPerfil;
+        } else if (pontosPerfil == null && qualidade != null) {
+            soma = qualidade.doubleValue();
         }
-        return new ContaDaNota(qualidade, porcentagem, limitada);
+        boolean limitada = soma != null && notaFinal < soma - FOLGA;
+        return new ContaDaNota(qualidade, pontosQualidade, pontosPerfil, limitada);
     }
 
     public boolean vazia() {
-        return qualidade == null && combinacao == null;
+        return pontosQualidade == null && pontosPerfil == null && qualidade == null;
     }
 }

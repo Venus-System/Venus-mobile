@@ -1,6 +1,7 @@
 package com.venussystem.venusmobile.view.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.domain.match.ResultadoMatch;
@@ -23,10 +24,6 @@ public class TextosMatchTest {
         TEXTOS.put(R.string.match_titulo_contem_silicone, "Contém silicone");
         TEXTOS.put(R.string.match_linha_evitar_silicones,
                 "Você marcou evitar silicones e a fórmula tem %1$s.");
-        TEXTOS.put(R.string.match_alergia_nao_contem_duas,
-                "Não contém %1$s nem %2$s, da sua lista de alergias.");
-        TEXTOS.put(R.string.match_alergia_nao_contem_varias,
-                "Não contém nenhuma das suas %1$d alergias.");
         TEXTOS.put(R.string.match_chip_hidratacao, "Hidratação");
         TEXTOS.put(R.string.match_titulo_bom_para, "Bom para %1$s");
         TEXTOS.put(R.string.match_titulo_atencao_para, "Atenção para %1$s");
@@ -109,15 +106,35 @@ public class TextosMatchTest {
     }
 
     @Test
-    public void alergiasAusentesCitaAsDuas() {
-        assertEquals("Não contém lanolina nem óleo de amêndoas, da sua lista de alergias.",
-                TextosMatch.alergiasAusentes(RECURSOS,
-                        Arrays.asList("Lanolina", "Óleo de Amêndoas")));
+    public void pontosComVirgulaESemCasaQuandoInteiro() {
+        assertEquals("24,5", TextosMatch.pontos(24.5));
+        assertEquals("15,3", TextosMatch.pontos(15.3));
+        assertEquals("0", TextosMatch.pontos(0.0));
+        assertEquals("35", TextosMatch.pontos(35.0));
     }
 
     @Test
-    public void muitasAlergiasViramContagem() {
-        assertEquals("Não contém nenhuma das suas 3 alergias.",
-                TextosMatch.alergiasAusentes(RECURSOS, Arrays.asList("A", "B", "C")));
+    public void erroDaNotaSaiPeloCode() {
+        assertEquals(Integer.valueOf(R.string.produto_match_erro_perfil),
+                TextosMatch.erroDaNota("PROFILE_NOT_FOUND"));
+        assertEquals(Integer.valueOf(R.string.produto_match_erro_produto),
+                TextosMatch.erroDaNota("PRODUCT_NOT_FOUND"));
+        assertEquals(Integer.valueOf(R.string.produto_match_erro_produto),
+                TextosMatch.erroDaNota("VERSION_NOT_FOUND"));
+        assertEquals(Integer.valueOf(R.string.produto_match_erro_em_revisao),
+                TextosMatch.erroDaNota("VERSION_UNDER_REVIEW"));
+        assertEquals(Integer.valueOf(R.string.produto_match_erro_sem_ingredientes),
+                TextosMatch.erroDaNota("NO_INGREDIENTS"));
+        assertEquals(Integer.valueOf(R.string.produto_match_erro_calculo),
+                TextosMatch.erroDaNota("SCORING_MODEL_NOT_FOUND"));
+        assertEquals(Integer.valueOf(R.string.produto_match_erro_calculo),
+                TextosMatch.erroDaNota("NO_ACTIVE_SCORING_MODEL"));
+    }
+
+    @Test
+    public void semAnaliseOuSemCodeNaoMostraErro() {
+        assertNull(TextosMatch.erroDaNota("ANALYSIS_NOT_FOUND"));
+        assertNull(TextosMatch.erroDaNota("CODE_NOVO"));
+        assertNull(TextosMatch.erroDaNota(null));
     }
 }

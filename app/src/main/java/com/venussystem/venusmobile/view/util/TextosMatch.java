@@ -1,11 +1,14 @@
 package com.venussystem.venusmobile.view.util;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.domain.match.EtiquetasDoPerfil;
 import com.venussystem.venusmobile.domain.match.ResultadoMatch;
 
+import java.math.RoundingMode;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,8 +20,8 @@ import java.util.Set;
 
 /**
  * Textos curtos da aba "Match com voce": titulo e uma linha por ponto, rotulo
- * dos chips e o cartao de alergias. A descricao longa do catalogo nao entra,
- * a tela ficava com texto demais.
+ * dos chips, a conta e os erros da nota. A descricao longa do catalogo nao
+ * entra, a tela ficava com texto demais.
  */
 public final class TextosMatch {
 
@@ -36,8 +39,17 @@ public final class TextosMatch {
     // Preferencias de evitar algo: a linha lembra que foi a pessoa que marcou.
     private static final Map<String, Integer> LINHA_EVITAR = new HashMap<>();
     private static final Map<String, Integer> CHIP = new HashMap<>();
+    private static final Map<String, Integer> ERRO_DA_NOTA = new HashMap<>();
 
     static {
+        ERRO_DA_NOTA.put("PROFILE_NOT_FOUND", R.string.produto_match_erro_perfil);
+        ERRO_DA_NOTA.put("PRODUCT_NOT_FOUND", R.string.produto_match_erro_produto);
+        ERRO_DA_NOTA.put("VERSION_NOT_FOUND", R.string.produto_match_erro_produto);
+        ERRO_DA_NOTA.put("VERSION_UNDER_REVIEW", R.string.produto_match_erro_em_revisao);
+        ERRO_DA_NOTA.put("NO_INGREDIENTS", R.string.produto_match_erro_sem_ingredientes);
+        ERRO_DA_NOTA.put("SCORING_MODEL_NOT_FOUND", R.string.produto_match_erro_calculo);
+        ERRO_DA_NOTA.put("NO_ACTIVE_SCORING_MODEL", R.string.produto_match_erro_calculo);
+
         TITULO_ALERTA.put("sem-silicone", R.string.match_titulo_contem_silicone);
         TITULO_ALERTA.put("sem-sulfato", R.string.match_titulo_contem_sulfato);
         TITULO_ALERTA.put("sem-parabenos", R.string.match_titulo_contem_parabeno);
@@ -140,16 +152,23 @@ public final class TextosMatch {
         return r.texto(R.string.match_ingredientes_mais, primeiro, nomes.size() - 1);
     }
 
-    /** Texto do cartao quando nenhuma das alergias da pessoa esta na formula. */
-    public static String alergiasAusentes(Recursos r, List<String> alergias) {
-        if (alergias.size() == 1) {
-            return r.texto(R.string.match_alergia_nao_contem_uma, minusculo(alergias.get(0)));
-        }
-        if (alergias.size() == 2) {
-            return r.texto(R.string.match_alergia_nao_contem_duas,
-                    minusculo(alergias.get(0)), minusculo(alergias.get(1)));
-        }
-        return r.texto(R.string.match_alergia_nao_contem_varias, alergias.size());
+    /** Pontos da conta da nota com ate uma casa: "24,5", "46,2" ou "0". */
+    public static String pontos(double valor) {
+        NumberFormat formato = NumberFormat.getNumberInstance(PT_BR);
+        formato.setMaximumFractionDigits(1);
+        formato.setRoundingMode(RoundingMode.HALF_UP);
+        return formato.format(valor);
+    }
+
+    /**
+     * Texto para o "code" do erro da Classificacao; a message e para dev. Null
+     * quando nao e para mostrar nada, como o ANALYSIS_NOT_FOUND de quem nunca
+     * analisou o produto e a falha de rede.
+     */
+    @Nullable
+    @StringRes
+    public static Integer erroDaNota(@Nullable String codigo) {
+        return codigo == null ? null : ERRO_DA_NOTA.get(codigo);
     }
 
     /** INCI vem em maiusculas ("BUTYLENE GLYCOL"); na tela fica "Butylene Glycol". */
@@ -164,10 +183,6 @@ public final class TextosMatch {
             inicio = !Character.isLetterOrDigit(c);
         }
         return saida.toString();
-    }
-
-    private static String minusculo(String texto) {
-        return texto.toLowerCase(PT_BR);
     }
 
     private static Map<String, Integer> tabelaDeTitulo(ResultadoMatch.Tipo tipo) {

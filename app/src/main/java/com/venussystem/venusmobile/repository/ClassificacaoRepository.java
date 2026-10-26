@@ -32,17 +32,42 @@ import retrofit2.Response;
  * Nota pessoal da aba "Match com voce", da Venus-Classificacao: le a ultima
  * analise salva e so pede uma nova (POST, que grava no banco) quando nao ha
  * nenhuma ou quando o perfil mudou depois dela. Qualquer falha devolve
- * aoFalhar, e a aba fica com o calculo feito no aparelho.
+ * aoFalhar com o code do erro, e a aba fica com o calculo feito no aparelho.
  */
 public class ClassificacaoRepository {
 
     public interface AoClassificar {
         void aoConcluir(@NonNull ClassificationResponse classificacao);
 
-        void aoFalhar();
+        /** @param codigo o "code" do erro da Classificacao; null em falha de rede ou sem perfil. */
+        void aoFalhar(@Nullable String codigo);
     }
 
-    private static final String PERFIL_FORA_DA_API = "PROFILE_NOT_FOUND";
+    /** A analise, ou o code do erro quando ela nao veio. */
+    @VisibleForTesting
+    static final class Resultado {
+        @Nullable
+        final ClassificationResponse classificacao;
+        @Nullable
+        final String codigoDoErro;
+
+        private Resultado(@Nullable ClassificationResponse classificacao,
+                          @Nullable String codigoDoErro) {
+            this.classificacao = classificacao;
+            this.codigoDoErro = codigoDoErro;
+        }
+
+        static Resultado ok(ClassificationResponse classificacao) {
+            return new Resultado(classificacao, null);
+        }
+
+        static Resultado falha(@Nullable String codigo) {
+            return new Resultado(null, codigo);
+        }
+    }
+
+    // O 404 do GET que so diz que a pessoa nunca analisou o produto.
+    private static final String SEM_ANALISE = "ANALYSIS_NOT_FOUND";
 
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
     private static final Handler PRINCIPAL = new Handler(Looper.getMainLooper());
@@ -52,70 +77,79 @@ public class ClassificacaoRepository {
     private final VenusApi crud;
     private final UsuarioApiRepository usuarios;
     private final PerfilRepository perfil;
+    private final AnaliseDoPostRepository doPost;
 
     public ClassificacaoRepository(Context context) {
         this(ClienteClassificacao.get(), ClienteApi.get(), new UsuarioApiRepository(context),
-                new PerfilRepository(context));
+                new PerfilRepository(context), new AnaliseDoPostRepository(context));
     }
 
     public ClassificacaoRepository(@Nullable VenusClassificacaoApi classificacao, VenusApi crud,
-                                   UsuarioApiRepository usuarios, PerfilRepository perfil) {
+                                   UsuarioApiRepository usuarios, PerfilRepository perfil,
+                                   AnaliseDoPostRepository doPost) {
         this.classificacao = classificacao;
         this.crud = crud;
         this.usuarios = usuarios;
         this.perfil = perfil;
+        this.doPost = doPost;
     }
 
     public void classificar(long produtoId, @NonNull AoClassificar callback) {
         EXECUTOR.execute(() -> {
-            ClassificationResponse resultado;
+            Resultado resultado;
             try {
                 resultado = classificarAgora(produtoId);
             } catch (IOException | RuntimeException e) {
-                resultado = null;
+                resultado = Resultado.falha(null);
             }
-            ClassificationResponse fim = resultado;
+            Resultado fim = resultado;
             PRINCIPAL.post(() -> {
-                if (fim != null && fim.finalScore != null) {
-                    callback.aoConcluir(fim);
+                if (fim.classificacao != null && fim.classificacao.finalScore != null) {
+                    callback.aoConcluir(fim.classificacao);
                 } else {
-                    callback.aoFalhar();
+                    callback.aoFalhar(fim.codigoDoErro);
                 }
             });
         });
     }
 
     @VisibleForTesting
-    @Nullable
-    ClassificationResponse classificarAgora(long produtoId) throws IOException {
-        if (classificacao == null || !perfil.jaRespondeuQuestionario()) return null;
+    @NonNull
+    Resultado classificarAgora(long produtoId) throws IOException {
+        if (classificacao == null || !perfil.jaRespondeuQuestionario()) return Resultado.falha(null);
         Long userId = usuarios.obterIdSincrono();
-        if (userId == null) return null;
+        if (userId == null) return Resultado.falha(null);
 
         Response<ClassificationResponse> salva =
                 classificacao.ultimaClassificacao(userId, produtoId).execute();
         ClassificationResponse anterior = salva.isSuccessful() ? salva.body() : null;
+        // O GET nao traz a alergia nem os pontos; volta o que o POST dessa analise trouxe.
+        if (anterior != null) doPost.completar(anterior);
 
         if (anterior != null && !QuandoClassificar.precisaRecalcular(anterior.calculatedAt,
                 perfil.alteradoEm(), perfil.temAlteracaoParaEnviar())) {
-            return anterior;
+            return Resultado.ok(anterior);
         }
         if (anterior == null) {
-            // So o 404 de "sem analise" pede um calculo. Sem perfil na API o POST
-            // daria o mesmo 404, e outro erro e problema do servidor.
-            if (salva.code() != 404 || PERFIL_FORA_DA_API.equals(codigoDoErro(salva.errorBody()))) {
-                return null;
-            }
+            // So "sem analise" pede um calculo. Produto, versao ou modelo que
+            // faltam o POST repetiria, e outro erro e problema do servidor.
+            String codigo = codigoDoErro(salva.errorBody());
+            if (!SEM_ANALISE.equals(codigo)) return Resultado.falha(codigo);
         }
 
         Long versao = versaoAtual(produtoId);
-        if (versao == null) return anterior;
+        if (versao == null) return anterior == null ? Resultado.falha(null) : Resultado.ok(anterior);
 
         Response<ClassificationResponse> nova =
                 classificacao.classificar(new ClassificationRequest(userId, versao)).execute();
-        if (nova.isSuccessful() && nova.body() != null) return nova.body();
+        if (nova.isSuccessful() && nova.body() != null) {
+            doPost.guardar(nova.body());
+            return Resultado.ok(nova.body());
+        }
         // Calculo novo recusado (versao em revisao, sem ingredientes...): a salva ainda serve.
-        return anterior;
+        return anterior == null
+                ? Resultado.falha(codigoDoErro(nova.errorBody()))
+                : Resultado.ok(anterior);
     }
 
     @Nullable
