@@ -49,14 +49,17 @@ import com.venussystem.venusmobile.repository.AcessosRecentesRepository;
 import com.venussystem.venusmobile.repository.AutenticacaoRepository;
 import com.venussystem.venusmobile.repository.ClassificacaoRepository;
 import com.venussystem.venusmobile.repository.ColecaoRepository;
+import com.venussystem.venusmobile.repository.CurtidosRepository;
 import com.venussystem.venusmobile.repository.HistoricoCatalogoRepository;
 import com.venussystem.venusmobile.repository.ListaItemRepository;
 import com.venussystem.venusmobile.repository.MatchProdutoRepository;
 import com.venussystem.venusmobile.repository.PerfilRepository;
 import com.venussystem.venusmobile.repository.ProdutoRepository;
+import com.venussystem.venusmobile.repository.SincronizacaoCurtidos;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.view.adapter.AlternativaAdapter;
 import com.venussystem.venusmobile.view.componente.CartaoPerfilView;
+import com.venussystem.venusmobile.view.util.MensagemRapida;
 import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
 import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 import com.venussystem.venusmobile.view.util.TextosMatch;
@@ -112,10 +115,12 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     private LinearLayout listaIngredientes;
     private ImageView imgProduto;
     private ImageButton btnSalvarNaLista;
+    private ImageButton btnCurtir;
     private ImageButton btnPerguntarVenus;
 
     private ColecaoRepository colecaoRepository;
     private ListaItemRepository itemRepository;
+    private CurtidosRepository curtidosRepository;
     private HistoricoCatalogoRepository historicoCatalogoRepository;
 
     private Produto produto;
@@ -143,6 +148,9 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     // menu de listas num envio so (como na DetalheListaActivity).
     private boolean listasAlteradas = false;
 
+    // O mesmo para o coracao: os toques vao para /api/favorites ao fechar.
+    private boolean curtidosAlterados = false;
+
     @Override
     protected void onCreate(
             Bundle savedInstanceState
@@ -158,6 +166,9 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         itemRepository =
                 new ListaItemRepository(this);
 
+        curtidosRepository =
+                new CurtidosRepository(this);
+
         historicoCatalogoRepository =
                 new HistoricoCatalogoRepository(this);
 
@@ -169,6 +180,10 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         btnSalvarNaLista.setOnClickListener(
                 this::mostrarListasParaSalvar
+        );
+
+        btnCurtir.setOnClickListener(
+                v -> alternarCurtida()
         );
 
         btnPerguntarVenus.setOnClickListener(
@@ -209,10 +224,11 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        // O produto pode ter saido de uma lista enquanto esta tela estava
-        // por baixo (ex.: removido na DetalheListaActivity).
+        // O produto pode ter saido de uma lista (ou dos curtidos) enquanto
+        // esta tela estava por baixo (ex.: removido na DetalheListaActivity).
         if (telaInicializada) {
             atualizarIconeDoMarcador();
+            atualizarIconeDoCoracao();
         }
     }
 
@@ -225,6 +241,12 @@ public class DetalheProdutoActivity extends AppCompatActivity {
             new SincronizacaoListas(this)
                     .sincronizarEmSegundoPlano();
         }
+
+        if (curtidosAlterados) {
+            curtidosAlterados = false;
+            new SincronizacaoCurtidos(this)
+                    .sincronizarEmSegundoPlano();
+        }
     }
 
     private void prepararReferenciasDeTela() {
@@ -233,6 +255,11 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         btnSalvarNaLista =
                 findViewById(
                         R.id.btnSalvarNaLista
+                );
+
+        btnCurtir =
+                findViewById(
+                        R.id.btnCurtir
                 );
 
         btnPerguntarVenus =
@@ -482,10 +509,14 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         btnSalvarNaLista.setVisibility(
                 View.VISIBLE
         );
+        btnCurtir.setVisibility(
+                View.VISIBLE
+        );
         btnPerguntarVenus.setVisibility(
                 View.VISIBLE
         );
         atualizarIconeDoMarcador();
+        atualizarIconeDoCoracao();
     }
 
     /**
@@ -1419,7 +1450,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         long listaId = lista.getId();
         long produtoId = produto.getId();
 
-        int mensagem;
+        View raiz = findViewById(R.id.main);
 
         if (itemRepository.contem(
                 listaId,
@@ -1431,7 +1462,13 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                     produtoId
             );
 
-            mensagem = R.string.produto_removido_da_lista;
+            MensagemRapida.neutra(
+                    raiz,
+                    getString(
+                            R.string.produto_removido_da_lista,
+                            lista.getName()
+                    )
+            );
 
         } else {
 
@@ -1440,20 +1477,75 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                     produtoId
             );
 
-            mensagem = R.string.produto_salvo_na_lista;
+            // Salvar ganha a mensagem verde; tirar fica no cinza.
+            MensagemRapida.sucesso(
+                    raiz,
+                    getString(
+                            R.string.produto_salvo_na_lista,
+                            lista.getName()
+                    )
+            );
         }
 
         listasAlteradas = true;
         atualizarIconeDoMarcador();
+    }
 
-        Toast.makeText(
-                this,
+    /**
+     * O coracao: curtir manda o produto para a lista fixa "Produtos curtidos"
+     * (com a mensagem verde); tocar de novo tira, com a mensagem cinza.
+     */
+    private void alternarCurtida() {
+
+        if (produto == null) {
+            return;
+        }
+
+        long produtoId = produto.getId();
+        View raiz = findViewById(R.id.main);
+
+        if (curtidosRepository.contem(produtoId)) {
+
+            curtidosRepository.descurtir(produtoId);
+            MensagemRapida.neutra(
+                    raiz,
+                    getString(R.string.produto_descurtido)
+            );
+
+        } else {
+
+            curtidosRepository.curtir(produtoId);
+            MensagemRapida.sucesso(
+                    raiz,
+                    getString(R.string.produto_curtido)
+            );
+        }
+
+        curtidosAlterados = true;
+        atualizarIconeDoCoracao();
+    }
+
+    /** Coracao cheio quando o produto esta nos curtidos. */
+    private void atualizarIconeDoCoracao() {
+
+        boolean curtido =
+                curtidosRepository.contem(
+                        produto.getId()
+                );
+
+        btnCurtir.setImageResource(
+                curtido
+                        ? R.drawable.ic_coracao_preenchido
+                        : R.drawable.ic_coracao
+        );
+
+        btnCurtir.setContentDescription(
                 getString(
-                        mensagem,
-                        lista.getName()
-                ),
-                Toast.LENGTH_SHORT
-        ).show();
+                        curtido
+                                ? R.string.desc_descurtir
+                                : R.string.desc_curtir
+                )
+        );
     }
 
     /** Marcador preenchido quando o produto esta em pelo menos uma lista. */

@@ -37,6 +37,8 @@
     <color name="nota_boa_fundo">#FFE5EFE9</color>
     <color name="nota_media_fundo">#FFF7EFE3</color>
     <color name="nota_ruim_fundo">#FFF3E3EC</color>
+    <!-- Mensagem verde de "deu certo" (MensagemRapida.sucesso). Mesmo verde da nota boa. -->
+    <color name="verde_sucesso">#FF2E9E6B</color>
     <color name="lilas_avatar">#FFCDB3E3</color>
     <color name="roxo_avatar_borda">#FF321B5D</color>
     <color name="laranja_pendente">#FFE08A2E</color>

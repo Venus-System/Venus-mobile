@@ -9,13 +9,13 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.ConcatAdapter;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
@@ -27,14 +27,17 @@ import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.view.CriarListaActivity;
 import com.venussystem.venusmobile.view.DetalheListaActivity;
 import com.venussystem.venusmobile.model.Colecao;
+import com.venussystem.venusmobile.view.adapter.AvisoListasVazioAdapter;
 import com.venussystem.venusmobile.view.adapter.ColecaoAdapter;
+import com.venussystem.venusmobile.view.adapter.ListaFixaAdapter;
+import com.venussystem.venusmobile.view.adapter.TituloSecaoAdapter;
 
 public class ListasFragment extends Fragment {
     private ColecaoRepository repository;
     private ListaItemRepository itemRepository;
     private ColecaoAdapter adapter;
+    private AvisoListasVazioAdapter avisoVazio;
     private RecyclerView lista;
-    private TextView textListasVazio;
 
     @Nullable
     @Override
@@ -51,13 +54,32 @@ public class ListasFragment extends Fragment {
         repository = new ColecaoRepository(requireContext());
         itemRepository = new ListaItemRepository(requireContext());
         adapter = new ColecaoAdapter(this::abrirLista);
+        avisoVazio = new AvisoListasVazioAdapter();
 
         lista = view.findViewById(R.id.listaColecoes);
-        textListasVazio = view.findViewById(R.id.textListasVazio);
         // 1 coluna no celular; vira grade no tablet (values-w600dp/w900dp).
         int colunas = getResources().getInteger(R.integer.colunas_grade);
-        lista.setLayoutManager(new GridLayoutManager(requireContext(), colunas));
-        lista.setAdapter(adapter);
+        GridLayoutManager grade = new GridLayoutManager(requireContext(), colunas);
+        lista.setLayoutManager(grade);
+        // "Listas fixas" (curtidos e em analise) sempre em cima, depois
+        // "Listas criadas" com as do usuario e, sem nenhuma, o aviso.
+        ListaFixaAdapter fixas = new ListaFixaAdapter();
+        ConcatAdapter tudo = new ConcatAdapter(
+                new TituloSecaoAdapter(R.string.listas_secao_fixas), fixas,
+                new TituloSecaoAdapter(R.string.listas_secao_criadas), adapter, avisoVazio);
+        lista.setAdapter(tudo);
+        // No tablet os separadores e o aviso ocupam a linha inteira, nao uma
+        // celula da grade.
+        int tituloCriadas = 1 + fixas.getItemCount();
+        grade.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int posicao) {
+                boolean titulo = posicao == 0 || posicao == tituloCriadas;
+                boolean aviso = avisoVazio.getItemCount() > 0
+                        && posicao == tudo.getItemCount() - 1;
+                return titulo || aviso ? colunas : 1;
+            }
+        });
         new ItemTouchHelper(new SwipeParaExcluir()).attachToRecyclerView(lista);
 
         view.findViewById(R.id.btnNovaLista).setOnClickListener(v ->
@@ -98,8 +120,8 @@ public class ListasFragment extends Fragment {
     private void carregar() {
         repository.minhasListas().observe(getViewLifecycleOwner(), colecoes -> {
             adapter.atualizar(colecoes);
-            // A conta comeca sem listas: sem o aviso, a aba ficaria em branco.
-            textListasVazio.setVisibility(colecoes.isEmpty() ? View.VISIBLE : View.GONE);
+            // A conta comeca sem listas: sem o aviso, so o cartao fixo apareceria.
+            avisoVazio.mostrar(colecoes.isEmpty());
         });
     }
 
@@ -128,6 +150,16 @@ public class ListasFragment extends Fragment {
 
         SwipeParaExcluir() {
             super(0, ItemTouchHelper.LEFT);
+        }
+
+        /** So as listas do usuario arrastam; as fixas, os separadores e o aviso nao. */
+        @Override
+        public int getSwipeDirs(@NonNull RecyclerView recyclerView,
+                                @NonNull RecyclerView.ViewHolder viewHolder) {
+            if (viewHolder.getBindingAdapter() != adapter) {
+                return 0;
+            }
+            return super.getSwipeDirs(recyclerView, viewHolder);
         }
 
         @Override

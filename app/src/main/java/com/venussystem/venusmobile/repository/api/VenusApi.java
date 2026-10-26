@@ -3,6 +3,8 @@ package com.venussystem.venusmobile.repository.api;
 import com.venussystem.venusmobile.repository.api.dto.AllergyResponse;
 import com.venussystem.venusmobile.repository.api.dto.BrandResponse;
 import com.venussystem.venusmobile.repository.api.dto.FatiaResponse;
+import com.venussystem.venusmobile.repository.api.dto.FavoriteRequest;
+import com.venussystem.venusmobile.repository.api.dto.FavoriteResponse;
 import com.venussystem.venusmobile.repository.api.dto.IngredientEffectResponse;
 import com.venussystem.venusmobile.repository.api.dto.IngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.MediaAssetResponse;
@@ -210,6 +212,22 @@ public interface VenusApi {
     @DELETE("api/user-list-items/user-list/{userListId}/product/{productId}")
     Call<Void> removerItem(@Path("userListId") long userListId,
                            @Path("productId") long productId);
+
+    // ---- Produtos curtidos (tabela favorites do Venus-CRUD) ----
+    // Nao confundir com a lista FAVORITES de /api/user-lists: esta e a do
+    // coracao na tela do produto. Curtir de novo da 409; descurtir o que nao
+    // esta curtido da 404.
+
+    @GET("api/favorites/user/{userId}")
+    Call<FatiaResponse<FavoriteResponse>> curtidosDoUsuario(@Path("userId") long userId,
+                                                            @Query("page") int pagina,
+                                                            @Query("size") int tamanho);
+
+    @POST("api/favorites")
+    Call<Void> curtir(@Body FavoriteRequest curtida);
+
+    @DELETE("api/favorites/user/{userId}/product/{productId}")
+    Call<Void> descurtir(@Path("userId") long userId, @Path("productId") long productId);
 
     // ---- Foto de perfil ----
     // O POST troca a foto anterior; a API sobe a imagem no Cloudinary e devolve o link.

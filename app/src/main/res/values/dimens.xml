@@ -47,6 +47,10 @@
     <dimen name="largura_nota_historico">44dp</dimen>
     <dimen name="altura_nota_historico">30dp</dimen>
     <dimen name="avatar_perfil">200dp</dimen>
+    <dimen name="botao_trocar_foto">40dp</dimen>
+    <!-- Poe o centro da camera na borda do circulo da foto, na diagonal de
+         baixo a direita: 0.244 x avatar_perfil - metade do botao. -->
+    <dimen name="margem_botao_trocar_foto">29dp</dimen>
     <dimen name="botao_editar">34dp</dimen>
     <dimen name="miniatura_chat">44dp</dimen>
     <!-- Veninha no topo do chat; menor com o teclado aberto, para sobrar conversa. -->
@@ -74,10 +78,6 @@
     <dimen name="texto_titulo_destaque">28sp</dimen>
     <dimen name="texto_titulo_aba">20sp</dimen>
 
-    <!-- Largura do menu lateral do perfil: o resto da tela fica escurecido. -->
-    <dimen name="largura_menu_lateral">280dp</dimen>
-    <!-- O mesmo raio dos modais do perfil (bg_modal_escolha). -->
-    <dimen name="raio_menu_lateral">20dp</dimen>
     <!-- Margem de dentro do cartao "Seu perfil Venus": mais justa que a das telas, para ele nao tomar a Home. -->
     <dimen name="padding_cartao_perfil">12dp</dimen>
 </resources>

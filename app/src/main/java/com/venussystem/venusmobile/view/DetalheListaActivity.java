@@ -39,6 +39,7 @@ import com.venussystem.venusmobile.repository.ProdutoRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.view.adapter.ItemListaAdapter;
 import com.venussystem.venusmobile.view.util.ImagemLocalUtil;
+import com.venussystem.venusmobile.view.util.MensagemRapida;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -101,6 +102,8 @@ public class DetalheListaActivity extends AppCompatActivity {
                 if (produtoId != -1) {
                     itemRepository.adicionar(listaId, produtoId);
                     carregarItens();
+                    MensagemRapida.sucesso(findViewById(R.id.main),
+                            getString(R.string.produto_salvo_na_lista, nomeAtual));
                 }
             });
 

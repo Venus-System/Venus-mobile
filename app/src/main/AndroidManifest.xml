@@ -57,6 +57,9 @@
             android:name=".view.ProdutosEmAnaliseActivity"
             android:exported="false" />
         <activity
+            android:name=".view.ProdutosCurtidosActivity"
+            android:exported="false" />
+        <activity
             android:name=".view.DetalheProdutoEmAnaliseActivity"
             android:exported="false" />
 

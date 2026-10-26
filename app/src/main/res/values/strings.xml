@@ -305,11 +305,8 @@
     <string name="lista_vazia">Sua lista está vazia</string>
     <string name="lista_criada_por">Criado por %1$s</string>
     <string name="desc_mais_opcoes">Mais opções</string>
-    <string name="desc_abrir_menu">Abrir menu</string>
-    <string name="menu_lateral_titulo">Menu</string>
-    <string name="menu_voltar_ao_login">Voltar ao login</string>
-    <string name="menu_alterar_foto">Alterar foto de perfil</string>
-    <string name="menu_produtos_em_analise">Produtos em análise</string>
+    <string name="perfil_voltar_ao_login">Voltar ao login</string>
+    <string name="perfil_trocar_foto">Alterar foto de perfil</string>
 
     <!-- Produtos em analise: o que a pessoa escaneou e mandou para a equipe conferir -->
     <string name="analise_titulo">Produtos em análise</string>
@@ -351,6 +348,19 @@
     <string name="desc_salvar_na_lista">Salvar em uma lista</string>
     <string name="produto_salvo_na_lista">Salvo em %1$s</string>
     <string name="produto_removido_da_lista">Removido de %1$s</string>
+
+    <!-- Produtos curtidos: o coracao na tela do produto e a lista fixa em Listas -->
+    <string name="desc_curtir">Curtir produto</string>
+    <string name="desc_descurtir">Descurtir produto</string>
+    <string name="produto_curtido">Adicionado aos curtidos</string>
+    <string name="produto_descurtido">Removido dos curtidos</string>
+    <string name="curtidos_titulo">Produtos curtidos</string>
+    <string name="curtidos_vazio_titulo">Nenhum produto curtido</string>
+    <string name="curtidos_vazio">Toque no coração na tela de um produto para guardar aqui os que você gostou.</string>
+
+    <!-- Separadores da aba Listas -->
+    <string name="listas_secao_fixas">Listas fixas</string>
+    <string name="listas_secao_criadas">Listas criadas</string>
     <string name="produto_nova_lista">+ Nova lista</string>
     <string name="listas_vazio">Você ainda não tem listas. Toque no + para criar a primeira e guardar os produtos que quiser.</string>
     <string name="produto_titulo_ingredientes">Ingredientes</string>
