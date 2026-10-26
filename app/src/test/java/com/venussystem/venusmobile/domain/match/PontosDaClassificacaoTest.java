@@ -68,4 +68,17 @@ public class PontosDaClassificacaoTest {
         assertEquals(ResultadoMatch.Tipo.ALERTA, r.get(0).tipo);
         assertEquals(ResultadoMatch.Tipo.BENEFICIO, r.get(1).tipo);
     }
+
+    @Test
+    public void alergiasDaClassificacaoVemPrimeiroSemRepetir() {
+        assertEquals(Arrays.asList("LIMONENO", "LINALOL", "Lanolina"),
+                PontosDaClassificacao.alergias(Arrays.asList("Linalol", "Lanolina"),
+                        Arrays.asList("LIMONENO", "LINALOL")));
+    }
+
+    @Test
+    public void semClassificacaoFicamAsDoAparelho() {
+        assertEquals(Collections.singletonList("Lanolina"),
+                PontosDaClassificacao.alergias(Collections.singletonList("Lanolina"), null));
+    }
 }

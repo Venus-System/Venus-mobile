@@ -10,35 +10,35 @@ import org.junit.Test;
 public class ContaDaNotaTest {
 
     @Test
-    public void exemploDoReadmeDaClassificacao() {
-        // 35 x 74% = 25,9 e 65 x 23,53% = 15,3: nota 41.
-        ContaDaNota conta = ContaDaNota.de(74, 23.53, 41);
+    public void usaOsPontosDaApiSemRefazerAConta() {
+        // breakdown do README da Classificacao: 25,9 + 15,3 = nota 41.
+        ContaDaNota conta = ContaDaNota.de(74, 25.9, 15.3, 41);
 
-        assertEquals(Integer.valueOf(74), conta.qualidade);
-        assertEquals(Integer.valueOf(24), conta.combinacao);
+        assertEquals(25.9, conta.pontosQualidade, 0.0);
+        assertEquals(15.3, conta.pontosPerfil, 0.0);
         assertFalse(conta.limitada);
     }
 
     @Test
     public void notaBemAbaixoDaSomaFoiLimitada() {
         // A soma daria 72, mas uma alergia alta prende a nota em 15.
-        assertTrue(ContaDaNota.de(74, 71.0, 15).limitada);
+        assertTrue(ContaDaNota.de(74, 25.9, 46.2, 15).limitada);
     }
 
     @Test
-    public void semCombinacaoANotaEAQualidade() {
-        ContaDaNota conta = ContaDaNota.de(74, null, 74);
+    public void semPerfilANotaEAQualidade() {
+        ContaDaNota conta = ContaDaNota.de(74, 25.9, null, 74);
 
-        assertNull(conta.combinacao);
+        assertNull(conta.pontosPerfil);
         assertFalse(conta.limitada);
+        assertTrue(ContaDaNota.de(74, 25.9, null, 40).limitada);
     }
 
     @Test
-    public void semQualidadeNaoDaParaSaberSeFoiLimitada() {
-        ContaDaNota conta = ContaDaNota.de(null, 71.0, 10);
+    public void semPontosDaApiFicaVazia() {
+        ContaDaNota conta = ContaDaNota.de(null, null, null, 10);
 
+        assertTrue(conta.vazia());
         assertFalse(conta.limitada);
-        assertFalse(conta.vazia());
-        assertTrue(ContaDaNota.de(null, null, 10).vazia());
     }
 }

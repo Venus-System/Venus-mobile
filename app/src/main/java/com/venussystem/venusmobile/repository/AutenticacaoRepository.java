@@ -93,8 +93,9 @@ public class AutenticacaoRepository {
 
     /**
      * Sai da conta. Antes, apaga a conversa com a Venus guardada no aparelho:
-     * ela costuma ter pele, alergias e saude, e nao deve ficar para tras. O
-     * resto (questionario, listas) fica guardado por conta, ver DadosDaConta.
+     * ela costuma ter pele, alergias e saude, e nao deve ficar para tras. Pelo
+     * mesmo motivo saem os ingredientes da alergia das analises (AnaliseDoPostRepository). O resto
+     * (questionario, listas) fica guardado por conta, ver DadosDaConta.
      *
      * O alarme do lembrete do questionario, as conferencias em segundo plano e as
      * notificacoes na barra tambem saem: quem entrar depois neste aparelho nao pode
@@ -103,6 +104,7 @@ public class AutenticacaoRepository {
      */
     public void sair(Context context) {
         new ConversaSalvaRepository(context).apagar();
+        new AnaliseDoPostRepository(context).apagar();
         // Antes do signOut: o alarme a cancelar depende de saber qual e a conta.
         Lembretes.cancelarDaContaAtual(context);
         DecisoesAgenda.cancelar(context);

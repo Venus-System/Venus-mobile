@@ -75,6 +75,25 @@ public final class PontosDaClassificacao {
         return saida;
     }
 
+    /**
+     * Ingredientes da alergia: primeiro os da Classificacao, que liga a alergia
+     * aos ingredientes pelo cadastro (Fragrancia pega LIMONENO), depois os que
+     * o aparelho achou pelo nome. Sem repetir o mesmo ingrediente.
+     */
+    public static List<String> alergias(List<String> doAparelho,
+                                        @Nullable List<String> daClassificacao) {
+        Map<String, String> porSlug = new LinkedHashMap<>();
+        if (daClassificacao != null) {
+            for (String nome : daClassificacao) {
+                if (!vazio(nome)) porSlug.putIfAbsent(Slug.de(nome), nome);
+            }
+        }
+        for (String nome : doAparelho) {
+            if (!vazio(nome)) porSlug.putIfAbsent(Slug.de(nome), nome);
+        }
+        return new ArrayList<>(porSlug.values());
+    }
+
     private static boolean jaTem(List<ResultadoMatch.Ponto> pontos, String slug, boolean aviso) {
         for (ResultadoMatch.Ponto p : pontos) {
             if (!slug.equals(p.slug)) continue;

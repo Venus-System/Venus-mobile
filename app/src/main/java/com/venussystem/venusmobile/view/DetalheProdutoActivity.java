@@ -136,6 +136,9 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     @Nullable
     private ClassificationResponse classificacaoMatch;
     private boolean classificacaoRespondeu = false;
+    /** O code do erro da Classificacao, para explicar por que o anel ficou na nota geral. */
+    @Nullable
+    private String erroClassificacao;
     private boolean telaInicializada = false;
     private boolean mensagemErroMostrada = false;
 
@@ -716,6 +719,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         notaGeralMatch = null;
         classificacaoMatch = null;
         classificacaoRespondeu = false;
+        erroClassificacao = null;
 
         carregandoMatch.setVisibility(View.VISIBLE);
         textMatchMensagem.setVisibility(View.GONE);
@@ -759,12 +763,15 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                         classificacaoMatch = classificacao;
                         classificacaoRespondeu = true;
                         atualizarNotaESelo();
+                        // A alergia que ela achou pelo cadastro entra no cartao.
+                        if (resultadoMatch != null) mostrarAlergias();
                     }
 
                     @Override
-                    public void aoFalhar() {
+                    public void aoFalhar(@Nullable String codigo) {
                         if (isFinishing() || isDestroyed() || pedido != pedidoMatch) return;
                         classificacaoRespondeu = true;
+                        erroClassificacao = codigo;
                         atualizarNotaESelo();
                     }
                 }
@@ -808,7 +815,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         mostrarDestaques(resultado.destaques);
         cartaoMatch.setVisibility(View.VISIBLE);
 
-        mostrarAlergias(resultado.alergiasEncontradas);
+        mostrarAlergias();
         textMatchAviso.setVisibility(View.VISIBLE);
     }
 
@@ -846,6 +853,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
             return;
         }
 
+        mostrarErroDaNota();
         Integer geral = notaGeralMatch == null ? null : notaGeralMatch.overallScore;
         if (geral == null) {
             anelNotaMatch.setVisibility(View.GONE);
@@ -856,25 +864,41 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 getString(R.string.produto_match_nota_descricao, geral));
     }
 
-    /** "Qualidade 74 · combina 71% com voce": de onde vem a nota pessoal. */
+    /**
+     * "A nota soma duas partes: 25,9 de 35 ... e 15,3 de 65 ...": de onde vem a
+     * nota pessoal, com os pontos da Classificacao. Sem eles (analise salva que
+     * nao foi calculada neste aparelho), a linha nao aparece.
+     */
     private void mostrarConta(ClassificationResponse pessoal) {
-        Integer qualidade = notaGeralMatch == null ? null : notaGeralMatch.overallScore;
-        ContaDaNota conta = ContaDaNota.de(qualidade, pessoal.compatibilityPercentage,
-                pessoal.finalScore);
+        ClassificationResponse.Breakdown partes = pessoal.breakdown;
+        ContaDaNota conta = partes == null
+                ? ContaDaNota.de(null, null, null, pessoal.finalScore)
+                : ContaDaNota.de(partes.qualityScore, partes.qualityPoints, partes.profilePoints,
+                        pessoal.finalScore);
         String texto;
-        if (conta.qualidade != null && conta.combinacao != null) {
+        if (conta.pontosQualidade != null && conta.pontosPerfil != null) {
             texto = getString(conta.limitada
                             ? R.string.produto_match_conta_limitada
                             : R.string.produto_match_conta,
-                    conta.qualidade, conta.combinacao);
-        } else if (conta.qualidade != null) {
+                    TextosMatch.pontos(conta.pontosQualidade),
+                    TextosMatch.pontos(conta.pontosPerfil));
+        } else if (conta.pontosPerfil == null && conta.qualidade != null) {
             texto = getString(conta.limitada
                             ? R.string.produto_match_conta_so_qualidade_limitada
                             : R.string.produto_match_conta_so_qualidade,
                     conta.qualidade);
-        } else if (conta.combinacao != null) {
-            texto = getString(R.string.produto_match_conta_so_combinacao, conta.combinacao);
         } else {
+            textMatchConta.setVisibility(View.GONE);
+            return;
+        }
+        textMatchConta.setText(texto);
+        textMatchConta.setVisibility(View.VISIBLE);
+    }
+
+    /** Na mesma linha da conta, por que a nota pessoal nao veio (produto em revisao...). */
+    private void mostrarErroDaNota() {
+        Integer texto = TextosMatch.erroDaNota(erroClassificacao);
+        if (texto == null) {
             textMatchConta.setVisibility(View.GONE);
             return;
         }
@@ -1043,7 +1067,11 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         secaoMatchDestaques.setVisibility(rotulos.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
-    private void mostrarAlergias(List<String> encontradas) {
+    /** As achadas no aparelho mais as que a Classificacao mandou (ou que o POST deixou guardadas). */
+    private void mostrarAlergias() {
+        List<String> encontradas = PontosDaClassificacao.alergias(
+                resultadoMatch.alergiasEncontradas,
+                classificacaoMatch == null ? null : classificacaoMatch.ingredientesDeAlergia());
         List<String> alergias = EtiquetasDoPerfil.alergiasEmTexto(new PerfilRepository(this));
         TextosMatch.Recursos recursos = this::getString;
 
@@ -1057,7 +1085,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
             textMatchAlergiaTitulo.setText(R.string.produto_match_sem_alergenos);
             textMatchAlergiaTitulo.setTextColor(
                     ContextCompat.getColor(this, R.color.roxo_avatar_borda));
-            textMatchAlergiaTexto.setText(TextosMatch.alergiasAusentes(recursos, alergias));
+            textMatchAlergiaTexto.setText(R.string.produto_match_sem_alergenos_texto);
         } else {
             textMatchAlergiaTitulo.setText(R.string.produto_match_sem_alergias_marcadas);
             textMatchAlergiaTitulo.setTextColor(

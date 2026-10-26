@@ -369,7 +369,7 @@
                         android:textColor="@color/roxo_avatar_borda"
                         android:textSize="12sp"
                         android:visibility="gone"
-                        tools:text="Qualidade 74 · combina 71% com você"
+                        tools:text="A nota soma duas partes: 25,9 de 35 pela qualidade do produto e 15,3 de 65 por combinar com o seu perfil."
                         tools:visibility="visible" />
 
                 </LinearLayout>
@@ -448,7 +448,7 @@
                     android:textColor="@color/roxo_avatar_borda"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    tools:text="Sem alérgenos seus" />
+                    tools:text="Sem alergia" />
 
                 <TextView
                     android:id="@+id/textMatchAlergiaTexto"
@@ -457,7 +457,7 @@
                     android:layout_marginTop="4dp"
                     android:textColor="@color/cinza_descricao"
                     android:textSize="13sp"
-                    tools:text="Não contém lanolina nem óleo de amêndoas, da sua lista de alergias." />
+                    tools:text="Nenhum ingrediente deste produto está nas alergias que você cadastrou." />
 
                 <TextView
                     android:id="@+id/botaoMatchAlternativas"
