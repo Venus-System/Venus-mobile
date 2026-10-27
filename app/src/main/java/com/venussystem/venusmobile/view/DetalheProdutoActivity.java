@@ -906,22 +906,15 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 ? ContaDaNota.de(null, null, null, pessoal.finalScore)
                 : ContaDaNota.de(partes.qualityScore, partes.qualityPoints, partes.profilePoints,
                         pessoal.finalScore);
-        String texto;
-        if (conta.pontosQualidade != null && conta.pontosPerfil != null) {
-            texto = getString(conta.limitada
-                            ? R.string.produto_match_conta_limitada
-                            : R.string.produto_match_conta,
-                    TextosMatch.pontos(conta.pontosQualidade),
-                    TextosMatch.pontos(conta.pontosPerfil));
-        } else if (conta.pontosPerfil == null && conta.qualidade != null) {
-            texto = getString(conta.limitada
-                            ? R.string.produto_match_conta_so_qualidade_limitada
-                            : R.string.produto_match_conta_so_qualidade,
-                    conta.qualidade);
-        } else {
+        if (conta.pontosQualidade == null || conta.pontosPerfil == null) {
             textMatchConta.setVisibility(View.GONE);
             return;
         }
+        String texto = getString(conta.limitada
+                        ? R.string.produto_match_conta_limitada
+                        : R.string.produto_match_conta,
+                TextosMatch.pontos(conta.pontosQualidade),
+                TextosMatch.pontos(conta.pontosPerfil));
         textMatchConta.setText(texto);
         textMatchConta.setVisibility(View.VISIBLE);
     }
