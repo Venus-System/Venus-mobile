@@ -1,15 +1,12 @@
 package com.venussystem.venusmobile.view.adapter;
 
-import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.venussystem.venusmobile.R;
@@ -92,7 +89,6 @@ public class HistoricoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         private final ImageView imagem;
         private final TextView nome;
         private final TextView marca;
-        private final TextView nota;
         private final TextView status;
 
         ProdutoViewHolder(@NonNull View item) {
@@ -100,7 +96,6 @@ public class HistoricoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             imagem = item.findViewById(R.id.imgProduto);
             nome = item.findViewById(R.id.textNome);
             marca = item.findViewById(R.id.textMarca);
-            nota = item.findViewById(R.id.textNota);
             status = item.findViewById(R.id.textStatus);
         }
 
@@ -115,7 +110,6 @@ public class HistoricoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 status.setText(statusText);
                 status.setVisibility(statusText.isEmpty() ? View.GONE : View.VISIBLE);
             }
-            mostrarNota(produto.getOverallScore());
 
             ProdutoImagemLoader.carregar(
                     itemView.getContext(), imagem, produto, R.drawable.bg_foto_historico);
@@ -145,35 +139,6 @@ public class HistoricoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 default:
                     return "";
             }
-        }
-
-        /**
-         * A pilula usa duas cores da mesma faixa: um fundo bem claro e o numero
-         * na versao forte. O fundo vem do tint porque o drawable e compartilhado
-         * entre todos os itens - pintar o proprio drawable vazaria a cor de um
-         * item para os outros quando a linha fosse reciclada.
-         */
-        private void mostrarNota(Integer valor) {
-            if (valor == null) {
-                aplicarCores(R.color.cinza_fechar, R.color.cinza_descricao);
-                nota.setText(R.string.nota_indisponivel);
-                return;
-            }
-
-            if (valor >= 70) {
-                aplicarCores(R.color.nota_boa_fundo, R.color.nota_boa);
-            } else if (valor >= 40) {
-                aplicarCores(R.color.nota_media_fundo, R.color.nota_media);
-            } else {
-                aplicarCores(R.color.nota_ruim_fundo, R.color.nota_ruim);
-            }
-            nota.setText(String.valueOf(valor));
-        }
-
-        private void aplicarCores(@ColorRes int fundo, @ColorRes int texto) {
-            nota.setBackgroundTintList(ColorStateList.valueOf(
-                    ContextCompat.getColor(itemView.getContext(), fundo)));
-            nota.setTextColor(ContextCompat.getColor(itemView.getContext(), texto));
         }
     }
 }

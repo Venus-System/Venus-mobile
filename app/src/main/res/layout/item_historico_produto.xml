@@ -31,7 +31,7 @@
         android:textColor="@color/preto_texto"
         android:textSize="15sp"
         android:textStyle="bold"
-        app:layout_constraintEnd_toStartOf="@+id/textNota"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/imgProduto"
         app:layout_constraintTop_toTopOf="@+id/imgProduto"
         tools:text="Creme de cabelo" />
@@ -63,19 +63,5 @@
         app:layout_constraintStart_toStartOf="@+id/textNome"
         app:layout_constraintTop_toBottomOf="@+id/textMarca"
         tools:text="Em análise" />
-
-    <TextView
-        android:id="@+id/textNota"
-        android:layout_width="@dimen/largura_nota_historico"
-        android:layout_height="@dimen/altura_nota_historico"
-        android:background="@drawable/bg_nota_historico"
-        android:gravity="center"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:background="@drawable/bg_nota_historico"
-        tools:text="90" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
