@@ -378,8 +378,6 @@
     <string name="produto_match_calculando_descricao">Calculando a sua nota</string>
     <string name="produto_match_conta">A nota soma duas partes: %1$s de 35 pela qualidade do produto e %2$s de 65 por combinar com o seu perfil.</string>
     <string name="produto_match_conta_limitada">A nota soma duas partes: %1$s de 35 pela qualidade do produto e %2$s de 65 por combinar com o seu perfil. Um alerta do seu perfil baixou a nota.</string>
-    <string name="produto_match_conta_so_qualidade">A nota vem só da qualidade do produto: %1$d de 100.</string>
-    <string name="produto_match_conta_so_qualidade_limitada">A nota vem só da qualidade do produto: %1$d de 100. Um alerta do seu perfil baixou a nota.</string>
     <string name="produto_match_erro_perfil">Complete o seu perfil pra ver a nota feita pra você.</string>
     <string name="produto_match_erro_produto">Não achamos esse produto.</string>
     <string name="produto_match_erro_em_revisao">Esse produto ainda está em revisão. A nota sai assim que terminar.</string>
