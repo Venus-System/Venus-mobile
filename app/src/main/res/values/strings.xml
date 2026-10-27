@@ -111,7 +111,7 @@
     <string name="desc_remover">Remover</string>
 
     <string name="perfil_pronto_titulo">Seu perfil está pronto! :)</string>
-    <string name="perfil_pronto_resumo">Agora o &lt;b>Venus&lt;/b> já conhece um pouco melhor suas &lt;b>necessidades&lt;/b> e &lt;b>preferências&lt;/b>.</string>
+    <string name="perfil_pronto_resumo">Agora o <b>Venus</b> já conhece um pouco melhor suas <b>necessidades</b> e <b>preferências</b>.</string>
     <string name="perfil_pronto_detalhe">Essas informações serão usadas para personalizar suas análises de produtos e destacar o que é mais relevante para você.</string>
     <string name="perfil_pronto_acao">Começar</string>
     <string name="pergunta_escolha_uma">Escolha uma opção para continuar</string>
