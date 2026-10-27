@@ -76,20 +76,6 @@
         app:layout_constraintWidth_max="@dimen/largura_max_conteudo"
         app:layout_constraintWidth_percent="0.8" />
 
-    <TextView
-        android:id="@+id/textAjudaCabelo"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="15dp"
-        android:gravity="center"
-        android:padding="4dp"
-        android:text="@string/pergunta_ajuda_cabelo"
-        android:textColor="@color/preto_texto"
-        android:textSize="@dimen/texto_corpo"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/cardOpcoes"
-        app:layout_constraintEnd_toEndOf="@+id/cardOpcoes"
-        app:layout_constraintStart_toStartOf="@+id/cardOpcoes" />
 
     <androidx.appcompat.widget.AppCompatAutoCompleteTextView
         android:id="@+id/campoBusca"
