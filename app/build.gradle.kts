@@ -46,6 +46,14 @@ android {
 
         buildConfigField("String", "VENUS_IA_URL", "\"$urlVenusIa\"")
         buildConfigField("String", "VENUS_CLASSIFICACAO_URL", "\"$urlVenusClassificacao\"")
+
+        // O Room grava o formato de cada versao do banco em app/schemas. Esse
+        // historico e o que permite escrever a migracao quando uma tabela mudar.
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments["room.schemaLocation"] = "$projectDir/schemas"
+            }
+        }
     }
 
     buildTypes {
@@ -118,6 +126,11 @@ dependencies {
     implementation(libs.play.services.location)
     // Reenvio dos produtos que ficaram sem enviar, quando a internet volta.
     implementation(libs.work.runtime)
+    // Banco SQLite do aparelho (repository/banco): conversa com a Venus e
+    // produtos curtidos. O app e Java, entao o Room gera o codigo pelo
+    // annotationProcessor (sem kapt nem ksp).
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)

@@ -50,7 +50,12 @@ public final class DadosDaConta {
 
     @VisibleForTesting
     static String nomeDoArquivo(String arquivo, @Nullable String uid) {
-        return arquivo + "_" + (uid == null ? SEM_CONTA : uid);
+        return arquivo + "_" + daConta(uid);
+    }
+
+    /** O que identifica a conta nas linhas do banco (repository/banco). */
+    static String daConta(@Nullable String uid) {
+        return uid == null ? SEM_CONTA : uid;
     }
 
     @Nullable

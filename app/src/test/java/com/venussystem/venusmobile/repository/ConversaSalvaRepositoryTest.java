@@ -120,13 +120,32 @@ public class ConversaSalvaRepositoryTest {
     }
 
     @Test
-    public void arquivoEstragado_naoTravaOChat() {
-        DadosDaConta.prefs(context, ConversaSalvaRepository.ARQUIVO, "uid-ana")
+    public void conversaDoArquivoAntigo_vemParaOBanco() {
+        DadosDaConta.prefs(context, ConversaSalvaRepository.ARQUIVO, "uid-bia").edit()
+                .putString("conversa", "{\"conversationId\":\"conv-1\",\"mensagens\":["
+                        + "{\"autor\":" + Mensagem.DO_USUARIO + ",\"texto\":\"oi\"},"
+                        + "{\"autor\":" + Mensagem.DO_ASSISTENTE + ",\"texto\":\"Olá!\"}]}")
+                .commit();
+
+        ConversaSalvaRepository.Conversa salva =
+                new ConversaSalvaRepository(context, "uid-bia").carregar();
+
+        assertEquals("conv-1", salva.conversationId);
+        assertEquals(2, salva.mensagens.size());
+        assertEquals("oi", salva.mensagens.get(0).getTexto());
+        assertEquals(Mensagem.DO_ASSISTENTE, salva.mensagens.get(1).getAutor());
+        assertTrue(DadosDaConta.prefs(context, ConversaSalvaRepository.ARQUIVO, "uid-bia")
+                .getAll().isEmpty());
+    }
+
+    @Test
+    public void arquivoAntigoEstragado_naoTravaOChat() {
+        DadosDaConta.prefs(context, ConversaSalvaRepository.ARQUIVO, "uid-bia")
                 .edit().putString("conversa", "{isso nao e json").commit();
 
-        ConversaSalvaRepository.Conversa salva = conversa.carregar();
+        ConversaSalvaRepository daBia = new ConversaSalvaRepository(context, "uid-bia");
 
-        assertTrue(salva.mensagens.isEmpty());
-        assertTrue(conversa.adicionarPar(null, "oi", "Olá!", "uid-ana"));
+        assertTrue(daBia.carregar().mensagens.isEmpty());
+        assertTrue(daBia.adicionarPar(null, "oi", "Olá!", "uid-bia"));
     }
 }
