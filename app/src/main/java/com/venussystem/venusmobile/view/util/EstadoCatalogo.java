@@ -10,17 +10,7 @@ import androidx.annotation.StringRes;
 
 import com.venussystem.venusmobile.R;
 
-/**
- * Decide o que a Home e a busca mostram no lugar da grade de produtos:
- * carregando, "acordando o servidor", erro com "tentar de novo", vazio, ou a
- * propria grade. Um estado por vez.
- *
- * Os avisos vem de include_estado_catalogo.xml; a grade e o conteudo que esta
- * classe liga e desliga.
- */
 public class EstadoCatalogo {
-
-    // Depois de alguns segundos de espera explicamos o que esta acontecendo.
     private static final long ESPERA_ATE_AVISAR = 4000L;
 
     private final View conteudo;
@@ -38,11 +28,6 @@ public class EstadoCatalogo {
     @Nullable
     private String erro;
 
-    /**
-     * @param painel         a raiz do include_estado_catalogo.xml
-     * @param conteudo       a grade de produtos
-     * @param aoTentarDeNovo o que fazer no botao do erro
-     */
     public EstadoCatalogo(View painel, View conteudo, Runnable aoTentarDeNovo) {
         this.conteudo = conteudo;
         blocoCarregando = painel.findViewById(R.id.blocoCarregando);
@@ -68,20 +53,10 @@ public class EstadoCatalogo {
         textErro.setText(mensagem);
     }
 
-    /**
-     * @param ativo       false esconde tudo, inclusive a grade (a busca com o
-     *                    historico na tela, por exemplo)
-     * @param temCatalogo o catalogo ja chegou alguma vez
-     * @param quantidade  quantos itens a grade tem agora
-     * @param textoVazio  o que dizer quando o catalogo chegou e nao sobrou nada
-     */
     public void atualizar(boolean ativo, boolean temCatalogo, int quantidade,
                           @StringRes int textoVazio) {
         boolean carregando = ativo && ocupado;
 
-        // Erro so bloqueia a tela enquanto nao houver catalogo: se uma
-        // atualizacao falhar depois de um carregamento que deu certo, o que
-        // esta em memoria continua bom e a tela segue utilizavel.
         boolean comErro = ativo && !ocupado && erro != null && !erro.isEmpty() && !temCatalogo;
         boolean vazio = ativo && !ocupado && !comErro && temCatalogo && quantidade == 0;
 
@@ -98,7 +73,6 @@ public class EstadoCatalogo {
         textAcordando.setVisibility(blocoCarregando.getVisibility());
     }
 
-    /** Chamado quando a tela vai embora: o aviso agendado nao pode disparar depois. */
     public void parar() {
         relogio.removeCallbacks(avisarDemora);
     }

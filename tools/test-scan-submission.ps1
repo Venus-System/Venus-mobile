@@ -1,4 +1,3 @@
-# Contract, authenticated-client and private-storage tests. No network or real uploads.
 param([string]$JavaHome = 'C:\Program Files\Android\Android Studio\jbr')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent

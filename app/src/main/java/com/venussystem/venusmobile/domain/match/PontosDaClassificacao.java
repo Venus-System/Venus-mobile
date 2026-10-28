@@ -10,19 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Junta aos pontos do calculo no aparelho os motivos da Venus-Classificacao.
- * O texto que a API manda vem do banco e hoje e quase todo placeholder de teste
- * ("Regra de teste criada..."), entao daqui so sai o que e dado: ingrediente,
- * etiqueta e se ajudou ou atrapalhou. A tela escreve o texto (TextosMatch).
- */
 public final class PontosDaClassificacao {
-
-    /** Um motivo de regra de ingrediente da Classificacao. */
     public static final class Motivo {
         public final String slug;
         public final String ingrediente;
-        /** true para penalidade ou bloqueio. */
         public final boolean aviso;
 
         public Motivo(String slug, String ingrediente, boolean aviso) {
@@ -35,10 +26,6 @@ public final class PontosDaClassificacao {
     private PontosDaClassificacao() {
     }
 
-    /**
-     * A Classificacao manda: o que ela achou e o aparelho nao, entra; e um aviso
-     * dela derruba o "Sem X" do aparelho para a mesma etiqueta.
-     */
     public static List<ResultadoMatch.Ponto> mesclar(List<ResultadoMatch.Ponto> locais,
                                                      @Nullable List<Motivo> motivos) {
         if (motivos == null || motivos.isEmpty()) return locais;
@@ -75,11 +62,6 @@ public final class PontosDaClassificacao {
         return saida;
     }
 
-    /**
-     * Ingredientes da alergia: primeiro os da Classificacao, que liga a alergia
-     * aos ingredientes pelo cadastro (Fragrancia pega LIMONENO), depois os que
-     * o aparelho achou pelo nome. Sem repetir o mesmo ingrediente.
-     */
     public static List<String> alergias(List<String> doAparelho,
                                         @Nullable List<String> daClassificacao) {
         Map<String, String> porSlug = new LinkedHashMap<>();

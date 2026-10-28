@@ -31,10 +31,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView2" />
 
-    <!-- Ilustracao inteira (forma, pessoa e plantas) num bloco de proporcao fixa:
-         tudo dentro dele e posicionado em porcentagem, entao a cena cresce junta
-         no tablet em vez de a pessoa crescer e as plantas ficarem para tras.
-         370:507 e o tamanho que o bloco tem num celular de 411dp. -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/composicaoBemVindo"
         android:layout_width="0dp"

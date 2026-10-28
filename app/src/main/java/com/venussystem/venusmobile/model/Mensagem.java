@@ -23,7 +23,6 @@ public class Mensagem {
         return new Mensagem(DO_USUARIO, texto, false);
     }
 
-    /** A bolha da Venus enquanto a resposta nao chega; a tela anima os pontos. */
     public static Mensagem digitando(String texto) {
         return new Mensagem(DO_ASSISTENTE, texto, true);
     }

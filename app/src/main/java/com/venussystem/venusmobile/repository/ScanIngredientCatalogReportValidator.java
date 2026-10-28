@@ -8,11 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Checks that catalogue evidence still describes exactly the OCR candidates
- * that will be sent. A malformed or stale report is downgraded to raw review
- * data instead of being allowed to attach an unrelated ingredient ID.
- */
 public final class ScanIngredientCatalogReportValidator {
     private ScanIngredientCatalogReportValidator() { }
 

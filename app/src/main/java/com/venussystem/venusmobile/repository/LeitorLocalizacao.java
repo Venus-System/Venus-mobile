@@ -3,10 +3,7 @@ package com.venussystem.venusmobile.repository;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 
-/** De onde vem a posicao do aparelho; separado para o envio ser testavel sem GPS. */
 public interface LeitorLocalizacao {
-
-    /** @return a posicao atual, ou null se o aparelho nao conseguiu determinar. */
     @WorkerThread
     @Nullable
     Posicao ler();

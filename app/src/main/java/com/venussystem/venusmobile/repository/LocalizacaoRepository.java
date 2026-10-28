@@ -20,15 +20,6 @@ import java.util.function.LongSupplier;
 
 import retrofit2.Response;
 
-/**
- * Leva para o Venus-CRUD a localizacao aproximada da pessoa logada, para a
- * analise de dados. Roda quieto, como a {@link SincronizacaoRepository}: se
- * falhar (sem rede, sem GPS, API dormindo) tenta de novo na proxima abertura.
- *
- * Guarda por conta se a permissao ja foi pedida - negar uma vez nao faz o app
- * perguntar de novo a cada abertura - e quando a ultima localizacao subiu, para
- * renovar so depois de {@link #VALIDADE_MS}.
- */
 public class LocalizacaoRepository {
 
     static final String ARQUIVO = "venus_localizacao";
@@ -39,7 +30,7 @@ public class LocalizacaoRepository {
     static final long VALIDADE_MS = TimeUnit.DAYS.toMillis(7);
 
     private static final int PROIBIDO = 403;
-    private static final double ESCALA_ARREDONDAMENTO = 100.0; // 2 casas, ~1 km
+    private static final double ESCALA_ARREDONDAMENTO = 100.0;
 
     private final SharedPreferences prefs;
     private final UsuarioApiRepository usuarios;
@@ -85,14 +76,9 @@ public class LocalizacaoRepository {
     }
 
     public void enviarEmSegundoPlano() {
-        // Mesma fila do perfil e das listas: o cadastro do usuario na API e o
-        // cold start do CRUD sao pagos uma vez so.
         SincronizacaoRepository.EXECUTOR.execute(this::enviarAgora);
     }
 
-    /**
-     * @return true se a localizacao subiu nesta chamada.
-     */
     @WorkerThread
     @VisibleForTesting
     public boolean enviarAgora() {
@@ -117,7 +103,6 @@ public class LocalizacaoRepository {
         try {
             Response<Void> resposta = api.atualizarLocalizacao(userId, corpo).execute();
             if (resposta.code() == PROIBIDO) {
-                // Mesmo caso do perfil: o id guardado nao e desta pessoa.
                 usuarios.esquecerId();
                 return false;
             }

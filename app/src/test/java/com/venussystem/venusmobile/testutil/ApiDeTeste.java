@@ -7,10 +7,6 @@ import okhttp3.mockwebserver.MockWebServer;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-/**
- * Retrofit de verdade apontando para o MockWebServer, com limites curtos para
- * um teste que trava falhar rapido em vez de esperar os minutos do app.
- */
 public final class ApiDeTeste {
 
     public static final long LIMITE_SEGUNDOS = 2L;

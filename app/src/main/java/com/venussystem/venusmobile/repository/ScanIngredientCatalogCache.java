@@ -9,11 +9,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Small, atomic, app-private snapshot of the public ingredient catalogue.
- * Only identifiers and names are cached; scientific evaluations are never
- * copied to the device for matching.
- */
 public final class ScanIngredientCatalogCache {
     public static final int SCHEMA_VERSION = 1;
     private static final Gson GSON = new Gson();

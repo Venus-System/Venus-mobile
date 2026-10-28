@@ -59,7 +59,6 @@ public class ScanOcrRepository {
         );
     }
 
-    /** Legacy single-pass entry point kept for callers outside the scan flow. */
     public void recognize(
             @NonNull Context context,
             @NonNull Uri imageUri,
@@ -75,11 +74,6 @@ public class ScanOcrRepository {
         }
     }
 
-    /**
-     * Runs a bounded set of local OCR passes and returns the strongest result.
-     * The original image is attempted first and never replaced. Derived images
-     * exist only in the app cache and are deleted after selection.
-     */
     public void recognizeBest(
             @NonNull Context context,
             @NonNull Uri imageUri,
@@ -96,8 +90,6 @@ public class ScanOcrRepository {
                     passes.add(new OcrPass("ORIGINAL", imageUri, null));
                     passes.addAll(buildDerivedPasses(context, imageUri));
                 } catch (Exception ignored) {
-                    // The original pass remains valid when a derived image cannot
-                    // be generated on a constrained device.
                 }
                 runPass(context, passes, 0, new ArrayList<>(), callback);
             });
@@ -162,7 +154,6 @@ public class ScanOcrRepository {
         AttemptResult best = null;
         for (AttemptResult result : results) {
             if (result.text == null || !result.attempt.isSuccessful()) continue;
-            // Keep the earlier pass on ties; ORIGINAL is intentionally first.
             if (best == null || result.attempt.getScore() > best.attempt.getScore()) {
                 best = result;
             }
@@ -196,7 +187,6 @@ public class ScanOcrRepository {
         );
     }
 
-    /** Conservative score: text amount plus section/separator evidence. */
     private static double score(String text, int lines) {
         if (text == null || text.trim().isEmpty()) return 0d;
         String upper = text.toUpperCase(Locale.ROOT);
@@ -312,7 +302,6 @@ public class ScanOcrRepository {
     private static void cleanup(List<OcrPass> passes) {
         for (OcrPass pass : passes) {
             if (pass.temporaryFile != null && pass.temporaryFile.exists()) {
-                //noinspection ResultOfMethodCallIgnored
                 pass.temporaryFile.delete();
             }
         }

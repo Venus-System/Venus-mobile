@@ -7,7 +7,6 @@ import static com.venussystem.venusmobile.view.util.ScanBackRules.COMMON_INCI_BO
 import static com.venussystem.venusmobile.view.util.ScanBackText.contémTermoComFronteira;
 import static com.venussystem.venusmobile.view.util.ScanBackText.normalizar;
 
-/** Internal collaborator for ScanBackExtractor; not a second scan entry point. */
 final class ScanBackInciVocabulary {
     private ScanBackInciVocabulary() { }
 
@@ -26,9 +25,6 @@ final class ScanBackInciVocabulary {
                 );
         int count =
                 0;
-        /*
-         * INCI já conhecidos pelo parser.
-         */
         for (
                 String known
                 : COMMON_INCI_BOUNDARIES
@@ -42,9 +38,6 @@ final class ScanBackInciVocabulary {
                 count++;
             }
         }
-        /*
-         * Alguns padrões químicos comuns.
-         */
         String[] chemicalPatterns = {
                 "\\b[A-Z]{4,}-[A-Z0-9-]{2,}\\b",
                 "\\b[A-Z]{6,}(?:OL|ONE|ATE|IDE|IUM|IC|YL)\\b",

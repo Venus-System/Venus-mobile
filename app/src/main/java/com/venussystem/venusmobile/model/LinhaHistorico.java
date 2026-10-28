@@ -1,10 +1,5 @@
 package com.venussystem.venusmobile.model;
 
-/**
- * Uma linha da lista de historico. A lista mistura dois tipos de linha - a data
- * ("Hoje", "25/07/2026") e o produto escaneado - entao o adapter precisa de um
- * tipo unico que saiba representar os dois.
- */
 public class LinhaHistorico {
 
     public static final int TIPO_DATA = 0;

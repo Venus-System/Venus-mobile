@@ -12,11 +12,6 @@ import com.venussystem.venusmobile.view.DetalheProdutoActivity;
 import com.venussystem.venusmobile.view.Notificador;
 import com.venussystem.venusmobile.view.ProdutosEmAnaliseActivity;
 
-/**
- * Confere se a equipe aprovou ou recusou algum produto enviado ({@link
- * ConsultaDeDecisoes}) e avisa. Roda ao abrir o app, quando um produto e enviado
- * e, enquanto ainda ha produto esperando, de 15 em 15 minutos.
- */
 public class DecisoesWorker extends Worker {
 
     public DecisoesWorker(@NonNull Context context, @NonNull WorkerParameters parametros) {
@@ -29,7 +24,6 @@ public class DecisoesWorker extends Worker {
         Context contexto = getApplicationContext();
         String uid = DadosDaConta.uidAtual(contexto);
         if (uid == null) {
-            // Ninguem logado: nao ha de quem avisar.
             DecisoesAgenda.desligarPeriodica(contexto);
             return Result.success();
         }
@@ -51,13 +45,11 @@ public class DecisoesWorker extends Worker {
         return Result.success();
     }
 
-    /** Sem permissao de notificacao nao publica; a decisao continua na tela Produtos em analise. */
     static void avisar(Context contexto, AvisoDeAnalise aviso) {
         Intent tela = aviso.destino == AvisoDeAnalise.Destino.PRODUTO
                 ? new Intent(contexto, DetalheProdutoActivity.class)
                         .putExtra(DetalheProdutoActivity.EXTRA_ID, aviso.produtoId)
                 : new Intent(contexto, ProdutosEmAnaliseActivity.class);
-        // Um numero por produto: dois produtos decididos viram dois avisos.
         Notificador.mostrar(contexto, Notificador.Canal.ANALISE_DE_PRODUTOS, aviso.scanId.hashCode(),
                 aviso.titulo, aviso.texto, tela);
     }

@@ -14,31 +14,17 @@ import com.google.firebase.auth.FirebaseUser;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Separa, dentro do aparelho, os dados de cada conta.
- *
- * Um celular pode ter mais de uma conta: a pessoa sai e entra com outro
- * e-mail. Antes, listas, itens, buscas e questionario ficavam num arquivo so
- * por aparelho, e quem entrava depois via o que a outra conta tinha criado.
- * Agora cada arquivo leva o UID do Firebase no nome.
- */
 public final class DadosDaConta {
 
     private static final String TAG = "DadosDaConta";
 
-    // O arquivo das buscas recentes, de quando elas existiam e eram um arquivo
-    // so por aparelho. As buscas recentes sairam do app; o arquivo antigo
-    // continua sendo apagado na migracao.
     private static final String ARQUIVO_BUSCAS_ANTIGAS = "venus_busca";
 
-    // So para ter um nome quando ninguem esta logado; nenhuma tela que grava
-    // dados abre sem conta.
     private static final String SEM_CONTA = "sem_conta";
 
     private DadosDaConta() {
     }
 
-    /** O arquivo de preferencias da conta logada agora. */
     public static SharedPreferences prefs(Context context, String arquivo) {
         return prefs(context, arquivo, uidAtual(context));
     }
@@ -55,7 +41,6 @@ public final class DadosDaConta {
 
     @Nullable
     public static String uidAtual(Context context) {
-        // Sem o Firebase inicializado (testes do Robolectric) nao existe conta.
         if (FirebaseApp.getApps(context).isEmpty()) {
             return null;
         }
@@ -63,13 +48,6 @@ public final class DadosDaConta {
         return usuario == null ? null : usuario.getUid();
     }
 
-    /**
-     * Da destino aos arquivos de antes da separacao por conta. Roda a cada
-     * abertura do app, mas so encontra algo na primeira depois da atualizacao.
-     *
-     * Nunca derruba o app: e limpeza de dado antigo, e falhar aqui impediria a
-     * pessoa de abrir o app por causa de um arquivo que ela nem ve.
-     */
     public static void migrarDadosAntigos(Context context) {
         try {
             migrarDadosAntigos(context, uidAtual(context));
@@ -82,9 +60,6 @@ public final class DadosDaConta {
     static void migrarDadosAntigos(Context context, @Nullable String uid) {
         Context app = context.getApplicationContext();
 
-        // Questionario: o unico jeito de trocar de conta ("reiniciar teste")
-        // ja apagava as respostas, entao o que sobrou e de quem esta logado.
-        // Sem ninguem logado nao da para saber de quem e, e vai fora.
         SharedPreferences perfilAntigo =
                 app.getSharedPreferences(PerfilRepository.ARQUIVO, Context.MODE_PRIVATE);
         if (!perfilAntigo.getAll().isEmpty()) {
@@ -97,9 +72,6 @@ public final class DadosDaConta {
             app.deleteSharedPreferences(PerfilRepository.ARQUIVO);
         }
 
-        // Listas, itens e buscas nunca eram apagados ao sair, entao nao da
-        // para saber de qual conta sao. Decisao do time: apagar (o app ainda
-        // nao foi publicado, sao dados de teste).
         ColecaoRepository.descartarListasSemDono(app);
         app.deleteSharedPreferences(ListaItemRepository.ARQUIVO);
         app.deleteSharedPreferences(ARQUIVO_BUSCAS_ANTIGAS);
@@ -126,8 +98,6 @@ public final class DadosDaConta {
                 editor.putStringSet(chave, conjunto);
             }
         }
-        // commit, e nao apply: logo depois o arquivo antigo e apagado, e a
-        // copia precisa estar gravada antes disso.
         editor.commit();
     }
 }

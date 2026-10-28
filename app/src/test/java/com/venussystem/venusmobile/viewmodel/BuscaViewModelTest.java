@@ -72,10 +72,6 @@ public class BuscaViewModelTest {
         Locale.setDefault(localeOriginal);
     }
 
-    /**
-     * Marcas: 10 Nivea, 20 Cliniq (sem informar se e brasileira), 30 Natura
-     * (brasileira). Notas: 6=90, 1=85, 4=70, 2=45, 5=20 e o 3 sem nota.
-     */
     private FakeApiDispatcher catalogoPadrao() {
         return CatalogoApi.novo()
                 .marca(10L, "Nivea", false)
@@ -98,8 +94,6 @@ public class BuscaViewModelTest {
         BuscaViewModel viewModel = new BuscaViewModel(application, repository, filtros);
         criados.add(viewModel);
         aguardarValor(repository.getCatalogo(), valor -> valor != null);
-        // Os resultados sao a ultima coisa que o catalogo recalcula: esperar por
-        // eles garante que nada mais esta rodando quando o teste continua.
         aguardarValor(viewModel.getResultados(), valor -> valor != null);
         return viewModel;
     }
@@ -123,8 +117,6 @@ public class BuscaViewModelTest {
     private static FiltroProdutos filtro() {
         return FiltroProdutos.vazio();
     }
-
-    // ---- Sem texto: historico ----
 
     @Test
     public void semTermo_mostraOHistoricoEOsResultadosFicamVazios() {
@@ -155,8 +147,6 @@ public class BuscaViewModelTest {
         assertTrue(viewModel.isMostrandoHistorico());
         assertTrue(viewModel.getResultados().getValue().isEmpty());
     }
-
-    // ---- Texto ----
 
     @Test
     public void buscaPorMarca_casoInsensitivoComEspacos() {
@@ -191,8 +181,6 @@ public class BuscaViewModelTest {
         assertTrue(viewModel.getResultados().getValue().isEmpty());
     }
 
-    // ---- Sugestoes ----
-
     @Test
     public void sugestoes_vemDaMaiorNotaParaAMenor_eSemNotaPorUltimo() {
         BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
@@ -222,8 +210,6 @@ public class BuscaViewModelTest {
 
         assertEquals(6, viewModel.getSugestoes().getValue().size());
     }
-
-    // ---- Filtro ----
 
     @Test
     public void filtroPorMarca_valeNasSugestoes() {
@@ -284,7 +270,6 @@ public class BuscaViewModelTest {
 
         filtros.aplicar(filtro().comSoBrasileiras(true));
 
-        // A Nivea e false e a Cliniq nao informou: as duas ficam de fora.
         assertEquals(Collections.singletonList(6L), ids(viewModel.getSugestoes().getValue()));
     }
 
@@ -305,7 +290,6 @@ public class BuscaViewModelTest {
                 .comCategoria(100L, true)
                 .comFaixa(FaixaNota.BOA, true));
 
-        // Hidratante e nota boa: 6 (90) e 1 (85). O 4 e boa mas e shampoo.
         assertEquals(Arrays.asList(6L, 1L), ids(viewModel.getSugestoes().getValue()));
     }
 
@@ -339,11 +323,9 @@ public class BuscaViewModelTest {
         BuscaViewModel home = criarViewModel(dispatcher);
         filtros.aplicar(filtro().comCategoria(200L, true));
 
-        // A tela de busca abre depois, com o seu proprio ViewModel.
         BuscaViewModel busca = criarViewModel(dispatcher);
         busca.buscar("o");
 
-        // "o" bate com varios produtos, mas so os de shampoo passam no filtro.
         assertEquals(Arrays.asList(4L, 5L), ids(busca.getResultados().getValue()));
         assertEquals(Arrays.asList(4L, 5L), ids(home.getSugestoes().getValue()));
         assertTrue(busca.isFiltroAtivo());
@@ -370,8 +352,6 @@ public class BuscaViewModelTest {
         assertTrue(viewModel.getSugestoes().getValue().isEmpty());
         assertTrue(viewModel.temCatalogo());
     }
-
-    // ---- Filtrar antes do catalogo chegar ----
 
     @Test
     public void filtrarAntesDoCatalogoChegar_naoQuebra() {

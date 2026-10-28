@@ -9,7 +9,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.ScanSubmissionDraft;
 
-/** Câmera do verso: foto usada posteriormente pelo fluxo de análise. */
 public class ScanCameraBackActivity extends ScanCameraBaseActivity {
 
     private ScanSubmissionDraft draft;

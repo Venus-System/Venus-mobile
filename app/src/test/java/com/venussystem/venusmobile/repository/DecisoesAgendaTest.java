@@ -63,8 +63,6 @@ public class DecisoesAgendaTest {
         return total;
     }
 
-    // ---- Agendamento ----
-
     @Test
     public void verificarAgora_criaUmTrabalhoQueEsperaInternet() throws Exception {
         DecisoesAgenda.verificarAgora(context);
@@ -121,8 +119,6 @@ public class DecisoesAgendaTest {
 
         assertEquals(0, emFila(DecisoesAgenda.CONFERENCIA_PERIODICA));
     }
-
-    // ---- O aviso ----
 
     private List<Notification> avisos() {
         NotificationManager gerente = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);

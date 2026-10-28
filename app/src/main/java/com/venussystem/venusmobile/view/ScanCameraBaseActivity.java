@@ -45,13 +45,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Base das telas CameraX do Scan.
- *
- * Esta classe cuida apenas da experiência da câmera e da passagem da foto
- * para a Activity de sucesso. O OCR, extractor e matching continuam nas
- * Activities/ViewModels existentes.
- */
 public abstract class ScanCameraBaseActivity extends AppCompatActivity {
 
     protected static final String EXTRA_OUTPUT_KEY = "scan_output_path";
@@ -96,25 +89,20 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
 
     protected abstract String outputFileName();
 
-    /** Mensagem inicial específica de cada lado. */
     protected abstract String initialInstruction();
 
-    /** Mensagem após a câmera ficar pronta. */
     protected String readyInstruction() {
         return "Centralize o rótulo. Aproxime para ler; afaste se cortar.";
     }
 
-    /** Mensagem durante o ajuste de foco por toque. */
     protected String focusingInstruction() {
         return "Ajustando o foco...";
     }
 
-    /** Mensagem quando o foco termina com sucesso. */
     protected String focusedInstruction() {
         return "Foco ajustado. Deixe o texto nítido e o rótulo inteiro.";
     }
 
-    /** Mensagem enquanto a foto é preparada para a próxima etapa. */
     protected abstract String capturedInstruction();
 
     @Override
@@ -161,7 +149,6 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
             try {
                 camera.getCameraControl().cancelFocusAndMetering();
             } catch (Exception ignored) {
-                // Não deixa uma falha de limpeza interromper a Activity.
             }
         }
 
@@ -299,7 +286,6 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                         ).show();
 
                     } catch (RuntimeException exception) {
-                        // Protege a navegação contra falhas de bind em aparelhos específicos.
                         android.util.Log.e(
                                 "VENUS_CAMERA",
                                 "Falha inesperada ao configurar a câmera.",
@@ -327,9 +313,6 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
             captureButton.setEnabled(true);
         }
 
-        // Não é um detector automático de distância: a mensagem não inventa
-        // uma medição que a CameraX não forneceu. Ela apenas orienta claramente
-        // o usuário e permite ajuste de foco por toque.
         mainHandler.postDelayed(
                 () -> {
                     if (!isFinishing() && !capturando) {
@@ -367,7 +350,6 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                             try {
                                 setInstruction(focusedInstruction());
                             } catch (Exception ignored) {
-                                // A Activity pode ter sido destruída entre callback e UI.
                             }
                         },
                         ContextCompat.getMainExecutor(this)
@@ -444,9 +426,6 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                             return;
                         }
 
-                        // A validação usa uma cópia reduzida em memória, mas mantém
-                        // o JPEG original intacto para OCR, Cloudinary e auditoria.
-                        // Ela roda fora da UI para não travar aparelhos mais lentos.
                         if (captureQualityExecutor.isShutdown()) {
                             return;
                         }
@@ -455,8 +434,6 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                                     () -> validateCapturedPhoto(photoFile)
                             );
                         } catch (RuntimeException ignored) {
-                            // A Activity encerrada pode concluir a captura depois
-                            // do shutdown do executor; não reabre o fluxo nesse caso.
                         }
                     }
 
@@ -513,8 +490,6 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
 
             capturando = false;
             if (message != null) {
-                // Uma captura recusada não deve ser enviada nem reaproveitada numa
-                // tentativa posterior. O original aceito nunca é sobrescrito aqui.
                 if (photoFile.exists() && !photoFile.delete()) {
                     android.util.Log.w("VENUS_CAMERA", "QUALITY_REJECT_DELETE_FAILED");
                 }
@@ -534,7 +509,6 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
                 setInstruction("Rótulo legível. Evite sombras e reflexos se puder.");
             }
 
-            // Um pequeno atraso permite ao usuário perceber que a foto foi aceita.
             mainHandler.postDelayed(
                     () -> {
                         if (!isFinishing() && !isDestroyed()) {
@@ -582,10 +556,6 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
         Intent intent = new Intent(this, successActivity());
         intent.putExtra(EXTRA_OUTPUT_KEY, path);
 
-        // IMPORTANTE: a câmera traseira recebe o draft do produto novo.
-        // Ele precisa ser repassado para a tela de sucesso/processamento;
-        // caso contrário o ScanSuccessBackActivity não consegue continuar
-        // para o Passo 3 e cai no fluxo de compatibilidade antigo.
         ScanSubmissionDraft draft =
                 ScanSubmissionDraft.fromIntent(getIntent());
 

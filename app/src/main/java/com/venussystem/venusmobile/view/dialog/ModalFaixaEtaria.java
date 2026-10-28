@@ -18,11 +18,6 @@ import com.venussystem.venusmobile.R;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Modal de faixa etaria: e a unica pergunta do perfil com muitas opcoes (7),
- * entao usa um dropdown em vez de chips - os chips das outras perguntas
- * ficariam apertados demais com tantas opcoes num card pequeno.
- */
 public final class ModalFaixaEtaria {
 
     private static final String[] TAGS = {

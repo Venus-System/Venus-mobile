@@ -19,15 +19,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Modal de varias escolhas, para editar no perfil as perguntas que aceitam mais
- * de uma resposta (condicoes de pele, gestacao). Mesmo visual e mesmo layout do
- * ModalEscolhaUnica, com o grupo de chips liberado para marcar varios.
- *
- * As opcoes exclusivas ("nenhuma", "prefiro nao dizer") funcionam como nas
- * telas cheias do questionario (PerguntaMultiplaBaseActivity): marcar uma
- * delas desmarca o resto, e marcar qualquer outra desmarca as exclusivas.
- */
 public final class ModalEscolhaMultipla {
 
     public interface AoSalvar {
@@ -68,8 +59,6 @@ public final class ModalEscolhaMultipla {
             chips.put(opcao, chip);
         }
 
-        // Os ouvintes entram depois de marcar o que ja estava salvo, para a
-        // regra das exclusivas nao mexer na resposta so por abrir o modal.
         for (Map.Entry<ModalEscolhaUnica.Opcao, Chip> entrada : chips.entrySet()) {
             ModalEscolhaUnica.Opcao opcao = entrada.getKey();
             entrada.getValue().setOnCheckedChangeListener((botao, marcado) -> {
@@ -87,8 +76,6 @@ public final class ModalEscolhaMultipla {
                     escolhidas.add(entrada.getKey().tag);
                 }
             }
-            // Lista vazia quer dizer "nao respondeu" (ver PerfilRepository):
-            // quem nao tem nenhuma marca a opcao propria para isso.
             if (escolhidas.isEmpty()) {
                 Toast.makeText(contexto, R.string.pergunta_escolha_ao_menos_uma,
                         Toast.LENGTH_SHORT).show();
@@ -102,10 +89,6 @@ public final class ModalEscolhaMultipla {
         dialog.show();
     }
 
-    /**
-     * O texto do cartao do perfil: os rotulos das tags salvas, na ordem das
-     * opcoes. Null quando nao ha nenhuma, que o perfil mostra como pendente.
-     */
     @Nullable
     public static String rotulos(Context contexto, List<ModalEscolhaUnica.Opcao> opcoes,
                                  List<String> tags) {

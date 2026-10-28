@@ -1,15 +1,5 @@
 package com.venussystem.venusmobile.repository.api.dto;
 
-/**
- * Um item de GET /api/scan-sessions/user/{userId}, so com o que a tela de
- * produtos em analise mostra. O Gson ignora o resto (ingredientes, OCR do
- * verso, aparelho...).
- *
- * Nao e o ScanSessionResponse do fluxo de scan de proposito: aquele e gravado
- * no aparelho como recibo do envio (ScanDraftStore), e o fluxo apaga o OCR do
- * aparelho depois de enviar. Com nome e marca nele, o rotulo voltaria a ficar
- * guardado.
- */
 public class ScanEnviadoResponse {
     public String id;
     public String status;

@@ -12,7 +12,6 @@ import static com.venussystem.venusmobile.view.util.ScanCosmeticText.pareceCapac
 import static com.venussystem.venusmobile.view.util.ScanCosmeticText.pareceCodigo;
 import static com.venussystem.venusmobile.view.util.ScanCosmeticText.temLetras;
 
-/** Internal collaborator for ScanCosmeticClassifier; not a second scan entry point. */
 final class ScanCosmeticEvidence {
     private ScanCosmeticEvidence() { }
 
@@ -29,14 +28,6 @@ final class ScanCosmeticEvidence {
                     )
             );
 
-    /**
-     * Marcas conhecidas por serem de cosméticos/cuidado pessoal.
-     *
-     * Não são requisito para classificação. Servem para situações comuns em
-     * que a frente possui apenas "MARCA + CREME" ou "MARCA + CUIDADO".
-     *
-     * A lista é conservadora e pode ser ampliada depois com base no catálogo.
-     */
     private static final Set<String> MARCAS_COSMETICAS_CONHECIDAS =
             new LinkedHashSet<>(
                     Arrays.asList(
@@ -106,11 +97,6 @@ final class ScanCosmeticEvidence {
                     )
             );
 
-    /*
-     * =============================================================
-     * NÍVEL 2
-     * =============================================================
-     */
     static void detectarContexto(
             String texto,
             Set<String> sinais,
@@ -155,11 +141,6 @@ final class ScanCosmeticEvidence {
         return false;
     }
 
-    /*
-     * =============================================================
-     * NÍVEL 3
-     * =============================================================
-     */
     static boolean detectarEstruturaRotulo(
             String texto,
             Set<String> estrutura
@@ -252,11 +233,6 @@ final class ScanCosmeticEvidence {
         return encontrou;
     }
 
-    /*
-     * =============================================================
-     * NÍVEL 4
-     * =============================================================
-     */
     static void detectarApoio(
             String texto,
             Set<String> sinais,
@@ -304,11 +280,6 @@ final class ScanCosmeticEvidence {
         return encontrados;
     }
 
-    /*
-     * =============================================================
-     * NÃO COSMÉTICO
-     * =============================================================
-     */
     static void detectarNaoCosmetico(
             String texto,
             Set<String> sinais,
@@ -332,11 +303,6 @@ final class ScanCosmeticEvidence {
         }
     }
 
-    /*
-     * =============================================================
-     * MARCA
-     * =============================================================
-     */
     static boolean possuiMarcaCosmeticaConhecida(
             @NonNull ScanFrontData frontData,
             String texto
@@ -352,9 +318,6 @@ final class ScanCosmeticEvidence {
                 }
             }
         }
-        /*
-         * Fallback no OCR.
-         */
         for (String marca :
                 MARCAS_COSMETICAS_CONHECIDAS) {
             if (contemTermo(
@@ -442,9 +405,6 @@ final class ScanCosmeticEvidence {
                     || pareceCapacidade(valor)) {
                 continue;
             }
-            /*
-             * Termos genéricos isolados não contam como descritor forte.
-             */
             if (valor.equals("CREME")
                     || valor.equals("CREAM")
                     || valor.equals("GEL")
@@ -465,11 +425,6 @@ final class ScanCosmeticEvidence {
         return false;
     }
 
-    /*
-     * =============================================================
-     * INTERFACE / DEBUG
-     * =============================================================
-     */
     static int contarSinaisInterface(
             String texto
     ) {

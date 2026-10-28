@@ -25,7 +25,6 @@ import static com.venussystem.venusmobile.view.util.ScanFrontVocabulary.CAPACIDA
 import static com.venussystem.venusmobile.view.util.ScanFrontVocabulary.FL_OZ_PATTERN;
 import static com.venussystem.venusmobile.view.util.ScanFrontVocabulary.NOISE_WORDS;
 
-/** Internal collaborator for ScanFrontExtractor; not a second scan entry point. */
 final class ScanFrontProductExtractor {
     private ScanFrontProductExtractor() { }
 
@@ -39,11 +38,6 @@ final class ScanFrontProductExtractor {
                     "(?i)\\b(PA)\\s*(\\+{2,4})\\b"
             );
 
-    /*
-     * =========================================================
-     * APRESENTAÇÕES
-     * =========================================================
-     */
     private static final Set<String> PRESENTATIONS =
             new LinkedHashSet<>(
                     Arrays.asList(
@@ -65,11 +59,6 @@ final class ScanFrontProductExtractor {
                     )
             );
 
-    /*
-     * =========================================================
-     * TERMOS GENÉRICOS
-     * =========================================================
-     */
     private static final Set<String> GENERIC_PRODUCT_WORDS =
             new LinkedHashSet<>(
                     Arrays.asList(
@@ -100,17 +89,9 @@ final class ScanFrontProductExtractor {
                     )
             );
 
-    /*
-     * =========================================================
-     * EXTENSÃO GENERALISTA
-     * =========================================================
-     */
     private static final Set<String> EXTENDED_PRODUCT_REFERENCES =
             new LinkedHashSet<>(
                     Arrays.asList(
-                            /*
-                             * CABELO
-                             */
                             "SHAMPOO",
                             "SHAMPOO SECO",
                             "DRY SHAMPOO",
@@ -138,9 +119,6 @@ final class ScanFrontProductExtractor {
                             "TINTURA",
                             "COLORACAO",
                             "DESCOLORANTE",
-                            /*
-                             * SKINCARE
-                             */
                             "HIDRATANTE FACIAL",
                             "FACIAL MOISTURIZER",
                             "FACE MOISTURIZER",
@@ -169,9 +147,6 @@ final class ScanFrontProductExtractor {
                             "BODY SCRUB",
                             "TONICO FACIAL",
                             "FACIAL TONER",
-                            /*
-                             * PROTEÇÃO SOLAR
-                             */
                             "PROTETOR SOLAR",
                             "SUNSCREEN",
                             "FILTRO SOLAR",
@@ -180,9 +155,6 @@ final class ScanFrontProductExtractor {
                             "FOTOPROTECAO",
                             "PROTETOR SOLAR FACIAL",
                             "PROTETOR SOLAR CORPORAL",
-                            /*
-                             * CORPO
-                             */
                             "DESODORANTE",
                             "DEODORANT",
                             "ANTITRANSPIRANTE",
@@ -198,9 +170,6 @@ final class ScanFrontProductExtractor {
                             "BODY LOTION",
                             "OLEO CORPORAL",
                             "BODY OIL",
-                            /*
-                             * MAQUIAGEM
-                             */
                             "BASE",
                             "FOUNDATION",
                             "CORRETIVO",
@@ -232,17 +201,11 @@ final class ScanFrontProductExtractor {
                             "PALETTE",
                             "MASCARA DE CILIOS",
                             "MASCARA DE PESTANAS",
-                            /*
-                             * UNHAS
-                             */
                             "ESMALTE",
                             "NAIL POLISH",
                             "BASE DE UNHA",
                             "TOP COAT",
                             "REMOVEDOR",
-                            /*
-                             * PERFUMARIA
-                             */
                             "PERFUME",
                             "PARFUM",
                             "FRAGRANCE",
@@ -253,9 +216,6 @@ final class ScanFrontProductExtractor {
                             "COLOGNE",
                             "BODY SPLASH",
                             "BODY MIST",
-                            /*
-                             * BARBEAR
-                             */
                             "GEL DE BARBEAR",
                             "SHAVING GEL",
                             "ESPUMA DE BARBEAR",
@@ -264,9 +224,6 @@ final class ScanFrontProductExtractor {
                             "SHAVING CREAM",
                             "POS BARBA",
                             "AFTER SHAVE",
-                            /*
-                             * HIGIENE
-                             */
                             "CREME DENTAL",
                             "TOOTHPASTE",
                             "ENXAGUANTE BUCAL",
@@ -274,17 +231,9 @@ final class ScanFrontProductExtractor {
                     )
             );
 
-    /*
-     * =========================================================
-     * ATIVOS / INGREDIENTES DE DESTAQUE
-     * =========================================================
-     */
     private static final Set<String> EXTENDED_ACTIVE_REFERENCES =
             new LinkedHashSet<>(
                     Arrays.asList(
-                            /*
-                             * SKINCARE
-                             */
                             "ACIDO HIALURONICO",
                             "HIALURONICO",
                             "HYALURONIC",
@@ -334,9 +283,6 @@ final class ScanFrontProductExtractor {
                             "GREEN TEA",
                             "MUCINA",
                             "SNAIL",
-                            /*
-                             * CABELO
-                             */
                             "QUERATINA",
                             "KERATIN",
                             "BIOTINA",
@@ -356,11 +302,6 @@ final class ScanFrontProductExtractor {
                     )
             );
 
-    /*
-     * =========================================================
-     * VARIANTES COMERCIAIS
-     * =========================================================
-     */
     private static final Set<String> EXTENDED_VARIANT_REFERENCES =
             new LinkedHashSet<>(
                     Arrays.asList(
@@ -435,11 +376,6 @@ final class ScanFrontProductExtractor {
                     )
             );
 
-    /*
-     * =========================================================
-     * PRODUTO
-     * =========================================================
-     */
     static void adicionarTokensProduto(
             @NonNull String linha,
             @NonNull List<String> destino
@@ -451,14 +387,6 @@ final class ScanFrontProductExtractor {
         if (texto.isEmpty()) {
             return;
         }
-        /*
-         * Descobre se a própria linha contém uma unidade.
-         *
-         * Isso permite eliminar artefatos como:
-         *
-         * E250 ML
-         * I250 ML
-         */
         boolean possuiCapacidade =
                 CAPACIDADE_PATTERN
                         .matcher(
@@ -486,64 +414,33 @@ final class ScanFrontProductExtractor {
                     || token.isEmpty()) {
                 continue;
             }
-            /*
-             * Números puros não são nomes.
-             */
             if (isSomenteNumero(
                     token
             )) {
                 continue;
             }
-            /*
-             * Capacidade:
-             *
-             * 250ML
-             * 200G
-             */
             if (token.matches(
                     "\\d+(?:[.,]\\d+)?(?:ML|G|GR|KG|L)"
             )) {
                 continue;
             }
-            /*
-             * FL OZ:
-             *
-             * 84FLOZ
-             * 8.4FLOZ
-             */
             if (token.matches(
                     "(?i)\\d+(?:[.,]\\d+)?FLOZ"
             )) {
                 continue;
             }
-            /*
-             * Fragmento OCR:
-             *
-             * E250
-             *
-             * somente é removido quando existe evidência
-             * de capacidade na própria linha.
-             *
-             * Assim Q10, B5, C10 etc. não são afetados.
-             */
             if (possuiCapacidade
                     && token.matches(
                     "(?i)[A-Z]\\d+(?:[.,]\\d+)?"
             )) {
                 continue;
             }
-            /*
-             * Número associado a FL OZ.
-             */
             if (possuiFlOz
                     && token.matches(
                     "[0-9.,]+"
             )) {
                 continue;
             }
-            /*
-             * Horas.
-             */
             if (token.matches(
                     "\\d{1,3}H"
             )) {
@@ -553,9 +450,6 @@ final class ScanFrontProductExtractor {
                 );
                 continue;
             }
-            /*
-             * Antitranspirante.
-             */
             if (isDescritorAntitranspirante(
                     token
             )) {
@@ -565,9 +459,6 @@ final class ScanFrontProductExtractor {
                 );
                 continue;
             }
-            /*
-             * Antiperspirante.
-             */
             if (isDescritorAntiperspirante(
                     token
             )) {
@@ -577,9 +468,6 @@ final class ScanFrontProductExtractor {
                 );
                 continue;
             }
-            /*
-             * FPS / SPF.
-             */
             if (token.matches(
                     "(?i)(FPS|SPF)\\d{1,3}"
             )) {
@@ -589,17 +477,11 @@ final class ScanFrontProductExtractor {
                 );
                 continue;
             }
-            /*
-             * Ruído.
-             */
             if (NOISE_WORDS.contains(
                     token
             )) {
                 continue;
             }
-            /*
-             * Conjunções.
-             */
             if (token.equals("E")
                     || token.equals("Y")
                     || token.equals("AND")
@@ -611,17 +493,9 @@ final class ScanFrontProductExtractor {
                     || token.equals("POR")) {
                 continue;
             }
-            /*
-             * Tokens muito curtos.
-             */
             if (token.length() < 3) {
                 continue;
             }
-            /*
-             * Mantemos exatamente a filosofia original:
-             *
-             * GENERIC_PRODUCT_WORDS NÃO apaga o token.
-             */
             adicionarProduto(
                     destino,
                     token
@@ -646,9 +520,6 @@ final class ScanFrontProductExtractor {
             if (normalizado.isEmpty()) {
                 continue;
             }
-            /*
-             * Descritores canônicos.
-             */
             if (normalizado.equals(
                     ANTITRANSPIRANTE
             )
@@ -661,9 +532,6 @@ final class ScanFrontProductExtractor {
                 );
                 continue;
             }
-            /*
-             * Horas.
-             */
             if (normalizado.matches(
                     "\\d{1,3}H"
             )) {
@@ -673,9 +541,6 @@ final class ScanFrontProductExtractor {
                 );
                 continue;
             }
-            /*
-             * FPS/SPF.
-             */
             if (normalizado.matches(
                     "(?i)(FPS|SPF)\\d{1,3}"
             )) {
@@ -685,9 +550,6 @@ final class ScanFrontProductExtractor {
                 );
                 continue;
             }
-            /*
-             * PA.
-             */
             if (normalizado.matches(
                     "(?i)PA\\+{2,4}"
             )) {
@@ -697,25 +559,16 @@ final class ScanFrontProductExtractor {
                 );
                 continue;
             }
-            /*
-             * FL OZ nunca é nome de produto.
-             */
             if (normalizado.matches(
                     "(?i)\\d+(?:[.,]\\d+)?FLOZ"
             )) {
                 continue;
             }
-            /*
-             * Artefatos como E250 não devem chegar ao matcher.
-             */
             if (normalizado.matches(
                     "(?i)[A-Z]\\d+(?:[.,]\\d+)?"
             )) {
                 continue;
             }
-            /*
-             * Frases gigantes não são candidatas.
-             */
             if (normalizado.length() > 45) {
                 continue;
             }
@@ -756,11 +609,6 @@ final class ScanFrontProductExtractor {
         );
     }
 
-    /*
-     * =========================================================
-     * FRASES DE PRODUTO
-     * =========================================================
-     */
     static boolean isFraseProdutoDistintiva(
             @NonNull String texto
     ) {
@@ -817,11 +665,6 @@ final class ScanFrontProductExtractor {
         return distintos >= 2;
     }
 
-    /*
-     * =========================================================
-     * DESCRITORES ANTITRANSPIRANTE
-     * =========================================================
-     */
     static void extrairDescritoresProduto(
             @NonNull String linha,
             @NonNull List<String> destino
@@ -869,11 +712,6 @@ final class ScanFrontProductExtractor {
         }
     }
 
-    /*
-     * =========================================================
-     * EXTENSÃO GENERALISTA
-     * =========================================================
-     */
     static void adicionarReferenciasExpandidas(
             @NonNull List<String> linhas,
             @NonNull List<String> destino
@@ -888,9 +726,6 @@ final class ScanFrontProductExtractor {
                     normalizar(
                             linha
                     );
-            /*
-             * Tipos/categorias.
-             */
             for (String referencia :
                     EXTENDED_PRODUCT_REFERENCES) {
                 if (contemTermo(
@@ -903,9 +738,6 @@ final class ScanFrontProductExtractor {
                     );
                 }
             }
-            /*
-             * Ativos.
-             */
             for (String referencia :
                     EXTENDED_ACTIVE_REFERENCES) {
                 if (contemTermo(
@@ -918,9 +750,6 @@ final class ScanFrontProductExtractor {
                     );
                 }
             }
-            /*
-             * Variantes.
-             */
             for (String referencia :
                     EXTENDED_VARIANT_REFERENCES) {
                 if (contemTermo(
@@ -936,11 +765,6 @@ final class ScanFrontProductExtractor {
         }
     }
 
-    /*
-     * =========================================================
-     * FPS / SPF / PA
-     * =========================================================
-     */
     static void extrairReferenciasNumericas(
             @NonNull List<String> linhas,
             @NonNull List<String> destino
@@ -996,11 +820,6 @@ final class ScanFrontProductExtractor {
         }
     }
 
-    /*
-     * =========================================================
-     * APRESENTAÇÕES
-     * =========================================================
-     */
     static void extrairApresentacoes(
             @NonNull String linha,
             @NonNull List<String> destino

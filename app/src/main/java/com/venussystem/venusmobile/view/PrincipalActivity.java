@@ -49,9 +49,6 @@ public class PrincipalActivity extends AppCompatActivity {
             Insets teclado = insets.getInsets(WindowInsetsCompat.Type.ime());
             boolean tecladoAberto = teclado.bottom > 0;
 
-            // Com o teclado aberto (o campo de mensagem do chat) o rodape sai da
-            // frente e a tela acaba logo acima do teclado: assim o campo
-            // continua visivel, em vez de espremido entre o teclado e o rodape.
             int rodape = tecladoAberto ? View.GONE : View.VISIBLE;
             findViewById(R.id.barraNavegacao).setVisibility(rodape);
             findViewById(R.id.btnScan).setVisibility(rodape);
@@ -74,24 +71,12 @@ public class PrincipalActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             selecionar(findViewById(R.id.navInicio), new InicioFragment(), false);
 
-            // Toda entrada no app passa por aqui (fim do questionario, login ou
-            // app reaberto): e o ponto para cadastrar a pessoa na API e mandar o
-            // que ficou pendente. Roda em segundo plano, sem segurar a tela.
             new SincronizacaoRepository(this).sincronizarEmSegundoPlano();
-            // As listas vao depois, na mesma fila: sobe o que ficou pendente e
-            // vem o que mudou no servidor. Num celular novo ou depois de
-            // reinstalar, e aqui que as listas que a pessoa ja tinha voltam.
             new SincronizacaoListas(this).atualizarEmSegundoPlano(null);
-            // Os curtidos tambem: o coracao aparece cheio nos produtos ja
-            // curtidos em outro aparelho ou pelo site.
             new SincronizacaoCurtidos(this).atualizarEmSegundoPlano(null);
-            // Foto de perfil que ficou sem enviar (sem rede, API dormindo).
             new FotoPerfilRepository(this).enviarEmSegundoPlano();
-            // Arma de novo o lembrete do questionario desta conta (alarmes nao sobrevivem a tudo).
             Lembretes.reagendarTudo(this);
-            // Produto escaneado que ficou sem enviar (sem internet, saiu da tela): termina sozinho.
             ReenvioDeScanAgenda.agendarSePreciso(this);
-            // Produto enviado que a equipe aprovou ou recusou desde a ultima vez: avisa.
             DecisoesAgenda.verificarAgora(this);
         }
     }
@@ -100,9 +85,6 @@ public class PrincipalActivity extends AppCompatActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        // O scan retorna para a mesma PrincipalActivity. Reabre a casinha, para
-        // a pessoa voltar ao ponto de partida; o produto enviado aparece no
-        // historico da tela de busca.
         selecionar(findViewById(R.id.navInicio), new InicioFragment(), true);
     }
 
@@ -160,8 +142,6 @@ public class PrincipalActivity extends AppCompatActivity {
 
     private void moverIndicador(View item, boolean animar) {
         indicador.post(() -> {
-            // No tablet a linha de itens fica centralizada dentro da barra, entao o
-            // deslocamento dela entra na conta (no celular ele e zero).
             View linha = (View) item.getParent();
             float destino = linha.getX() + item.getX() + (item.getWidth() - indicador.getWidth()) / 2f;
             if (animar) {

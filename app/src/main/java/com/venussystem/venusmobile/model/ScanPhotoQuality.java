@@ -3,7 +3,6 @@ package com.venussystem.venusmobile.model;
 import androidx.annotation.NonNull;
 import java.io.Serializable;
 
-/** Measurements produced locally from the two captured images. */
 public final class ScanPhotoQuality implements Serializable {
     private static final long serialVersionUID = 1L;
     private final double blurScore;

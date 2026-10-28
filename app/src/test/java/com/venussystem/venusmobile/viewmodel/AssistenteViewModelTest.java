@@ -38,10 +38,6 @@ public class AssistenteViewModelTest {
     @Rule
     public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
 
-    /**
-     * Nao vai na rede: guarda cada envio para o teste decidir quando e como a
-     * Venus "responde".
-     */
     private static class ConversaFalsa extends ConversaRepository {
         final List<String> mensagens = new ArrayList<>();
         final List<String> conversas = new ArrayList<>();
@@ -76,7 +72,6 @@ public class AssistenteViewModelTest {
         viewModel = abrirChat();
     }
 
-    /** Como abrir a tela de novo: ViewModel novo, mesma conta no aparelho. */
     private AssistenteViewModel abrirChat() {
         return new AssistenteViewModel(app, conversa, new ConversaSalvaRepository(app, UID));
     }
@@ -99,8 +94,6 @@ public class AssistenteViewModelTest {
         conversa.ultimoCallback.aoResponder(resposta, idDaApi, null);
     }
 
-    // ---- Abrir ----
-
     @Test
     public void comecaSoComASaudacao() {
         assertEquals(1, mensagens().size());
@@ -112,8 +105,6 @@ public class AssistenteViewModelTest {
     public void abrir_acordaOServidor() {
         assertEquals(1, conversa.vezesQueAcordou);
     }
-
-    // ---- Perguntar ----
 
     @Test
     public void perguntar_mostraAPerguntaEODigitando() {
@@ -159,8 +150,6 @@ public class AssistenteViewModelTest {
         assertEquals(1, mensagens().size());
     }
 
-    // ---- Id da conversa ----
-
     @Test
     public void primeiraVaiSemId_eAsSeguintesUsamOIdDevolvido() {
         conversarUmaVez("primeira", "ok", UID);
@@ -169,8 +158,6 @@ public class AssistenteViewModelTest {
         assertNull(conversa.conversas.get(0));
         assertEquals(UID, conversa.conversas.get(1));
     }
-
-    // ---- Conversa salva ----
 
     @Test
     public void reabrir_trazAConversaEContinuaComOMesmoId() {
@@ -191,7 +178,6 @@ public class AssistenteViewModelTest {
     @Test
     public void respostaQueChegaDepoisDeFecharATela_ficaGravada() {
         viewModel.perguntar("oi");
-        // O repositorio segura o callback; a tela pode ja ter fechado.
         ConversaRepository.AoResponder chegando = conversa.ultimoCallback;
         viewModel = null;
 
@@ -210,11 +196,8 @@ public class AssistenteViewModelTest {
         assertEquals(1, mensagens(abrirChat()).size());
     }
 
-    // ---- Sincronizar com a conversa salva ----
-
     @Test
     public void sincronizarComSalva_trazOQueAndouEmOutraTela() {
-        // A tela do produto tem o seu proprio ViewModel; a aba do chat ficou parada.
         AssistenteViewModel telaDoProduto = abrirChat();
         telaDoProduto.perguntar("e este produto?");
         conversa.ultimoCallback.aoResponder("Parece bom.", UID, null);
@@ -252,8 +235,6 @@ public class AssistenteViewModelTest {
         assertEquals("Ola!", ultima().getTexto());
     }
 
-    // ---- Nova conversa ----
-
     @Test
     public void novaConversa_limpaATelaETrocaOId() {
         conversarUmaVez("oi", "Olá!", UID);
@@ -265,7 +246,6 @@ public class AssistenteViewModelTest {
         String idNovo = conversa.conversas.get(1);
         assertNotNull(idNovo);
         assertNotEquals(UID, idNovo);
-        // Reabrir nao traz a conversa de antes.
         assertEquals(1, mensagens(abrirChat()).size());
     }
 
@@ -282,15 +262,12 @@ public class AssistenteViewModelTest {
         viewModel.perguntar("oi");
         ConversaRepository.AoResponder antigo = conversa.ultimoCallback;
 
-        // Outra tela do chat comecou uma conversa nova enquanto a resposta vinha.
         AssistenteViewModel outraTela = abrirChat();
         outraTela.novaConversa();
         antigo.aoResponder("Olá!", UID, null);
 
         assertEquals(1, mensagens(abrirChat()).size());
     }
-
-    // ---- Produto ----
 
     @Test
     public void produto_vaiNaMensagemMasNaoNaBolha() {
@@ -333,8 +310,6 @@ public class AssistenteViewModelTest {
         assertEquals("oi", viewModel.paraApi("oi"));
     }
 
-    // ---- Falhas ----
-
     @Test
     public void semUrlConfigurada_mostraOAvisoDeOffline() {
         viewModel.perguntar("oi");
@@ -376,8 +351,6 @@ public class AssistenteViewModelTest {
 
         assertEquals(app.getString(R.string.assistente_erro_mensagem), ultima().getTexto());
     }
-
-    // ---- Cara da Veninha ----
 
     @Test
     public void abrir_comecaFeliz() {

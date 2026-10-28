@@ -17,15 +17,6 @@ import com.venussystem.venusmobile.model.ScanProductMatch;
 import com.venussystem.venusmobile.repository.ScanOcrRepository;
 import com.venussystem.venusmobile.repository.ScanProductMatchRepository;
 
-/**
- * ViewModel responsável pelo fluxo da leitura da frente.
- *
- * OCR:
- * foto -> ML Kit -> ScanOcrResult
- *
- * Identificação:
- * ScanFrontData -> catálogo -> ScanProductMatch
- */
 public class ScanViewModel extends AndroidViewModel {
 
     private final ScanOcrRepository ocrRepository;
@@ -71,9 +62,6 @@ public class ScanViewModel extends AndroidViewModel {
         return productMatch;
     }
 
-    /**
-     * Executa o OCR da imagem.
-     */
     public void reconhecer(
             @NonNull Uri imageUri
     ) {
@@ -132,11 +120,6 @@ public class ScanViewModel extends AndroidViewModel {
         );
     }
 
-    /**
-     * Derived OCR passes such as a crop or a rotation no longer share the
-     * source image coordinate system. Spatial tokens from those passes must
-     * not be sent to the parser as if they belonged to the original photo.
-     */
     private boolean preservesSelectedGeometry(
             @NonNull java.util.List<ScanOcrAttempt> attempts
     ) {
@@ -148,10 +131,6 @@ public class ScanViewModel extends AndroidViewModel {
         return true;
     }
 
-    /**
-     * Transforma o objeto Text do ML Kit em uma lista de linhas,
-     * preservando a estrutura básica fornecida pelo OCR.
-     */
     @NonNull
     private java.util.List<String> extrairLinhas(
             @NonNull Text result
@@ -180,10 +159,6 @@ public class ScanViewModel extends AndroidViewModel {
         return linhas;
     }
 
-    /**
-     * Extrai os elementos espaciais do ML Kit sem alterar a lista de linhas
-     * usada pelo fluxo antigo da frente.
-     */
     @NonNull
     private java.util.List<ScanOcrToken> extrairTokens(
             @NonNull Text result
@@ -240,9 +215,6 @@ public class ScanViewModel extends AndroidViewModel {
         return tokens;
     }
 
-    /**
-     * Tenta localizar o produto no catálogo real.
-     */
     public void identificarProduto(
             @NonNull ScanFrontData frontData
     ) {

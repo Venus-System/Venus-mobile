@@ -19,33 +19,16 @@ import com.venussystem.venusmobile.repository.ConversaSalvaRepository;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Estado da conversa com a Venus. Fica no ViewModel, e nao na Activity, porque
- * uma resposta pode levar mais de um minuto: girar a tela no meio disso nao
- * pode apagar a conversa nem perder a resposta que esta chegando.
- *
- * A conversa e uma so por conta e continua entre aberturas do chat: as
- * mensagens ficam no ConversaSalvaRepository e o historico, na API. "Nova
- * conversa" comeca outra dos dois lados.
- */
 public class AssistenteViewModel extends AndroidViewModel {
-
-    // A API nao tem campo de produto: quando o chat abre por um produto, a
-    // pergunta vai com o nome dele na frente, para a Venus saber do que se fala.
-    // A bolha mostra so o que a pessoa escreveu.
     private static final String FORMATO_COM_MARCA = "Sobre o produto \"%s\" da marca %s: %s";
     private static final String FORMATO_SEM_MARCA = "Sobre o produto \"%s\": %s";
 
-    // Nome de catalogo as vezes vem enorme; cortado, cabe folgado nos 4000
-    // caracteres que a API aceita, junto com os 3500 do campo de texto.
     @VisibleForTesting
     static final int LIMITE_NOME_PRODUTO = 120;
 
     private final ConversaRepository conversa;
     private final ConversaSalvaRepository salva;
 
-    // Null ate a primeira resposta: o contrato pede para omitir o id na
-    // primeira mensagem e reenviar o que a API devolver.
     @Nullable
     private String conversationId;
 
@@ -83,10 +66,6 @@ public class AssistenteViewModel extends AndroidViewModel {
         return aguardando;
     }
 
-    /**
-     * A ultima pergunta que nao teve resposta, para a tela devolver ao campo e
-     * a pessoa so tocar em enviar de novo. Null depois de usada.
-     */
     public LiveData<String> getPerguntaQueFalhou() {
         return perguntaQueFalhou;
     }
@@ -99,11 +78,6 @@ public class AssistenteViewModel extends AndroidViewModel {
         return humor;
     }
 
-    /**
-     * O texto da bolha que a Veninha acabou de mandar (resposta ou aviso de
-     * falha), para a tela mexer a boca dela uma vez. Null depois de usada: a
-     * conversa salva, relida ao abrir ou ao girar a tela, nao e falada de novo.
-     */
     public LiveData<String> getFala() {
         return fala;
     }
@@ -112,14 +86,6 @@ public class AssistenteViewModel extends AndroidViewModel {
         fala.setValue(null);
     }
 
-    /**
-     * Rele a conversa salva. A aba do chat chama ao abrir: a conversa pode ter
-     * andado em outra tela (a do produto) enquanto este ViewModel, que vive
-     * tanto quanto a tela principal, ficava parado.
-     *
-     * Nao faz nada enquanto a Venus responde: a resposta que esta vindo e
-     * desta conversa, e reler agora a derrubaria da tela.
-     */
     public void sincronizarComSalva() {
         if (Boolean.TRUE.equals(aguardando.getValue())) {
             return;
@@ -127,10 +93,6 @@ public class AssistenteViewModel extends AndroidViewModel {
         mostrar(salva.carregar());
     }
 
-    /**
-     * O produto de onde o chat foi aberto, ou null no chat geral. Vale para
-     * todas as perguntas desta tela.
-     */
     public void definirProduto(@Nullable String nome, @Nullable String marca) {
         nomeProduto = vazioParaNull(nome);
         marcaProduto = vazioParaNull(marca);
@@ -139,10 +101,6 @@ public class AssistenteViewModel extends AndroidViewModel {
         }
     }
 
-    /**
-     * @return false quando a pergunta foi ignorada (vazia, ou a Venus ainda esta
-     * respondendo a anterior) - a tela usa isso para nao apagar o que foi digitado.
-     */
     public boolean perguntar(String texto) {
         String pergunta = texto == null ? "" : texto.trim();
         if (pergunta.isEmpty() || Boolean.TRUE.equals(aguardando.getValue())) {
@@ -160,8 +118,6 @@ public class AssistenteViewModel extends AndroidViewModel {
             @Override
             public void aoResponder(String resposta, @Nullable String idUsado,
                                     @Nullable String expressao) {
-                // Grava antes de mostrar, e mesmo se a tela ja fechou: a resposta
-                // aparece quando a pessoa reabrir o chat.
                 salva.adicionarPar(idEnviado, pergunta, resposta, idUsado);
                 conversationId = idUsado;
                 humor.setValue(HumorDaVeninha.daExpressao(expressao));
@@ -178,12 +134,6 @@ public class AssistenteViewModel extends AndroidViewModel {
         return true;
     }
 
-    /**
-     * Apaga a conversa do aparelho e comeca outra na API.
-     *
-     * @return false enquanto a Venus responde: a resposta que esta vindo e da
-     * conversa atual.
-     */
     public boolean novaConversa() {
         if (Boolean.TRUE.equals(aguardando.getValue())) {
             return false;
@@ -208,15 +158,12 @@ public class AssistenteViewModel extends AndroidViewModel {
     private void mostrar(ConversaSalvaRepository.Conversa salvaAgora) {
         conversationId = salvaAgora.conversationId;
         mensagens.clear();
-        // A saudacao abre toda conversa, mas nao e gravada: e da tela.
         mensagens.add(Mensagem.doAssistente(getApplication().getString(R.string.assistente_saudacao)));
         mensagens.addAll(salvaAgora.mensagens);
         publicar();
     }
 
     private void trocarDigitando(String texto) {
-        // Enquanto aguarda nao entra mensagem nova, entao o "digitando" e sempre
-        // a ultima da lista.
         mensagens.set(mensagens.size() - 1, Mensagem.doAssistente(texto));
         fala.setValue(texto);
         publicar();

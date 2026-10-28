@@ -13,7 +13,6 @@ import coil.request.ImageRequest;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.repository.ProdutoRepository;
 
-/** Centraliza a leitura da foto ativa de media_assets nos cards do app. */
 public final class ProdutoImagemLoader {
 
     private ProdutoImagemLoader() {
@@ -64,11 +63,6 @@ public final class ProdutoImagemLoader {
                 .build());
     }
 
-    /**
-     * Os assets do Cloudinary costumam ser originais grandes. Para cards, uma
-     * variante pequena e com c_fit reduz o tempo de rede e preserva a foto
-     * inteira, sem o corte implícito de c_fill/centerCrop.
-     */
     @Nullable
     public static String urlParaExibicao(@Nullable String url, int tamanhoMaximo) {
         if (url == null || url.trim().isEmpty()

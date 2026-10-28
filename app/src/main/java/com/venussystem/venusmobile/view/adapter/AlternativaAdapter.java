@@ -19,10 +19,6 @@ import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Lista de produtos em card com selo de nota circular, usada na aba
- * "Alternativas" do detalhe do produto.
- */
 public class AlternativaAdapter extends RecyclerView.Adapter<AlternativaAdapter.AlternativaViewHolder> {
 
     public interface AoClicar {
@@ -87,8 +83,6 @@ public class AlternativaAdapter extends RecyclerView.Adapter<AlternativaAdapter.
             nota.setTextColor(ContextCompat.getColor(
                     itemView.getContext(), NotaProdutoUtil.corPara(valor)));
 
-            // O drawable e compartilhado entre os itens reciclados - pintar ele
-            // direto vazaria a cor de um item para os outros. O tint resolve.
             nota.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(
                     itemView.getContext(), NotaProdutoUtil.fundoPara(valor))));
 

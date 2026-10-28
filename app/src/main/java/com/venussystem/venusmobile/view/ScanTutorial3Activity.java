@@ -11,9 +11,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.ScanSubmissionDraft;
 
-/**
- * Passo 3: explica que os dados do novo produto serão preparados para análise.
- */
 public class ScanTutorial3Activity extends AppCompatActivity {
 
     private static final String TAG = "VENUS_SCAN";
@@ -41,7 +38,6 @@ public class ScanTutorial3Activity extends AppCompatActivity {
 
         setContentView(R.layout.activity_scan_tutorial_3);
 
-        // Marca como visto somente depois que a tela foi realmente montada.
         ScanTutorialState.markTutorial3Seen(this);
 
         findViewById(R.id.btnScanNext).setOnClickListener(

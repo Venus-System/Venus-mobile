@@ -44,8 +44,6 @@ public class ReenvioDeScanTest {
         return new ReenvioDeScan(etapas, () -> false).tentar(UID, AGORA);
     }
 
-    // ---- O caminho feliz e os passos que se pulam ----
-
     @Test
     public void rascunhoDoZero_fazTodosOsPassosNaOrdem() throws Exception {
         etapas.adicionar("scan-1", "Hidratante", false, false, false);
@@ -105,8 +103,6 @@ public class ReenvioDeScanTest {
         assertEquals(Arrays.asList("Hidratante", "Tônico"), resultado.enviados);
     }
 
-    // ---- O que nao se mexe ----
-
     @Test
     public void rascunhoAlteradoHaPouco_podeEstarSendoEnviadoPelaTela_ficaParaDepois() throws Exception {
         etapas.adicionar("scan-1", "Hidratante", false, false, false);
@@ -139,8 +135,6 @@ public class ReenvioDeScanTest {
         assertTrue(etapas.chamadas.isEmpty());
         assertTrue(resultado.tentarDepois);
     }
-
-    // ---- Falhas ----
 
     @Test
     public void semRede_naoEnviaEPedeParaTentarDepois() throws Exception {
@@ -207,8 +201,6 @@ public class ReenvioDeScanTest {
         assertFalse(ReenvioDeScan.transitorio(new IllegalStateException("fotos nao confirmadas")));
     }
 
-    // ---- Etapas de mentira ----
-
     private static final class EtapasFalsas implements ReenvioDeScan.Etapas {
         final List<ScanDraftStore.SavedDraft> rascunhos = new ArrayList<>();
         final Map<String, Long> ultimaAlteracao = new HashMap<>();
@@ -216,8 +208,6 @@ public class ReenvioDeScanTest {
         private final Map<String, Exception> falhas = new HashMap<>();
 
         void adicionar(String scanId, String nome, boolean frente, boolean verso, boolean ingredientes) {
-            // Sem setters para o id nem para os candidatos: o Gson preenche pelos nomes dos campos,
-            // como o ScanDraftStore faz ao ler o rascunho do disco.
             ScanSubmissionDraft draft = new Gson().fromJson(
                     "{\"scanId\":\"" + scanId + "\",\"productCandidates\":[\"" + nome + "\"]}",
                     ScanSubmissionDraft.class);
@@ -231,7 +221,6 @@ public class ReenvioDeScanTest {
             ultimaAlteracao.put(scanId, PARADO_HA_MUITO);
         }
 
-        /** @param chave "assinaturas", "fotos"... para qualquer scan, ou "passo scan-id" para um so. */
         void falhaEm(String chave, Exception erro) {
             falhas.put(chave, erro);
         }

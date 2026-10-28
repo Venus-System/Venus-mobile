@@ -5,7 +5,6 @@ import androidx.annotation.Nullable;
 
 import java.io.Serializable;
 
-/** Safe metadata about one local OCR pass; never contains the recognized text. */
 public final class ScanOcrAttempt implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -43,7 +42,6 @@ public final class ScanOcrAttempt implements Serializable {
     public boolean isSelected() { return selected; }
     @Nullable public String getErrorCode() { return errorCode; }
 
-    /** Contrast keeps the source dimensions; crop/rotation do not. */
     public boolean preservesSourceGeometry() {
         return "ORIGINAL".equals(variant) || "CONTRAST".equals(variant);
     }

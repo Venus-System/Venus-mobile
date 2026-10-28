@@ -27,21 +27,11 @@ import com.venussystem.venusmobile.view.util.EstadoCatalogo;
 import com.venussystem.venusmobile.viewmodel.BuscaViewModel;
 import com.venussystem.venusmobile.viewmodel.HistoricoViewModel;
 
-/**
- * A tela de busca, sem o rodape: o campo ja abre com o teclado, e embaixo fica
- * o historico de produtos acessados e escaneados. Ao digitar, o historico sai e entram os
- * resultados no card novo (com o filtro escolhido na Home); apagar o texto
- * traz o historico de volta.
- *
- * Em modo escolha (paraEscolherProduto), tocar num produto nao abre o detalhe:
- * devolve o id para quem chamou - usado para adicionar um produto a uma lista.
- */
 public class BuscaActivity extends AppCompatActivity {
 
     public static final String EXTRA_PRODUTO_ID = "produto_id";
     private static final String EXTRA_MODO_ESCOLHA = "busca_modo_escolha";
 
-    /** Abre a busca para escolher um produto, e nao para ver o detalhe dele. */
     public static Intent paraEscolherProduto(Context context) {
         return new Intent(context, BuscaActivity.class).putExtra(EXTRA_MODO_ESCOLHA, true);
     }
@@ -106,7 +96,6 @@ public class BuscaActivity extends AppCompatActivity {
         lista.setLayoutManager(new GridLayoutManager(
                 this, getResources().getInteger(R.integer.colunas_card_produto)));
         lista.setAdapter(adapterResultados);
-        // Os resultados trocam inteiros a cada tecla.
         lista.setItemAnimator(null);
 
         estado = new EstadoCatalogo(
@@ -130,8 +119,6 @@ public class BuscaActivity extends AppCompatActivity {
             }
         });
 
-        // O resultado ja acompanha o texto a cada tecla; o "buscar" do teclado
-        // so tira o teclado da frente para ver a lista inteira.
         campo.setOnEditorActionListener((v, acao, evento) -> {
             if (acao == EditorInfo.IME_ACTION_SEARCH) {
                 WindowCompat.getInsetsController(getWindow(), campo)
@@ -149,7 +136,6 @@ public class BuscaActivity extends AppCompatActivity {
         });
 
         viewModel.getFiltro().observe(this, filtro -> {
-            // O mesmo aviso da Home: icone magenta enquanto ha filtro ligado.
             if (filtro != null && filtro.isAtivo()) {
                 btnFiltro.setColorFilter(ContextCompat.getColor(this, R.color.magenta_venus));
             } else {
@@ -169,7 +155,6 @@ public class BuscaActivity extends AppCompatActivity {
         });
     }
 
-    /** Historico enquanto nao ha texto; resultados (ou o aviso deles) depois. */
     private void atualizarEstado() {
         boolean mostrandoHistorico = viewModel.isMostrandoHistorico();
         grupoHistorico.setVisibility(mostrandoHistorico ? View.VISIBLE : View.GONE);

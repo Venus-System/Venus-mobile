@@ -14,13 +14,6 @@ import com.venussystem.venusmobile.view.ProdutosEmAnaliseActivity;
 import java.io.IOException;
 import java.util.List;
 
-/**
- * Roda quando ha internet e termina os envios de produto que ficaram pela
- * metade ({@link ReenvioDeScan}). Se enviou algo, avisa; se ficou algo para
- * tentar depois, o WorkManager repete com espera crescente, ate
- * {@link #MAXIMO_DE_TENTATIVAS} - depois disso a proxima abertura do app agenda
- * de novo.
- */
 public class ReenvioDeScanWorker extends Worker {
 
     static final int MAXIMO_DE_TENTATIVAS = 6;
@@ -36,7 +29,6 @@ public class ReenvioDeScanWorker extends Worker {
         Context contexto = getApplicationContext();
         String uid = DadosDaConta.uidAtual(contexto);
         if (uid == null) {
-            // Ninguem logado: os rascunhos de cada conta esperam essa conta voltar.
             return Result.success();
         }
 
@@ -50,7 +42,6 @@ public class ReenvioDeScanWorker extends Worker {
 
         if (!resultado.enviados.isEmpty()) {
             avisarEnvio(contexto, resultado.enviados);
-            // Um produto novo na fila da equipe: passa a conferir se ja decidiram.
             DecisoesAgenda.verificarAgora(contexto);
         }
         return resultado.tentarDepois ? repetirOuDesistir() : Result.success();

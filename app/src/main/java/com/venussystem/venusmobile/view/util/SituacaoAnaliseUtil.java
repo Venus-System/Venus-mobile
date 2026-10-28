@@ -11,17 +11,11 @@ import androidx.core.content.ContextCompat;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.ProdutoEmAnalise.Situacao;
 
-/**
- * Texto e cor do selo de cada situacao de um produto em analise. As cores sao
- * as mesmas das notas: verde aprovado, amarelo em analise, rosa recusado, e
- * cinza enquanto ninguem pegou para conferir.
- */
 public final class SituacaoAnaliseUtil {
 
     private SituacaoAnaliseUtil() {
     }
 
-    /** Escreve a situacao no selo (bg_selo_situacao) e pinta com a cor dela. */
     public static void aplicarSelo(TextView selo, Situacao situacao) {
         selo.setText(rotulo(situacao));
         selo.setTextColor(ContextCompat.getColor(selo.getContext(), corTexto(situacao)));
@@ -71,11 +65,6 @@ public final class SituacaoAnaliseUtil {
         }
     }
 
-    /**
-     * A frase do detalhe. Aprovado sem produtoId e o caso em que a equipe
-     * aprovou mas o produto ainda nao entrou no catalogo (ou a entrada falhou
-     * e vai ser tentada de novo).
-     */
     @StringRes
     public static int explicacao(Situacao situacao, @Nullable Long produtoId) {
         switch (situacao) {

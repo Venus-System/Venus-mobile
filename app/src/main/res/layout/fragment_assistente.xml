@@ -6,8 +6,6 @@
     android:layout_height="match_parent"
     android:background="@color/white">
 
-    <!-- Segura o lugar da linha do topo: o botao de voltar so existe quando o
-         chat abre pelo produto, e o resto da tela nao pode depender dele. -->
     <Space
         android:id="@+id/ancoraTopo"
         android:layout_width="0dp"
@@ -59,7 +57,6 @@
         app:layout_constraintTop_toTopOf="@+id/ancoraTopo"
         app:tint="@color/roxo_venus" />
 
-    <!-- So aparece quando a conversa foi aberta a partir de um produto. -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/cardProduto"
         android:layout_width="0dp"
@@ -132,7 +129,6 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Encolhe para veninha_chat_teclado com o teclado aberto (ver AssistenteFragment). -->
     <com.venussystem.venusmobile.view.componente.VeninhaView
         android:id="@+id/veninha"
         android:layout_width="@dimen/veninha_chat"
@@ -194,9 +190,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintWidth_max="@dimen/largura_max_lista">
 
-        <!-- Quebra a linha em ate 4 sem virar campo multilinha: assim o teclado
-             continua com o botao de enviar (ver AssistenteFragment). O limite
-             deixa folga para o nome do produto dentro dos 4000 da API. -->
         <EditText
             android:id="@+id/campoMensagem"
             android:layout_width="0dp"

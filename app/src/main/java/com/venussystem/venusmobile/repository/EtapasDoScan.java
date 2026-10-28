@@ -10,12 +10,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Os passos do envio do scan, bloqueantes, em cima do {@link ScanSubmissionRepository}
- * (o mesmo que a tela do scan usa, com callbacks). Cada passo espera o callback;
- * o limite e maior que o tempo de leitura da rede (3 min), para o proprio erro de
- * rede chegar antes.
- */
 final class EtapasDoScan implements ReenvioDeScan.Etapas {
 
     private static final long LIMITE_MINUTOS = 4L;
@@ -110,7 +104,6 @@ final class EtapasDoScan implements ReenvioDeScan.Etapas {
         esperar(resposta);
     }
 
-    /** Devolve o erro original (ScanApiException, ScanUploadException...), nao o embrulho do futuro. */
     private static <T> T esperar(CompletableFuture<T> futuro) throws Exception {
         try {
             return futuro.get(LIMITE_MINUTOS, TimeUnit.MINUTES);

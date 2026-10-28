@@ -127,7 +127,6 @@ public class CriarListaActivity extends AppCompatActivity {
             editNome.setError(getString(R.string.lista_erro_nome));
             return;
         }
-        // A API nao aceita duas listas com o mesmo nome para a mesma pessoa.
         if (repository.nomeEmUso(nome, -1)) {
             editNome.setError(getString(R.string.lista_erro_nome_repetido));
             return;
@@ -143,8 +142,6 @@ public class CriarListaActivity extends AppCompatActivity {
         intent.putExtra(DetalheListaActivity.EXTRA_IMAGEM, criada.getImageUrl());
         startActivity(intent);
 
-        // Sai da tela de criacao: voltar do detalhe tem que cair nas listas,
-        // nao no formulario que o usuario acabou de preencher.
         finish();
     }
 }

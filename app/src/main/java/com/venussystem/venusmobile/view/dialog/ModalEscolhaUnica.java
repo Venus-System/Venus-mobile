@@ -22,14 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Modal compacto de escolha unica, usado para editar uma resposta do perfil
- * sem sair da tela (ao contrario das telas cheias do questionario inicial).
- *
- * Reaproveitado pelas 5 perguntas que sao de escolha simples entre poucas
- * opcoes (pele, fototipo, sensibilidade, cabelo, couro cabeludo); a faixa
- * etaria usa o ModalFaixaEtaria porque a interacao la e um dropdown, nao chips.
- */
 public final class ModalEscolhaUnica {
 
     public interface AoSalvar {
@@ -96,7 +88,6 @@ public final class ModalEscolhaUnica {
         dialog.show();
     }
 
-    /** Chip marcavel com o visual dos modais do perfil (tambem usado no de varias escolhas). */
     static Chip criarChip(Context contexto, Opcao opcao) {
         float densidade = contexto.getResources().getDisplayMetrics().density;
 
@@ -114,17 +105,11 @@ public final class ModalEscolhaUnica {
         return chip;
     }
 
-    /**
-     * O fundo padrao da janela de dialog e um retangulo branco que esconderia
-     * os cantos arredondados do nosso layout - por isso fica transparente, e
-     * quem desenha o card e o proprio bg_modal_escolha do conteudo.
-     */
     static void prepararJanela(@NonNull AlertDialog dialog, Context contexto) {
         if (dialog.getWindow() == null) {
             return;
         }
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        // 88% da tela no celular; no tablet isso ficaria largo demais, entao tem teto.
         int largura = Math.min(
                 (int) (contexto.getResources().getDisplayMetrics().widthPixels * 0.88f),
                 contexto.getResources().getDimensionPixelSize(R.dimen.largura_max_dialogo));

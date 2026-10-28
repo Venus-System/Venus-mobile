@@ -92,16 +92,13 @@ public interface VenusApi {
     @GET("api/ingredients/{id}")
     Call<IngredientResponse> buscarIngrediente(@Path("id") long id);
 
-    /** Efeitos do ingrediente sobre cada etiqueta de perfil (catalogo aberto). */
     @GET("api/ingredient-effects/ingredient/{ingredientId}")
     Call<List<IngredientEffectResponse>> listarEfeitosDoIngrediente(
             @Path("ingredientId") long ingredientId);
 
-    /** Catalogo inteiro de etiquetas de perfil (pele, cabelo, valores...). */
     @GET("api/profile-tags")
     Call<List<PreferenceCatalogResponse>> listarEtiquetas(@Query("size") int tamanho);
 
-    /** Scans recentes da própria conta; a API aplica a regra de ownership. */
     @GET("api/scan-sessions/user/{userId}")
     Call<FatiaResponse<ScanSessionResponse>> listarScansDoUsuario(
             @Path("userId") long userId,
@@ -109,29 +106,15 @@ public interface VenusApi {
             @Query("size") int tamanho,
             @Query("sort") String ordenacao);
 
-    // ---- Usuario: liga o UID do Firebase ao id numerico da API ----
-
     @GET("api/users/search")
     Call<FatiaResponse<UserResponse>> buscarUsuarioPorUid(@Query("firebaseUid") String firebaseUid);
 
     @POST("api/users")
     Call<UserResponse> criarUsuario(@Body UserRequest usuario);
 
-    // PATCH: so os campos de localizacao seguem no corpo, o resto do usuario nao
-    // muda. ATENCAO: o contrato disso no Venus-CRUD ainda precisa ser confirmado
-    // com o backend (nome da rota e dos campos).
     @PATCH("api/users/{userId}")
     Call<Void> atualizarLocalizacao(@Path("userId") long userId,
                                     @Body UserLocationRequest localizacao);
-
-    // ---- Perfil do questionario ----
-    // O PUT responde 404 quando a pessoa ainda nao tem perfil; ai vale o POST.
-    // O corpo da resposta nao e usado, dai o Void.
-    //
-    // PUT e nao PATCH de proposito: o app manda sempre o perfil inteiro, e no
-    // PUT um campo ausente vira "nao informado". No PATCH ele seria "nao mexe",
-    // e quem trocasse "tenho rosacea" por "prefiro nao dizer" continuaria com
-    // rosacea na API.
 
     @PUT("api/user-profiles/{userId}")
     Call<Void> atualizarPerfil(@Path("userId") long userId, @Body UserProfileRequest perfil);
@@ -146,9 +129,6 @@ public interface VenusApi {
     @POST("api/user-preferences")
     Call<Void> criarPreferencias(@Body UserPreferenceRequest preferencias);
 
-    // ---- Alergias ----
-    // O catalogo e aberto; o que e de cada pessoa exige o token.
-
     @GET("api/allergies")
     Call<List<AllergyResponse>> listarAlergias();
 
@@ -162,8 +142,6 @@ public interface VenusApi {
 
     @DELETE("api/user-allergies/user/{userId}/allergy/{allergyId}")
     Call<Void> removerAlergia(@Path("userId") long userId, @Path("allergyId") long allergyId);
-
-    // ---- Etiquetas de preferencia (as que nao tem campo em user-preferences) ----
 
     @GET("api/profile-tags/preferences")
     Call<List<PreferenceCatalogResponse>> listarEtiquetasDePreferencia();
@@ -180,19 +158,15 @@ public interface VenusApi {
     Call<Void> removerEtiqueta(@Path("userId") long userId,
                                @Path("profileTagId") long profileTagId);
 
-    // ---- Listas da pessoa e os produtos dentro delas ----
-
     @POST("api/user-lists")
     Call<UserListResponse> criarLista(@Body UserListRequest lista);
 
-    /** O corpo vem do UserListPatchRequest.paraEnviar(). */
     @PATCH("api/user-lists/{id}")
     Call<Void> atualizarLista(@Path("id") long id, @Body RequestBody lista);
 
     @DELETE("api/user-lists/{id}")
     Call<Void> apagarLista(@Path("id") long id);
 
-    /** Uma capa nova substitui a anterior; a resposta traz o link da foto. */
     @Multipart
     @POST("api/user-lists/{id}/cover")
     Call<MediaAssetResponse> enviarCapaDaLista(@Path("id") long id,
@@ -213,11 +187,6 @@ public interface VenusApi {
     Call<Void> removerItem(@Path("userListId") long userListId,
                            @Path("productId") long productId);
 
-    // ---- Produtos curtidos (tabela favorites do Venus-CRUD) ----
-    // Nao confundir com a lista FAVORITES de /api/user-lists: esta e a do
-    // coracao na tela do produto. Curtir de novo da 409; descurtir o que nao
-    // esta curtido da 404.
-
     @GET("api/favorites/user/{userId}")
     Call<FatiaResponse<FavoriteResponse>> curtidosDoUsuario(@Path("userId") long userId,
                                                             @Query("page") int pagina,
@@ -229,18 +198,12 @@ public interface VenusApi {
     @DELETE("api/favorites/user/{userId}/product/{productId}")
     Call<Void> descurtir(@Path("userId") long userId, @Path("productId") long productId);
 
-    // ---- Foto de perfil ----
-    // O POST troca a foto anterior; a API sobe a imagem no Cloudinary e devolve o link.
-
     @Multipart
     @POST("api/users/{userId}/avatar")
     Call<Void> enviarAvatar(@Path("userId") long userId, @Part MultipartBody.Part arquivo);
 
     @GET("api/users/{userId}/avatar")
     Call<MediaAssetResponse> buscarAvatar(@Path("userId") long userId);
-
-    // ---- Produtos que a pessoa escaneou e mandou para a equipe conferir ----
-    // Do mais recente para o mais antigo. So devolve os scans da propria pessoa.
 
     @GET("api/scan-sessions/user/{userId}")
     Call<FatiaResponse<ScanEnviadoResponse>> scansDoUsuario(@Path("userId") long userId,

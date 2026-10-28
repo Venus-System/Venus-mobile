@@ -17,12 +17,6 @@ import com.venussystem.venusmobile.viewmodel.ProdutosEmAnaliseViewModel.Estado;
 
 import java.util.List;
 
-/**
- * Os produtos que a pessoa escaneou, nao achou no catalogo e mandou para a
- * equipe conferir, com a situacao de cada um. Aberta pela lista fixa do topo
- * da aba Listas (ListaFixaAdapter). Tocar num produto abre o detalhe
- * (DetalheProdutoEmAnaliseActivity).
- */
 public class ProdutosEmAnaliseActivity extends AppCompatActivity {
 
     private RecyclerView lista;

@@ -18,8 +18,6 @@ public class PerguntaAlergiaActivity extends PerguntaBuscaBaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // A tela abre com o ultimo catalogo guardado (ou a lista reserva) e
-        // troca pelo da API quando ele chegar.
         catalogo().atualizarEmSegundoPlano(nomes -> {
             if (!isDestroyed()) {
                 trocarOpcoes(nomes);
@@ -48,8 +46,6 @@ public class PerguntaAlergiaActivity extends PerguntaBuscaBaseActivity {
         return PerfilRepository.ALERGIAS;
     }
 
-    // getOpcoes() e chamado de dentro do super.onCreate, antes de qualquer
-    // linha do onCreate desta classe, dai o repositorio criado sob demanda.
     private CatalogoAlergiasRepository catalogo() {
         if (catalogo == null) {
             catalogo = new CatalogoAlergiasRepository(this);

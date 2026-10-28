@@ -25,15 +25,6 @@ import com.venussystem.venusmobile.viewmodel.ScanViewModel;
 
 import java.io.File;
 
-/**
- * Pós-captura do verso.
- *
- * O processamento existente é preservado:
- * OCR -> ScanBackExtractor -> atualização do draft.
- *
- * Após o processamento, a próxima etapa é aberta automaticamente.
- * Não exige clique no botão da tela de sucesso.
- */
 public class ScanSuccessBackActivity extends AppCompatActivity {
 
     private static final String TAG = "VENUS_BACK";
@@ -66,8 +57,6 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
         ImageView photo = findViewById(R.id.imgCapturedPhoto);
         successBadge = findViewById(R.id.txtSuccessBadge);
 
-        // A transição deve ser automática. O botão antigo da tela de sucesso
-        // não participa mais da navegação.
         View nextButton = findViewById(R.id.btnScanNext);
         if (nextButton != null) {
             nextButton.setVisibility(View.GONE);
@@ -94,7 +83,6 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
 
         setBadge("Lendo o verso...");
 
-        // Não existe continuidade válida sem o draft criado pela frente.
         if (draft == null) {
             Log.e(
                     TAG,
@@ -230,7 +218,6 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
 
         setBadge("Verso pronto. Continuando...");
 
-        // IMPORTANTE: não esperar clique do usuário.
         mainHandler.postDelayed(
                 this::abrirProximaEtapaAutomaticamente,
                 NEXT_STEP_DELAY_MS
@@ -262,8 +249,6 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
                 return;
             }
 
-            // Passo 3 já foi visto anteriormente: não mostra novamente.
-            // Finaliza automaticamente.
             ScanFlowFinisher.finalizar(this, draft);
 
         } catch (Exception exception) {

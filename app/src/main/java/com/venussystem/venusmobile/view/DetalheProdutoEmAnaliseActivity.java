@@ -21,10 +21,6 @@ import com.venussystem.venusmobile.view.util.SituacaoAnaliseUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Um produto enviado para analise. Recebe o produto inteiro pelo Intent (ver
- * ProdutosEmAnaliseActivity), sem ir de novo na API.
- */
 public class DetalheProdutoEmAnaliseActivity extends AppCompatActivity {
 
     public static final String EXTRA_PRODUTO = "produto_em_analise";
@@ -82,7 +78,6 @@ public class DetalheProdutoEmAnaliseActivity extends AppCompatActivity {
         }
     }
 
-    /** "Enviado em", e embaixo "Aprovado em"/"Recusado em" quando ja decidiram. */
     private void mostrarDatas(ProdutoEmAnalise produto) {
         List<String> linhas = new ArrayList<>();
         if (produto.getEnviadoEm() != null) {

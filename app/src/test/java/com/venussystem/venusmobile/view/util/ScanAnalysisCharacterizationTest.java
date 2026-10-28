@@ -11,7 +11,6 @@ import java.util.List;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
-/** Golden results captured before decomposition; these freeze behavior, not OCR accuracy. */
 public class ScanAnalysisCharacterizationTest {
     private static final String[][] LABELS = {
         {}, {"DOVE", "ANTITRANSPIRANTE", "ORIGINAL", "150 ML"},

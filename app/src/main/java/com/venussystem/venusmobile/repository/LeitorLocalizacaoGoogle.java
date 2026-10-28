@@ -22,10 +22,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Posicao pelo Fused Location (precisao de bairro, pouca bateria) e cidade e
- * estado pelo Geocoder do aparelho. Bloqueia a thread: so chamar fora da principal.
- */
 public class LeitorLocalizacaoGoogle implements LeitorLocalizacao {
 
     private static final long ESPERA_POSICAO_S = 15;
@@ -41,7 +37,7 @@ public class LeitorLocalizacaoGoogle implements LeitorLocalizacao {
     @WorkerThread
     @Nullable
     @Override
-    @SuppressLint("MissingPermission") // quem chama confere a permissao antes
+    @SuppressLint("MissingPermission")
     public Posicao ler() {
         try {
             FusedLocationProviderClient cliente =

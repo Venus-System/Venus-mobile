@@ -48,8 +48,6 @@ public class ConsultaDeDecisoesTest {
                 situacao == Situacao.RECUSADO ? "Foto ruim" : null, situacao == Situacao.APROVADO ? 7L : null);
     }
 
-    // ---- A primeira conferencia so aprende ----
-
     @Test
     public void primeiraConferencia_naoAvisaDoQueJaEstavaDecidido() {
         naApi.addAll(Arrays.asList(produto("a", Situacao.APROVADO), produto("b", Situacao.RECUSADO)));
@@ -75,8 +73,6 @@ public class ConsultaDeDecisoesTest {
         assertTrue(resultado.avisos.isEmpty());
         assertFalse(resultado.aindaAguardando);
     }
-
-    // ---- Depois da primeira ----
 
     @Test
     public void produtoQueEraDeEsperaEVirouAprovado_avisaComOProduto() {
@@ -132,21 +128,19 @@ public class ConsultaDeDecisoesTest {
         ConsultaDeDecisoes.Resultado resultado = consulta.verificar();
 
         assertEquals(2, resultado.avisos.size());
-        assertTrue(resultado.aindaAguardando); // o "c" segue esperando
+        assertTrue(resultado.aindaAguardando);
     }
 
     @Test
     public void produtoEnviadoDepoisDaPrimeiraEJaDecidido_avisa() {
         ConsultaDeDecisoes consulta = consulta("t1");
-        consulta.verificar(); // a lista estava vazia
+        consulta.verificar();
 
         naApi.add(produto("novo", Situacao.APROVADO));
         ConsultaDeDecisoes.Resultado resultado = consulta.verificar();
 
         assertEquals(1, resultado.avisos.size());
     }
-
-    // ---- Falhas e contas ----
 
     @Test
     public void apiFora_pedeParaTentarDepoisENaoAvisaNada() {
@@ -166,7 +160,6 @@ public class ConsultaDeDecisoesTest {
         apiFora = false;
         naApi.add(produto("a", Situacao.APROVADO));
 
-        // Ainda e a primeira de verdade: aprende, nao avisa do que ja estava decidido.
         assertTrue(consulta.verificar().avisos.isEmpty());
     }
 
@@ -177,7 +170,6 @@ public class ConsultaDeDecisoesTest {
         ana.verificar();
         naApi.set(0, produto("a", Situacao.APROVADO));
 
-        // A Bia nunca conferiu neste aparelho: a primeira dela so aprende.
         assertTrue(consulta("bia").verificar().avisos.isEmpty());
         assertEquals(1, ana.verificar().avisos.size());
     }

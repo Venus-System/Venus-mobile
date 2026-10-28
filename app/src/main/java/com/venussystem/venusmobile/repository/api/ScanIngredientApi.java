@@ -6,14 +6,6 @@ import retrofit2.http.GET;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
-/**
- * Public, read-only PostgreSQL catalog endpoints. No Firebase token is needed.
- *
- * This interface intentionally exposes no POST, PUT, PATCH or DELETE method.
- * The mobile scan may resolve an OCR candidate to an existing ingredient, but
- * it can never create or modify an ingredient record. New/uncertain text is
- * sent as review evidence in the scan session only.
- */
 public interface ScanIngredientApi {
     @GET("api/ingredients")
     Call<List<Ingredient>> allIngredients();

@@ -13,10 +13,6 @@ import com.venussystem.venusmobile.repository.ProdutosEmAnaliseRepository;
 
 import java.util.List;
 
-/**
- * Busca os produtos em analise ao abrir a tela. Girar o celular nao busca de
- * novo; "Tentar de novo" chama carregar() outra vez.
- */
 public class ProdutosEmAnaliseViewModel extends AndroidViewModel {
 
     public enum Estado {

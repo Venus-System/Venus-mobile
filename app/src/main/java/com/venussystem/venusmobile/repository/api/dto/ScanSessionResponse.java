@@ -1,6 +1,5 @@
 package com.venussystem.venusmobile.repository.api.dto;
 
-/** Summary returned by GET /api/scan-sessions/user/{userId}. */
 public final class ScanSessionResponse {
     public String id, scanId, status, startedAt, finishedAt, createdAt, updatedAt;
     public Source source;

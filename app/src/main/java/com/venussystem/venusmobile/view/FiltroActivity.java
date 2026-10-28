@@ -21,11 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * O filtro do catalogo, em tela propria e sem o rodape. Aberto pela Home e
- * pela busca, e o mesmo nas duas: Aplicar vale para as duas, e a seta de voltar
- * descarta o que foi marcado.
- */
 public class FiltroActivity extends AppCompatActivity {
 
     private FiltroViewModel viewModel;
@@ -42,8 +37,6 @@ public class FiltroActivity extends AppCompatActivity {
     private final Map<Long, Chip> chipsCategoria = new HashMap<>();
     private final Map<Long, Chip> chipsMarca = new HashMap<>();
 
-    // Marcar um chip pelo codigo (para refletir o rascunho) dispara o mesmo
-    // listener de quando a pessoa toca. Sem esta trava, um mudaria o outro.
     private boolean sincronizando;
 
     @Override
@@ -96,7 +89,6 @@ public class FiltroActivity extends AppCompatActivity {
         viewModel.getTemMarcaBrasileira().observe(this, tem ->
                 switchBrasileiras.setVisibility(Boolean.TRUE.equals(tem) ? View.VISIBLE : View.GONE));
 
-        // Os grupos de categoria e marca so existem depois que o catalogo chega.
         viewModel.getCarregando().observe(this, ocupado -> findViewById(R.id.carregando)
                 .setVisibility(Boolean.TRUE.equals(ocupado) && !viewModel.temCatalogo()
                         ? View.VISIBLE : View.GONE));
@@ -153,7 +145,6 @@ public class FiltroActivity extends AppCompatActivity {
         return chip;
     }
 
-    /** Reflete o rascunho nos chips e no interruptor. */
     private void sincronizar() {
         FiltroProdutos rascunho = viewModel.getRascunho().getValue();
         if (rascunho == null) {

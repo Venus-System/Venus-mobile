@@ -81,7 +81,6 @@ public class ReenvioDeScanAgendaTest {
                 um.extras.getCharSequence(android.app.Notification.EXTRA_TEXT).toString());
 
         ReenvioDeScanWorker.avisarEnvio(context, java.util.Arrays.asList("Hidratante", "Tônico", "Sabonete"));
-        // Mesmo id: o segundo aviso troca o primeiro.
         assertEquals(1, org.robolectric.Shadows.shadowOf(gerente).getAllNotifications().size());
         android.app.Notification varios = org.robolectric.Shadows.shadowOf(gerente).getAllNotifications().get(0);
         assertEquals("3 produtos foram enviados para análise.",

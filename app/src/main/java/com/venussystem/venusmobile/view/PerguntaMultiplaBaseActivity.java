@@ -28,10 +28,8 @@ public abstract class PerguntaMultiplaBaseActivity extends AppCompatActivity {
     @Nullable
     protected abstract Class<?> getProximaTela();
 
-    /** Onde a lista desta tela e guardada. Ver PerfilRepository. */
     protected abstract String getChave();
 
-    /** Opcoes que nao convivem com outras: marcar uma delas desmarca o resto. */
     protected abstract List<String> getTagsExclusivas();
 
     @Override
@@ -79,8 +77,6 @@ public abstract class PerguntaMultiplaBaseActivity extends AppCompatActivity {
     }
 
     private void avancar() {
-        // Lista vazia aqui significaria "nao respondeu": quem nao tem nenhuma
-        // das condicoes marca a opcao propria para isso, que fica salva.
         if (selecionados.isEmpty()) {
             Toast.makeText(this, R.string.pergunta_escolha_ao_menos_uma, Toast.LENGTH_SHORT).show();
             return;

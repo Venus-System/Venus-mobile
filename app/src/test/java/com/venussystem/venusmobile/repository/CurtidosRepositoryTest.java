@@ -74,9 +74,7 @@ public class CurtidosRepositoryTest {
     @Test
     public void envioQueTerminaDepoisDeDescurtir_naoApagaADescurtida() {
         curtidos.curtir(100L);
-        // O POST esta no caminho quando a pessoa descurte...
         curtidos.descurtir(100L);
-        // ...e so depois ele volta aceito.
         curtidos.marcarCurtidaEnviada(100L);
 
         assertEquals(Collections.singletonList(100L), curtidos.paraDescurtirNaApi());
@@ -87,12 +85,11 @@ public class CurtidosRepositoryTest {
     public void trazerDaApi_oServidorVence_masOQueEstaNaFilaFica() {
         curtidos.curtir(100L);
         curtidos.marcarCurtidaEnviada(100L);
-        curtidos.curtir(300L);            // ainda nao subiu
+        curtidos.curtir(300L);
         curtidos.curtir(400L);
         curtidos.marcarCurtidaEnviada(400L);
-        curtidos.descurtir(400L);         // descurtido aqui, ainda curtido na API
+        curtidos.descurtir(400L);
 
-        // Na API: 100 saiu (descurtido pelo site), 200 entrou, 400 continua.
         boolean mudou = curtidos.trocarPelosDaApi(Arrays.asList(200L, 400L));
 
         assertTrue(mudou);

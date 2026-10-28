@@ -64,7 +64,6 @@ public class ProdutoRepositoryTest {
 
     private static final long MODELO_ATIVO = 1L;
 
-    /** Produtos, marcas, categorias, versoes, notas e o modelo ativo. */
     private static final int REQUISICOES_POR_CARGA = 6;
 
     @Rule
@@ -206,11 +205,6 @@ public class ProdutoRepositoryTest {
         return r;
     }
 
-    /**
-     * A trava EM_ANDAMENTO pode nao ter sido liberada pela carga anterior quando
-     * o teste pede a proxima, e ai carregar() e no-op. Repetir ate a requisicao
-     * sair tira o teste da dependencia desse tempo.
-     */
     private void carregarAteRequisitar(boolean forcar) {
         int antes = server.getRequestCount();
         aguardarAte(() -> {
@@ -226,8 +220,6 @@ public class ProdutoRepositoryTest {
         aguardarValor(repository.getCarregando(), Boolean.FALSE::equals);
         return repository.getCatalogo().getValue();
     }
-
-    // ---- Montagem do catalogo ----
 
     @Test
     public void montarCatalogo_resolveMarcaCategoriaENotaPelaVersaoAtual() {
@@ -276,7 +268,6 @@ public class ProdutoRepositoryTest {
         assertEquals(Boolean.TRUE, catalogo.get(0).getBrazilianBrand());
         assertEquals(Boolean.FALSE, catalogo.get(1).getBrazilianBrand());
         assertNull(catalogo.get(2).getBrazilianBrand());
-        // Marca que a API nao lista: o id fica, mas nao ha o que dizer do pais.
         assertEquals((Long) 999L, catalogo.get(3).getBrandId());
         assertNull(catalogo.get(3).getBrazilianBrand());
         assertEquals("", catalogo.get(3).getBrandName());
@@ -363,8 +354,6 @@ public class ProdutoRepositoryTest {
         assertNull(catalogo.get(0).getCategoryName());
     }
 
-    // ---- Erros HTTP e falha de rede ----
-
     @Test
     public void erroHttpEmCadaEndpoint_publicaMensagemNaoPublicaCatalogoEZeraCarregando() {
         String[][] casos = {
@@ -425,8 +414,6 @@ public class ProdutoRepositoryTest {
         assertTrue(catalogo.isEmpty());
     }
 
-    // ---- Cache ----
-
     @Test
     public void carregarFalseAposSucesso_naoFazNovaRequisicao() {
         FakeApiDispatcher dispatcher = new FakeApiDispatcher();
@@ -480,8 +467,6 @@ public class ProdutoRepositoryTest {
         assertEquals(requisicoesAposErro + REQUISICOES_POR_CARGA, server.getRequestCount());
     }
 
-    // ---- buscarNoCache ----
-
     @Test
     public void buscarNoCache_encontrado() {
         FakeApiDispatcher dispatcher = new FakeApiDispatcher();
@@ -514,8 +499,6 @@ public class ProdutoRepositoryTest {
     public void buscarNoCache_catalogoAindaNulo_retornaNull() {
         assertNull(repository.buscarNoCache(1L));
     }
-
-    // ---- buscarDetalheProduto (/full) ----
 
     private String[] buscarDetalhe() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
@@ -647,8 +630,6 @@ public class ProdutoRepositoryTest {
         assertNull(resultado[1]);
     }
 
-    // ---- buscarIngredientesDoProduto (product-ingredients + ingredients) ----
-
     private List<com.venussystem.venusmobile.model.IngredienteProduto> buscarIngredientes()
             throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
@@ -717,7 +698,6 @@ public class ProdutoRepositoryTest {
         dispatcher.em("/api/product-ingredients/product-version/7", json(Arrays.asList(
                 vinculo(10L, 1), vinculo(20L, 2))));
         dispatcher.em("/api/ingredients/10", json(ingrediente(10L, "AQUA", "ÁGUA", "x")));
-        // /api/ingredients/20 responde 404
         server.setDispatcher(dispatcher);
 
         assertTrue(buscarIngredientes().isEmpty());
@@ -790,8 +770,6 @@ public class ProdutoRepositoryTest {
         assertEquals("https://cdn/leve.jpg", url[0]);
         assertEquals(7, server.getRequestCount());
     }
-
-    // ---- Modelo de scoring ativo / cargas simultaneas ----
 
     @Test
     public void duasNotasParaMesmaVersao_valeADoModeloAtivo() {

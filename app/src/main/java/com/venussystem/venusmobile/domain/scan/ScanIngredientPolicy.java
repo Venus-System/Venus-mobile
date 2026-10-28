@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
-/** Conservative local checks. Unknown text is retained and requires review. */
 public final class ScanIngredientPolicy {
     private static final Pattern ADMIN = Pattern.compile(
             "\\b(?:UNILEVER|ONILEVER|ONILEVEW|WOFENSNO|LTDA|CNPJ|CEP|"
@@ -28,8 +27,6 @@ public final class ScanIngredientPolicy {
     public static boolean hasAdministrativeText(String raw) {
         String value = normalize(raw);
         if (ADMIN.matcher(value).find()) return true;
-        // A standalone OCR line containing the manufacturer name is noise;
-        // keep mixed/uncertain candidates for administrative review.
         return value.matches("^UNILEVEV(?:\\s+[0-9]{4,})?$");
     }
 
@@ -38,7 +35,6 @@ public final class ScanIngredientPolicy {
         return ScanIngredientVocabulary.NAMES.contains(value) || value.matches("CI ?[0-9]{5}");
     }
 
-    /** A small unambiguous change to ONE complete candidate; no formula completion. */
     public static String correct(String raw) {
         String value = normalize(raw);
         if (isRecognized(value)) return value;
@@ -72,7 +68,6 @@ public final class ScanIngredientPolicy {
         return edits + (a.length() - i) + (b.length() - j) == 1;
     }
 
-    /** Contextual section-tail hint, never a generic ingredient discard rule. */
     public static boolean isPackagingTailLine(String raw) {
         String value = normalize(raw);
         if (hasAdministrativeText(value)) return true;

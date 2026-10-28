@@ -14,22 +14,6 @@ import java.util.concurrent.Executors;
 import static com.venussystem.venusmobile.repository.ScanCatalogMatcher.procurarMelhorProduto;
 import static com.venussystem.venusmobile.repository.ScanCatalogRules.TAG;
 
-/**
- * Identifica um produto da VENUS usando os dados extraídos
- * da frente da embalagem e o catálogo real carregado.
- *
- * Fluxo:
- *
- * OCR
- *   ↓
- * marca
- *   ↓
- * produtos da marca
- *   ↓
- * tokens/frases relevantes do produto
- *   ↓
- * produto real do catálogo
- */
 public class ScanProductMatchRepository {
 
     private static final long MAX_WAIT_MILLIS = 15000L;

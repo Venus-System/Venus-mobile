@@ -119,7 +119,6 @@ public class LembretesTest {
         assertEquals(PesquisaInicialActivity.class.getName(),
                 pilha[pilha.length - 1].getComponent().getClassName());
         assertEquals(1, estado.enviados());
-        // O segundo e 3 dias depois do primeiro.
         assertEquals(instante(21, 10, 0), alarmesArmados().get(0).triggerAtTime);
     }
 

@@ -1,12 +1,5 @@
 package com.venussystem.venusmobile.repository.api.dto;
 
-/**
- * Corpo do POST /api/user-profiles e do PUT /api/user-profiles/{userId}.
- *
- * Os Boolean de condicao ficam null quando a pessoa nao respondeu ou preferiu
- * nao dizer: o Gson nao escreve campo null, e a API entende ausente como "nao
- * informado", que e diferente de "nao tem".
- */
 public class UserProfileRequest {
     public Long userId;
     public String skinType;

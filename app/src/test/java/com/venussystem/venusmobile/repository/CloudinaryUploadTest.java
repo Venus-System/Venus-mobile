@@ -28,7 +28,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import static org.junit.Assert.*;
 
-/** Synthetic files and intercepted HTTP only: never sends photos or credentials. */
 public class CloudinaryUploadTest {
     @Rule public TemporaryFolder temp = new TemporaryFolder();
     private static final long NOW = 1800000000L;
@@ -70,7 +69,6 @@ public class CloudinaryUploadTest {
     private ScanDraftStore.SavedDraft draft(ScanDraftStore store) throws IOException {
         ScanSubmissionDraft d = new ScanSubmissionDraft(); d.bindToUser("owner");
         d.setFrontPhotoPath(photo().getAbsolutePath()); d.setBackPhotoPath(photo().getAbsolutePath());
-        // Minimal storage fixture; OCR parsing is covered by its own tests.
         d.setBackData(new Gson().fromJson("{\"fullText\":\"OCR preserved\",\"lines\":[],\"ingredients\":[],\"claims\":[]}", ScanBackData.class));
         return store.save("owner", d);
     }

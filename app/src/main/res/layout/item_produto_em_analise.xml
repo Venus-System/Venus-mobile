@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Um produto enviado para analise (ProdutoEmAnaliseAdapter): foto da frente,
-     nome e marca lidos pelo OCR, dia do envio e o selo da situacao. -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"

@@ -8,11 +8,6 @@ import com.venussystem.venusmobile.repository.DadosDaConta;
 
 import java.time.ZoneId;
 
-/**
- * Recebe o alarme do lembrete e os avisos do sistema depois dos quais o alarme
- * precisa ser armado de novo: celular reiniciado, app atualizado e fuso ou hora
- * mudados (o horario do lembrete e o do relogio da pessoa).
- */
 public class LembretesReceiver extends BroadcastReceiver {
 
     @Override

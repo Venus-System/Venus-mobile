@@ -36,7 +36,6 @@ public class ListaItemRepositoryTest {
         itens.adicionar(1L, 42L);
 
         assertTrue(itens.contem(1L, 42L));
-        // O produto entrou so nesta lista.
         assertFalse(itens.contem(2L, 42L));
     }
 

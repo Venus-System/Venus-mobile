@@ -6,11 +6,9 @@ import java.util.List;
 import java.util.Set;
 import static com.venussystem.venusmobile.view.util.ScanCosmeticText.contemTermo;
 
-/** Internal collaborator for ScanCosmeticClassifier; not a second scan entry point. */
 final class ScanCosmeticCategories {
     private ScanCosmeticCategories() { }
 
-    /** Applies the existing ordered category vocabulary without changing scoring. */
     static void detectarCategorias(String texto, Set<String> nivel1Categoria, Set<String> tipos) {
         detectarCategoria(
                 texto,
@@ -91,9 +89,6 @@ final class ScanCosmeticCategories {
                         "SABONETE INTIMO", "SABONETE ÍNTIMO"
                 )
         );
-        /*
-         * Cabelos
-         */
         detectarCategoria(
                 texto,
                 nivel1Categoria,
@@ -272,9 +267,6 @@ final class ScanCosmeticCategories {
                         "BLEACH FOR HAIR"
                 )
         );
-        /*
-         * Pele / rosto / corpo
-         */
         detectarCategoria(
                 texto,
                 nivel1Categoria,
@@ -424,9 +416,6 @@ final class ScanCosmeticCategories {
                         "EYE CONTOUR", "EYE CONTOUR CREAM"
                 )
         );
-        /*
-         * Proteção solar
-         */
         detectarCategoria(
                 texto,
                 nivel1Categoria,
@@ -456,9 +445,6 @@ final class ScanCosmeticCategories {
                         "AFTER SUN", "AFTERSUN"
                 )
         );
-        /*
-         * Perfumaria
-         */
         detectarCategoria(
                 texto,
                 nivel1Categoria,
@@ -510,9 +496,6 @@ final class ScanCosmeticCategories {
                         "BODY SPRAY", "FRAGRANCE MIST"
                 )
         );
-        /*
-         * Maquiagem
-         */
         detectarCategoria(
                 texto,
                 nivel1Categoria,
@@ -719,9 +702,6 @@ final class ScanCosmeticCategories {
                         "MAKE UP REMOVER", "CLEANSING BALM"
                 )
         );
-        /*
-         * Unhas
-         */
         detectarCategoria(
                 texto,
                 nivel1Categoria,
@@ -771,9 +751,6 @@ final class ScanCosmeticCategories {
                         "NAIL POLISH REMOVER", "POLISH REMOVER"
                 )
         );
-        /*
-         * Barbear
-         */
         detectarCategoria(
                 texto,
                 nivel1Categoria,
@@ -825,11 +802,6 @@ final class ScanCosmeticCategories {
                         "BEARD OIL", "BEARD BALM"
                 )
         );
-        /*
-         * Higiene oral
-         *
-         * Mantemos porque está presente na base anterior do classificador.
-         */
         detectarCategoria(
                 texto,
                 nivel1Categoria,
@@ -855,9 +827,6 @@ final class ScanCosmeticCategories {
                         "MOUTH WASH"
                 )
         );
-        /*
-         * Infantil
-         */
         detectarCategoria(
                 texto,
                 nivel1Categoria,
@@ -884,11 +853,6 @@ final class ScanCosmeticCategories {
                         "KIDS SOAP"
                 )
         );
-        /*
-         * Cosmético explícito.
-         *
-         * "COSMÉTICO" sozinho não basta: precisa de estrutura/contexto.
-         */
         detectarCategoria(
                 texto,
                 nivel1Categoria,
@@ -904,11 +868,6 @@ final class ScanCosmeticCategories {
         );
     }
 
-    /*
-     * =============================================================
-     * NÍVEL 1
-     * =============================================================
-     */
     private static void detectarCategoria(
             String texto,
             Set<String> sinais,
@@ -957,10 +916,6 @@ final class ScanCosmeticCategories {
     static boolean temCategoriaAltaPrecisao(
             Set<String> sinais
     ) {
-        /*
-         * Categorias que praticamente já identificam a natureza do produto
-         * mesmo quando a frente tem pouco texto.
-         */
         String[] altaPrecisao = {
                 "DESODORANTE",
                 "ANTITRANSPIRANTE",
@@ -1040,11 +995,6 @@ final class ScanCosmeticCategories {
         return false;
     }
 
-    /*
-     * =============================================================
-     * MODELO INTERNO
-     * =============================================================
-     */
     private static final class TermGroup {
         private final String id;
         private final String evidencia;

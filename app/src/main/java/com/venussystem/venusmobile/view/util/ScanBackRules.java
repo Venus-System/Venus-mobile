@@ -3,7 +3,6 @@ package com.venussystem.venusmobile.view.util;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/** Internal collaborator for ScanBackExtractor; not a second scan entry point. */
 final class ScanBackRules {
     private ScanBackRules() { }
 
@@ -13,11 +12,6 @@ final class ScanBackRules {
     static final String EMPTY =
             "";
 
-    /*
-     * ================================================================
-     * HEADINGS
-     * ================================================================
-     */
     static final String[] INGREDIENT_HEADINGS = {
             "INGREDIENTES",
             "INGREDIENTE",
@@ -32,11 +26,6 @@ final class ScanBackRules {
             "INCI"
     };
 
-    /*
-     * ================================================================
-     * REGEX
-     * ================================================================
-     */
     static final Pattern EMAIL_PATTERN =
             Pattern.compile(
                     "[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}",
@@ -49,12 +38,6 @@ final class ScanBackRules {
                             + "CALLE|CARRERA|JIRON|BOULEVARD|BLVD)\\b"
             );
 
-    /**
-     * Captura um pequeno bloco que termina claramente em sufixo empresarial.
-     * Usado apenas como barreira de segurança dentro da composição,
-     * principalmente quando o OCR cola empresa + endereço na mesma linha.
-     */
-    /** OCR contact text that may be malformed. */
     static final Pattern CONTACT_CONTEXT_PATTERN =
             Pattern.compile(
                     "(?i)\\b(?:QUESTIONS{0,2}|CONTACT|CUSTOMER\\s+SERVICE|"
@@ -75,7 +58,6 @@ final class ScanBackRules {
 
     static final Pattern URL_PATTERN =
             Pattern.compile(
-                    // Bare domains need a conservative suffix; OCR dots are not URLs.
                     "(?i)(?<![a-z0-9@._-])(?:"
                             + "(?:https?://|www\\.)[a-z0-9][a-z0-9.-]*"
                             + "|(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+"
@@ -126,11 +108,6 @@ final class ScanBackRules {
                             + "RODOVIA|CALLE|CARRERA|JIRON|BOULEVARD|BLVD)\\b"
             );
 
-    /*
-     * ================================================================
-     * INCI CONHECIDOS
-     * ================================================================
-     */
     static final Set<String> COMMON_INCI_BOUNDARIES =
             com.venussystem.venusmobile.domain.scan.ScanIngredientVocabulary.NAMES;
 }

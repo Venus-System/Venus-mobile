@@ -14,24 +14,12 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.Set;
 
-/**
- * Traduz as respostas do questionario para os slugs de profile-tags do
- * catalogo, que e como o catalogo liga um efeito de ingrediente a uma pessoa.
- * So entram as respostas que tem etiqueta equivalente.
- */
 public final class EtiquetasDoPerfil {
-
-    /**
-     * Etiquetas com aviso no catalogo (silicone, sulfato, gestacao...). Quando a
-     * pessoa tem uma delas e nada da formula bate, a tela diz isso: "Sem silicones".
-     */
     public static final List<String> ETIQUETAS_DE_AVISO = Arrays.asList(
             "gravidez", "amamentacao", "reativa", "sem-silicone", "sem-sulfato",
             "sem-parabenos");
 
-    // preferencia da tela (em slug) -> slug da etiqueta
     private static final Map<String, String> PREFERENCIAS = new HashMap<>();
-    // condicoes de pele e gestacao (tags do app) -> slug da etiqueta
     private static final Map<String, String> CONDICOES = new HashMap<>();
 
     static {
@@ -60,10 +48,6 @@ public final class EtiquetasDoPerfil {
     private EtiquetasDoPerfil() {
     }
 
-    /**
-     * Nomes para mostrar o que entrou na conta. O que nao esta aqui sai com o
-     * proprio slug, so com os hifens trocados por espaco.
-     */
     private static final Map<String, String> ROTULOS = new HashMap<>();
 
     static {
@@ -89,7 +73,6 @@ public final class EtiquetasDoPerfil {
         ROTULOS.put("testado-dermatologicamente", "testado dermatologicamente");
     }
 
-    /** Etiquetas e alergias que entraram na conta, em texto para a tela. */
     public static List<String> rotulos(Set<String> etiquetas, Set<String> alergias) {
         TreeSet<String> textos = new TreeSet<>();
         for (String slug : etiquetas) {
@@ -126,7 +109,6 @@ public final class EtiquetasDoPerfil {
             slugs.add("reativa");
         }
 
-        // Ondulado, cacheado e crespo: o catalogo liga o antifrizz a eles.
         String cabelo = respostas.getTag(PerfilRepository.TIPO_CABELO);
         if (cabelo != null && cabelo.matches("TYPE_[234][ABC]")) {
             slugs.add("controle-de-frizz");
@@ -140,7 +122,6 @@ public final class EtiquetasDoPerfil {
         return slugs;
     }
 
-    /** Alergias escolhidas, em slug, para comparar com o nome do ingrediente. */
     public static Set<String> alergias(MapeadorPerfilApi.Respostas respostas) {
         Set<String> slugs = new HashSet<>();
         for (String alergia : alergiasEmTexto(respostas)) {
@@ -150,7 +131,6 @@ public final class EtiquetasDoPerfil {
         return slugs;
     }
 
-    /** Alergias como a pessoa escolheu, sem as respostas "nenhuma" e "prefiro nao dizer". */
     public static List<String> alergiasEmTexto(MapeadorPerfilApi.Respostas respostas) {
         List<String> alergias = new ArrayList<>();
         for (String alergia : respostas.getLista(PerfilRepository.ALERGIAS)) {

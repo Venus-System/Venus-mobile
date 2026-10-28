@@ -19,15 +19,6 @@ import com.venussystem.venusmobile.view.util.MensagemRapida;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Os produtos que a pessoa curtiu no coracao da tela do produto, do mais
- * recente para o mais antigo. Aberta pela lista fixa "Produtos curtidos" da
- * aba Listas (ListaFixaAdapter). O X descurte; tocar abre o produto.
- *
- * Os ids vem do aparelho (CurtidosRepository) e os produtos do catalogo ja em
- * memoria, como na DetalheListaActivity. Ao abrir, traz o que foi curtido em
- * outro aparelho ou pelo site.
- */
 public class ProdutosCurtidosActivity extends AppCompatActivity {
 
     private CurtidosRepository curtidos;
@@ -37,7 +28,6 @@ public class ProdutosCurtidosActivity extends AppCompatActivity {
     private View carregando;
     private View blocoVazio;
 
-    // Descurtir aqui vai para a API quando a tela fecha, num envio so.
     private boolean alterados = false;
 
     @Override
@@ -58,7 +48,6 @@ public class ProdutosCurtidosActivity extends AppCompatActivity {
 
         findViewById(R.id.btnVoltar).setOnClickListener(v -> finish());
 
-        // Sem o catalogo os ids nao viram produto: espera ele chegar.
         produtoRepository.getCatalogo().observe(this, catalogo -> carregar());
         produtoRepository.getCarregando().observe(this, emAndamento -> carregar());
         produtoRepository.carregar(false);
@@ -69,7 +58,6 @@ public class ProdutosCurtidosActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Um produto aberto daqui pode ter sido descurtido na tela dele.
         carregar();
     }
 
@@ -82,10 +70,6 @@ public class ProdutosCurtidosActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Um id sem produto no catalogo (produto removido) e simplesmente
-     * ignorado, como nas listas.
-     */
     private void carregar() {
         List<Long> ids = curtidos.getProdutoIds();
         List<Produto> produtos = new ArrayList<>();

@@ -51,7 +51,6 @@ public class CatalogoAlergiasRepositoryTest {
     }
 
     private CatalogoAlergiasRepository novoRepositorio() {
-        // Executor direto: o aviso chega na propria thread do repositorio.
         return new CatalogoAlergiasRepository(context, api, Runnable::run);
     }
 
@@ -80,7 +79,6 @@ public class CatalogoAlergiasRepositoryTest {
 
         assertEquals(Arrays.asList("Lanolina", "Soja"), novoRepositorio().buscarAgora());
 
-        // Outra tela, outra instancia: ja abre com o catalogo, sem esperar a API.
         assertEquals(Arrays.asList("Lanolina", "Soja"), novoRepositorio().nomes());
     }
 

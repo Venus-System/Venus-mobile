@@ -12,12 +12,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.ScanSubmissionDraft;
 
-/**
- * Informa que o produto não foi encontrado no catálogo e conduz o usuário
- * para a captura do verso.
- *
- * Esta tela não executa OCR, matching ou classificação.
- */
 public class ScanProductNotRegisteredActivity extends AppCompatActivity {
 
     private static final String TAG = "VENUS_SCAN";

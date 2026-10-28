@@ -9,11 +9,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.venussystem.venusmobile.R;
 
-/**
- * O aviso "voce ainda nao tem listas" como um item da propria lista, depois
- * do separador "Listas criadas": solto por cima da RecyclerView, ele cobriria
- * as listas fixas. Tem 1 item quando visivel e nenhum quando nao.
- */
 public class AvisoListasVazioAdapter extends RecyclerView.Adapter<AvisoListasVazioAdapter.AvisoViewHolder> {
 
     private boolean visivel;
@@ -40,7 +35,6 @@ public class AvisoListasVazioAdapter extends RecyclerView.Adapter<AvisoListasVaz
 
     @Override
     public void onBindViewHolder(@NonNull AvisoViewHolder holder, int posicao) {
-        // O texto e fixo, ja vem do layout.
     }
 
     @Override

@@ -1,6 +1,5 @@
 package android.graphics;
 
-/** JVM-only geometry double. Never included in the Android app source sets. */
 public final class Rect {
     public int left, top, right, bottom;
     public Rect(int left, int top, int right, int bottom) {

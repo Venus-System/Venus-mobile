@@ -25,11 +25,6 @@ import com.venussystem.venusmobile.view.componente.CartaoPerfilView;
 import com.venussystem.venusmobile.view.util.EstadoCatalogo;
 import com.venussystem.venusmobile.viewmodel.BuscaViewModel;
 
-/**
- * A casinha: o campo de busca, o filtro e as sugestoes de produtos, do melhor
- * avaliado para o pior. Acima das sugestoes, o cartao "Seu perfil Venus" chama
- * para o questionario enquanto o perfil nao esta completo. Outras secoes vem depois.
- */
 public class InicioFragment extends Fragment {
 
     private BuscaViewModel viewModel;
@@ -64,8 +59,6 @@ public class InicioFragment extends Fragment {
         lista.setLayoutManager(new GridLayoutManager(
                 requireContext(), getResources().getInteger(R.integer.colunas_card_produto)));
         lista.setAdapter(adapter);
-        // A lista troca inteira a cada mudanca de filtro; a animacao padrao de
-        // insercao e remocao faria a troca parecer lenta.
         lista.setItemAnimator(null);
 
         estado = new EstadoCatalogo(
@@ -86,8 +79,6 @@ public class InicioFragment extends Fragment {
         });
 
         viewModel.getFiltro().observe(getViewLifecycleOwner(), filtro -> {
-            // O icone muda de cor com o filtro ligado, para a pessoa lembrar
-            // que a lista nao e o catalogo inteiro.
             if (filtro != null && filtro.isAtivo()) {
                 btnFiltro.setColorFilter(ContextCompat.getColor(requireContext(), R.color.magenta_venus));
             } else {
@@ -117,7 +108,6 @@ public class InicioFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        // Confere de novo ao voltar do questionario: o cartao some quando o perfil fecha.
         cartaoPerfil.atualizar(new PerfilRepository(requireContext()).progresso());
     }
 

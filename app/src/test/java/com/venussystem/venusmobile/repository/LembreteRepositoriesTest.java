@@ -17,7 +17,6 @@ import org.robolectric.annotation.Config;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
-/** O estado do lembrete do questionario e guardado por conta. */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = Config.OLDEST_SDK)
 public class LembreteRepositoriesTest {

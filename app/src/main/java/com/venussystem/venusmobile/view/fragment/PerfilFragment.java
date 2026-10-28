@@ -48,14 +48,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class PerfilFragment extends Fragment {
-
-    /**
-     * Um cartao da secao "Pele & cabelo": o titulo, de onde le/salva a
-     * resposta, a pergunta do modal e as opcoes de chip. `opcoes == null`
-     * marca a faixa etaria, que usa um modal de dropdown em vez de chips.
-     * `exclusivas != null` marca as perguntas de varias escolhas, salvas como
-     * lista (condicoes de pele e gestacao).
-     */
     private static class Atributo {
         @StringRes final int rotulo;
         final String chave;
@@ -88,8 +80,6 @@ public class PerfilFragment extends Fragment {
         return lista;
     }
 
-    // As mesmas tags/opcoes das telas cheias do questionario (para a resposta
-    // continuar compativel), na ordem em que os cartoes aparecem na tela.
     private static final Atributo[] ATRIBUTOS = {
             new Atributo(R.string.perfil_genero, PerfilRepository.GENERO,
                     R.string.pergunta_genero, opcoes(
@@ -157,8 +147,6 @@ public class PerfilFragment extends Fragment {
             new Atributo(R.string.perfil_faixa_etaria, PerfilRepository.FAIXA_ETARIA,
                     R.string.pergunta_faixa_etaria, null),
 
-            // Muda com o tempo (a gestacao acaba, a amamentacao tambem), entao
-            // precisa ser editavel aqui e nao so no questionario inicial.
             new Atributo(R.string.perfil_gestacao, PerfilRepository.GESTACAO,
                     R.string.pergunta_gestacao, opcoes(
                     "isPregnant", R.string.gestacao_gravida,
@@ -174,8 +162,6 @@ public class PerfilFragment extends Fragment {
     private FotoPerfilRepository fotoPerfil;
     private LinearLayout listaAtributos;
 
-    // Onde a camera vai gravar a foto. Guardado no estado da tela porque o
-    // sistema pode fechar o app enquanto a camera esta aberta.
     @Nullable
     private Uri uriCameraPendente;
 
@@ -225,13 +211,10 @@ public class PerfilFragment extends Fragment {
         mostrarUsuario(view);
         montarAtributos();
 
-        // Trocar a foto: pela camera na borda ou tocando na propria foto.
         view.findViewById(R.id.btnTrocarFoto).setOnClickListener(v -> escolherFoto());
         view.findViewById(R.id.imgAvatar).setOnClickListener(v -> escolherFoto());
         view.findViewById(R.id.btnSairDaConta).setOnClickListener(v -> voltarAoLogin());
 
-        // A foto guardada aparece na hora; sem foto no aparelho, a API e
-        // consultada (foto posta pelo site ou em outro celular).
         fotoPerfil = new FotoPerfilRepository(requireContext());
         mostrarFoto(fotoPerfil.caminho());
         fotoPerfil.buscarDaApiEmSegundoPlano(this::mostrarFoto);
@@ -243,8 +226,6 @@ public class PerfilFragment extends Fragment {
                 Arrays.asList(getResources().getStringArray(R.array.preferencias)),
                 PerfilRepository.PREFERENCIAS);
 
-        // As alergias vem do catalogo da API, o mesmo do site; ate ele chegar,
-        // vale o ultimo guardado (ou a lista reserva).
         catalogo.atualizarEmSegundoPlano(nomes -> {
             View raiz = getView();
             if (raiz != null) {
@@ -253,11 +234,6 @@ public class PerfilFragment extends Fragment {
         });
     }
 
-    /**
-     * Cada edicao ja salva no aparelho na hora; o envio para a API fica para
-     * quando a pessoa sai da tela, juntando todas as edicoes num envio so. Se
-     * nada mudou, a sincronizacao nao manda nada.
-     */
     @Override
     public void onStop() {
         super.onStop();
@@ -302,10 +278,6 @@ public class PerfilFragment extends Fragment {
         }
     }
 
-    /**
-     * A foto nova aparece assim que fica pronta no aparelho; o envio para a
-     * API vai em segundo plano e, se falhar, tenta de novo na proxima abertura.
-     */
     private void trocarFoto(Uri origem) {
         fotoPerfil.trocar(origem, caminho -> {
             if (caminho == null) {
@@ -320,7 +292,6 @@ public class PerfilFragment extends Fragment {
         });
     }
 
-    /** Pode chegar depois que a tela fechou (a foto vem da API): ai nao faz nada. */
     private void mostrarFoto(@Nullable String caminho) {
         View raiz = getView();
         if (raiz == null) {
@@ -333,21 +304,11 @@ public class PerfilFragment extends Fragment {
         }
         Coil.imageLoader(requireContext()).enqueue(new ImageRequest.Builder(requireContext())
                 .data(caminho)
-                // A view posiciona a foto sozinha (ver AvatarPerfilView); FILL
-                // faz o Coil abrir a imagem grande o bastante para cobrir o
-                // circulo sem ficar borrada.
                 .scale(Scale.FILL)
                 .target(avatar)
                 .build());
     }
 
-    /**
-     * Sai da conta e volta para a tela de boas-vindas (Entrar / Cadastrar),
-     * limpando a pilha para o voltar do celular nao trazer o perfil de volta.
-     * As respostas do questionario continuam no aparelho, guardadas por conta
-     * (ver DadosDaConta): entrar de novo com a mesma conta traz tudo de volta.
-     * So a conversa com a Venus e apagada (ver AutenticacaoRepository.sair).
-     */
     private void voltarAoLogin() {
         new AutenticacaoRepository().sair(requireContext());
 
@@ -373,10 +334,6 @@ public class PerfilFragment extends Fragment {
         }
     }
 
-    /**
-     * As perguntas de varias escolhas guardam so as tags (acneProne,
-     * isPregnant...), entao o texto do cartao e montado a partir das opcoes.
-     */
     @Nullable
     private String valorAtual(Atributo atributo) {
         if (atributo.exclusivas != null && atributo.opcoes != null) {
@@ -393,10 +350,6 @@ public class PerfilFragment extends Fragment {
                 respondido ? R.color.roxo_marca : R.color.laranja_pendente));
     }
 
-    /**
-     * Abre o modal por cima da propria tela de perfil - nao navega para
-     * nenhuma outra Activity, entao nunca da a impressao de "sair" do perfil.
-     */
     private void abrirModal(Atributo atributo) {
         if (atributo.exclusivas != null && atributo.opcoes != null) {
             ModalEscolhaMultipla.mostrar(requireContext(), atributo.pergunta,
@@ -425,10 +378,6 @@ public class PerfilFragment extends Fragment {
                 });
     }
 
-    /**
-     * Alergias e Valores sao editaveis na propria tela: escolher no campo de
-     * busca adiciona um chip, e o X remove. Cada mudanca ja salva.
-     */
     private void prepararSecaoDeLista(View raiz, int idCampo, int idChips,
                                       List<String> opcoes, String chave) {
         AppCompatAutoCompleteTextView campo = raiz.findViewById(idCampo);

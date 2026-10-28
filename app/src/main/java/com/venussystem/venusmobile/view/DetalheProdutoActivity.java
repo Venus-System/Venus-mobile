@@ -130,9 +130,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     private boolean alternativasMontadas = false;
     private boolean matchCarregado = false;
 
-    // A aba junta duas respostas que chegam em qualquer ordem: o cruzamento feito
-    // no aparelho e a nota pessoal da Venus-Classificacao. O contador descarta a
-    // resposta de um pedido antigo quando a aba e aberta de novo.
     private int pedidoMatch = 0;
     @Nullable
     private ResultadoMatch resultadoMatch;
@@ -141,17 +138,13 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     @Nullable
     private ClassificationResponse classificacaoMatch;
     private boolean classificacaoRespondeu = false;
-    /** O code do erro da Classificacao, para explicar por que o anel ficou na nota geral. */
     @Nullable
     private String erroClassificacao;
     private boolean telaInicializada = false;
     private boolean mensagemErroMostrada = false;
 
-    // So vai para a API quando a tela fecha, juntando todos os toques do
-    // menu de listas num envio so (como na DetalheListaActivity).
     private boolean listasAlteradas = false;
 
-    // O mesmo para o coracao: os toques vao para /api/favorites ao fechar.
     private boolean curtidosAlterados = false;
 
     @Override
@@ -227,8 +220,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        // O produto pode ter saido de uma lista (ou dos curtidos) enquanto
-        // esta tela estava por baixo (ex.: removido na DetalheListaActivity).
         if (telaInicializada) {
             atualizarIconeDoMarcador();
             atualizarIconeDoCoracao();
@@ -507,8 +498,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         preencherCabecalho();
         prepararAbas();
 
-        // Escondidos ate aqui: antes de achar o produto nao ha o que salvar
-        // nem sobre o que perguntar.
         btnSalvarNaLista.setVisibility(
                 View.VISIBLE
         );
@@ -522,10 +511,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         atualizarIconeDoCoracao();
     }
 
-    /**
-     * Anota o produto no historico da busca. Falhar aqui nao pode atrapalhar
-     * a tela: o historico e so um atalho.
-     */
     private void registrarAcesso(
             long produtoId
     ) {
@@ -598,9 +583,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                         : View.GONE
         );
 
-        // A foto é independente da leitura dos ingredientes. Resolve-a logo
-        // pelo media_assets para não fazer a imagem esperar as consultas da
-        // composição completa do produto.
         ProdutoImagemLoader.carregar(
                 this, imgProduto, produto, R.drawable.bg_foto_produto);
     }
@@ -775,7 +757,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                     @Override
                     public void aoFalhar() {
                         if (isFinishing() || isDestroyed() || pedido != pedidoMatch) return;
-                        // Deixa tentar de novo ao reabrir a aba.
                         matchCarregado = false;
                         carregandoMatch.setVisibility(View.GONE);
                         mostrarMensagemMatch(R.string.produto_match_indisponivel);
@@ -783,8 +764,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 }
         );
 
-        // A nota pessoal vem de outro servico (a Venus-Classificacao): corre em
-        // paralelo e so troca o anel e o selo quando chega.
         new ClassificacaoRepository(this).classificar(
                 produto.getId(),
                 new ClassificacaoRepository.AoClassificar() {
@@ -794,7 +773,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                         classificacaoMatch = classificacao;
                         classificacaoRespondeu = true;
                         atualizarNotaESelo();
-                        // A alergia que ela achou pelo cadastro entra no cartao.
                         if (resultadoMatch != null) mostrarAlergias();
                     }
 
@@ -822,10 +800,8 @@ public class DetalheProdutoActivity extends AppCompatActivity {
             if (progresso.estado == ProgressoPerfil.Estado.COMPLETO) {
                 mostrarMensagemMatch(R.string.produto_match_sem_perfil);
             } else {
-                // O cartao chama para o questionario, com o botao que o texto nao tinha.
                 cartaoPerfilMatch.atualizar(progresso);
             }
-            // Quando a pessoa responder o questionario, a aba recalcula.
             matchCarregado = false;
             return;
         }
@@ -840,7 +816,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         textMatchCruzado.setText(consideradas.isEmpty()
                 ? getString(R.string.produto_match_perfil_sem_etiquetas)
                 : getString(R.string.produto_match_cruzado, String.join(", ", consideradas)));
-        // Tambem desenha os pontos: com a nota pessoal, eles ganham os motivos dela.
         atualizarNotaESelo();
         textMatchSemEfeitos.setVisibility(resultado.catalogoCobre ? View.GONE : View.VISIBLE);
         mostrarDestaques(resultado.destaques);
@@ -850,11 +825,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         textMatchAviso.setVisibility(View.VISIBLE);
     }
 
-    /**
-     * Anel e selo do cabecalho. Com a Venus-Classificacao: a nota pessoal e a
-     * faixa dela. Enquanto ela nao responde, o anel fica carregando; se falhar,
-     * volta para a nota geral do produto e o veredito do calculo no aparelho.
-     */
     private void atualizarNotaESelo() {
         if (resultadoMatch == null) return;
 
@@ -895,11 +865,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 getString(R.string.produto_match_nota_descricao, geral));
     }
 
-    /**
-     * "A nota soma duas partes: 25,9 de 35 ... e 15,3 de 65 ...": de onde vem a
-     * nota pessoal, com os pontos da Classificacao. Sem eles (analise salva que
-     * nao foi calculada neste aparelho), a linha nao aparece.
-     */
     private void mostrarConta(ClassificationResponse pessoal) {
         ClassificationResponse.Breakdown partes = pessoal.breakdown;
         ContaDaNota conta = partes == null
@@ -919,7 +884,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         textMatchConta.setVisibility(View.VISIBLE);
     }
 
-    /** Na mesma linha da conta, por que a nota pessoal nao veio (produto em revisao...). */
     private void mostrarErroDaNota() {
         Integer texto = TextosMatch.erroDaNota(erroClassificacao);
         if (texto == null) {
@@ -930,7 +894,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         textMatchConta.setVisibility(View.VISIBLE);
     }
 
-    /** Motivos de regra de ingrediente da Classificacao, sem o texto do banco. */
     private static List<PontosDaClassificacao.Motivo> motivosDe(ClassificationResponse c) {
         List<PontosDaClassificacao.Motivo> motivos = new ArrayList<>();
         if (c.reasons == null) return motivos;
@@ -984,14 +947,12 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         anelNotaMatch.setVisibility(View.VISIBLE);
     }
 
-    /** Enche so a parte da volta que corresponde a nota (60 enche 60%), na cor da faixa. */
     private void preencherAnel(int valor, int cor, int trilho) {
         progressoNotaMatch.setIndicatorColor(ContextCompat.getColor(this, cor));
         progressoNotaMatch.setTrackColor(ContextCompat.getColor(this, trilho));
         progressoNotaMatch.setProgressCompat(Math.max(0, Math.min(100, valor)), true);
     }
 
-    /** Faixa da nota pessoal (recommendationLevel da Classificacao) em texto e cor. */
     private static final class FaixaPessoal {
         final int texto;
         final int corAnel;
@@ -1074,7 +1035,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         listaMatchPontos.setVisibility(pontos.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
-    /** Destaques gerais so como chips curtos: a descricao do catalogo era texto demais. */
     private void mostrarDestaques(List<ResultadoMatch.Destaque> destaques) {
         grupoMatchDestaques.removeAllViews();
         List<String> rotulos = TextosMatch.chips(this::getString, destaques, MAXIMO_CHIPS_MATCH);
@@ -1091,7 +1051,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         secaoMatchDestaques.setVisibility(rotulos.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
-    /** As achadas no aparelho mais as que a Classificacao mandou (ou que o POST deixou guardadas). */
     private void mostrarAlergias() {
         List<String> encontradas = PontosDaClassificacao.alergias(
                 resultadoMatch.alergiasEncontradas,
@@ -1162,9 +1121,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         textIngredientes.setVisibility(View.GONE);
         listaIngredientes.setVisibility(View.GONE);
 
-        // Duas chamadas independentes: o rotulo (texto corrido e foto) e a
-        // lista de ingredientes com descricao. A tela so se monta quando as
-        // duas voltam, para nao piscar o texto corrido antes da lista.
         final String[] rotulo = new String[1];
         final List<IngredienteProduto>[] lista = new List[1];
         final int[] pendentes = {2};
@@ -1188,11 +1144,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Um ingrediente por item, com a descricao embaixo. Sem lista (produto sem
-     * ingredientes cadastrados ou chamada falhou) cai no texto corrido do
-     * rotulo, que era o comportamento anterior.
-     */
     private void mostrarIngredientes(@Nullable List<IngredienteProduto> ingredientes,
                                      @Nullable String textoRotulo) {
         carregandoIngredientes.setVisibility(View.GONE);
@@ -1305,13 +1256,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         );
     }
 
-    /**
-     * Menu preso ao marcador com todas as listas do usuario. As que ja tem
-     * este produto aparecem marcadas; tocar numa lista salva o produto nela
-     * (no topo, como o "Adicionar produto" da propria lista) ou tira, se ja
-     * estava. A ultima opcao cria uma lista nova ja com o produto - e a unica
-     * quando a pessoa ainda nao tem lista nenhuma.
-     */
     private void mostrarListasParaSalvar(
             View ancora
     ) {
@@ -1341,7 +1285,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
             Colecao lista = listas.get(i);
 
-            // O id do item e a posicao na lista, para achar a Colecao no clique.
             menu.getMenu()
                     .add(
                             Menu.NONE,
@@ -1358,7 +1301,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                     );
         }
 
-        // Depois de todas as listas: o id dela e o primeiro que sobra.
         int idNovaLista = listas.size();
 
         menu.getMenu()
@@ -1392,10 +1334,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         menu.show();
     }
 
-    /**
-     * Pede so o nome (como o "Editar nome" da lista) e ja salva o produto
-     * na lista criada. Descricao e capa ficam para a tela da lista.
-     */
     private void mostrarDialogoNovaLista() {
 
         View conteudo =
@@ -1418,8 +1356,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                         .setNegativeButton(R.string.lista_cancelar, null)
                         .create();
 
-        // Botao positivo tratado a mao: nome vazio ou repetido mantem o
-        // dialog aberto mostrando o erro (o listener do Builder sempre fecha).
         dialog.setOnShowListener(
                 d -> dialog
                         .getButton(AlertDialog.BUTTON_POSITIVE)
@@ -1498,7 +1434,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                     produtoId
             );
 
-            // Salvar ganha a mensagem verde; tirar fica no cinza.
             MensagemRapida.sucesso(
                     raiz,
                     getString(
@@ -1512,10 +1447,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         atualizarIconeDoMarcador();
     }
 
-    /**
-     * O coracao: curtir manda o produto para a lista fixa "Produtos curtidos"
-     * (com a mensagem verde); tocar de novo tira, com a mensagem cinza.
-     */
     private void alternarCurtida() {
 
         if (produto == null) {
@@ -1546,7 +1477,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         atualizarIconeDoCoracao();
     }
 
-    /** Coracao cheio quando o produto esta nos curtidos. */
     private void atualizarIconeDoCoracao() {
 
         boolean curtido =
@@ -1569,7 +1499,6 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         );
     }
 
-    /** Marcador preenchido quando o produto esta em pelo menos uma lista. */
     private void atualizarIconeDoMarcador() {
 
         boolean salvo = false;

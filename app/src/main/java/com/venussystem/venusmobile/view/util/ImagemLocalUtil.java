@@ -12,13 +12,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
 
-/**
- * Copia de imagens escolhidas (galeria ou camera) para o armazenamento
- * privado do app, para a capa de uma lista sobreviver ao reinicio do
- * aparelho. Um content:// da galeria pode perder o acesso depois que o
- * processo morre, e o arquivo temporario da camera fica no cache, que o
- * sistema pode limpar - por isso a copia final vai sempre para filesDir.
- */
 public final class ImagemLocalUtil {
 
     private static final String PASTA_CAPAS = "capas_lista";
@@ -49,11 +42,6 @@ public final class ImagemLocalUtil {
         return Uri.fromFile(destino).toString();
     }
 
-    /**
-     * Cria um arquivo vazio no cache e devolve o Uri (via FileProvider) para
-     * a camera do sistema gravar a foto ali - a camera precisa de um Uri
-     * content:// pra escrever, nao aceita um caminho de arquivo direto.
-     */
     public static Uri criarUriParaCaptura(Context context) throws IOException {
         File pasta = new File(context.getCacheDir(), PASTA_CAPTURAS);
         if (!pasta.exists() && !pasta.mkdirs()) {

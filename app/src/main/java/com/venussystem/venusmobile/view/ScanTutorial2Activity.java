@@ -13,9 +13,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.ScanSubmissionDraft;
 
-/**
- * Passo 2: explica que a foto do verso deve priorizar ingredientes/composição.
- */
 public class ScanTutorial2Activity extends AppCompatActivity {
 
     private static final String TAG = "VENUS_SCAN";

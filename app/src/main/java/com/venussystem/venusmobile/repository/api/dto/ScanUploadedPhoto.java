@@ -2,7 +2,6 @@ package com.venussystem.venusmobile.repository.api.dto;
 
 import java.io.IOException;
 
-/** Durable upload receipt. No token, upload signature or API key is persisted. */
 public final class ScanUploadedPhoto {
     public ScanSessionRequest.Image image;
     public String cloudName, deliveryType;

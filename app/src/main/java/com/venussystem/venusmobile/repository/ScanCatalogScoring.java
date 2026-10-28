@@ -12,44 +12,11 @@ import static com.venussystem.venusmobile.repository.ScanCatalogText.normalizarC
 import static com.venussystem.venusmobile.repository.ScanCatalogText.tokensProdutoIdentidade;
 import static com.venussystem.venusmobile.repository.ScanCatalogText.tokensSignificativos;
 
-/** Internal collaborator for ScanProductMatchRepository; not a second scan entry point. */
 final class ScanCatalogScoring {
     private ScanCatalogScoring() { }
 
     private static final double TOKEN_MATCH_THRESHOLD = 0.84;
 
-    /**
-     * Pontua um produto.
-     *
-     * A principal mudança é:
-     *
-     * ANTES:
-     *
-     *     muitos termos do OCR
-     *     ---------------------
-     *     score diluído
-     *
-     * AGORA:
-     *
-     *     quantos tokens RELEVANTES DO PRODUTO
-     *     foram encontrados no OCR?
-     *
-     * Exemplo:
-     *
-     * OCR:
-     *     CLINICAL
-     *     CLEAN
-     *     MEN
-     *
-     * Produto:
-     *     REXONA CLINICAL CLEAN MEN
-     *
-     * Após remover a marca:
-     *
-     *     CLINICAL CLEAN MEN
-     *
-     * Os 3 tokens são encontrados.
-     */
     static ProductEvidence pontuarProduto(
             @NonNull List<String> candidatos,
             @NonNull List<String> termosFortes,
@@ -63,40 +30,11 @@ final class ScanCatalogScoring {
         if (tokensAlvo.isEmpty()) {
             return null;
         }
-        /*
-         * =========================================================
-         * CASAMENTO DOS TOKENS DO PRODUTO
-         * =========================================================
-         *
-         * Exemplo:
-         *
-         * Produto:
-         * REXONA CLINICAL CLEAN MEN
-         *
-         * Após remover a marca:
-         *
-         * CLINICAL CLEAN MEN
-         *
-         * OCR:
-         * CLINICAL
-         * CLEAN
-         * CREMAMEN
-         *
-         * Resultado:
-         * CLINICAL -> exato
-         * CLEAN    -> exato
-         * MEN      -> não encontrado
-         *
-         * Isso representa 2 de 3 tokens identificadores.
-         */
         int tokensAlvoCasados = 0;
         int tokensAlvoExatos = 0;
         double somaMelhoresTokensAlvo = 0.0;
         String melhorTermo = null;
         double melhorTermoScore = 0.0;
-        /*
-         * Tokens OCR disponíveis.
-         */
         Set<String> tokensOCR =
                 new LinkedHashSet<>();
         for (String candidato :
@@ -107,10 +45,6 @@ final class ScanCatalogScoring {
                     )
             );
         }
-        /*
-         * Evita que o mesmo token OCR seja reutilizado
-         * para casar vários tokens do produto.
-         */
         Set<String> tokensOCRUsados =
                 new LinkedHashSet<>();
         for (String tokenAlvo :
@@ -118,9 +52,6 @@ final class ScanCatalogScoring {
             double melhorDoAlvo = 0.0;
             String melhorOCRDoAlvo = null;
             boolean melhorFoiExato = false;
-            /*
-             * PRIMEIRO: procura casamento EXATO.
-             */
             for (String tokenOCR :
                     tokensOCR) {
                 if (tokensOCRUsados.contains(
@@ -137,10 +68,6 @@ final class ScanCatalogScoring {
                     break;
                 }
             }
-            /*
-             * SEGUNDO: se não achou exato,
-             * tenta similaridade/falha de OCR.
-             */
             if (!melhorFoiExato) {
                 for (String tokenOCR :
                         tokensOCR) {
@@ -163,9 +90,6 @@ final class ScanCatalogScoring {
                     }
                 }
             }
-            /*
-             * Aceita o token quando o match é suficientemente forte.
-             */
             if (melhorDoAlvo
                     >= TOKEN_MATCH_THRESHOLD) {
                 tokensAlvoCasados++;
@@ -191,11 +115,6 @@ final class ScanCatalogScoring {
         if (tokensAlvoCasados == 0) {
             return null;
         }
-        /*
-         * =========================================================
-         * COBERTURAS
-         * =========================================================
-         */
         double targetCoverage =
                 (double) tokensAlvoCasados
                         / tokensAlvo.size();
@@ -205,15 +124,6 @@ final class ScanCatalogScoring {
         double exactTargetCoverage =
                 (double) tokensAlvoExatos
                         / tokensAlvo.size();
-        /*
-         * =========================================================
-         * TERMOS FORTES DO OCR
-         * =========================================================
-         *
-         * Depois de tornar palavras genéricas como DESODORANTE,
-         * AEROSOL e ANTITRANSPIRANT fracas, elas deixam de
-         * contaminar esta evidência.
-         */
         int termosFortesCasados = 0;
         for (String termoOCR :
                 termosFortes) {
@@ -235,11 +145,6 @@ final class ScanCatalogScoring {
                 termosFortesCasados++;
             }
         }
-        /*
-         * =========================================================
-         * MELHOR FRASE
-         * =========================================================
-         */
         double melhorFraseScore = 0.0;
         String melhorFrase = null;
         for (String frase :
@@ -248,8 +153,6 @@ final class ScanCatalogScoring {
                     || frase.trim().isEmpty()) {
                 continue;
             }
-            // Capacity is a shared presentation field, never product
-            // identity. Do not let "150 ML" decide between variants.
             if (frase.trim().matches(
                     "(?i)\\d+(?:[.,]\\d+)?\\s*(?:ML|G|GR|KG|L|FLOZ)")) {
                 continue;
@@ -274,85 +177,24 @@ final class ScanCatalogScoring {
                         frase;
             }
         }
-        /*
-         * =========================================================
-         * SCORE BASE
-         * =========================================================
-         *
-         * O foco agora é:
-         *
-         * 1. cobertura dos tokens do produto;
-         * 2. similaridade;
-         * 3. quantidade de tokens exatos;
-         * 4. frase comercial.
-         */
         double score =
                 targetCoverage * 0.35
                         + targetSimilarityAverage * 0.15
                         + exactTargetCoverage * 0.25
                         + melhorFraseScore * 0.25;
-        /*
-         * =========================================================
-         * BÔNUS DE EVIDÊNCIA FORTE
-         * =========================================================
-         *
-         * Esta é a correção principal para o seu Rexona.
-         *
-         * CLINICAL + CLEAN
-         *
-         * são dois tokens exatos em um nome com três tokens.
-         *
-         * Isso deve ser considerado uma evidência forte,
-         * mesmo que MEN não tenha sido lido perfeitamente.
-         */
         if (tokensAlvoExatos >= 2) {
             score += 0.20;
         }
-        /*
-         * Dois ou mais tokens exatos ocupando pelo menos
-         * aproximadamente 2/3 do nome identificador.
-         */
         if (tokensAlvoExatos >= 2
                 && targetCoverage >= 0.66) {
             score += 0.10;
         }
-        /*
-         * Três ou mais tokens exatos praticamente determinam
-         * o produto.
-         */
         if (tokensAlvoExatos >= 3) {
             score += 0.10;
         }
         if (score > 1.0) {
             score = 1.0;
         }
-        /*
-         * =========================================================
-         * SEGURANÇA
-         * =========================================================
-         *
-         * Ainda exigimos pelo menos duas evidências fortes.
-         *
-         * Assim:
-         *
-         * "Clinical"
-         * sozinho
-         *
-         * não basta.
-         *
-         * Mas:
-         *
-         * "Clinical" + "Clean"
-         *
-         * basta quando há diferença suficiente para o
-         * segundo produto.
-         */
-        /*
-         * Evidência parcial continua sendo devolvida ao matcher. Ela não
-         * abre o produto: o matcher exige cobertura/termos fortes e retorna
-         * AMBIGUOUS quando a decisão não é segura. Descartá-la aqui convertia
-         * dois produtos igualmente compatíveis em NOT_FOUND.
-         */
         String candidatoFinal =
                 melhorFrase != null
                         ? melhorFrase
@@ -369,9 +211,6 @@ final class ScanCatalogScoring {
         );
     }
 
-    /**
-     * Extrai termos fortes dos candidatos OCR.
-     */
     @NonNull
     static List<String> extrairTermosFortes(
             @NonNull List<String> candidatos
@@ -403,18 +242,6 @@ final class ScanCatalogScoring {
         return resultado;
     }
 
-    /**
-     * Cria frases a partir das próprias strings
-     * produzidas pelo extractor.
-     *
-     * Exemplo:
-     *
-     * NATIVA SPA
-     *
-     * vira:
-     *
-     * NATIVA SPA
-     */
     @NonNull
     static List<String> gerarFrasesProduto(
             @NonNull List<String> candidatos
@@ -441,9 +268,6 @@ final class ScanCatalogScoring {
                     resultado,
                     normalizado
             );
-            /*
-             * Frases contíguas de 2 tokens.
-             */
             for (int i = 0;
                  i < tokens.length - 1;
                  i++) {
@@ -453,9 +277,6 @@ final class ScanCatalogScoring {
                                 + " "
                                 + tokens[i + 1]
                 );
-                /*
-                 * Frases contíguas de 3 tokens.
-                 */
                 if (i < tokens.length - 2) {
                     adicionarUnico(
                             resultado,
@@ -471,9 +292,6 @@ final class ScanCatalogScoring {
         return resultado;
     }
 
-    /**
-     * Compara uma frase comercial contra o nome do produto.
-     */
     private static double scoreFraseContidaNoProduto(
             @NonNull String frase,
             @NonNull String nomeProduto
@@ -491,15 +309,6 @@ final class ScanCatalogScoring {
         if (tokensConsulta.length < 2) {
             return 0.0;
         }
-        /*
-         * Caso ideal:
-         *
-         * NATIVA SPA
-         *
-         * existe literalmente em:
-         *
-         * CREME PARA MAOS NATIVA SPA QUINOA
-         */
         if (alvo.contains(
                 consulta
         )) {
@@ -508,9 +317,6 @@ final class ScanCatalogScoring {
             }
             return 0.97;
         }
-        /*
-         * Fallback fuzzy por tokens.
-         */
         String[] tokensAlvo =
                 alvo.split("\\s+");
         int casados =
@@ -559,7 +365,6 @@ final class ScanCatalogScoring {
     }
 
     static class ProductEvidence {
-        /* Package-private: ScanCatalogMatcher consumes this immutable value. */
         final double score;
         final String candidatoOCR;
         final int termosFortesCasados;

@@ -4,7 +4,6 @@ import static org.junit.Assert.*;
 import android.graphics.Bitmap;
 import org.junit.Test;
 
-/** Runs on Android because Bitmap is an Android framework type. */
 public class ScanPhotoQualityAnalyzerInstrumentedTest {
     @Test public void metricsAreBoundedForUniformAndEdgeImages() {
         Bitmap uniform = Bitmap.createBitmap(80, 80, Bitmap.Config.ARGB_8888);

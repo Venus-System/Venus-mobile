@@ -3,10 +3,6 @@ package com.venussystem.venusmobile.domain.scan;
 import java.text.Normalizer;
 import java.util.Locale;
 
-/**
- * Deterministic key used only for catalogue lookup. The OCR value itself is
- * never rewritten with this method.
- */
 public final class ScanIngredientKeyNormalizer {
     private ScanIngredientKeyNormalizer() { }
 

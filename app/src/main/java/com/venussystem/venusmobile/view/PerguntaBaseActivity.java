@@ -32,7 +32,6 @@ public abstract class PerguntaBaseActivity extends AppCompatActivity {
         return 0;
     }
 
-    /** Onde a resposta desta tela e guardada. Ver PerfilRepository. */
     protected abstract String getChave();
 
     @Override
@@ -74,7 +73,6 @@ public abstract class PerguntaBaseActivity extends AppCompatActivity {
             View opcao = lista.getChildAt(i);
             opcao.setOnClickListener(v -> selecionar(lista, v));
 
-            // Se essa pergunta ja tinha sido respondida antes, a opcao volta marcada.
             if (jaEscolhido != null && jaEscolhido.equals(String.valueOf(opcao.getTag()))) {
                 selecionar(lista, opcao);
             }
@@ -88,7 +86,6 @@ public abstract class PerguntaBaseActivity extends AppCompatActivity {
         escolhida.setSelected(true);
         respostaSelecionada = String.valueOf(escolhida.getTag());
 
-        // O proprio texto da opcao vira o rotulo mostrado depois no perfil.
         rotuloSelecionado = escolhida instanceof TextView
                 ? ((TextView) escolhida).getText().toString()
                 : respostaSelecionada;

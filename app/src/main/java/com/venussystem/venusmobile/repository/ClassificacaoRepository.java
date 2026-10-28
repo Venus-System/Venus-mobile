@@ -28,22 +28,14 @@ import java.util.concurrent.Executors;
 import okhttp3.ResponseBody;
 import retrofit2.Response;
 
-/**
- * Nota pessoal da aba "Match com voce", da Venus-Classificacao: le a ultima
- * analise salva e so pede uma nova (POST, que grava no banco) quando nao ha
- * nenhuma ou quando o perfil mudou depois dela. Qualquer falha devolve
- * aoFalhar com o code do erro, e a aba fica com o calculo feito no aparelho.
- */
 public class ClassificacaoRepository {
 
     public interface AoClassificar {
         void aoConcluir(@NonNull ClassificationResponse classificacao);
 
-        /** @param codigo o "code" do erro da Classificacao; null em falha de rede ou sem perfil. */
         void aoFalhar(@Nullable String codigo);
     }
 
-    /** A analise, ou o code do erro quando ela nao veio. */
     @VisibleForTesting
     static final class Resultado {
         @Nullable
@@ -66,7 +58,6 @@ public class ClassificacaoRepository {
         }
     }
 
-    // O 404 do GET que so diz que a pessoa nunca analisou o produto.
     private static final String SEM_ANALISE = "ANALYSIS_NOT_FOUND";
 
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
@@ -123,7 +114,6 @@ public class ClassificacaoRepository {
         Response<ClassificationResponse> salva =
                 classificacao.ultimaClassificacao(userId, produtoId).execute();
         ClassificationResponse anterior = salva.isSuccessful() ? salva.body() : null;
-        // O GET nao traz a alergia nem os pontos; volta o que o POST dessa analise trouxe.
         if (anterior != null) doPost.completar(anterior);
 
         if (anterior != null && !QuandoClassificar.precisaRecalcular(anterior.calculatedAt,
@@ -131,8 +121,6 @@ public class ClassificacaoRepository {
             return Resultado.ok(anterior);
         }
         if (anterior == null) {
-            // So "sem analise" pede um calculo. Produto, versao ou modelo que
-            // faltam o POST repetiria, e outro erro e problema do servidor.
             String codigo = codigoDoErro(salva.errorBody());
             if (!SEM_ANALISE.equals(codigo)) return Resultado.falha(codigo);
         }
@@ -146,7 +134,6 @@ public class ClassificacaoRepository {
             doPost.guardar(nova.body());
             return Resultado.ok(nova.body());
         }
-        // Calculo novo recusado (versao em revisao, sem ingredientes...): a salva ainda serve.
         return anterior == null
                 ? Resultado.falha(codigoDoErro(nova.errorBody()))
                 : Resultado.ok(anterior);
@@ -173,7 +160,6 @@ public class ClassificacaoRepository {
         }
     }
 
-    /** O campo "code" do ErrorResponse da Classificacao, ou null. */
     @VisibleForTesting
     @Nullable
     static String codigoDoErro(@Nullable String json) {

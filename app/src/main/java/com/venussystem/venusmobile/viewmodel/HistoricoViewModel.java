@@ -30,9 +30,6 @@ public class HistoricoViewModel extends AndroidViewModel {
         super(application);
         repository = new HistoricoRepository(application);
         linhas.addSource(repository.getHistorico(), this::montarLinhas);
-        // Quem abre a busca logo no inicio do app chega antes do catalogo: os
-        // produtos acessados so entram quando ele chega. Quem carrega o
-        // catalogo e o BuscaViewModel da mesma tela.
         linhas.addSource(new ProdutoRepository().getCatalogo(), catalogo -> {
             if (catalogo != null) repository.recombinar();
         });
@@ -43,11 +40,6 @@ public class HistoricoViewModel extends AndroidViewModel {
         return linhas;
     }
 
-    /**
-     * Achata as entradas numa lista unica de linhas, inserindo um cabecalho toda
-     * vez que a data muda. Como as entradas vem em ordem decrescente de data,
-     * basta comparar com a anterior.
-     */
     private void montarLinhas(List<ItemHistorico> entradas) {
         List<LinhaHistorico> resultado = new ArrayList<>();
         if (entradas == null) {

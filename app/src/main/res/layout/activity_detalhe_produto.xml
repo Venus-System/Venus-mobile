@@ -35,8 +35,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
 
-    <!-- Curtir: o produto vai para a lista fixa "Produtos curtidos". Escondido
-         ate o produto carregar, como o marcador ao lado. -->
     <ImageButton
         android:id="@+id/btnCurtir"
         android:layout_width="@dimen/area_toque_minima"
@@ -49,8 +47,6 @@
         app:layout_constraintEnd_toStartOf="@+id/btnSalvarNaLista"
         app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
 
-    <!-- Abre o chat ja falando deste produto. Escondido ate o produto carregar,
-         como o marcador ao lado. -->
     <ImageButton
         android:id="@+id/btnPerguntarVenus"
         android:layout_width="@dimen/area_toque_minima"
@@ -235,7 +231,6 @@
                 android:visibility="gone"
                 tools:text="Responda o questionário para ver o match." />
 
-            <!-- Sem questionario respondido o Match nao existe: o cartao chama para ele. -->
             <com.venussystem.venusmobile.view.componente.CartaoPerfilView
                 android:id="@+id/cartaoPerfilMatch"
                 android:layout_width="match_parent"
@@ -243,8 +238,6 @@
                 android:layout_marginTop="@dimen/espaco_pequeno"
                 android:visibility="gone" />
 
-            <!-- Cartao "Para voce" do Figma, com lilas claro no lugar do degrade roxo:
-                 a nota geral em destaque no anel e os pontos do perfil em uma linha cada. -->
             <LinearLayout
                 android:id="@+id/cartaoMatch"
                 android:layout_width="match_parent"
@@ -308,9 +301,6 @@
 
                     </LinearLayout>
 
-                    <!-- O numero que mais importa na aba: a nota pessoal da Venus-Classificacao,
-                         ou a nota geral do produto quando ela nao responde. -->
-                    <!-- O anel enche so a parte da volta que corresponde a nota (60 enche 60%). -->
                     <FrameLayout
                         android:id="@+id/anelNotaMatch"
                         android:layout_width="84dp"
@@ -374,7 +364,6 @@
 
                 </LinearLayout>
 
-                    <!-- De onde vem a nota pessoal: qualidade do produto + combinacao com o perfil. -->
                     <TextView
                         android:id="@+id/textMatchConta"
                         android:layout_width="match_parent"
@@ -407,7 +396,6 @@
                     android:textSize="13sp"
                     android:visibility="gone" />
 
-                <!-- Destaques da composicao fora do perfil, so como chips. -->
                 <LinearLayout
                     android:id="@+id/secaoMatchDestaques"
                     android:layout_width="match_parent"
@@ -443,7 +431,6 @@
 
             </LinearLayout>
 
-            <!-- Alergias tem cartao proprio, com o atalho para as alternativas. -->
             <LinearLayout
                 android:id="@+id/cartaoMatchAlergias"
                 android:layout_width="match_parent"

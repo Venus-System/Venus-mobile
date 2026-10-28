@@ -272,7 +272,6 @@
     <string name="assistente_saudacao">Oi! Sou a Vênus. Pode me perguntar sobre produtos, ingredientes e cuidados com a pele e o cabelo.</string>
     <string name="assistente_offline">Esta versão do app foi gerada sem o endereço do servidor de conversas, então não consigo responder de verdade.</string>
     <string name="assistente_digitando">Digitando…</string>
-    <!-- Os três pontos que vão aparecendo são somados pelo ConversaAdapter. -->
     <string name="assistente_digitando_sem_pontos">Digitando</string>
     <string name="assistente_erro_conexao">Não consegui falar com o servidor. Confira sua internet e tente de novo.</string>
     <string name="assistente_erro_demora">Demorei demais pra responder e acabei desistindo. Pode perguntar de novo?</string>
@@ -308,7 +307,6 @@
     <string name="perfil_voltar_ao_login">Voltar ao login</string>
     <string name="perfil_trocar_foto">Alterar foto de perfil</string>
 
-    <!-- Produtos em analise: o que a pessoa escaneou e mandou para a equipe conferir -->
     <string name="analise_titulo">Produtos em análise</string>
     <string name="analise_detalhe_titulo">Detalhes do envio</string>
     <string name="analise_vazio_titulo">Nenhum produto enviado</string>
@@ -349,7 +347,6 @@
     <string name="produto_salvo_na_lista">Salvo em %1$s</string>
     <string name="produto_removido_da_lista">Removido de %1$s</string>
 
-    <!-- Produtos curtidos: o coracao na tela do produto e a lista fixa em Listas -->
     <string name="desc_curtir">Curtir produto</string>
     <string name="desc_descurtir">Descurtir produto</string>
     <string name="produto_curtido">Adicionado aos curtidos</string>
@@ -358,7 +355,6 @@
     <string name="curtidos_vazio_titulo">Nenhum produto curtido</string>
     <string name="curtidos_vazio">Toque no coração na tela de um produto para guardar aqui os que você gostou.</string>
 
-    <!-- Separadores da aba Listas -->
     <string name="listas_secao_fixas">Listas fixas</string>
     <string name="listas_secao_criadas">Listas criadas</string>
     <string name="produto_nova_lista">+ Nova lista</string>

@@ -4,18 +4,14 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <!-- So a aproximada: a analise precisa de cidade/estado, nao do ponto exato. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- Avisos do app (produto enviado, aprovado ou recusado, lembrete do questionario): notificacoes locais. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- O alarme do lembrete some quando o celular reinicia; o app o arma de novo. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
 
-    <!-- HTTP sem TLS so para o IP da Venus-AI-api na AWS (ver res/xml/network_security_config.xml). -->
     <application
         android:name=".VenusApplication"
         android:allowBackup="false"

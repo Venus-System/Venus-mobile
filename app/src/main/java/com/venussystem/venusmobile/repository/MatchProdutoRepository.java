@@ -35,15 +35,9 @@ import java.util.concurrent.Future;
 
 import retrofit2.Response;
 
-/**
- * Monta a aba "Match com voce": le a composicao do produto, os efeitos que o
- * catalogo registra para cada ingrediente e cruza com as etiquetas e alergias
- * do aparelho. Nao grava nada na API.
- */
 public class MatchProdutoRepository {
 
     public interface AoCalcular {
-        /** nota pode ser null: produto sem score no catalogo. */
         void aoConcluir(@NonNull ResultadoMatch resultado, @Nullable ProductScoreResponse nota,
                         @NonNull List<String> consideradas);
 
@@ -120,7 +114,6 @@ public class MatchProdutoRepository {
         for (ProductIngredientResponse item : composicao.body()) {
             if (item == null || item.ingredientId == null) continue;
             long ingredienteId = item.ingredientId;
-            // Os efeitos sao buscados mesmo sem etiqueta do perfil: viram os destaques.
             pedidos.add(REDE.submit(() -> analisar(ingredienteId)));
         }
 
@@ -134,12 +127,10 @@ public class MatchProdutoRepository {
                 ingredientes.add(ingrediente);
             }
         }
-        // Metade ou mais sem resposta: o resultado enganaria, melhor avisar o erro.
         if (!pedidos.isEmpty() && falhas * 2 >= pedidos.size()) {
             throw new IOException("ingredientes sem resposta");
         }
 
-        // As alergias tem cartao proprio na tela; aqui so o que entrou no cruzamento.
         List<String> consideradas =
                 EtiquetasDoPerfil.rotulos(slugsDoPerfil, Collections.emptySet());
         return new Resultado(
@@ -147,7 +138,6 @@ public class MatchProdutoRepository {
                 nota, consideradas);
     }
 
-    /** id -> slug de todas as profile-tags: os destaques precisam do slug de cada efeito. */
     private Map<Long, String> catalogoDeEtiquetas() throws IOException {
         Response<List<PreferenceCatalogResponse>> catalogo = api.listarEtiquetas(500).execute();
         if (!catalogo.isSuccessful() || catalogo.body() == null) {
@@ -162,7 +152,6 @@ public class MatchProdutoRepository {
         return slugs;
     }
 
-    /** null quando a API nao respondeu para este ingrediente. */
     @Nullable
     private IngredienteAnalisado analisar(long ingredienteId) {
         try {
