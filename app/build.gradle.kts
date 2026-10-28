@@ -5,12 +5,14 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
-// Endereco da API de IA (Venus-AI-api). O padrao e o servidor publicado no
-// Render, para todo APK ja sair com o chat ligado. Quem testa a API rodando no
-// PC (http://localhost:8000/ com adb reverse) troca por -PVENUS_IA_URL=... ou
-// no local.properties; um valor vazio de proposito deixa o chat avisando que
-// nao esta conectado, em vez de quebrar.
-val urlVenusIaPadrao = "https://venus-ai-api.onrender.com/"
+// Endereco da API de IA (Venus-AI-api). O padrao e o servidor da AWS, para todo
+// APK ja sair com o chat ligado. Quem testa a API rodando no PC
+// (http://localhost:8000/ com adb reverse) troca por -PVENUS_IA_URL=... ou no
+// local.properties; um valor vazio de proposito deixa o chat avisando que nao
+// esta conectado, em vez de quebrar. A URL tem caminho (/ai) e as rotas do
+// Retrofit sao relativas, entao ela precisa terminar em "/". E HTTP puro, sem
+// certificado: a liberacao fica em res/xml/network_security_config.xml.
+val urlVenusIaPadrao = "http://44.222.132.139/ai/"
 val propriedadesLocais = Properties().apply {
     val arquivo = rootProject.file("local.properties")
     if (arquivo.exists()) {
@@ -21,10 +23,10 @@ val urlVenusIa: String = (findProperty("VENUS_IA_URL") as String?)
     ?: propriedadesLocais.getProperty("VENUS_IA_URL")
     ?: urlVenusIaPadrao
 
-// Endereco da Venus-Classificacao (nota pessoal da aba "Match com voce"). Tambem
-// fica no Render, fora da EC2 do CRUD; troca do mesmo jeito que a da IA. Vazio
-// deixa a aba so com o calculo feito no aparelho.
-val urlVenusClassificacaoPadrao = "https://venus-classificacao.onrender.com/"
+// Endereco da Venus-Classificacao (nota pessoal da aba "Match com voce"). Fica no
+// mesmo host do CRUD (o sslip.io da EC2), no caminho /classificacao; troca do
+// mesmo jeito que a da IA. Vazio deixa a aba so com o calculo feito no aparelho.
+val urlVenusClassificacaoPadrao = "https://34-192-194-32.sslip.io/classificacao/"
 val urlVenusClassificacao: String = (findProperty("VENUS_CLASSIFICACAO_URL") as String?)
     ?: propriedadesLocais.getProperty("VENUS_CLASSIFICACAO_URL")
     ?: urlVenusClassificacaoPadrao

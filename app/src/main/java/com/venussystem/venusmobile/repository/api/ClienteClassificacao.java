@@ -13,16 +13,18 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
- * Cliente da Venus-Classificacao, que fica no Render (fora da EC2 do CRUD). A
- * URL vem do BuildConfig.VENUS_CLASSIFICACAO_URL (ver app/build.gradle.kts).
- * Vazia, a aba Match fica so com o calculo feito no aparelho.
+ * Cliente da Venus-Classificacao, que fica no mesmo host do CRUD (EC2 da AWS),
+ * no caminho /classificacao. A URL vem do BuildConfig.VENUS_CLASSIFICACAO_URL
+ * (ver app/build.gradle.kts). Vazia, a aba Match fica so com o calculo feito no
+ * aparelho.
  */
 public final class ClienteClassificacao {
 
     private static final long LIMITE_CONEXAO = 30L;
 
-    // O Render dorme: acordar levou ~40s no teste e chega a ~100s. A conta em si
-    // e rapida (dezenas de ms), entao o limite e quase todo para o cold start.
+    // Esses limites vieram do cold start do Render (~40s, chegando a ~100s). Na
+    // AWS o servidor nao dorme e a conta em si e rapida (dezenas de ms), entao a
+    // folga so cobre uma rede ruim.
     private static final long LIMITE_LEITURA = 120L;
     private static final long LIMITE_TOTAL = 150L;
 

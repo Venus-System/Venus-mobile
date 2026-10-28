@@ -14,20 +14,20 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * Cliente da Venus-AI-api. A URL vem do BuildConfig.VENUS_IA_URL: por padrao o
- * servidor no Render, trocavel no local.properties ou no build (ver
+ * servidor da AWS, trocavel no local.properties ou no build (ver
  * app/build.gradle.kts). Se alguem a deixar vazia, o chat avisa que nao esta
  * conectado em vez de tentar uma URL falsa.
  */
 public final class ClienteIa {
 
-    // Conectar e rapido mesmo com o servidor dormindo: quem atende primeiro e a
-    // borda do Render, que segura a conexao enquanto a API acorda.
+    // Conectar e rapido; o limite so pesa com o servidor fora do ar.
     private static final long LIMITE_CONEXAO = 30L;
 
     // A leitura e o tempo inteiro da resposta: a API so devolve quando a Venus
     // termina, e cada mensagem passa por varios modelos em sequencia (roteador,
     // especialista, juiz, memoria) - dezenas de segundos numa mensagem normal.
-    // Somado aos ~100s do Render acordando, 180s ficava justo demais.
+    // O valor sobrou do tempo em que a API acordava no Render (~100s a mais); na
+    // AWS ela nao dorme, e a folga so cobre mensagens muito lentas.
     private static final long LIMITE_LEITURA = 240L;
 
     private static VenusIaApi instancia;

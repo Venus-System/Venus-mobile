@@ -82,9 +82,10 @@ public class ConversaRepository {
     }
 
     /**
-     * Acorda o servidor sem esperar resposta. A primeira mensagem depois de o
-     * Render dormir leva mais de um minuto; disparado ao abrir a tela, esse
-     * tempo corre enquanto a pessoa ainda escreve.
+     * Chama a rota de health da IA sem esperar resposta. No Render, a primeira
+     * mensagem depois de o servidor dormir levava mais de um minuto, e disparar
+     * isto ao abrir a tela fazia esse tempo correr enquanto a pessoa escrevia.
+     * Na AWS ele nao dorme: a chamada so adianta a conexao.
      */
     public void acordar() {
         if (api == null) {

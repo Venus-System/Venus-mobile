@@ -783,8 +783,8 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 }
         );
 
-        // A nota pessoal vem de outro servidor (Render, que pode estar dormindo):
-        // corre em paralelo e so troca o anel e o selo quando chega.
+        // A nota pessoal vem de outro servico (a Venus-Classificacao): corre em
+        // paralelo e so troca o anel e o selo quando chega.
         new ClassificacaoRepository(this).classificar(
                 produto.getId(),
                 new ClassificacaoRepository.AoClassificar() {

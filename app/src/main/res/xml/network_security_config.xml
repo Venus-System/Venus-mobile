@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- O Android so aceita HTTPS por padrao. A Venus-AI-api esta na AWS em
+     http://44.222.132.139/ai (IP direto, sem certificado), entao so esse IP pode
+     usar HTTP sem TLS; qualquer outro endereco continua exigindo HTTPS. O token
+     do Firebase vai sem criptografia nesse trecho: quando a IA ganhar um
+     endereco com HTTPS, tire o IP daqui e do arquivo de debug. O build de debug
+     usa o src/debug/res/xml, que repete o IP e acrescenta os enderecos do PC. -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">44.222.132.139</domain>
+    </domain-config>
+</network-security-config>
