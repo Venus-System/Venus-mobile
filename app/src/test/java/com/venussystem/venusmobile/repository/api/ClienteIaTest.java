@@ -13,7 +13,13 @@ public class ClienteIaTest {
 
     @Test
     public void urlComBarraEEspacos_ficaComUmaBarraSo() {
-        assertEquals("https://venus-ai.onrender.com/",
-                ClienteIa.normalizar("  https://venus-ai.onrender.com/ "));
+        assertEquals("http://44.222.132.139/ai/",
+                ClienteIa.normalizar("  http://44.222.132.139/ai/ "));
+    }
+
+    @Test
+    public void urlComCaminhoSemBarraNoFim_mantemOCaminhoEGanhaABarra() {
+        assertEquals("https://34-192-194-32.sslip.io/classificacao/",
+                ClienteIa.normalizar("https://34-192-194-32.sslip.io/classificacao"));
     }
 }

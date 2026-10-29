@@ -15,6 +15,7 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
+    <!-- HTTP sem TLS so para o IP da Venus-AI-api na AWS (ver res/xml/network_security_config.xml). -->
     <application
         android:name=".VenusApplication"
         android:allowBackup="false"
@@ -22,6 +23,7 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.VenusMobile">

@@ -25,8 +25,9 @@ public interface VenusIaApi {
                                  @Body ChatRequest corpo);
 
     /**
-     * Rota publica e leve. Serve so para acordar o servidor (o Render dorme
-     * depois de 15 minutos parado) enquanto a pessoa ainda esta digitando.
+     * Rota publica e leve. Nasceu para acordar o servidor no Render (dormia
+     * depois de 15 minutos parado); na AWS ele nao dorme, e a chamada so adianta
+     * a conexao enquanto a pessoa ainda esta digitando.
      */
     @GET("v1/health")
     Call<Void> acordar();
