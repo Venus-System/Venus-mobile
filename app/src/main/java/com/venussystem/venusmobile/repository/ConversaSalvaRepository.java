@@ -9,8 +9,13 @@ import androidx.annotation.VisibleForTesting;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.venussystem.venusmobile.model.Mensagem;
+import com.venussystem.venusmobile.repository.banco.ConversaDao;
+import com.venussystem.venusmobile.repository.banco.ConversaEntity;
+import com.venussystem.venusmobile.repository.banco.MensagemEntity;
+import com.venussystem.venusmobile.repository.banco.VenusDatabase;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -45,8 +50,9 @@ public class ConversaSalvaRepository {
         String texto;
     }
 
-    private final SharedPreferences prefs;
-    private final Gson gson = new Gson();
+    private final VenusDatabase banco;
+    private final ConversaDao dao;
+    private final String uid;
 
     public ConversaSalvaRepository(Context context) {
         this(context, DadosDaConta.uidAtual(context));
@@ -54,78 +60,84 @@ public class ConversaSalvaRepository {
 
     @VisibleForTesting
     public ConversaSalvaRepository(Context context, @Nullable String uid) {
-        this.prefs = DadosDaConta.prefs(context, ARQUIVO, uid);
+        this.banco = VenusDatabase.get(context);
+        this.dao = banco.conversaDao();
+        this.uid = DadosDaConta.daConta(uid);
+        trazerDoArquivoAntigo(context, uid);
     }
 
     public Conversa carregar() {
-        Gravada gravada = ler();
+        ConversaEntity conversa = dao.conversa(uid);
         List<Mensagem> mensagens = new ArrayList<>();
-        for (MensagemGravada m : gravada.mensagens) {
-            if (m == null || m.texto == null) {
-                continue;
-            }
+        for (MensagemEntity m : dao.mensagens(uid)) {
             mensagens.add(m.autor == Mensagem.DO_USUARIO
                     ? Mensagem.doUsuario(m.texto)
                     : Mensagem.doAssistente(m.texto));
         }
-        return new Conversa(gravada.conversationId, mensagens);
+        return new Conversa(conversa == null ? null : conversa.conversationId, mensagens);
     }
 
     public boolean adicionarPar(@Nullable String idEnviado, String pergunta, String resposta,
                                 @Nullable String idUsado) {
-        Gravada gravada = ler();
-        if (!Objects.equals(gravada.conversationId, idEnviado)) {
-            return false;
-        }
-        gravada.mensagens.add(gravar(Mensagem.DO_USUARIO, pergunta));
-        gravada.mensagens.add(gravar(Mensagem.DO_ASSISTENTE, resposta));
-        while (gravada.mensagens.size() > LIMITE_MENSAGENS) {
-            gravada.mensagens.remove(0);
-        }
-        gravada.conversationId = idUsado;
-        salvar(gravada);
-        return true;
+        return banco.runInTransaction(() -> {
+            ConversaEntity conversa = dao.conversa(uid);
+            String idGuardado = conversa == null ? null : conversa.conversationId;
+            if (!Objects.equals(idGuardado, idEnviado)) {
+                return false;
+            }
+            dao.inserirMensagens(Arrays.asList(
+                    new MensagemEntity(uid, Mensagem.DO_USUARIO, pergunta),
+                    new MensagemEntity(uid, Mensagem.DO_ASSISTENTE, resposta)));
+            dao.manterSoAsUltimas(uid, LIMITE_MENSAGENS);
+            dao.gravarConversa(new ConversaEntity(uid, idUsado));
+            return true;
+        });
     }
 
     public String novaConversa() {
-        Gravada gravada = new Gravada();
-        gravada.conversationId = UUID.randomUUID().toString();
-        gravada.mensagens = new ArrayList<>();
-        salvar(gravada);
-        return gravada.conversationId;
+        String id = UUID.randomUUID().toString();
+        banco.runInTransaction(() -> {
+            dao.apagarMensagens(uid);
+            dao.gravarConversa(new ConversaEntity(uid, id));
+        });
+        return id;
     }
 
     public void apagar() {
-        prefs.edit().clear().commit();
+        banco.runInTransaction(() -> {
+            dao.apagarMensagens(uid);
+            dao.apagarConversa(uid);
+        });
     }
 
-    private Gravada ler() {
+    private void trazerDoArquivoAntigo(Context context, @Nullable String uidDaConta) {
+        SharedPreferences antigo = DadosDaConta.prefs(context, ARQUIVO, uidDaConta);
+        String json = antigo.getString(CHAVE, null);
+        if (json == null) {
+            return;
+        }
         Gravada gravada = null;
-        String json = prefs.getString(CHAVE, null);
-        if (json != null) {
-            try {
-                gravada = gson.fromJson(json, Gravada.class);
-            } catch (JsonParseException e) {
-                gravada = null;
+        try {
+            gravada = new Gson().fromJson(json, Gravada.class);
+        } catch (JsonParseException e) {
+        }
+        if (gravada != null && dao.conversa(uid) == null) {
+            List<MensagemEntity> mensagens = new ArrayList<>();
+            if (gravada.mensagens != null) {
+                for (MensagemGravada m : gravada.mensagens) {
+                    if (m != null && m.texto != null) {
+                        mensagens.add(new MensagemEntity(uid, m.autor, m.texto));
+                    }
+                }
             }
+            ConversaEntity conversa = new ConversaEntity(uid, gravada.conversationId);
+            banco.runInTransaction(() -> {
+                dao.inserirMensagens(mensagens);
+                dao.gravarConversa(conversa);
+            });
         }
-        if (gravada == null) {
-            gravada = new Gravada();
-        }
-        if (gravada.mensagens == null) {
-            gravada.mensagens = new ArrayList<>();
-        }
-        return gravada;
-    }
-
-    private void salvar(Gravada gravada) {
-        prefs.edit().putString(CHAVE, gson.toJson(gravada)).apply();
-    }
-
-    private static MensagemGravada gravar(int autor, String texto) {
-        MensagemGravada m = new MensagemGravada();
-        m.autor = autor;
-        m.texto = texto;
-        return m;
+        antigo.edit().clear().commit();
+        context.getApplicationContext()
+                .deleteSharedPreferences(DadosDaConta.nomeDoArquivo(ARQUIVO, uidDaConta));
     }
 }

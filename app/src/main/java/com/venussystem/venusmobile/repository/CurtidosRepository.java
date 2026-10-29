@@ -7,6 +7,10 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+import com.venussystem.venusmobile.repository.banco.CurtidoDao;
+import com.venussystem.venusmobile.repository.banco.CurtidoEntity;
+import com.venussystem.venusmobile.repository.banco.VenusDatabase;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,14 +22,13 @@ public class CurtidosRepository {
 
     static final String ARQUIVO = "venus_curtidos";
 
-    private static final String CHAVE_PRODUTOS = "produtos";
-    private static final String CHAVE_PARA_CURTIR = "para_curtir";
-    private static final String CHAVE_PARA_DESCURTIR = "para_descurtir";
+    private static final String CHAVE_PRODUTOS = CurtidoEntity.PRODUTOS;
+    private static final String CHAVE_PARA_CURTIR = CurtidoEntity.PARA_CURTIR;
+    private static final String CHAVE_PARA_DESCURTIR = CurtidoEntity.PARA_DESCURTIR;
 
-    private static final Object TRAVA = new Object();
-
-    private final SharedPreferences prefs;
-    private final Gson gson = new Gson();
+    private final VenusDatabase banco;
+    private final CurtidoDao dao;
+    private final String uid;
 
     public CurtidosRepository(Context context) {
         this(context, DadosDaConta.uidAtual(context));
@@ -33,7 +36,10 @@ public class CurtidosRepository {
 
     @VisibleForTesting
     public CurtidosRepository(Context context, @Nullable String uid) {
-        this.prefs = DadosDaConta.prefs(context, ARQUIVO, uid);
+        this.banco = VenusDatabase.get(context);
+        this.dao = banco.curtidoDao();
+        this.uid = DadosDaConta.daConta(uid);
+        trazerDoArquivoAntigo(context, uid);
     }
 
     public List<Long> getProdutoIds() {
@@ -45,7 +51,7 @@ public class CurtidosRepository {
     }
 
     public void curtir(long produtoId) {
-        synchronized (TRAVA) {
+        banco.runInTransaction(() -> {
             List<Long> produtos = ler(CHAVE_PRODUTOS);
             if (!produtos.contains(produtoId)) {
                 produtos.add(0, produtoId);
@@ -57,11 +63,11 @@ public class CurtidosRepository {
             List<Long> paraDescurtir = ler(CHAVE_PARA_DESCURTIR);
             paraDescurtir.remove(Long.valueOf(produtoId));
             gravar(produtos, paraCurtir, paraDescurtir);
-        }
+        });
     }
 
     public void descurtir(long produtoId) {
-        synchronized (TRAVA) {
+        banco.runInTransaction(() -> {
             List<Long> produtos = ler(CHAVE_PRODUTOS);
             produtos.remove(Long.valueOf(produtoId));
             List<Long> paraCurtir = ler(CHAVE_PARA_CURTIR);
@@ -71,7 +77,7 @@ public class CurtidosRepository {
                 paraDescurtir.add(produtoId);
             }
             gravar(produtos, paraCurtir, paraDescurtir);
-        }
+        });
     }
 
     List<Long> paraCurtirNaApi() {
@@ -95,7 +101,7 @@ public class CurtidosRepository {
     }
 
     boolean trocarPelosDaApi(List<Long> daApi) {
-        synchronized (TRAVA) {
+        return banco.runInTransaction(() -> {
             List<Long> atuais = ler(CHAVE_PRODUTOS);
             Set<Long> paraCurtir = new LinkedHashSet<>(ler(CHAVE_PARA_CURTIR));
             Set<Long> paraDescurtir = new LinkedHashSet<>(ler(CHAVE_PARA_DESCURTIR));
@@ -116,34 +122,71 @@ public class CurtidosRepository {
             if (resultado.equals(atuais)) {
                 return false;
             }
-            prefs.edit().putString(CHAVE_PRODUTOS, gson.toJson(resultado)).apply();
+            gravarLista(CHAVE_PRODUTOS, resultado);
             return true;
-        }
+        });
     }
 
     private void tirarDaFila(String fila, long produtoId) {
-        synchronized (TRAVA) {
+        banco.runInTransaction(() -> {
             List<Long> ids = ler(fila);
             if (ids.remove(Long.valueOf(produtoId))) {
-                prefs.edit().putString(fila, gson.toJson(ids)).apply();
+                gravarLista(fila, ids);
             }
-        }
+        });
     }
 
-    private List<Long> ler(String chave) {
-        String salvo = prefs.getString(chave, null);
-        if (salvo == null) {
-            return new ArrayList<>();
-        }
-        Long[] ids = gson.fromJson(salvo, Long[].class);
-        return ids == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(ids));
+    private List<Long> ler(String lista) {
+        return new ArrayList<>(dao.ids(uid, lista));
     }
 
     private void gravar(List<Long> produtos, List<Long> paraCurtir, List<Long> paraDescurtir) {
-        prefs.edit()
-                .putString(CHAVE_PRODUTOS, gson.toJson(produtos))
-                .putString(CHAVE_PARA_CURTIR, gson.toJson(paraCurtir))
-                .putString(CHAVE_PARA_DESCURTIR, gson.toJson(paraDescurtir))
-                .apply();
+        gravarLista(CHAVE_PRODUTOS, produtos);
+        gravarLista(CHAVE_PARA_CURTIR, paraCurtir);
+        gravarLista(CHAVE_PARA_DESCURTIR, paraDescurtir);
+    }
+
+    private void gravarLista(String lista, List<Long> ids) {
+        dao.apagarLista(uid, lista);
+        List<CurtidoEntity> linhas = new ArrayList<>();
+        for (int posicao = 0; posicao < ids.size(); posicao++) {
+            linhas.add(new CurtidoEntity(uid, lista, ids.get(posicao), posicao));
+        }
+        dao.inserir(linhas);
+    }
+
+    private void trazerDoArquivoAntigo(Context context, @Nullable String uidDaConta) {
+        SharedPreferences antigo = DadosDaConta.prefs(context, ARQUIVO, uidDaConta);
+        if (antigo.getAll().isEmpty()) {
+            return;
+        }
+        if (dao.quantos(uid) == 0) {
+            List<Long> produtos = lerDoArquivo(antigo, CHAVE_PRODUTOS);
+            List<Long> paraCurtir = lerDoArquivo(antigo, CHAVE_PARA_CURTIR);
+            List<Long> paraDescurtir = lerDoArquivo(antigo, CHAVE_PARA_DESCURTIR);
+            banco.runInTransaction(() -> gravar(produtos, paraCurtir, paraDescurtir));
+        }
+        antigo.edit().clear().commit();
+        context.getApplicationContext()
+                .deleteSharedPreferences(DadosDaConta.nomeDoArquivo(ARQUIVO, uidDaConta));
+    }
+
+    private static List<Long> lerDoArquivo(SharedPreferences antigo, String chave) {
+        String salvo = antigo.getString(chave, null);
+        if (salvo == null) {
+            return new ArrayList<>();
+        }
+        Long[] ids;
+        try {
+            ids = new Gson().fromJson(salvo, Long[].class);
+        } catch (JsonParseException e) {
+            return new ArrayList<>();
+        }
+        if (ids == null) {
+            return new ArrayList<>();
+        }
+        Set<Long> unicos = new LinkedHashSet<>(Arrays.asList(ids));
+        unicos.remove(null);
+        return new ArrayList<>(unicos);
     }
 }

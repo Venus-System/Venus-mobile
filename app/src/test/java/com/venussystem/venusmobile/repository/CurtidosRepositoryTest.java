@@ -113,4 +113,21 @@ public class CurtidosRepositoryTest {
         assertTrue(daBia.getProdutoIds().isEmpty());
         assertFalse(daBia.temAlgoParaEnviar());
     }
+
+    @Test
+    public void curtidosDoArquivoAntigo_vemParaOBanco() {
+        DadosDaConta.prefs(context, CurtidosRepository.ARQUIVO, "uid-bia").edit()
+                .putString("produtos", "[300,200,100]")
+                .putString("para_curtir", "[300]")
+                .putString("para_descurtir", "[400]")
+                .commit();
+
+        CurtidosRepository daBia = new CurtidosRepository(context, "uid-bia");
+
+        assertEquals(Arrays.asList(300L, 200L, 100L), daBia.getProdutoIds());
+        assertEquals(Collections.singletonList(300L), daBia.paraCurtirNaApi());
+        assertEquals(Collections.singletonList(400L), daBia.paraDescurtirNaApi());
+        assertTrue(DadosDaConta.prefs(context, CurtidosRepository.ARQUIVO, "uid-bia")
+                .getAll().isEmpty());
+    }
 }
