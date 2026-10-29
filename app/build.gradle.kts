@@ -5,13 +5,6 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
-// Endereco da API de IA (Venus-AI-api). O padrao e o servidor da AWS, para todo
-// APK ja sair com o chat ligado. Quem testa a API rodando no PC
-// (http://localhost:8000/ com adb reverse) troca por -PVENUS_IA_URL=... ou no
-// local.properties; um valor vazio de proposito deixa o chat avisando que nao
-// esta conectado, em vez de quebrar. A URL tem caminho (/ai) e as rotas do
-// Retrofit sao relativas, entao ela precisa terminar em "/". E HTTP puro, sem
-// certificado: a liberacao fica em res/xml/network_security_config.xml.
 val urlVenusIaPadrao = "http://44.222.132.139/ai/"
 val propriedadesLocais = Properties().apply {
     val arquivo = rootProject.file("local.properties")
@@ -23,9 +16,6 @@ val urlVenusIa: String = (findProperty("VENUS_IA_URL") as String?)
     ?: propriedadesLocais.getProperty("VENUS_IA_URL")
     ?: urlVenusIaPadrao
 
-// Endereco da Venus-Classificacao (nota pessoal da aba "Match com voce"). Fica no
-// mesmo host do CRUD (o sslip.io da EC2), no caminho /classificacao; troca do
-// mesmo jeito que a da IA. Vazio deixa a aba so com o calculo feito no aparelho.
 val urlVenusClassificacaoPadrao = "https://34-192-194-32.sslip.io/classificacao/"
 val urlVenusClassificacao: String = (findProperty("VENUS_CLASSIFICACAO_URL") as String?)
     ?: propriedadesLocais.getProperty("VENUS_CLASSIFICACAO_URL")
@@ -57,11 +47,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Provisorio: ainda nao existe a chave de release (o keystore vai
-            // nos secrets do GitHub). Sem assinatura o APK nem instala, entao
-            // por enquanto o release usa a chave de debug. O que protege a
-            // pessoa e o release nao ser depuravel: num APK de debug, o
-            // "adb run-as" le o token do Firebase e as respostas de saude.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -70,8 +55,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    // Libera o BuildConfig: o DEBUG so liga o log de rede em debug, e o
-    // VENUS_IA_URL diz onde esta a API de IA.
     buildFeatures {
         buildConfig = true
     }
@@ -91,24 +74,17 @@ dependencies {
     implementation(libs.lifecycle.viewmodel)
     implementation(libs.lifecycle.livedata)
 
-    // A BoM define as versoes de todas as libs do Firebase: nao coloque
-    // versao nas linhas de firebase-* abaixo, ela vem daqui.
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
 
-    // Login com Google. O GoogleSignInClient antigo esta descontinuado;
-    // o caminho atual e o Credential Manager.
     implementation(libs.credentials)
     implementation(libs.credentials.play.services)
     implementation(libs.googleid)
 
     implementation(libs.fragment)
     implementation(libs.recyclerview)
-    // Carrega imagem de URL: o ImageView sozinho nao busca da rede.
     implementation(libs.coil)
 
-    // Retrofit fala com a API do Venus-CRUD; o converter-gson transforma
-    // o JSON nas classes de repository/api/dto.
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp.logging)
@@ -118,7 +94,6 @@ dependencies {
     implementation(libs.camera.view)
     implementation(libs.mlkit.text.recognition)
     implementation(libs.play.services.location)
-    // Reenvio dos produtos que ficaram sem enviar, quando a internet volta.
     implementation(libs.work.runtime)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
