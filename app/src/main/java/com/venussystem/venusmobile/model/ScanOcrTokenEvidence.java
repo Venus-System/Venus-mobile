@@ -6,11 +6,6 @@ import androidx.annotation.NonNull;
 
 import java.io.Serializable;
 
-/**
- * Serializable, immutable snapshot of one OCR token.  The Android ML Kit
- * token itself contains an Android {@link Rect}, so it cannot safely cross an
- * Activity/process boundary or be persisted with the draft.
- */
 public final class ScanOcrTokenEvidence implements Serializable {
     private static final long serialVersionUID = 1L;
 

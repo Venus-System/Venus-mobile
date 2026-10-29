@@ -1,4 +1,3 @@
-# Parser-only regression tests. Uses isolated Rect/Log doubles, NOT an Android build.
 param(
     [string]$JavaHome = 'C:\Program Files\Android\Android Studio\jbr',
     [string]$GradleCache = "$env:USERPROFILE\.gradle\caches\modules-2\files-2.1",

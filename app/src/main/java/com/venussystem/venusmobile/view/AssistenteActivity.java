@@ -11,14 +11,7 @@ import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Produto;
 import com.venussystem.venusmobile.view.fragment.AssistenteFragment;
 
-/**
- * O chat aberto a partir do detalhe de um produto, ja perguntando sobre ele. A
- * conversa e a mesma da aba Chat (ela fica salva por conta); esta tela so
- * hospeda o fragment, com a seta de voltar que leva de volta ao produto.
- */
 public class AssistenteActivity extends AppCompatActivity {
-
-    /** Abre o chat falando de um produto. */
     public static Intent paraProduto(Context context, @Nullable Produto produto) {
         Intent intent = new Intent(context, AssistenteActivity.class);
         intent.putExtras(AssistenteFragment.extrasDoProduto(produto));

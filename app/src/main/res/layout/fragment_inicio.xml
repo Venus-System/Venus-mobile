@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="@color/white">
 
-    <!-- O campo so abre a tela de busca: quem digita la e a BuscaActivity. -->
     <LinearLayout
         android:id="@+id/linhaBusca"
         android:layout_width="0dp"
@@ -52,8 +51,6 @@
 
     </LinearLayout>
 
-    <!-- "Seu perfil Venus": chama para o questionario. Gone ate o fragmento
-         conferir o progresso (e de novo quando o perfil esta completo). -->
     <com.venussystem.venusmobile.view.componente.CartaoPerfilView
         android:id="@+id/cartaoPerfil"
         android:layout_width="0dp"

@@ -55,9 +55,6 @@
         <item name="rippleColor">@color/chip_fundo_escolha</item>
     </style>
 
-    <!-- Chip das categorias da Busca: fundo lilas cheio em vez de branco com
-         borda, para nao parecer apagado; selecionado vira roxo solido, para o
-         filtro ativo ficar obvio. -->
     <style name="CategoriaBuscaChip" parent="Widget.Material3.Chip.Filter">
         <item name="chipBackgroundColor">@color/chip_categoria_fundo</item>
         <item name="chipStrokeWidth">0dp</item>
@@ -183,7 +180,6 @@
         <item name="android:textSize">13sp</item>
     </style>
 
-    <!-- Titulo de cada grupo da tela de filtro (Nota geral, Categoria, Marca). -->
     <style name="TituloGrupoFiltro">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
@@ -256,9 +252,6 @@
         <item name="android:textSize">@dimen/texto_corpo</item>
     </style>
 
-    <!-- Filho unico de um ScrollView/FrameLayout que precisa virar coluna
-         centralizada no tablet (o ConstraintLayout pai nao alcanca ele). No
-         celular ocupa a largura toda; a versao de tablet esta em values-w600dp. -->
     <style name="ColunaConteudo">
         <item name="android:layout_width">match_parent</item>
     </style>

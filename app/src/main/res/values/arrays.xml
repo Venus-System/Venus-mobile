@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- A mesma lista do site. As cinco primeiras sao campos de
-         /api/user-preferences; as outras vao como etiqueta
-         (ver MapeadorPerfilApi). -->
     <string-array name="preferencias">
         <item>Vegano</item>
         <item>Cruelty free</item>
@@ -20,9 +17,6 @@
         <item>Embalagem reciclável</item>
     </string-array>
 
-    <!-- Reserva: as opcoes de verdade vem de GET /api/allergies (ver
-         CatalogoAlergiasRepository). Esta lista so aparece enquanto a API nao
-         respondeu nenhuma vez, e sao as alergias que a analise consegue checar. -->
     <string-array name="alergias">
         <item>Lanolina</item>
         <item>Óleo de amêndoas</item>

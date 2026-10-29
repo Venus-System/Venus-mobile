@@ -104,8 +104,6 @@ public class TokenFirebaseTest {
 
     @Test
     public void firebaseSemRede_pedidoSegueSemToken() throws Exception {
-        // O catalogo nao depende do token: falhar aqui derrubaria a busca de
-        // produtos so porque o Firebase nao conseguiu renovar.
         sessao.falhaDeRede = new IOException("sem rede");
         server.enqueue(new MockResponse().setResponseCode(200));
 

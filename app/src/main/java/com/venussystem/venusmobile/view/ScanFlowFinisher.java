@@ -22,18 +22,12 @@ import com.venussystem.venusmobile.repository.api.dto.ScanUploadSignaturesRespon
 import com.venussystem.venusmobile.domain.scan.ScanPhotoQualityPolicy;
 import com.venussystem.venusmobile.view.dialog.ScanStatusDialog;
 
-/**
- * Persiste a coleta, envia as fotos e cadastra o scan para análise administrativa.
- */
 public final class ScanFlowFinisher {
-
-    // Espera antes da primeira tentativa do reenvio: o envio da tela pode ainda estar terminando.
     private static final long ATRASO_DO_REENVIO_MS = 60_000L;
 
     private ScanFlowFinisher() {
     }
 
-    /** Compatibilidade com fluxos antigos. */
     public static void finalizar(@NonNull Activity activity) {
         ScanTutorialState.markCompleted(activity);
 
@@ -46,10 +40,6 @@ public final class ScanFlowFinisher {
         abrirPrincipal(activity);
     }
 
-    /**
-     * Finaliza a coleta do novo produto.
-     * Salva fotos/rascunho antes de solicitar as assinaturas à API.
-     */
     public static void finalizar(
             @NonNull Activity activity,
             @NonNull ScanSubmissionDraft draft
@@ -146,10 +136,6 @@ public final class ScanFlowFinisher {
                         boolean forbidden = failureInfo != null && failureInfo.kind == ScanApiException.Kind.FORBIDDEN;
                         boolean alreadyAttempted = accountAttempted || connectAccount;
 
-                        // A sessão Firebase não garante que o usuário já tenha um
-                        // registro no Venus CRUD. Quando a API responde 403,
-                        // provisionamos a própria conta uma única vez, sem pedir
-                        // nome, e-mail ou qualquer ação manual ao usuário.
                         if (forbidden && !alreadyAttempted) {
                             solicitarAssinaturas(activity, repository, saved, true, true);
                             return;
@@ -234,11 +220,7 @@ public final class ScanFlowFinisher {
                         if (activity.isFinishing() || activity.isDestroyed()) return;
                         progress.dismiss();
                         ScanTutorialState.markCompleted(activity);
-                        // O app confere sozinho se a equipe aprovou ou recusou o produto.
                         DecisoesAgenda.verificarAgora(activity);
-                        // O ACK do Mongo encerra o fluxo. O recibo continua salvo
-                        // localmente para manter retry/idempotência, mas o usuário
-                        // volta imediatamente para a Home.
                         Toast.makeText(activity,
                                 "Scan enviado para análise administrativa.",
                                 Toast.LENGTH_LONG).show();
@@ -262,7 +244,6 @@ public final class ScanFlowFinisher {
     }
 
     private static void showWhileAlive(Activity activity, AlertDialog dialog) {
-        // Both scan screens are LifecycleOwners. Release windows on rotation/exit.
         if (activity instanceof LifecycleOwner) {
             LifecycleOwner owner = (LifecycleOwner) activity;
             DefaultLifecycleObserver observer = new DefaultLifecycleObserver() {
@@ -274,12 +255,6 @@ public final class ScanFlowFinisher {
         dialog.show();
     }
 
-    /**
-     * "Voltar" no meio do envio ou depois de uma falha. O rascunho (fotos e leitura)
-     * fica guardado e o reenvio termina o trabalho quando houver internet. Como o
-     * aviso de que o produto foi enviado depende da permissao de notificacao, ela
-     * e oferecida aqui, uma vez por conta.
-     */
     private static void sairDeixandoPendente(@NonNull Activity activity) {
         ReenvioDeScanAgenda.agendar(activity, ATRASO_DO_REENVIO_MS);
         if (!PedidoDeAvisos.deveOferecer(activity) || activity.isFinishing() || activity.isDestroyed()) {

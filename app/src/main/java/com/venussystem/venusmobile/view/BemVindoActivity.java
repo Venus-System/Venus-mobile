@@ -30,9 +30,6 @@ public class BemVindoActivity extends AppCompatActivity {
         btnCadastrar.setOnClickListener(v ->
                 startActivity(new Intent(this, CadastrarActivity.class)));
 
-        // A API dorme no plano gratuito do Render e a primeira chamada acorda o
-        // servidor. Comecar aqui faz essa espera acontecer enquanto a pessoa
-        // ainda esta logando, e nao depois, olhando a tela de busca vazia.
         new ProdutoRepository().carregar(false);
     }
 

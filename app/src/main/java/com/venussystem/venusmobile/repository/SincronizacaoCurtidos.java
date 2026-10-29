@@ -20,17 +20,6 @@ import java.util.concurrent.Executor;
 
 import retrofit2.Response;
 
-/**
- * Mantem os produtos curtidos do aparelho e os de /api/favorites iguais.
- *
- * Mandar: cada produto curtido vira um POST e cada descurtido um DELETE. Roda
- * quieto quando a tela do produto (ou a dos curtidos) fecha; o que falhar
- * fica na fila e vai na proxima.
- *
- * Trazer: ao abrir o app e a tela dos curtidos, depois de mandar o pendente,
- * le os curtidos da pessoa no servidor. O servidor vence, menos no que ainda
- * esta na fila (ver CurtidosRepository.trocarPelosDaApi).
- */
 public class SincronizacaoCurtidos {
 
     private static final int TAMANHO_PAGINA = 100;
@@ -60,17 +49,10 @@ public class SincronizacaoCurtidos {
         this.principal = principal;
     }
 
-    /** Mesma fila do perfil e das listas: nada de dois envios em paralelo. */
     public void sincronizarEmSegundoPlano() {
         SincronizacaoRepository.EXECUTOR.execute(this::sincronizarAgora);
     }
 
-    /**
-     * Manda o pendente e traz o que mudou no servidor.
-     *
-     * @param aoMudar chamado na thread principal se os curtidos mudaram no
-     *                aparelho, para a tela recarregar.
-     */
     public void atualizarEmSegundoPlano(@Nullable Runnable aoMudar) {
         SincronizacaoRepository.EXECUTOR.execute(() -> {
             if (atualizarAgora() && aoMudar != null) {
@@ -79,13 +61,9 @@ public class SincronizacaoCurtidos {
         });
     }
 
-    /**
-     * @return true se tudo o que estava pendente foi para a API.
-     */
     @WorkerThread
     @VisibleForTesting
     public boolean sincronizarAgora() {
-        // Sem nada para mandar, nem pergunta o id da pessoa.
         if (!curtidos.temAlgoParaEnviar()) {
             return false;
         }
@@ -103,9 +81,6 @@ public class SincronizacaoCurtidos {
         }
     }
 
-    /**
-     * @return true se os curtidos mudaram no aparelho.
-     */
     @WorkerThread
     @VisibleForTesting
     public boolean atualizarAgora() {
@@ -114,30 +89,21 @@ public class SincronizacaoCurtidos {
             return false;
         }
         try {
-            // Primeiro o que mudou aqui: assim o que vem do servidor ja inclui.
             enviarPendentes(userId);
             List<Long> daApi = todosOsCurtidos(userId);
             return daApi != null && curtidos.trocarPelosDaApi(daApi);
         } catch (IOException e) {
             return false;
         } catch (Proibido e) {
-            // O id guardado nao e mais desta pessoa (banco recriado): a proxima
-            // tentativa busca de novo.
             usuarios.esquecerId();
             return false;
         }
     }
 
-    /**
-     * @return true se a fila esvaziou. Um erro do servidor (5xx) para no meio:
-     * o resto fica para a proxima.
-     */
     private boolean enviarPendentes(long userId) throws IOException, Proibido {
         for (Long produtoId : curtidos.paraCurtirNaApi()) {
             int codigo = api.curtir(new FavoriteRequest(userId, produtoId)).execute().code();
             exigirPermissao(codigo);
-            // 409: ja estava curtido. 404/400: o produto nao existe mais - nao
-            // adianta repetir, e a proxima leitura tira ele da tela.
             if (sucesso(codigo) || codigo == CONFLITO
                     || codigo == NAO_ENCONTRADO || codigo == INVALIDO) {
                 curtidos.marcarCurtidaEnviada(produtoId);
@@ -148,7 +114,6 @@ public class SincronizacaoCurtidos {
         for (Long produtoId : curtidos.paraDescurtirNaApi()) {
             int codigo = api.descurtir(userId, produtoId).execute().code();
             exigirPermissao(codigo);
-            // 404: ja nao estava curtido.
             if (sucesso(codigo) || codigo == NAO_ENCONTRADO) {
                 curtidos.marcarDescurtidaEnviada(produtoId);
             } else {
@@ -158,11 +123,6 @@ public class SincronizacaoCurtidos {
         return true;
     }
 
-    /**
-     * Todos os curtidos da pessoa na API, do mais recente para o mais antigo.
-     *
-     * @return null se alguma pagina falhou ou se passou do limite de paginas.
-     */
     @Nullable
     private List<Long> todosOsCurtidos(long userId) throws IOException, Proibido {
         List<FavoriteResponse> todos = new ArrayList<>();
@@ -182,7 +142,6 @@ public class SincronizacaoCurtidos {
         return null;
     }
 
-    /** A API nao promete ordem; o id do registro cresce com o tempo. */
     private static List<Long> ordenados(List<FavoriteResponse> daApi) {
         List<FavoriteResponse> validos = new ArrayList<>();
         for (FavoriteResponse curtido : daApi) {

@@ -41,17 +41,9 @@ import static com.venussystem.venusmobile.view.util.ScanBackText.pareceAdministr
 import static com.venussystem.venusmobile.view.util.ScanBackText.safeSubstring;
 import static com.venussystem.venusmobile.view.util.ScanBackText.substringSafe;
 
-/** Internal collaborator for ScanBackExtractor; not a second scan entry point. */
 final class ScanBackIngredientSection {
     private ScanBackIngredientSection() { }
 
-    /**
-     * Marcadores fortes usados especificamente durante o fechamento
-     * da seção de ingredientes.
-     *
-     * Mantemos uma lista separada para deixar explícita a intenção
-     * desta etapa do parser.
-     */
     private static final String[] STRONG_INGREDIENT_SECTION_STOPS = {
             "LOT",
             "CONTEUDO",
@@ -163,36 +155,13 @@ final class ScanBackIngredientSection {
                             + "\\s*[:;.,#\\-]*\\s*"
             );
 
-    /*
-     * Limite de segurança.
-     *
-     * Não significa que uma composição real necessariamente tenha
-     * este tamanho. É apenas uma proteção contra OCR contaminado ou
-     * uma captura em que nenhum marcador administrativo foi reconhecido.
-     */
     private static final int MAX_INGREDIENT_SECTION_LINES =
             64;
 
-    /*
-     * O OCR espacial pode intercalar uma coluna de advertências/marketing
-     * no meio da composição. Depois de uma barreira desse tipo, permitimos
-     * recuperar no máximo duas continuações com sinais fortes de INCI.
-     * Barreiras de empresa, endereço e registro continuam definitivas.
-     */
     private static final int MAX_INGREDIENT_SECTION_RECOVERIES = 2;
     private static final int INGREDIENT_CONTINUATION_LOOKAHEAD = 24;
-    /**
-     * OCR espacial pode ordenar as últimas linhas da composição antes do
-     * título "INGREDIENTES". Limitamos a recuperação a um bloco pequeno e
-     * contíguo para não transformar marketing ou fabricante em INCI.
-     */
     private static final int INGREDIENT_PRE_HEADING_LOOKBACK = 6;
 
-    /*
-     * ================================================================
-     * INGREDIENTES
-     * ================================================================
-     */
     static IngredientSection localizarSecaoIngredientes(
             List<String> lines
     ) {
@@ -200,11 +169,6 @@ final class ScanBackIngredientSection {
         int headingEndColumn = 0;
         String heading = EMPTY;
         boolean detectedByContent = false;
-        /*
-         * ============================================================
-         * 1) TENTATIVA NORMAL
-         * ============================================================
-         */
         for (
                 int i = 0;
                 i < lines.size();
@@ -229,17 +193,6 @@ final class ScanBackIngredientSection {
                 break;
             }
         }
-        /*
-         * ============================================================
-         * 2) FALLBACK POR CONTEÚDO INCI
-         * ============================================================
-         *
-         * Caso o OCR destrua completamente "INGREDIENTES".
-         *
-         * Exemplo real:
-         *
-         * UENTES: BUTANE: ISOBUTANE: PROPANE...
-         */
         if (start < 0) {
             for (
                     int i = 0;
@@ -287,19 +240,10 @@ final class ScanBackIngredientSection {
             Log.d(TAG, "INGREDIENT_PREFIX_RECOVERED lines=" + preHeading.size());
         }
         int sectionStart = start - preHeading.size();
-        /*
-         * ============================================================
-         * PRIMEIRA LINHA
-         * ============================================================
-         */
         String firstLine =
                 lines.get(start);
         String firstRemainder;
         if (detectedByContent) {
-            /*
-             * Quando o heading não foi reconhecido, tentamos cortar
-             * tudo antes do primeiro INCI conhecido.
-             */
             firstRemainder =
                     cortarPrefixoAntesDoPrimeiroINCI(
                             firstLine
@@ -325,15 +269,6 @@ final class ScanBackIngredientSection {
         if (
                 !firstRemainder.isEmpty()
         ) {
-            /*
-             * A primeira linha é um caso especial: quando o OCR coloca
-             * \"INGREDIENTES: ... MADE IN BRASIL\" ou \"... Ltda. Av\"
-             * na mesma linha do heading, o loop das linhas seguintes não
-             * chega a executar detectarFimIngredientes().
-             *
-             * Reutilizamos a mesma lógica aqui, sem criar um segundo
-             * parser, para manter o comportamento atual.
-             */
             List<String> seedContent =
                     Collections.singletonList(
                             firstRemainder
@@ -356,11 +291,6 @@ final class ScanBackIngredientSection {
                         lines,
                         start + 1
                 ) >= 0) {
-                    /*
-                     * O heading pode ter sido seguido por uma coluna de
-                     * marketing. Mantemos o prefixo útil e retomamos quando
-                     * aparecer uma sequência com sinais de ingredientes.
-                     */
                     firstStopReason = null;
                     firstLineRecovered = true;
                 } else {
@@ -388,11 +318,6 @@ final class ScanBackIngredientSection {
         }
         int recoveryCount =
                 firstLineRecovered ? 1 : 0;
-        /*
-         * ============================================================
-         * DEMAIS LINHAS
-         * ============================================================
-         */
         for (
                 int i = start + 1;
                 firstStopReason == null && i < lines.size();
@@ -416,8 +341,6 @@ final class ScanBackIngredientSection {
             ) {
                 continue;
             }
-            // A terminal period plus an entirely administrative/code suffix is
-            // evidence of the section ending. A code in the middle is retained.
             if (!collected.isEmpty()
                     && collected.get(collected.size() - 1).trim().endsWith(".")
                     && isPackagingSuffix(lines, i)) {
@@ -454,11 +377,6 @@ final class ScanBackIngredientSection {
                 if (continuation >= 0) {
                     recoveryCount++;
                     end = i;
-                    /*
-                     * Ignora apenas o trecho administrativo intercalado.
-                     * A linha de continuação volta ao fluxo normal e ainda
-                     * passa por todas as barreiras existentes.
-                     */
                     i = continuation - 1;
                     stopReason = "RECOVERED_AFTER_" + stop.reason;
                     continue;
@@ -514,14 +432,6 @@ final class ScanBackIngredientSection {
         );
     }
 
-    /**
-     * Recovers a short INCI continuation that appears immediately before a
-     * detected heading. This occurs when the OCR geometry orders the bottom
-     * of a narrow/curved label before the word "INGREDIENTES". The first
-     * recovered line must carry INCI evidence; punctuation-only fragments are
-     * accepted only after that first line. Administrative lines and another
-     * heading always terminate the look-back.
-     */
     private static List<String> localizarIngredientesAntesDoHeading(
             List<String> lines,
             int headingIndex
@@ -547,9 +457,6 @@ final class ScanBackIngredientSection {
             boolean startsWithKnown = linhaComecaComInciConhecido(normalized);
             boolean hasSeparator = normalized.matches(".*[,;].*");
             if (!captured) {
-                // The line nearest to the heading cannot be punctuation-only;
-                // this prevents a marketing sentence ending in a comma from
-                // opening a composition section by accident.
                 if (signals == 0 && !startsWithKnown) {
                     break;
                 }
@@ -567,11 +474,6 @@ final class ScanBackIngredientSection {
                 && "SAFETY_OR_MARKETING".equals(stop.reason);
     }
 
-    /**
-     * Procura uma nova sequência de linhas que pareça composição INCI após
-     * uma barreira de segurança/marketing. Exige dois sinais consecutivos ou
-     * dois sinais na mesma linha para não reabrir a seção por acaso.
-     */
     private static int localizarContinuacaoIngredientes(
             List<String> lines,
             int fromIndex
@@ -620,12 +522,6 @@ final class ScanBackIngredientSection {
                 packagingMarkerFound = true;
                 continue;
             }
-            /*
-             * Depois de um código de embalagem, o OCR costuma separar o
-             * fabricante e outros fragmentos em linhas independentes. Eles
-             * continuam sendo sufixo administrativo, mas uma linha que
-             * pareça claramente um ingrediente deve manter a seção aberta.
-             */
             if (ScanIngredientPolicy.isRecognized(normalized)
                     || linhaComecaComInciConhecido(normalized)
                     || contarSinaisINCI(normalized) >= 2) {
@@ -648,9 +544,6 @@ final class ScanBackIngredientSection {
                 normalizar(
                         line
                 );
-        /*
-         * 1) Correspondência exata.
-         */
         HeadingMatch exact =
                 encontrarHeading(
                         normalized,
@@ -660,11 +553,6 @@ final class ScanBackIngredientSection {
         if (exact != null) {
             return exact;
         }
-        /*
-         * 2) Correção de confusões comuns do OCR.
-         *
-         * Só usamos isso para heading.
-         */
         String ocrAdjusted =
                 normalizarHeadingOCR(
                         normalized
@@ -678,9 +566,6 @@ final class ScanBackIngredientSection {
         if (exact != null) {
             return exact;
         }
-        /*
-         * 3) Fuzzy mais tolerante somente para headings.
-         */
         String[] tokens =
                 normalized.split(
                         "\\s+"
@@ -689,7 +574,6 @@ final class ScanBackIngredientSection {
                 String token
                 : tokens
         ) {
-            // Fuzzy headings must be at the start; punctuation is not part of the word.
             if (!token.equals(tokens[0])) break;
             token = token.replaceAll("^[^A-Z]+|[^A-Z]+$", "");
             if (
@@ -705,9 +589,6 @@ final class ScanBackIngredientSection {
                         normalizar(
                                 heading
                         );
-                /*
-                 * Só fazemos fuzzy em headings de uma palavra.
-                 */
                 if (
                         h.contains(" ")
                 ) {
@@ -747,10 +628,6 @@ final class ScanBackIngredientSection {
         if (value == null) {
             return EMPTY;
         }
-        /*
-         * Essas substituições só são aplicadas na tentativa
-         * de reconhecer o heading.
-         */
         return value
                 .replace(
                         '0',
@@ -797,9 +674,6 @@ final class ScanBackIngredientSection {
         if (current.isEmpty()) {
             return false;
         }
-        /*
-         * Nunca inicia composição em linha claramente administrativa.
-         */
         if (
                 pareceAdministrativoForte(
                         current
@@ -811,25 +685,12 @@ final class ScanBackIngredientSection {
                 contarSinaisINCI(
                         current
                 );
-        // Look-ahead must not pull a warning/marketing line into the section.
         if (currentSignals == 0) return false;
-        /*
-         * Caso muito forte:
-         *
-         * BUTANE, ISOBUTANE, PROPANE
-         */
         if (
                 currentSignals >= 2
         ) {
             return true;
         }
-        /*
-         * Caso a composição esteja distribuída:
-         *
-         * AQUA
-         * GLYCERIN
-         * PARFUM
-         */
         int consecutiveSignals =
                 currentSignals > 0
                         ? 1
@@ -890,9 +751,6 @@ final class ScanBackIngredientSection {
                 Integer.MAX_VALUE;
         String bestTerm =
                 null;
-        /*
-         * Primeiro procura INCI conhecido.
-         */
         for (
                 String known
                 : COMMON_INCI_BOUNDARIES
@@ -920,10 +778,6 @@ final class ScanBackIngredientSection {
                 bestIndex
                         != Integer.MAX_VALUE
         ) {
-            /*
-             * Precisamos retornar uma posição correspondente
-             * na linha original.
-             */
             int originalIndex =
                     localizarIndiceOriginalPorTextoComFronteira(
                             line,
@@ -945,10 +799,6 @@ final class ScanBackIngredientSection {
                 ).trim();
             }
         }
-        /*
-         * Caso não tenhamos encontrado INCI conhecido,
-         * simplesmente preservamos a linha inteira.
-         */
         return removerPrefixoHeadingIngredientesOCR(
                 line.trim()
         );
@@ -1009,19 +859,10 @@ final class ScanBackIngredientSection {
             if (!linhaComecaComInciConhecido(prefix)
                     && encontrarHeadingIngredientesRobusto(prefix) == null
                     && contarSinaisINCI(prefix) == 0) {
-                // A line can begin with an OCR-corrupted continuation
-                // (for example "SALUCYLATE, HEXYL...") and still be part
-                // of the formula. Keep it only when it carries an INCI
-                // signal; pure safety prose remains excluded.
                 start = 0;
             }
             return new StopMatch("SAFETY_OR_MARKETING", start);
         }
-        /*
-         * ============================================================
-         * 1) MARCADORES ADMINISTRATIVOS EXPLÍCITOS
-         * ============================================================
-         */
         StopMatch explicit =
                 encontrarPrimeiroStop(
                         line,
@@ -1039,17 +880,6 @@ final class ScanBackIngredientSection {
                 return explicit;
             }
         }
-        /*
-         * ============================================================
-         * 2) ORIGEM DENTRO DA MESMA LINHA
-         * ============================================================
-         *
-         * Exemplo real:
-         *
-         * ... PEEL OIL (CITRUS LIMON) ...
-         * - São José dos Pinhais/PR - Brasil
-         * ... Made in Brasil
-         */
         Matcher origin =
                 ORIGIN_INLINE_PATTERN.matcher(
                         line
@@ -1060,15 +890,6 @@ final class ScanBackIngredientSection {
                     origin.start()
             );
         }
-        /*
-         * ============================================================
-         * 3) ENDEREÇO DENTRO DA MESMA LINHA
-         * ============================================================
-         *
-         * Exemplo:
-         *
-         * ... Ltda., Av. Rui Barbosa, 007/0001-57
-         */
         Matcher address =
                 ADDRESS_INLINE_PATTERN.matcher(
                         line
@@ -1095,18 +916,6 @@ final class ScanBackIngredientSection {
                     address.start()
             );
         }
-        /*
-         * ============================================================
-         * 4) EMPRESA COLADA AO FINAL DA COMPOSIÇÃO
-         * ============================================================
-         *
-         * Caso o OCR não preserve nem mesmo o endereço, ainda podemos
-         * encontrar algo como:
-         *
-         * ... PEEL OIL cial Farmacêutica Ltda
-         *
-         * O sufixo empresarial é usado apenas como barreira final.
-         */
         Matcher inlineCompany =
                 INLINE_COMPANY_PATTERN.matcher(
                         line
@@ -1122,15 +931,6 @@ final class ScanBackIngredientSection {
                     inlineCompany.start()
             );
         }
-        /*
-         * ============================================================
-         * 5) MUNICÍPIO / UF
-         * ============================================================
-         *
-         * Exemplo:
-         *
-         * São José dos Pinhais/PR
-         */
         Matcher cityState =
                 CITY_STATE_PATTERN.matcher(
                         line
@@ -1146,11 +946,6 @@ final class ScanBackIngredientSection {
                     cityState.start()
             );
         }
-        /*
-         * ============================================================
-         * 5) FRAGMENTO DE CNPJ
-         * ============================================================
-         */
         Matcher companyRegistration =
                 COMPANY_REGISTRATION_FRAGMENT_PATTERN.matcher(
                         line
@@ -1166,11 +961,6 @@ final class ScanBackIngredientSection {
                     companyRegistration.start()
             );
         }
-        /*
-         * ============================================================
-         * 6) REGISTRO / PROCESSO
-         * ============================================================
-         */
         Matcher registrationMarker =
                 REGISTRATION_MARKER_PATTERN.matcher(
                         normalized
@@ -1181,11 +971,6 @@ final class ScanBackIngredientSection {
                     registrationMarker.start()
             );
         }
-        /*
-         * ============================================================
-         * 7) CNPJ / CEP
-         * ============================================================
-         */
         Matcher cnpj =
                 CNPJ_PATTERN.matcher(
                         line
@@ -1206,20 +991,10 @@ final class ScanBackIngredientSection {
                     0
             );
         }
-        /*
-         * ============================================================
-         * 8) CONTATO DEFORMADO POR OCR
-         * ============================================================
-         */
         Matcher contactContext = CONTACT_CONTEXT_PATTERN.matcher(line);
         if (contactContext.find() && jaTemConteudoIngrediente(collected)) {
             return new StopMatch("CONTACT_TEXT", contactContext.start());
         }
-        /*
-         * ============================================================
-         * 9) TELEFONE / EMAIL / URL
-         * ============================================================
-         */
         Matcher phone =
                 PHONE_PATTERN.matcher(
                         line
@@ -1251,11 +1026,6 @@ final class ScanBackIngredientSection {
             if (label.find()) start = label.start();
             return new StopMatch("URL", start);
         }
-        /*
-         * ============================================================
-         * 9) ENDEREÇO COM NÚMERO
-         * ============================================================
-         */
         Matcher street =
                 STREET_PATTERN.matcher(
                         line
@@ -1377,9 +1147,6 @@ final class ScanBackIngredientSection {
         if (stop == null) {
             return line.trim();
         }
-        /*
-         * Elementos administrativos que começam a linha.
-         */
         if (
                 "PHONE".equals(stop.reason)
                         || "EMAIL".equals(stop.reason)
@@ -1398,11 +1165,6 @@ final class ScanBackIngredientSection {
             }
             return safeSubstring(line, 0, originalIndex).trim();
         }
-        /*
-         * Para as barreiras encontradas diretamente na linha original,
-         * usamos a posição recebida sem fazer uma segunda conversão.
-         * Isso evita o vazamento clássico: \"... Ltda. Av\".
-         */
         if (
                 "URL".equals(stop.reason)
                         || "SAFETY_OR_MARKETING".equals(stop.reason)
@@ -1436,10 +1198,6 @@ final class ScanBackIngredientSection {
                     originalIndex
             ).trim();
         }
-        /*
-         * Origem e endereço devem ser localizados diretamente na linha
-         * original, preservando exatamente onde o OCR colocou o marcador.
-         */
         if (
                 ORIGIN_INLINE_PATTERN
                         .matcher(line)
@@ -1474,15 +1232,6 @@ final class ScanBackIngredientSection {
                 ).trim();
             }
         }
-        /*
-         * Para markers administrativos explícitos, tente primeiro localizar
-         * o marcador diretamente na linha original.
-         *
-         * Isso é importante quando o OCR/normalização altera espaços,
-         * pontuação ou acentuação. A conversão por índice normalizado pode
-         * parar alguns caracteres antes e deixar um fragmento como
-         * "FABRI" dentro do último ingrediente.
-         */
         int originalIndex =
                 localizarIndiceOriginalPorTextoComFronteira(
                         line,
@@ -1505,16 +1254,6 @@ final class ScanBackIngredientSection {
         ).trim();
     }
 
-    /**
-     * Quando endereço e empresa aparecem colados na mesma linha, tenta
-     * localizar o início do pequeno bloco empresarial antes do endereço.
-     *
-     * Exemplo alvo:
-     *   ... PEEL OIL cial Farmacêuticaa Ltda. Av
-     *
-     * O corte é feito no início do match empresarial, não no \"Ltda\",
-     * evitando que o fragmento \"cial Farmacêuticaa\" vire ingrediente.
-     */
     private static int localizarInicioEmpresaAntesDaBarreira(
             String line,
             int barrierIndex
@@ -1564,11 +1303,6 @@ final class ScanBackIngredientSection {
         return text.length() >= 5;
     }
 
-    /*
-     * ================================================================
-     * ESTRUTURAS PRIVADAS
-     * ================================================================
-     */
     static final class IngredientSection {
         final boolean found;
         final int startIndex;

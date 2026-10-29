@@ -38,8 +38,6 @@
             android:paddingStart="@dimen/espaco_medio"
             android:paddingEnd="@dimen/espaco_medio">
 
-            <!-- A foto num circulo por cima do escudo; sem foto, so o escudo.
-                 Tocar na foto ou na camera da borda troca a foto. -->
             <FrameLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -52,8 +50,6 @@
                     android:layout_height="@dimen/avatar_perfil"
                     android:contentDescription="@string/desc_foto_perfil" />
 
-                <!-- Na borda de baixo, a direita, do circulo da foto (que tem 80%
-                     da largura do escudo). -->
                 <ImageButton
                     android:id="@+id/btnTrocarFoto"
                     android:layout_width="@dimen/botao_trocar_foto"
@@ -144,7 +140,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
 
-            <!-- Sair da conta fica sempre no fim do perfil. -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"

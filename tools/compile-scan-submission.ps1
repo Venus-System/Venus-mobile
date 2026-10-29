@@ -1,5 +1,3 @@
-# Compile-only smoke check against cached Android dependencies and the last app build.
-# This does not build an APK or replace a Gradle/device test.
 param([string]$JavaHome = 'C:\Program Files\Android\Android Studio\jbr')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent

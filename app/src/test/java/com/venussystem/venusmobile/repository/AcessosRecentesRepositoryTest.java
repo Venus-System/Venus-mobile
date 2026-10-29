@@ -23,8 +23,6 @@ import static org.junit.Assert.assertTrue;
 public class AcessosRecentesRepositoryTest {
 
     private Context context;
-    // O relogio do teste: cada acesso anda um segundo, como se a pessoa
-    // abrisse um produto depois do outro.
     private final long[] agora = {1_000L};
     private AcessosRecentesRepository acessos;
 
@@ -81,7 +79,6 @@ public class AcessosRecentesRepositoryTest {
 
         List<AcessosRecentesRepository.Acesso> lista = acessos.listar();
         assertEquals(Arrays.asList(1L, 3L, 2L), ids(lista));
-        // O momento e o da ultima abertura, nao o da primeira.
         assertEquals(5_000L, lista.get(0).momento);
     }
 

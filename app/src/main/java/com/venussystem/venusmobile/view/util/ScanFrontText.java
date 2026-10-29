@@ -12,7 +12,6 @@ import static com.venussystem.venusmobile.view.util.ScanFrontVocabulary.CAPACIDA
 import static com.venussystem.venusmobile.view.util.ScanFrontVocabulary.CONCENTRACAO_PATTERN;
 import static com.venussystem.venusmobile.view.util.ScanFrontVocabulary.FL_OZ_PATTERN;
 
-/** Internal collaborator for ScanFrontExtractor; not a second scan entry point. */
 final class ScanFrontText {
     private ScanFrontText() { }
 
@@ -21,11 +20,6 @@ final class ScanFrontText {
                     "(?i)\\b(\\d{1,3})\\s*H\\b"
             );
 
-    /*
-     * =========================================================
-     * REFERÊNCIA GENÉRICA DE COSMÉTICO
-     * =========================================================
-     */
     static boolean isReferenciaGenericaCosmetica(
             @NonNull String token
     ) {
@@ -213,11 +207,6 @@ final class ScanFrontText {
         );
     }
 
-    /*
-     * =========================================================
-     * TERMOS EXATOS
-     * =========================================================
-     */
     static boolean contemTermo(
             @NonNull String texto,
             @NonNull String termo
@@ -247,22 +236,10 @@ final class ScanFrontText {
         );
     }
 
-    /*
-     * =========================================================
-     * CAPACIDADE
-     * =========================================================
-     */
     @NonNull
     static String extrairCapacidade(
             @NonNull String texto
     ) {
-        /*
-         * Padrão normal:
-         *
-         * 250 ML
-         * 200 G
-         * 1 L
-         */
         Matcher matcher =
                 CAPACIDADE_PATTERN.matcher(
                         texto
@@ -292,13 +269,6 @@ final class ScanFrontText {
                         + unidade;
             }
         }
-        /*
-         * Tolerância OCR:
-         *
-         * E250 ML
-         * I250 ML
-         * O250 ML
-         */
         Matcher ocrMatcher =
                 CAPACIDADE_OCR_PREFIX_PATTERN.matcher(
                         texto
@@ -331,11 +301,6 @@ final class ScanFrontText {
         return "";
     }
 
-    /*
-     * =========================================================
-     * CONCENTRAÇÃO
-     * =========================================================
-     */
     @NonNull
     static String extrairConcentracao(
             @NonNull String texto
@@ -357,11 +322,6 @@ final class ScanFrontText {
                 + "%";
     }
 
-    /*
-     * =========================================================
-     * RUÍDO FORTE
-     * =========================================================
-     */
     static boolean isLinhaDeRuidoForte(
             @NonNull String linha
     ) {
@@ -422,11 +382,6 @@ final class ScanFrontText {
         return false;
     }
 
-    /*
-     * =========================================================
-     * LIMPEZA NUMÉRICA
-     * =========================================================
-     */
     @NonNull
     static String removerDadosNumericos(
             @NonNull String texto
@@ -439,13 +394,6 @@ final class ScanFrontText {
                         .replaceAll(
                                 " "
                         );
-        /*
-         * Remove também:
-         *
-         * E250 ML
-         * I250 ML
-         * O250 ML
-         */
         resultado =
                 CAPACIDADE_OCR_PREFIX_PATTERN
                         .matcher(
@@ -454,13 +402,6 @@ final class ScanFrontText {
                         .replaceAll(
                                 " "
                         );
-        /*
-         * Remove:
-         *
-         * 84 FLOZ
-         * 84FLOZ
-         * 8.4 FL OZ
-         */
         resultado =
                 FL_OZ_PATTERN
                         .matcher(
@@ -477,11 +418,6 @@ final class ScanFrontText {
                         .replaceAll(
                                 " "
                         );
-        /*
-         * 72 H -> 72H
-         *
-         * Continua válido como evidência do produto.
-         */
         Matcher matcher =
                 HORAS_PATTERN.matcher(
                         resultado
@@ -506,11 +442,6 @@ final class ScanFrontText {
         );
     }
 
-    /*
-     * =========================================================
-     * NORMALIZAÇÃO
-     * =========================================================
-     */
     @NonNull
     static String normalizar(
             String texto
@@ -533,9 +464,6 @@ final class ScanFrontText {
                                 " "
                         )
                         .trim();
-        /*
-         * 72 H -> 72H
-         */
         Matcher matcher =
                 Pattern.compile(
                         "(?i)\\b(\\d{1,3})\\s+H\\b"
@@ -564,11 +492,6 @@ final class ScanFrontText {
                 );
     }
 
-    /*
-     * =========================================================
-     * UTILITÁRIOS
-     * =========================================================
-     */
     static void adicionarProduto(
             @NonNull List<String> destino,
             String valor
@@ -640,11 +563,6 @@ final class ScanFrontText {
         return false;
     }
 
-    /*
-     * =========================================================
-     * SIMILARIDADE
-     * =========================================================
-     */
     private static double similaridade(
             @NonNull String a,
             @NonNull String b

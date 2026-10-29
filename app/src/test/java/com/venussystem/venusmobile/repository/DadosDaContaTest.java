@@ -25,10 +25,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-/**
- * Um celular pode ter mais de uma conta. O que uma conta guarda no aparelho
- * (listas, itens, buscas, questionario) nao pode aparecer para outra.
- */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = Config.OLDEST_SDK)
 public class DadosDaContaTest {
@@ -36,7 +32,6 @@ public class DadosDaContaTest {
     private static final String ANA = "uid-ana";
     private static final String BIA = "uid-bia";
 
-    // Nomes dos arquivos de antes da separacao por conta.
     private static final String LISTAS_ANTIGAS = "venus_listas";
     private static final String ITENS_ANTIGOS = "venus_lista_itens";
     private static final String BUSCAS_ANTIGAS = "venus_busca";
@@ -60,8 +55,6 @@ public class DadosDaContaTest {
     private SharedPreferences antigo(String arquivo) {
         return context.getSharedPreferences(arquivo, Context.MODE_PRIVATE);
     }
-
-    // ---- Cada conta ve so o que e seu ----
 
     @Test
     public void listaCriadaPorUmaConta_naoApareceParaOutra() {
@@ -100,8 +93,6 @@ public class DadosDaContaTest {
         assertNull(daBia.getTag(PerfilRepository.TIPO_PELE));
     }
 
-    // ---- Dados de antes da separacao ----
-
     @Test
     public void listasAntigas_saoApagadasComAsCapas() throws IOException {
         File capa = new File(context.getFilesDir(), "capas_lista/capa_antiga.jpg");
@@ -109,10 +100,6 @@ public class DadosDaContaTest {
         try (FileOutputStream saida = new FileOutputStream(capa)) {
             saida.write(new byte[]{1, 2, 3});
         }
-        // No aparelho o ImagemLocalUtil grava "file:///data/user/0/...". O
-        // Uri.fromFile nao serve aqui porque, com o teste rodando no Windows, o
-        // caminho comeca com "C:\"; montado assim fica no mesmo formato do
-        // aparelho nos dois sistemas.
         String caminho = capa.getAbsolutePath().replace('\\', '/');
         String caminhoDaCapa = "file://" + (caminho.startsWith("/") ? "" : "/") + caminho;
         antigo(LISTAS_ANTIGAS).edit().putString("minhas_listas",
@@ -141,8 +128,6 @@ public class DadosDaContaTest {
 
     @Test
     public void questionarioAntigo_ficaComQuemEstaLogado() {
-        // O unico jeito de trocar de conta ("reiniciar teste") apagava o
-        // questionario junto, entao o que sobrou e da conta logada.
         antigo(PERFIL_ANTIGO).edit()
                 .putString("tipo_pele_tag", "DRY")
                 .putBoolean("respondeu_questionario", true)

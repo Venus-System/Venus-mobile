@@ -5,14 +5,9 @@ import com.venussystem.venusmobile.model.ScanFrontData;
 import com.venussystem.venusmobile.model.ScanOcrResult;
 import java.util.Locale;
 
-/** Internal collaborator for ScanCosmeticClassifier; not a second scan entry point. */
 final class ScanCosmeticText {
     private ScanCosmeticText() { }
 
-    /*
-     * Distância fuzzy controlada.
-     * Não usamos fuzzy para termos muito curtos.
-     */
     private static final int FUZZY_MAX_DISTANCE_SHORT = 1;
 
     private static final int FUZZY_MAX_DISTANCE_MEDIUM = 1;
@@ -90,11 +85,6 @@ final class ScanCosmeticText {
         );
     }
 
-    /*
-     * =============================================================
-     * MATCH DE TEXTO / OCR
-     * =============================================================
-     */
     static boolean contemTermo(
             String texto,
             String termo,
@@ -108,9 +98,6 @@ final class ScanCosmeticText {
                 || nTermo.isEmpty()) {
             return false;
         }
-        /*
-         * Match exato por token/frase.
-         */
         String paddedTexto =
                 " " + nTexto + " ";
         String paddedTermo =
@@ -120,9 +107,6 @@ final class ScanCosmeticText {
         )) {
             return true;
         }
-        /*
-         * Não executar fuzzy para termos curtos.
-         */
         if (!permitirFuzzy
                 || nTermo.length() < 7) {
             return false;
@@ -131,9 +115,6 @@ final class ScanCosmeticText {
                 nTexto.split("\\s+");
         String[] tokensTermo =
                 nTermo.split("\\s+");
-        /*
-         * Frases.
-         */
         if (tokensTermo.length > 1
                 && tokensTexto.length >= tokensTermo.length) {
             for (int i = 0;
@@ -159,9 +140,6 @@ final class ScanCosmeticText {
                 }
             }
         }
-        /*
-         * Palavra única.
-         */
         if (tokensTermo.length == 1) {
             for (String tokenTexto :
                     tokensTexto) {
@@ -173,9 +151,6 @@ final class ScanCosmeticText {
                 }
             }
         }
-        /*
-         * OCR que grudou palavras.
-         */
         if (tokensTermo.length == 1
                 && nTermo.length() >= 8) {
             String compactado =
@@ -281,11 +256,6 @@ final class ScanCosmeticText {
                 ];
     }
 
-    /*
-     * =============================================================
-     * NORMALIZAÇÃO
-     * =============================================================
-     */
     @NonNull
     static String normalizar(
             String texto
@@ -309,11 +279,6 @@ final class ScanCosmeticText {
                 );
     }
 
-    /*
-     * =============================================================
-     * TEXTO COMPLETO
-     * =============================================================
-     */
     @NonNull
     static String montarTextoCompleto(
             @NonNull ScanOcrResult ocr,
@@ -382,11 +347,6 @@ final class ScanCosmeticText {
                 .append(texto);
     }
 
-    /*
-     * =============================================================
-     * RUÍDO
-     * =============================================================
-     */
     static boolean ehRuidoComum(
             String valor
     ) {

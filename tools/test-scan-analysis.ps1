@@ -1,4 +1,3 @@
-# Offline characterization of front extraction/classification. Does not run ML Kit or the UI.
 param([string]$JavaHome = 'C:\Program Files\Android\Android Studio\jbr', [switch]$PrintBaseline)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent

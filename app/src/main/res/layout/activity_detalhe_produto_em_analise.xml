@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Detalhe de um produto enviado para analise (DetalheProdutoEmAnaliseActivity):
-     as duas fotos, a situacao explicada, o motivo quando foi recusado e o
-     "Ver produto" quando ja entrou no catalogo. -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -55,7 +52,6 @@
                 app:layout_constraintStart_toEndOf="@+id/btnVoltar"
                 app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
 
-            <!-- Frente e verso lado a lado, cada um com metade da largura. -->
             <TextView
                 android:id="@+id/textFrente"
                 android:layout_width="0dp"

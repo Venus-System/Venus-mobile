@@ -128,7 +128,6 @@ public class ScanBackExtractorInstrumentedTest {
 
     @Test
     public void ordersShuffledOcrBeforeFindingSection() {
-        // Synthetic geometry resembling the single-paragraph can, not a photo replay.
         List<String> lines = Arrays.asList("DIMETHICONOL, LIMONENE.",
                 "PROCURAR ORIENTAÇÃO MEDICA", "ISOBUTANE, PROPANE,",
                 "KiREDIENTES: BUTANE,", "80133324 G");
@@ -224,7 +223,6 @@ public class ScanBackExtractorInstrumentedTest {
 
     @Test
     public void ocrDotsDoNotStopTheRemainingIngredientLines() {
-        // Synthetic reproduction of STOP=URL, not the missing BACK_LINE[21] capture.
         List<String> lines = Arrays.asList(
                 "INGREDIENTES: BUTANE, ISOBUTANE, PROPANE, PPG-14 BUTL ETE,",
                 "CYCLOPENTASILOXANE.ALUMINUM SESQUICHLOROHYDRATE, PARFUM,",
@@ -370,7 +368,6 @@ public class ScanBackExtractorInstrumentedTest {
 
     @Test
     public void peripheralVerticalCodeDoesNotDisableShuffledIngredientGeometry() {
-        // Synthetic coordinates: the device log does not include bounding boxes.
         for (float angle : new float[] {-90, 90}) {
             List<String> lines = Arrays.asList("LIMONENE.", "69657381",
                     "INGREDIENTES: AQUA,", "GLYCINE,", "Unilever");
@@ -399,8 +396,6 @@ public class ScanBackExtractorInstrumentedTest {
                 "INGREDIENTES: AQUA,",
                 "GLYCINE, PARFUM",
                 "LIMONENE, LINALOOL");
-        // Canonical rows are represented vertically in the image. The two
-        // tokens in each row keep their reading order along the image Y axis.
         for (float angle : new float[]{-90f, 90f}) {
             List<ScanOcrToken> tokens = Arrays.asList(
                     rotatedToken("INGREDIENTES:", 500, 50, 520, 140, angle, 0, 0),
@@ -477,8 +472,6 @@ public class ScanBackExtractorInstrumentedTest {
                 new ScanOcrToken(lines.get(1), new Rect(260, 0, 280, 80), .9f, -90, 0, 1, 0));
         ScanBackData data = ScanBackExtractor.extract(
                 new ScanOcrResult(String.join("\n", lines), lines, tokens));
-        // Existing section rules may identify a numeric barcode independently of rotation.
-        // Orientation separation must not change that decision or erase the source.
         assertEquals(names(ScanBackExtractor.extract(lines)), names(data));
         assertEquals(ScanBackExtractor.extract(lines).getIngredientsRawText(), data.getIngredientsRawText());
         assertEquals(lines, data.getLines());

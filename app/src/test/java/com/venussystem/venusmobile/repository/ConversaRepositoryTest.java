@@ -39,7 +39,6 @@ public class ConversaRepositoryTest {
     private MockWebServer server;
     private SessaoFalsa sessao;
 
-    /** Guarda o que o callback recebeu, para o teste conferir depois. */
     private static class Retorno implements ConversaRepository.AoResponder {
         final CountDownLatch chegou = new CountDownLatch(1);
         String resposta;
@@ -113,8 +112,6 @@ public class ConversaRepositoryTest {
         return JsonParser.parseString(pedido.getBody().readUtf8()).getAsJsonObject();
     }
 
-    // ---- Sucesso ----
-
     @Test
     public void mensagem_chegaComTokenEConversa() throws InterruptedException {
         server.enqueue(respostaDaVenus("Oi! Posso ajudar."));
@@ -133,7 +130,6 @@ public class ConversaRepositoryTest {
         JsonObject json = corpo(pedido);
         assertEquals("oi", json.get("mensagem").getAsString());
         assertEquals(CONVERSA, json.get("conversation_id").getAsString());
-        // A API acha a pessoa pelo token; id no corpo e coisa de app antigo.
         assertFalse(json.has("usuario_id_postgres"));
     }
 
@@ -177,8 +173,6 @@ public class ConversaRepositoryTest {
         assertNull(retorno.expressao);
     }
 
-    // ---- Token ----
-
     @Test
     public void tokenRecusado_renovaETentaUmaVez() throws InterruptedException {
         server.enqueue(resposta(401, "{\"detail\":\"token inválido ou expirado\"}"));
@@ -221,8 +215,6 @@ public class ConversaRepositoryTest {
 
         assertEquals(ConversaRepository.Falha.SEM_CONEXAO, retorno.falha);
     }
-
-    // ---- Falhas da API ----
 
     @Test
     public void limiteDeMensagens_eMuitasMensagens() {
@@ -291,8 +283,6 @@ public class ConversaRepositoryTest {
         assertEquals(0, server.getRequestCount());
         assertEquals(0, sessao.pedidosDeToken.size());
     }
-
-    // ---- Acordar o servidor ----
 
     @Test
     public void acordar_chamaOHealthSemToken() throws InterruptedException {

@@ -14,18 +14,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Os produtos que a pessoa curtiu (o coracao na tela do produto), guardados no
- * aparelho e separados por conta, como as listas. A copia em /api/favorites e
- * mantida pela SincronizacaoCurtidos.
- *
- * A ordem guardada e a da tela: o mais recente primeiro.
- *
- * Cada toque deixa o produto pendente de curtir ou de descurtir na API, e so
- * vale a ultima vontade: curtir tira o produto da fila de descurtir e
- * vice-versa. Assim um envio que termina depois de a pessoa mudar de ideia
- * nao apaga a mudanca - ela continua na outra fila e vai no proximo envio.
- */
 public class CurtidosRepository {
 
     static final String ARQUIVO = "venus_curtidos";
@@ -34,7 +22,6 @@ public class CurtidosRepository {
     private static final String CHAVE_PARA_CURTIR = "para_curtir";
     private static final String CHAVE_PARA_DESCURTIR = "para_descurtir";
 
-    // A tela grava e a sincronizacao marca o envio, cada uma na sua thread.
     private static final Object TRAVA = new Object();
 
     private final SharedPreferences prefs;
@@ -87,8 +74,6 @@ public class CurtidosRepository {
         }
     }
 
-    // ---- O que a SincronizacaoCurtidos usa ----
-
     List<Long> paraCurtirNaApi() {
         return ler(CHAVE_PARA_CURTIR);
     }
@@ -101,31 +86,20 @@ public class CurtidosRepository {
         return !paraCurtirNaApi().isEmpty() || !paraDescurtirNaApi().isEmpty();
     }
 
-    /** O POST desse produto foi aceito (ou ele ja estava curtido na API). */
     void marcarCurtidaEnviada(long produtoId) {
         tirarDaFila(CHAVE_PARA_CURTIR, produtoId);
     }
 
-    /** O DELETE desse produto foi aceito (ou ele ja nao estava curtido na API). */
     void marcarDescurtidaEnviada(long produtoId) {
         tirarDaFila(CHAVE_PARA_DESCURTIR, produtoId);
     }
 
-    /**
-     * Troca os curtidos pelos da API: o servidor vence (o que foi curtido ou
-     * descurtido pelo site aparece aqui), menos o que mudou no aparelho e
-     * ainda esta na fila - esses continuam como a pessoa deixou.
-     *
-     * @param daApi na ordem da tela, o mais recente primeiro.
-     * @return true se os curtidos mudaram.
-     */
     boolean trocarPelosDaApi(List<Long> daApi) {
         synchronized (TRAVA) {
             List<Long> atuais = ler(CHAVE_PRODUTOS);
             Set<Long> paraCurtir = new LinkedHashSet<>(ler(CHAVE_PARA_CURTIR));
             Set<Long> paraDescurtir = new LinkedHashSet<>(ler(CHAVE_PARA_DESCURTIR));
 
-            // Os curtidos aqui que ainda nao subiram ficam no topo, na ordem da tela.
             Set<Long> novos = new LinkedHashSet<>();
             for (Long produtoId : atuais) {
                 if (paraCurtir.contains(produtoId)) {
@@ -165,7 +139,6 @@ public class CurtidosRepository {
         return ids == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(ids));
     }
 
-    // Chamado sempre de dentro da TRAVA.
     private void gravar(List<Long> produtos, List<Long> paraCurtir, List<Long> paraDescurtir) {
         prefs.edit()
                 .putString(CHAVE_PRODUTOS, gson.toJson(produtos))

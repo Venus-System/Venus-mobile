@@ -64,7 +64,6 @@ public class FotoPerfilRepositoryTest {
         server.shutdown();
     }
 
-    /** Uma "foto" ja reduzida no aparelho, como a que o trocar() deixa. */
     private String fotoNoAparelho(String nome) throws IOException {
         File pasta = new File(context.getFilesDir(), "fotos_perfil");
         pasta.mkdirs();
@@ -74,8 +73,6 @@ public class FotoPerfilRepositoryTest {
         }
         return arquivo.toURI().toString();
     }
-
-    // ---- Enviar ----
 
     @Test
     public void fotoNova_vaiNoCampoFileComoJpeg() throws IOException {
@@ -139,12 +136,9 @@ public class FotoPerfilRepositoryTest {
 
         foto.enviarAgora();
 
-        // A segunda foto ainda nao foi: a proxima chamada manda ela.
         assertTrue(foto.enviarAgora());
         assertTrue(api.corposEm(ENVIAR).get(1).contains("foto_b.jpg"));
     }
-
-    // ---- Trocar ----
 
     @Test
     public void trocarDeFoto_apagaOArquivoDaAnterior() throws IOException {
@@ -170,8 +164,6 @@ public class FotoPerfilRepositoryTest {
         assertNull(daOutraConta.caminho());
     }
 
-    // ---- Buscar na API ----
-
     @Test
     public void semFotoNoAparelho_usaOLinkDaApi() {
         api.em(BUSCAR, 200, "{\"purpose\":\"AVATAR\",\"url\":\"" + LINK + "\"}");
@@ -191,7 +183,6 @@ public class FotoPerfilRepositoryTest {
 
     @Test
     public void semFotoNaApi_continuaSemFoto() {
-        // GET sem resposta configurada cai no 404 do ApiPorRota.
         assertNull(foto.buscarDaApiAgora());
         assertNull(foto.caminho());
     }

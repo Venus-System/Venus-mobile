@@ -11,13 +11,6 @@ import java.util.Map;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
 
-/**
- * Corpo do PATCH /api/user-lists/{id}, so com os campos que mudaram: a API
- * mantem o campo que nao veio e apaga o que vier null.
- *
- * O JSON e montado aqui porque o conversor do Retrofit nao escreve campo
- * null, e sem o null nao da para apagar a descricao.
- */
 public class UserListPatchRequest {
 
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
@@ -29,12 +22,10 @@ public class UserListPatchRequest {
         campos.put("name", nome);
     }
 
-    /** null apaga a descricao na API. */
     public void description(@Nullable String descricao) {
         campos.put("description", descricao);
     }
 
-    /** Ver UserListRequest para os valores. null apaga a capa padrao. */
     public void coverKey(@Nullable String capaPadrao) {
         campos.put("coverKey", capaPadrao);
     }

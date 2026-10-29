@@ -75,7 +75,6 @@ public class ClassificacaoRepositoryTest {
                 + ",\"recommendationLevel\":\"ACCEPTABLE\",\"calculatedAt\":\"" + calculadaEm + "\"}";
     }
 
-    /** Resposta do POST com o motivo de alergia e os pontos, que o GET nao traz. */
     private static String analiseComAlergia(String calculadaEm) {
         return "{\"userId\":42,\"productVersionId\":118,\"finalScore\":49,"
                 + "\"recommendationLevel\":\"NOT_RECOMMENDED\",\"calculatedAt\":\"" + calculadaEm + "\","
@@ -206,7 +205,6 @@ public class ClassificacaoRepositoryTest {
     @Test
     public void alergiaDoPostVoltaNoGetDaMesmaAnalise() throws IOException {
         api.em(SALVA, 404, "{\"status\":404,\"code\":\"ANALYSIS_NOT_FOUND\"}");
-        // O POST manda nanossegundos; o banco devolve microssegundos no GET.
         api.em(CALCULAR, 201, analiseComAlergia("2099-01-01T00:00:00.123456789Z"));
 
         assertEquals(Arrays.asList("LIMONENO", "LINALOL"),
@@ -225,7 +223,6 @@ public class ClassificacaoRepositoryTest {
         api.em(CALCULAR, 201, analiseComAlergia("2099-01-01T00:00:00Z"));
         repositorio.classificarAgora(PRODUTO);
 
-        // O GET manda o breakdown com os pontos nulos.
         api.em(SALVA, 200, "{\"productVersionId\":118,\"finalScore\":41,"
                 + "\"recommendationLevel\":\"ACCEPTABLE\",\"calculatedAt\":\"2099-01-01T00:00:00Z\","
                 + "\"breakdown\":{\"qualityScore\":null,\"qualityPoints\":null,\"profilePoints\":null,"
@@ -251,7 +248,6 @@ public class ClassificacaoRepositoryTest {
         api.em(CALCULAR, 201, analiseComAlergia("2099-01-01T00:00:00Z"));
         repositorio.classificarAgora(PRODUTO);
 
-        // Calculada depois, na web: o perfil pode ter mudado.
         api.em(SALVA, 200, analise(70, "2099-02-01T00:00:00Z"));
 
         assertTrue(repositorio.classificarAgora(PRODUTO).classificacao

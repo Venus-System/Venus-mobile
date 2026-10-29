@@ -51,13 +51,8 @@ public class ProdutoRepository {
     private static final ExecutorService EXECUTOR =
             Executors.newSingleThreadExecutor();
 
-    // As chamadas do catalogo sao independentes, entao vao juntas neste pool em
-    // vez de uma esperando a outra.
     private static final ExecutorService REDE = Executors.newFixedThreadPool(6);
 
-    // A composição traz ids e cada id precisa ser resolvido para o nome INCI.
-    // Este pool separado não bloqueia o pool principal quando a tela de
-    // detalhe busca vários ingredientes ao mesmo tempo.
     private static final ExecutorService REDE_INGREDIENTES =
             Executors.newFixedThreadPool(6);
 
@@ -76,11 +71,6 @@ public class ProdutoRepository {
     private static final MutableLiveData<String> ERRO =
             new MutableLiveData<>();
 
-    /*
-     * As listas do catálogo não expõem media_assets. A imagem é resolvida
-     * sob demanda pela rota leve de fotos da versão atual e fica em cache
-     * para que cada produto seja consultado uma única vez por processo.
-     */
     private static final Object CACHE_LOCK = new Object();
     private static final Map<Long, String> IMAGENS_CACHE = new HashMap<>();
     private static final Map<Long, Long> VERSOES_CACHE = new HashMap<>();
@@ -118,30 +108,16 @@ public class ProdutoRepository {
         }
     }
 
-    /**
-     * EXECUTOR e REDE sao estaticos e vivem pro processo de teste inteiro, nao
-     * so reiniciados junto com os campos acima. Sem esta barreira, a tarefa em
-     * segundo plano de um teste podia ainda estar rodando (ou na fila) quando
-     * o proximo teste comecava - invisivel numa maquina rapida, mas em uma
-     * mais lenta/carregada (CI) o atraso se acumula teste apos teste ate
-     * estourar o timeout de aguardarValor. Submeter um no-op no EXECUTOR e
-     * esperar ele rodar garante que a fila esvaziou - e como o EXECUTOR so
-     * libera depois que as 6 chamadas do REDE respondem, isso arrasta o REDE
-     * junto.
-     */
     private static void aguardarExecutorOcioso() {
         try {
             EXECUTOR.submit(() -> null).get(20, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (ExecutionException | TimeoutException ignorada) {
-            // Se nem o no-op responder, o proprio teste que chamou isto vai
-            // estourar seu timeout e relatar o problema real.
         }
     }
 
     public interface AoObterIngredientes {
-        /** Lista vazia quando o produto nao tem ingredientes ou algo falhou. */
         void aoConcluir(List<IngredienteProduto> ingredientes);
     }
 
@@ -244,11 +220,6 @@ public class ProdutoRepository {
         return null;
     }
 
-    /**
-     * Busca o agregado /full do produto (rotulo e fotos). E uma tela isolada,
-     * nao o catalogo compartilhado, entao roda em uma chamada avulsa e devolve
-     * pelo callback - null quando a API nao tiver o dado ou estiver fora do ar.
-     */
     public void buscarDetalheProduto(long produtoId, AoObterDetalhe callback) {
         REDE.execute(() -> {
             DetalheProduto detalhe = obterDetalheCompleto(produtoId);
@@ -257,14 +228,6 @@ public class ProdutoRepository {
         });
     }
 
-    /**
-     * Ingredientes do produto na ordem do rotulo, cada um com nome e
-     * descricao (a tela mostra um item por ingrediente). Reaproveita a mesma
-     * composicao do texto corrido: versao atual -> product-ingredients -> um
-     * GET por ingrediente. Se qualquer passo falhar devolve lista vazia, e nao
-     * uma lista parcial: omitir ingrediente em silencio enganaria quem confere
-     * o rotulo, e a tela cai no texto corrido.
-     */
     public void buscarIngredientesDoProduto(long produtoId, AoObterIngredientes callback) {
         REDE.execute(() -> {
             List<IngredienteProduto> lista = obterIngredientesDoProduto(produtoId);
@@ -316,10 +279,6 @@ public class ProdutoRepository {
         }
     }
 
-    /**
-     * Resolve a primeira foto ativa de media_assets para cards e listas.
-     * Chamadas simultâneas do mesmo produto compartilham a mesma consulta.
-     */
     public void buscarImagemProduto(long produtoId, @NonNull AoObterImagem callback) {
         if (produtoId <= 0) {
             PRINCIPAL.post(() -> callback.aoConcluir(null));
@@ -395,11 +354,6 @@ public class ProdutoRepository {
         }
     }
 
-    /**
-     * Busca a composição persistida. O endpoint de product-ingredients só
-     * retorna ids; os nomes INCI são resolvidos em paralelo no catálogo de
-     * ingredientes e remontados na ordem do rótulo.
-     */
     @Nullable
     private String obterTextoIngredientes(@Nullable Long versaoId) {
         if (versaoId == null || versaoId <= 0) {
@@ -468,7 +422,6 @@ public class ProdutoRepository {
                 Thread.currentThread().interrupt();
                 break;
             } catch (ExecutionException | TimeoutException ignored) {
-                // Um ingrediente indisponível não deve esconder os demais.
             }
         }
 
@@ -529,11 +482,6 @@ public class ProdutoRepository {
         return ingrediente.commonName == null ? "" : ingrediente.commonName.trim();
     }
 
-    /**
-     * Esse texto é um marcador interno salvo em cargas antigas, não uma
-     * composição. Ele nunca deve aparecer para a pessoa usuária como se fosse
-     * a lista de ingredientes.
-     */
     @Nullable
     private String rotuloParaExibicao(@Nullable String texto) {
         if (texto == null || texto.trim().isEmpty()) {
@@ -564,9 +512,6 @@ public class ProdutoRepository {
                 }
             }
 
-            // Histórico e produtos abertos antes do catálogo não têm a versão
-            // no cache; nesses casos o agregado completo continua sendo o
-            // caminho compatível.
             Response<ProductFullResponse> resposta =
                     api.buscarProdutoCompleto(produtoId).execute();
             if (!resposta.isSuccessful() || resposta.body() == null) {
@@ -588,17 +533,12 @@ public class ProdutoRepository {
     private void guardarImagem(long produtoId, @Nullable String urlFoto) {
         if (produtoId <= 0) return;
         synchronized (CACHE_LOCK) {
-            // Uma falha transitória no carregamento do detalhe não deve
-            // apagar uma URL válida já resolvida por outra tela.
             if (urlFoto != null || !IMAGENS_CACHE.containsKey(produtoId)) {
                 IMAGENS_CACHE.put(produtoId, urlFoto);
             }
         }
     }
 
-    /**
-     * A primeira foto ACTIVE do tipo PRODUCT_PHOTO, na ordem de sortOrder.
-     */
     @Nullable
     private String primeiraFotoAtiva(List<MediaAssetResponse> fotos) {
         if (fotos == null) {
@@ -624,19 +564,6 @@ public class ProdutoRepository {
         return foto.sortOrder == null ? Integer.MAX_VALUE : foto.sortOrder;
     }
 
-    /**
-     * A lista de produtos da API traz so o brandId/categoryId e nao traz nota
-     * nenhuma. Para montar o card do jeito que a tela precisa (nome, marca,
-     * categoria e nota) juntamos seis chamadas: produtos, marcas, categorias,
-     * versoes, notas e o modelo de scoring ativo.
-     *
-     * A nota mora na versao atual do produto, nao no produto, e cada versao
-     * pode ter uma nota por modelo de scoring: por isso o caminho e produto ->
-     * versao atual -> nota do modelo ativo.
-     *
-     * Nenhuma depende do resultado da outra, entao as seis sao disparadas de
-     * uma vez: o custo passa a ser o da chamada mais lenta, e nao a soma delas.
-     */
     private List<Produto> montarCatalogo() throws IOException, FalhaApi {
         Future<List<ProductResponse>> pedidoProdutos =
                 REDE.submit(
@@ -787,8 +714,6 @@ public class ProdutoRepository {
                 marca = "";
             }
 
-            // A listagem nao traz media_assets. Os adapters resolvem a primeira
-            // foto ativa sob demanda pelo endpoint leve de fotos da versao.
             guardarVersaoAtual(produto.id, versaoAtual);
             catalogo.add(new Produto(produto.id, produto.name, marca, nota, null,
                     produto.productCategoryId, nomeDaCategoria.get(produto.productCategoryId),
@@ -807,11 +732,6 @@ public class ProdutoRepository {
         }
     }
 
-    /**
-     * Sem modelo ativo (404) ou com a chamada fora do ar, o catalogo carrega
-     * mesmo assim: melhor mostrar os produtos sem nota do que derrubar a busca
-     * inteira por causa de uma configuracao de scoring.
-     */
     @Nullable
     private Long buscarModeloAtivoId(VenusApi api) {
         try {
@@ -837,10 +757,6 @@ public class ProdutoRepository {
         }
     }
 
-    /**
-     * Devolve o resultado da chamada preservando o motivo da falha: quem chama
-     * precisa distinguir "a API respondeu erro" de "nao deu para chegar nela".
-     */
     private <T> List<T> esperar(Future<List<T>> pedido) throws IOException, FalhaApi {
         try {
             return pedido.get();

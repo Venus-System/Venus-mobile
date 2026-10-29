@@ -9,7 +9,6 @@ import java.util.Collections;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-/** Small catalog fixture protecting the public matching decision after extraction. */
 public class ScanCatalogCharacterizationTest {
     @Test public void keepsTheBestProductDecisionAfterSplit() {
         ScanFrontData front = new ScanFrontData(

@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** Persiste localmente os produtos do catálogo acessados pelo usuário. */
 public final class HistoricoCatalogoRepository {
 
     private static final String ARQUIVO = "venus_historico_catalogo";
@@ -53,7 +52,6 @@ public final class HistoricoCatalogoRepository {
         EXECUTOR.execute(() -> historico.postValue(mapear(lerRegistros())));
     }
 
-    /** Coloca o produto no topo e remove uma entrada anterior do mesmo produto. */
     public synchronized void registrarAcesso(@Nullable Produto produto) {
         if (produto == null || produto.getId() == null || produto.getId() <= 0) {
             return;
@@ -114,7 +112,6 @@ public final class HistoricoCatalogoRepository {
                 );
                 resultado.add(new ItemHistorico(produto, data(registro.accessedAt)));
             } catch (RuntimeException ignored) {
-                // Uma entrada corrompida não impede a leitura das demais.
             }
         }
         return resultado;

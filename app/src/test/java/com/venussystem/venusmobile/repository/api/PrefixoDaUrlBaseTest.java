@@ -19,13 +19,6 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-/**
- * Na AWS a IA e a Classificacao ficam atras de um prefixo (/ai e
- * /classificacao). Se alguma rota for escrita com "/" na frente, o Retrofit
- * descarta o prefixo ("/v1/chat" vira http://host/v1/chat) e o servidor
- * responde 404, sem nenhum erro de compilacao. Estes testes seguram as rotas
- * relativas.
- */
 public class PrefixoDaUrlBaseTest {
 
     private MockWebServer server;
@@ -41,7 +34,6 @@ public class PrefixoDaUrlBaseTest {
         server.shutdown();
     }
 
-    /** Monta a base como o app faz: a URL do build passa pelo ClienteIa.normalizar. */
     private <T> T api(String prefixo, Class<T> tipo) {
         String base = ClienteIa.normalizar(server.url(prefixo).toString());
         return new Retrofit.Builder()

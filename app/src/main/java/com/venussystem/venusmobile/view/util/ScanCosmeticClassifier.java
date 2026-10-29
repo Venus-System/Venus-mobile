@@ -24,60 +24,7 @@ import static com.venussystem.venusmobile.view.util.ScanCosmeticEvidence.possuiP
 import static com.venussystem.venusmobile.view.util.ScanCosmeticText.contemTermo;
 import static com.venussystem.venusmobile.view.util.ScanCosmeticText.montarTextoCompleto;
 
-/**
- * Classificador frontal de produtos para o fluxo de novo produto.
- *
- * REGRA DE NEGÓCIO:
- *
- *   produto NÃO encontrado no catálogo
- *             +
- *   evidência suficiente de cosmético
- *             ↓
- *   COSMETIC_CONFIRMED
- *             ↓
- *   captura do verso
- *
- * O classificador foi desenhado para maximizar a cobertura de cosméticos
- * sem permitir que palavras genéricas como CREME, GEL, OIL, BODY, BEAUTY
- * ou FRAGRANCE confirmem sozinhas um produto.
- *
- * 4 níveis de evidência:
- *
- * NÍVEL 1 - CATEGORIA EXPLÍCITA
- *   Shampoo, condicionador, sabonete, desodorante, creme para pentear,
- *   hidratante, perfume, protetor solar, maquiagem etc.
- *
- * NÍVEL 2 - CONTEXTO DE APLICAÇÃO
- *   cabelo, pele, rosto, corpo, axilas, barba, lábios, unhas,
- *   higiene pessoal, cuidados da pele/cabelo etc.
- *
- * NÍVEL 3 - ESTRUTURA DE PRODUTO / RÓTULO
- *   marca + produto, capacidade, apresentação, ingredientes/INCI,
- *   modo de uso, cuidados/advertências, fragrância/perfume etc.
- *
- * NÍVEL 4 - CLAIMS / COMPOSIÇÃO / VOCABULÁRIO COSMÉTICO
- *   vegan, cruelty free, dermatologicamente testado, sulfate free,
- *   moisturizing, nourishing, antiperspirant etc., além de palavras
- *   típicas de formulação cosmética.
- *
- * Importante:
- * - Os quatro níveis podem participar da confirmação.
- * - Não é obrigatório ter os quatro níveis para confirmar um cosmético.
- * - Um termo genérico isolado NÃO confirma.
- * - Categoria de alta precisão pode confirmar com estrutura mínima.
- * - Categoria de precisão média precisa de apoio contextual/estrutural.
- * - Conflitos fortes com não cosmético geram UNCERTAIN ou NON_COSMETIC.
- * - Texto de IDE/Logcat/tela contaminada gera UNCERTAIN.
- */
 public final class ScanCosmeticClassifier {
-
-    /*
-     * Threshold principal.
-     *
-     * Mantemos um threshold alto, mas a regra de confirmação ficou mais
-     * inteligente: em vez de depender apenas do score, ela usa a combinação
-     * dos quatro níveis.
-     */
     private static final double SCORE_CONFIRMED_MIN = 0.78;
 
     private static final double SCORE_UNCERTAIN_MAX = 0.77;
@@ -95,11 +42,6 @@ public final class ScanCosmeticClassifier {
                 new LinkedHashSet<>();
         Set<String> tipos =
                 new LinkedHashSet<>();
-        /*
-         * =============================================================
-         * 4 NÍVEIS DE EVIDÊNCIA
-         * =============================================================
-         */
         Set<String> nivel1Categoria =
                 new LinkedHashSet<>();
         Set<String> nivel2Contexto =
@@ -108,11 +50,6 @@ public final class ScanCosmeticClassifier {
                 new LinkedHashSet<>();
         Set<String> nivel4Apoio =
                 new LinkedHashSet<>();
-        /*
-         * =============================================================
-         * NÃO COSMÉTICOS
-         * =============================================================
-         */
         Set<String> sinaisNaoCosmeticos =
                 new LinkedHashSet<>();
         detectarNaoCosmetico(
@@ -213,17 +150,7 @@ public final class ScanCosmeticClassifier {
                 "FUNGICIDA AGRICOLA", "PESTICIDE",
                 "FERTILIZANTE", "FERTILIZER", "VENENO"
         );
-        /*
-         * =============================================================
-         * NÍVEL 1 — CATEGORIAS EXPLÍCITAS
-         * =============================================================
-         */
         detectarCategorias(texto, nivel1Categoria, tipos);
-        /*
-         * =============================================================
-         * NÍVEL 2 — CONTEXTO DE APLICAÇÃO
-         * =============================================================
-         */
         detectarContexto(
                 texto,
                 nivel2Contexto,
@@ -301,9 +228,6 @@ public final class ScanCosmeticClassifier {
                 "BEAUTY", "BELEZA", "MAKEUP", "MAKE UP",
                 "MAQUILLAGE", "MAQUILLAJE"
         );
-        /*
-         * Termos genéricos úteis apenas em contexto:
-         */
         boolean temGenericoCreme =
                 contemTermo(texto, "CREME", false)
                         || contemTermo(texto, "CREAM", false);
@@ -317,10 +241,6 @@ public final class ScanCosmeticClassifier {
                         || contemTermo(texto, "OIL", false);
         boolean temGenericoSoap =
                 contemTermo(texto, "SOAP", false);
-        /*
-         * "CREME + pele" / "CREME + body" / "CREME + face" é contexto
-         * suficiente para reforçar um cosmético.
-         */
         if (temGenericoCreme
                 && possuiAlgumContexto(
                 nivel2Contexto,
@@ -330,9 +250,6 @@ public final class ScanCosmeticClassifier {
         )) {
             nivel2Contexto.add("tipo de formulação: CREME + área cosmética");
         }
-        /*
-         * Creme para cabelo / leave in / hair context.
-         */
         if (temGenericoCreme
                 && nivel2Contexto.contains("cabelo")) {
             nivel2Contexto.add("tipo de formulação: CREME + cabelo");
@@ -341,9 +258,6 @@ public final class ScanCosmeticClassifier {
                 && nivel2Contexto.contains("corpo")) {
             nivel2Contexto.add("tipo de formulação: LOÇÃO + corpo");
         }
-        /*
-         * GEL não confirma sozinho. GEL + cabelo/pele/corpo pode reforçar.
-         */
         if (temGenericoGel
                 && possuiAlgumContexto(
                 nivel2Contexto,
@@ -353,9 +267,6 @@ public final class ScanCosmeticClassifier {
         )) {
             nivel2Contexto.add("tipo de formulação: GEL + área cosmética");
         }
-        /*
-         * OIL não confirma sozinho.
-         */
         if (temGenericoOleo
                 && possuiAlgumContexto(
                 nivel2Contexto,
@@ -366,10 +277,6 @@ public final class ScanCosmeticClassifier {
         )) {
             nivel2Contexto.add("tipo de formulação: OIL + área cosmética");
         }
-        /*
-         * SOAP genérico em inglês pode ser limpeza doméstica. Só reforça
-         * quando acompanhado por contexto pessoal/body/face/hand.
-         */
         if (temGenericoSoap
                 && possuiAlgumContexto(
                 nivel2Contexto,
@@ -379,11 +286,6 @@ public final class ScanCosmeticClassifier {
         )) {
             nivel2Contexto.add("SOAP + contexto de higiene pessoal");
         }
-        /*
-         * =============================================================
-         * NÍVEL 3 — ESTRUTURA DE PRODUTO / RÓTULO
-         * =============================================================
-         */
         boolean temMarca =
                 possuiMarcaSignificativa(frontData);
         boolean temProduto =
@@ -416,11 +318,6 @@ public final class ScanCosmeticClassifier {
         if (temMarcaCosmeticaConhecida) {
             nivel3Estrutura.add("marca cosmética conhecida");
         }
-        /*
-         * =============================================================
-         * NÍVEL 4 — CLAIMS / COMPOSIÇÃO / VOCABULÁRIO
-         * =============================================================
-         */
         detectarApoio(
                 texto,
                 nivel4Apoio,
@@ -458,10 +355,6 @@ public final class ScanCosmeticClassifier {
                 "PROTETOR", "PROTECTION",
                 "MATTIFYING", "MATIFICANTE"
         );
-        /*
-         * Algumas palavras químicas/fórmula são úteis, mas não podem
-         * confirmar sozinhas.
-         */
         int sinaisFormula =
                 contarTermos(
                         texto,
@@ -484,11 +377,6 @@ public final class ScanCosmeticClassifier {
                     "vocabulário de formulação cosmética"
             );
         }
-        /*
-         * =============================================================
-         * CONTAMINAÇÃO DE INTERFACE
-         * =============================================================
-         */
         int sinaisInterface =
                 contarSinaisInterface(texto);
         if (sinaisInterface >= 2) {
@@ -516,11 +404,6 @@ public final class ScanCosmeticClassifier {
                     new ArrayList<>(tipos)
             );
         }
-        /*
-         * =============================================================
-         * PREPARA EVIDÊNCIAS
-         * =============================================================
-         */
         evidencias.addAll(
                 prefixarNivel("N1", nivel1Categoria)
         );
@@ -533,24 +416,10 @@ public final class ScanCosmeticClassifier {
         evidencias.addAll(
                 prefixarNivel("N4", nivel4Apoio)
         );
-        /*
-         * =============================================================
-         * CONFLITO NÃO COSMÉTICO
-         * =============================================================
-         */
         if (!sinaisNaoCosmeticos.isEmpty()) {
             evidencias.addAll(
                     prefixarNivel("NAO_COSMETICO", sinaisNaoCosmeticos)
             );
-            /*
-             * Estrutura genérica (marca/produto/capacidade) NÃO é evidência
-             * de cosmético por si só. Portanto, um alimento como
-             * "CHOCOLATE 90 G" deve continuar NON_COSMETIC mesmo possuindo
-             * marca, produto e capacidade.
-             *
-             * Conflito só existe quando há alguma evidência cosmética real:
-             * N1, N2 ou N4, ou uma marca cosmética conhecida.
-             */
             boolean temEvidenciaCosmeticaReal =
                     !nivel1Categoria.isEmpty()
                             || !nivel2Contexto.isEmpty()
@@ -596,11 +465,6 @@ public final class ScanCosmeticClassifier {
                     new ArrayList<>(tipos)
             );
         }
-        /*
-         * =============================================================
-         * MÉTRICAS DOS 4 NÍVEIS
-         * =============================================================
-         */
         int n1 = nivel1Categoria.size();
         int n2 = nivel2Contexto.size();
         int n3 = nivel3Estrutura.size();
@@ -628,24 +492,7 @@ public final class ScanCosmeticClassifier {
                 n4 >= 2;
         boolean marcaCosmetica =
                 temMarcaCosmeticaConhecida;
-        /*
-         * =============================================================
-         * SCORE
-         *
-         * Cada nível tem participação:
-         *
-         * N1 = até 0.68
-         * N2 = até 0.14
-         * N3 = até 0.12
-         * N4 = até 0.10
-         *
-         * Score é complemento da regra estrutural, não substituto.
-         * =============================================================
-         */
         double score = 0.0;
-        /*
-         * NÍVEL 1
-         */
         if (categoriaReal) {
             score += categoriaAltaPrecisao
                     ? 0.70
@@ -654,18 +501,12 @@ public final class ScanCosmeticClassifier {
         if (n1 >= 2) {
             score += 0.06;
         }
-        /*
-         * NÍVEL 2
-         */
         if (contextoForte) {
             score += 0.07;
         }
         if (contextoMuitoForte) {
             score += 0.05;
         }
-        /*
-         * NÍVEL 3
-         */
         if (temMarca) {
             score += 0.04;
         }
@@ -681,25 +522,15 @@ public final class ScanCosmeticClassifier {
         if (estruturaRotulo) {
             score += 0.04;
         }
-        /*
-         * Marca cosmética conhecida reforça muito em casos de:
-         * "NIVEA CREME", "DOVE ...", etc.
-         */
         if (marcaCosmetica) {
             score += 0.05;
         }
-        /*
-         * NÍVEL 4
-         */
         if (apoioFormulaOuClaim) {
             score += 0.04;
         }
         if (apoioForte) {
             score += 0.03;
         }
-        /*
-         * Cosmético explícito com estrutura recebe pequeno bônus.
-         */
         if (cosmeticoExplicito
                 && estruturaProduto) {
             score += 0.07;
@@ -708,34 +539,6 @@ public final class ScanCosmeticClassifier {
                 1.0,
                 score
         );
-        /*
-         * =============================================================
-         * REGRAS DE CONFIRMAÇÃO
-         *
-         * Vários caminhos possíveis.
-         *
-         * CAMINHO A
-         * Categoria de alta precisão.
-         *
-         * CAMINHO B
-         * Categoria real + contexto.
-         *
-         * CAMINHO C
-         * Categoria real + estrutura.
-         *
-         * CAMINHO D
-         * Categoria real + apoio.
-         *
-         * CAMINHO E
-         * Contexto forte + estrutura + apoio.
-         *
-         * CAMINHO F
-         * Marca cosmética conhecida + formulação/contexto.
-         *
-         * Assim sabonete, creme Nivea, creme para pentear e condicionador
-         * deixam de depender de um único score rígido.
-         * =============================================================
-         */
         boolean caminhoA =
                 categoriaAltaPrecisao;
         boolean caminhoB =
@@ -754,22 +557,11 @@ public final class ScanCosmeticClassifier {
         boolean caminhoF =
                 marcaCosmetica
                         && (
-                        /*
-                         * Casos muito comuns de frente curta, como
-                         * "NIVEA CREME". A marca é uma evidência forte
-                         * de contexto cosmético, enquanto CREME identifica
-                         * a forma do produto. A combinação é aceita sem
-                         * exigir que o OCR tenha lido "pele" ou "rosto".
-                         */
                         temGenericoCreme
                                 || (temGenericoLoção
                                 && nivel2Contexto.contains("corpo"))
                                 || (categoriaReal)
                 );
-        /*
-         * Categoria real explícita + uma estrutura mínima:
-         * praticamente todos os cosméticos frontais passam aqui.
-         */
         boolean confirmado =
                 caminhoA
                         || caminhoB
@@ -777,10 +569,6 @@ public final class ScanCosmeticClassifier {
                         || caminhoD
                         || caminhoE
                         || caminhoF;
-        /*
-         * "COSMÉTICO" genérico sozinho não confirma.
-         * Deve haver estrutura.
-         */
         if (cosmeticoExplicito
                 && !categoriaReal) {
             confirmado =
@@ -791,13 +579,6 @@ public final class ScanCosmeticClassifier {
                                     || marcaCosmetica
                     );
         }
-        /*
-         * Score mínimo.
-         *
-         * Para categorias de alta precisão permitimos um caminho
-         * excepcional com estrutura mínima mesmo se o score ficar
-         * marginal devido a OCR.
-         */
         if (confirmado) {
             boolean scoreAceito =
                     score >= SCORE_CONFIRMED_MIN
@@ -834,11 +615,6 @@ public final class ScanCosmeticClassifier {
                 );
             }
         }
-        /*
-         * =============================================================
-         * CASOS INCERTOS
-         * =============================================================
-         */
         double scoreIncerto =
                 Math.min(
                         SCORE_UNCERTAIN_MAX,
@@ -871,11 +647,6 @@ public final class ScanCosmeticClassifier {
         );
     }
 
-    /**
-     * Guarda usada pela ScanSuccessFrontActivity.
-     *
-     * O catálogo precisa ter falhado antes.
-     */
     public static boolean shouldOpenNewCosmeticFlow(
             boolean productFoundInCatalog,
             @NonNull ScanCosmeticClassification classification
@@ -887,11 +658,6 @@ public final class ScanCosmeticClassifier {
                 && classification.isConfirmedCosmetic();
     }
 
-    /*
-     * =============================================================
-     * LOG
-     * =============================================================
-     */
     private static void logResultado(
             String status,
             double score,
@@ -903,8 +669,6 @@ public final class ScanCosmeticClassifier {
             Set<String> n4,
             Set<String> naoCosmeticos
     ) {
-        // A classificação é uma função de domínio; não registra OCR nem
-        // depende de android.util.Log para funcionar em testes unitários.
     }
 
     private static List<String> prefixarNivel(

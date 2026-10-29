@@ -27,7 +27,6 @@ public class MapeadorPerfilApiTest {
 
     private static final long USER_ID = 42L;
 
-    /** Respostas em memoria, no mesmo formato do PerfilRepository. */
     private static class RespostasFalsas implements MapeadorPerfilApi.Respostas {
         final Map<String, String> tags = new HashMap<>();
         final Map<String, List<String>> listas = new HashMap<>();
@@ -57,8 +56,6 @@ public class MapeadorPerfilApiTest {
         respostas.tags.put(PerfilRepository.FOTOTIPO, "IV");
         respostas.tags.put(PerfilRepository.FAIXA_ETARIA, "AGE_25_34");
     }
-
-    // ---- Perfil ----
 
     @Test
     public void questionarioCompleto_viraOCorpoDaApi() {
@@ -96,7 +93,6 @@ public class MapeadorPerfilApiTest {
 
     @Test
     public void faltandoRespostaObrigatoria_naoEnvia() {
-        // Quem escolheu "Responder depois" nao tem nenhuma; aqui falta so uma.
         respostas.tags.remove(PerfilRepository.FOTOTIPO);
 
         assertNull(MapeadorPerfilApi.perfil(USER_ID, respostas));
@@ -172,8 +168,6 @@ public class MapeadorPerfilApiTest {
         assertTrue(corpo.isBreastfeeding);
     }
 
-    // ---- Preferencias ----
-
     @Test
     public void preferenciasComCampoNaApi_viramTrue() {
         respostas.listas.put(PerfilRepository.PREFERENCIAS, Arrays.asList(
@@ -191,8 +185,6 @@ public class MapeadorPerfilApiTest {
 
     @Test
     public void fragranciaESustentavel_vaoSempreFalse() {
-        // "Sem fragrancia" saiu da tela, mas pode estar salvo de uma versao
-        // antiga; "Embalagem reciclavel" agora vai como etiqueta.
         respostas.listas.put(PerfilRepository.PREFERENCIAS,
                 Arrays.asList("Sem fragrância", "Embalagem reciclável"));
 
@@ -217,7 +209,6 @@ public class MapeadorPerfilApiTest {
 
     @Test
     public void semPreferencias_mandaTudoFalse() {
-        // A API exige os sete campos, entao "nada escolhido" vai como false.
         UserPreferenceRequest corpo = MapeadorPerfilApi.preferencias(USER_ID, respostas);
 
         assertFalse(corpo.preferVegan);
@@ -236,8 +227,6 @@ public class MapeadorPerfilApiTest {
         assertTrue(MapeadorPerfilApi.preferencias(USER_ID, respostas).preferParabenFree);
     }
 
-    // ---- Etiquetas de preferencia ----
-
     private static PreferenceCatalogResponse etiqueta(long id, String slug, String nome) {
         PreferenceCatalogResponse etiqueta = new PreferenceCatalogResponse();
         etiqueta.id = id;
@@ -246,7 +235,6 @@ public class MapeadorPerfilApiTest {
         return etiqueta;
     }
 
-    // Recorte do catalogo de verdade (GET /api/profile-tags/preferences).
     private static final List<PreferenceCatalogResponse> CATALOGO_ETIQUETAS = Arrays.asList(
             etiqueta(28, "vegano", "Vegano"),
             etiqueta(31, "sem-alcool", "Sem Álcool"),
@@ -274,7 +262,6 @@ public class MapeadorPerfilApiTest {
 
     @Test
     public void etiquetas_preferenciaComColunaNaoViraEtiqueta() {
-        // Vegano tem etiqueta no catalogo, mas vai pelo preferVegan.
         respostas.listas.put(PerfilRepository.PREFERENCIAS, Arrays.asList("Vegano"));
 
         assertTrue(MapeadorPerfilApi.etiquetasEscolhidas(CATALOGO_ETIQUETAS, respostas).isEmpty());
@@ -282,15 +269,11 @@ public class MapeadorPerfilApiTest {
 
     @Test
     public void etiquetas_semCorrespondenteNoCatalogo_ficamDeFora() {
-        // "Recyclable Packaging" nao conta como "Embalagem reciclavel": o site
-        // tambem nao reconhece, e os dois precisam gravar as mesmas etiquetas.
         respostas.listas.put(PerfilRepository.PREFERENCIAS,
                 Arrays.asList("Hipoalergênico", "Embalagem reciclável"));
 
         assertTrue(MapeadorPerfilApi.etiquetasEscolhidas(CATALOGO_ETIQUETAS, respostas).isEmpty());
     }
-
-    // ---- Alergias ----
 
     private static AllergyResponse alergia(long id, String nome) {
         AllergyResponse alergia = new AllergyResponse();

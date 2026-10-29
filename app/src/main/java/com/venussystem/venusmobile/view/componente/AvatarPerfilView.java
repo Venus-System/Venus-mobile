@@ -19,25 +19,12 @@ import androidx.core.graphics.PathParser;
 
 import com.venussystem.venusmobile.R;
 
-/**
- * A foto de perfil num circulo, por cima do escudo com ondas do design.
- *
- * O escudo lilas com contorno fica atras, e a foto (se houver) entra num
- * circulo centralizado nele, ocupando 80% da largura do escudo - a borda lilas
- * aparece em volta, como no design. Sem foto, fica so o escudo. A foto
- * preenche o circulo inteiro, cortando o que sobrar, como num centerCrop.
- *
- * O formato vem de R.string.caminho_forma_avatar, num quadro de 145x160, e e
- * centralizado no tamanho da view sem distorcer.
- */
 public class AvatarPerfilView extends AppCompatImageView {
 
     private static final float LARGURA_FORMA = 145f;
     private static final float ALTURA_FORMA = 160f;
     private static final float ESPESSURA_CONTORNO = 2f;
 
-    // Medido no design: o circulo da foto tem 80% da largura do escudo e o
-    // centro no centro do escudo.
     private static final float PROPORCAO_FOTO = 0.8f;
 
     private final Path formaOriginal;
@@ -66,14 +53,8 @@ public class AvatarPerfilView extends AppCompatImageView {
         contorno.setStrokeJoin(Paint.Join.ROUND);
         contorno.setColor(ContextCompat.getColor(context, R.color.roxo_avatar_borda));
 
-        // Apaga a foto fora do circulo, com a borda suavizada (um clipPath
-        // deixaria a borda serrilhada). Tem que ser o "fora" pintado com
-        // DST_OUT: um DST_IN pintando o circulo so mexeria nos pixels do
-        // proprio circulo, e os cantos da foto ficariam.
         mascara.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
 
-        // A posicao da foto e calculada aqui (ver ajustarFoto), e nao pelo
-        // centerCrop, porque ela preenche o circulo e nao a view inteira.
         setScaleType(ScaleType.MATRIX);
     }
 
@@ -105,13 +86,11 @@ public class AvatarPerfilView extends AppCompatImageView {
     @Override
     public void setImageDrawable(@Nullable Drawable drawable) {
         super.setImageDrawable(drawable);
-        // O construtor da ImageView ja chama isto, antes dos campos daqui existirem.
         if (matrizFoto != null) {
             ajustarFoto();
         }
     }
 
-    /** Escala a foto para cobrir o circulo inteiro, centralizada nele. */
     private void ajustarFoto() {
         Drawable foto = getDrawable();
         if (foto == null || circulo.isEmpty()) {

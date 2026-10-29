@@ -18,16 +18,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Traduz as respostas do questionario, do jeito que o app guarda, para o que
- * o Venus-CRUD aceita: perfil, preferencias, etiquetas de preferencia e alergias.
- *
- * Quase todas as tags das telas ja sao os valores da API (ver PerfilRepository);
- * aqui ficam so as diferencas e as regras de "nao respondeu".
- */
 public final class MapeadorPerfilApi {
-
-    /** O que o mapeador precisa ler - o PerfilRepository ja tem os dois metodos. */
     public interface Respostas {
         @Nullable
         String getTag(String chave);
@@ -35,9 +26,6 @@ public final class MapeadorPerfilApi {
         List<String> getLista(String chave);
     }
 
-    // Valores aceitos pela API (enums do UserProfileRequest em /v3/api-docs).
-    // Uma tag fora daqui - de uma versao antiga do app, por exemplo - daria 400
-    // em toda tentativa; melhor nao mandar do que insistir num envio que falha.
     private static final Set<String> GENEROS =
             Set.of("FEMALE", "MALE", "NON_BINARY", "OTHER", "PREFER_NOT_SAY");
     private static final Set<String> TIPOS_PELE =
@@ -50,32 +38,18 @@ public final class MapeadorPerfilApi {
             Set.of("NORMAL", "DRY", "OILY", "SENSITIVE", "DANDRUFF", "OTHER");
     private static final Set<String> SENSIBILIDADES = Set.of("LOW", "MEDIUM", "HIGH", "VERY_HIGH");
 
-    // A API passou a ser so para adultos (migracao 20260914_003_adult_only do
-    // Venus-Banco) e tirou UNDER_13 e AGE_13_17, mas a tela ainda oferece as
-    // duas. Com elas o perfil fica so no aparelho.
     private static final Set<String> FAIXAS_ETARIAS =
             Set.of("AGE_18_24", "AGE_25_34", "AGE_35_44", "AGE_45_54", "AGE_55_PLUS");
 
-    // A tela pergunta so "Tipo 1" (liso), mas a API divide em 1A, 1B e 1C.
-    // 1A e o liso sem ondulacao nenhuma, o mais proximo do que a tela descreve.
     private static final String CABELO_TIPO_1_APP = "TYPE_1";
     private static final String CABELO_TIPO_1_API = "TYPE_1A";
 
-    // As preferencias sao guardadas pelo texto da tela ("Sem parabenos"), entao
-    // tudo aqui e comparado na forma de slug (ver paraSlug): um acento ou uma
-    // maiuscula a mais no arrays.xml nao quebra o envio em silencio.
     private static final String VEGANO = "vegano";
     private static final String CRUELTY_FREE = "cruelty-free";
     private static final String SEM_PARABENOS = "sem-parabenos";
     private static final String SEM_SULFATOS = "sem-sulfatos";
     private static final String SEM_SILICONES = "sem-silicones";
 
-    /**
-     * As outras oito preferencias nao tem campo em /api/user-preferences e vao
-     * como etiqueta do catalogo, achada pelo slug ou pelo nome. A lista de nomes
-     * aceitos e a mesma do site (PREFERENCIAS_EM_ETIQUETA em perfil.ts), para os
-     * dois lerem e gravarem as mesmas etiquetas.
-     */
     private static final Map<String, List<String>> PREFERENCIAS_EM_ETIQUETA = new HashMap<>();
 
     static {
@@ -95,11 +69,6 @@ public final class MapeadorPerfilApi {
     private MapeadorPerfilApi() {
     }
 
-    /**
-     * @return null quando ainda nao da para mandar: falta alguma resposta que a
-     * API exige (quem escolheu "Responder depois"), ou a faixa etaria e de
-     * menor de idade.
-     */
     @Nullable
     public static UserProfileRequest perfil(long userId, Respostas respostas) {
         String genero = valida(respostas.getTag(PerfilRepository.GENERO), GENEROS);
@@ -140,13 +109,6 @@ public final class MapeadorPerfilApi {
         return corpo;
     }
 
-    /**
-     * As cinco preferencias que tem campo proprio na API. As outras vao como
-     * etiqueta (ver etiquetasEscolhidas).
-     *
-     * A API exige os sete campos. "Sem fragrancia" saiu da tela e "sustentavel"
-     * nunca esteve nela, entao os dois vao sempre false, como no site.
-     */
     public static UserPreferenceRequest preferencias(long userId, Respostas respostas) {
         Set<String> escolhidas = slugs(respostas.getLista(PerfilRepository.PREFERENCIAS));
 
@@ -162,11 +124,6 @@ public final class MapeadorPerfilApi {
         return corpo;
     }
 
-    /**
-     * Ids das etiquetas do catalogo (GET /api/profile-tags/preferences) que
-     * correspondem as preferencias escolhidas. Preferencia sem etiqueta no
-     * catalogo fica de fora: nao ha o que mandar ate o catalogo ter a etiqueta.
-     */
     public static Set<Long> etiquetasEscolhidas(List<PreferenceCatalogResponse> catalogo,
                                                 Respostas respostas) {
         Set<String> aceitos = new HashSet<>();
@@ -187,12 +144,6 @@ public final class MapeadorPerfilApi {
         return ids;
     }
 
-    /**
-     * Ids do catalogo (GET /api/allergies) das alergias escolhidas, comparando
-     * pelo nome. A tela mostra os nomes do proprio catalogo, entao so fica de
-     * fora quem foi escolhido numa lista antiga ou na lista reserva de quando a
-     * API nao respondeu, e o catalogo ainda nao tem aquele nome.
-     */
     public static Set<Long> alergiasEscolhidas(List<AllergyResponse> catalogo,
                                                Respostas respostas) {
         Set<String> escolhidas = slugs(respostas.getLista(PerfilRepository.ALERGIAS));
@@ -216,10 +167,6 @@ public final class MapeadorPerfilApi {
         return tag != null && aceitos.contains(tag) ? tag : null;
     }
 
-    /**
-     * true/false quando a pessoa passou pela tela; null quando nao passou ou
-     * preferiu nao dizer. Marcar "nenhuma" responde false para todas.
-     */
     @Nullable
     private static Boolean marcou(List<String> respostas, String tag) {
         if (respostas.isEmpty() || respostas.contains(PerfilRepository.PREFIRO_NAO_DIZER)) {
@@ -240,11 +187,6 @@ public final class MapeadorPerfilApi {
         return texto != null && slugs.contains(paraSlug(texto));
     }
 
-    /**
-     * "Oleo de Amendoas", com ou sem acento, vira "oleo-de-amendoas": sem
-     * acento, minusculo e so letras e numeros separados por hifen. E a mesma
-     * regra do paraSlug do site, e e o formato dos slugs do catalogo.
-     */
     static String paraSlug(String texto) {
         String semAcento = Normalizer.normalize(texto, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "");

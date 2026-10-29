@@ -24,41 +24,14 @@ import java.io.IOException;
 import java.util.EnumMap;
 import java.util.Map;
 
-/**
- * A Veninha do chat: a cara do humor da vez, com a boca por cima mexendo
- * enquanto ela "fala" a mensagem que acabou de mandar.
- *
- * Portada da web (components/Veninha e hooks/useFalaDaVeninha): as caras vem
- * sem boca, e cada boca entra numa posicao medida em fracao da cara. A cara e
- * centralizada no tamanho da view sem distorcer, como num fitCenter.
- *
- * Feliz e calada, ela fica pulando (veninha_pulando, um WebP animado que so
- * existe no app). Essa animacao ja tem a boca desenhada, entao na hora de
- * falar volta a cara parada com a boca por cima, e depois volta a pular.
- *
- * Pensando, o "?" da cara (recortado dela em veninha_interrogacao) vira tres
- * menores que aparecem um a um e recomecam, no ritmo dos pontos do "Digitando".
- *
- * E so enfeite: a conversa diz tudo o que ela mostra, entao fica fora da
- * leitura de tela.
- */
 public class VeninhaView extends View {
-
-    // O mesmo ritmo da web: a boca troca a cada 60 ms, uma silaba a cada 3
-    // letras, e a fala para em 3 s mesmo com resposta longa.
     private static final long INTERVALO_MS = 60;
     private static final long DURACAO_MAXIMA_MS = 3000;
     private static final int LETRAS_POR_SILABA = 3;
-    // Par, para a fala terminar de boca fechada.
     private static final int PASSOS_MAXIMOS = (int) (DURACAO_MAXIMA_MS / INTERVALO_MS / 2) * 2;
 
-    // O mesmo intervalo dos pontos do "Digitando" (ConversaAdapter), que aparece
-    // junto: os dois andam no mesmo passo.
     private static final long INTERVALO_INTERROGACAO_MS = 400;
 
-    // Onde entra o "?": centro (x, y) e altura, em fracao da cara. Parado, e o
-    // lugar e o tamanho do desenho original; animado, sao tres menores subindo
-    // em diagonal no espaco livre acima do cabelo.
     private static final float[] INTERROGACAO_PARADA = {0.8692f, 0.1187f, 0.2101f};
     private static final float[][] INTERROGACOES = {
             {0.810f, 0.117f, 0.105f},
@@ -66,7 +39,6 @@ public class VeninhaView extends View {
             {0.954f, 0.078f, 0.105f},
     };
 
-    /** Uma boca e onde ela entra: centro (x, y) e largura em fracao da cara, giro em graus. */
     private static final class Boca {
         @DrawableRes
         final int imagem;
@@ -89,9 +61,7 @@ public class VeninhaView extends View {
         final int cara;
         final Boca aberta;
         final Boca fechada;
-        // De boca aberta mesmo calada (a confusa fica de boca aberta).
         final boolean abertaQuieta;
-        // A boca de quando as animacoes do sistema estao desligadas.
         final boolean abertaSemMovimento;
 
         Rosto(@DrawableRes int cara, Boca aberta, Boca fechada,
@@ -104,7 +74,6 @@ public class VeninhaView extends View {
         }
     }
 
-    // Medidas copiadas do styles.module.css da Veninha na web.
     private static final Map<HumorDaVeninha, Rosto> ROSTOS = new EnumMap<>(HumorDaVeninha.class);
 
     static {
@@ -130,7 +99,6 @@ public class VeninhaView extends View {
     private final Runnable passoDaFala = this::darPasso;
     private final Runnable passoDaInterrogacao = this::darPassoDaInterrogacao;
 
-    // Null se o aparelho nao conseguir abrir a animacao: fica a cara parada.
     @Nullable
     private final AnimatedImageDrawable pulo;
 
@@ -162,7 +130,6 @@ public class VeninhaView extends View {
         atualizarAnimacoes();
     }
 
-    /** Mexe a boca no ritmo do texto. Com as animacoes do sistema desligadas, nao mexe. */
     public void falar(@Nullable String texto) {
         calar();
         if (!ValueAnimator.areAnimatorsEnabled()) {
@@ -182,22 +149,16 @@ public class VeninhaView extends View {
         atualizarAnimacoes();
     }
 
-    /** Se e hora de pular: feliz, calada e com as animacoes do sistema ligadas. */
     @VisibleForTesting
     static boolean pula(HumorDaVeninha humor, boolean falando, boolean animacoesLigadas) {
         return humor == HumorDaVeninha.FELIZ && !falando && animacoesLigadas;
     }
 
-    /** Quantos dos tres "?" da pensando aparecem neste passo. */
     @VisibleForTesting
     static int interrogacoesVisiveis(int passo) {
         return passo % (INTERROGACOES.length + 1);
     }
 
-    /**
-     * Quantas trocas de boca o texto rende: cada silaba abre e fecha. So letras
-     * contam, e uma silaba e uma letra a cada tres, como na web.
-     */
     @VisibleForTesting
     static int passosDaFala(@Nullable String texto) {
         if (texto == null) {
@@ -211,7 +172,6 @@ public class VeninhaView extends View {
     @Override
     public void onVisibilityAggregated(boolean isVisible) {
         super.onVisibilityAggregated(isVisible);
-        // Fora da tela (outra aba, app em segundo plano) nao gasta bateria pulando.
         visivel = isVisible;
         atualizarAnimacoes();
     }
@@ -287,7 +247,6 @@ public class VeninhaView extends View {
         if (passo < totalDePassos) {
             postDelayed(passoDaFala, INTERVALO_MS);
         }
-        // No ultimo passo a fala acaba, e feliz ela volta a pular.
         atualizarAnimacoes();
     }
 
@@ -295,7 +254,6 @@ public class VeninhaView extends View {
         return pula(humor, passo < totalDePassos, ValueAnimator.areAnimatorsEnabled());
     }
 
-    /** Liga ou desliga o pulo e as interrogacoes conforme o humor, a fala e a tela. */
     private void atualizarAnimacoes() {
         if (pulo != null) {
             if (visivel && pulandoAgora()) {
@@ -308,7 +266,6 @@ public class VeninhaView extends View {
         boolean interrogar = visivel && humor == HumorDaVeninha.PENSANDO
                 && ValueAnimator.areAnimatorsEnabled();
         if (interrogar && !interrogacaoAndando) {
-            // Cada vez que ela comeca a pensar, os "?" comecam do zero.
             interrogacaoAndando = true;
             passoInterrogacao = 0;
             postDelayed(passoDaInterrogacao, INTERVALO_INTERROGACAO_MS);
@@ -348,11 +305,6 @@ public class VeninhaView extends View {
         imagem.draw(canvas);
     }
 
-    /**
-     * Centraliza a imagem no espaco da view sem distorcer.
-     *
-     * @return false se a view ainda nao tem tamanho.
-     */
     private boolean encaixar(Drawable imagem) {
         float larguraLivre = getWidth() - getPaddingLeft() - getPaddingRight();
         float alturaLivre = getHeight() - getPaddingTop() - getPaddingBottom();

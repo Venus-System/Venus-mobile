@@ -10,9 +10,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.venussystem.venusmobile.R;
 
-/**
- * Passo 1: explica que a primeira foto serve para procurar o produto no banco.
- */
 public class ScanTutorial1Activity extends AppCompatActivity {
 
     @Override
@@ -25,7 +22,6 @@ public class ScanTutorial1Activity extends AppCompatActivity {
             return;
         }
 
-        // A tela foi efetivamente exibida ao usuário: registra como vista.
         ScanTutorialState.markTutorial1Seen(this);
 
         setContentView(R.layout.activity_scan_tutorial_1);

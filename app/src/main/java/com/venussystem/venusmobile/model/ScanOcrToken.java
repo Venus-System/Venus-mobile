@@ -4,12 +4,6 @@ import android.graphics.Rect;
 
 import androidx.annotation.NonNull;
 
-/**
- * Token espacial do OCR.
- *
- * Representa um Element do ML Kit com sua posição na imagem.
- * O texto é sempre preservado como retornado pelo OCR.
- */
 public final class ScanOcrToken {
 
     private final String text;

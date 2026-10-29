@@ -14,15 +14,9 @@ import static com.venussystem.venusmobile.view.util.ScanBackRules.CONTACT_CONTEX
 import static com.venussystem.venusmobile.view.util.ScanBackRules.EMPTY;
 import static com.venussystem.venusmobile.view.util.ScanBackRules.PHONE_PATTERN;
 
-/** Internal collaborator for ScanBackExtractor; not a second scan entry point. */
 final class ScanBackText {
     private ScanBackText() { }
 
-    /*
-     * ================================================================
-     * LIXO ADMINISTRATIVO
-     * ================================================================
-     */
     private static final String[] ADMIN_GARBAGE = {
             "CNPJ",
             "CEP",
@@ -73,10 +67,6 @@ final class ScanBackText {
             "EIRELI"
     };
 
-    /**
-     * Encontra o início do primeiro match de um Pattern diretamente na
-     * string original. Retorna -1 quando não houver match.
-     */
     static int localizarIndiceOriginalPorRegex(
             String original,
             Pattern pattern
@@ -141,12 +131,6 @@ final class ScanBackText {
         );
     }
 
-    /**
-     * Localiza um termo INCI na linha original respeitando fronteiras de
-     * palavra. Isso é preferível ao mapeamento por índice normalizado para
-     * evitar perder o primeiro caractere do ingrediente, como em:
-     *   \"UENTES: BUTANE...\" -> \"BUTANE...\"
-     */
     static int localizarIndiceOriginalPorTextoComFronteira(
             String original,
             String marker
@@ -165,11 +149,6 @@ final class ScanBackText {
         if (normalizedMarker.isEmpty()) {
             return -1;
         }
-        /*
-         * 1) Primeiro tenta no texto ORIGINAL.
-         * Isso preserva a posição exata e evita cortes tardios como
-         * "LINALOOL .FABRI".
-         */
         Pattern originalPattern =
                 Pattern.compile(
                         "(?i)(?<![A-Z0-9])"
@@ -181,9 +160,6 @@ final class ScanBackText {
         if (originalMatcher.find()) {
             return originalMatcher.start();
         }
-        /*
-         * 2) Fallback para OCR que perdeu acentos ou alterou espaçamento.
-         */
         Pattern normalizedPattern =
                 Pattern.compile(
                         "(?i)(?<![A-Z0-9])"
@@ -253,11 +229,6 @@ final class ScanBackText {
         );
     }
 
-    /*
-     * ================================================================
-     * HELPERS
-     * ================================================================
-     */
     static String joinLines(
             List<String> lines
     ) {
@@ -527,9 +498,6 @@ final class ScanBackText {
                 );
             }
         }
-        /*
-         * Fuzzy somente para heading longo.
-         */
         if (
                 !allowFuzzy
                         || line.length() > 80
@@ -639,9 +607,6 @@ final class ScanBackText {
                         ".*\\b(?:AQUA|WATER|ALCOHOL)\\b.*"
                 )
         ) {
-            /*
-             * Telefone isolado é administrativo.
-             */
             return true;
         }
         for (
@@ -845,10 +810,6 @@ final class ScanBackText {
                 normalizarOCRBasico(
                         line
                 );
-        /*
-         * Mantemos pontuação interna.
-         * Ela ainda pode ser necessária para segmentação.
-         */
         return n
                 .replaceAll(
                         "\\s+",
@@ -923,11 +884,6 @@ final class ScanBackText {
         );
     }
 
-    /*
-     * ================================================================
-     * LEVENSHTEIN
-     * ================================================================
-     */
     static int levenshtein(
             String a,
             String b

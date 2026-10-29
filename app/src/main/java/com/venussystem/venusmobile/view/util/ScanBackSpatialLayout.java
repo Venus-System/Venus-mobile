@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-/** Reconstructs visual rows before section detection, without changing OCR spelling. */
 final class ScanBackSpatialLayout {
     private ScanBackSpatialLayout() { }
     private static final double MAX_TEXT_ROTATION = 25.0;
@@ -21,7 +20,6 @@ final class ScanBackSpatialLayout {
     private static final int MIN_GLOBAL_ROTATED_LINES = 3;
     private static final int MIN_GLOBAL_ROTATED_TOKENS = 6;
 
-    // Empty means uncertain/incomplete geometry: the caller must use the source text.
     static List<List<ScanOcrToken>> rows(List<String> source, List<ScanOcrToken> tokens) {
         if (tokens == null || tokens.isEmpty()) return fallback("NO_TOKENS");
         List<String> nonEmpty = new ArrayList<>();
@@ -39,14 +37,11 @@ final class ScanBackSpatialLayout {
                 return fallback("LINE_INDEX_OUT_OF_RANGE line=" + token.getLineIndex());
             if (!Float.isFinite(token.getRotation()))
                 return fallback("ROTATION line=" + token.getLineIndex() + " angle=" + token.getRotation());
-            // Recognition confidence measures spelling, not the validity of a box.
-            // Keep every token; geometry is checked independently below.
             if (token.getConfidence() > 0 && token.getConfidence() < 0.5f)
                 Log.d("VENUS_BACK_PARSE", "BACK_TEXT_LOW_CONFIDENCE line="
                         + token.getLineIndex() + " value=" + token.getConfidence());
             original.computeIfAbsent(token.getLineIndex(), k -> new ArrayList<>()).add(token);
         }
-        // Never replace whole OCR lines with a partial subset of their elements.
         if (original.size() != nonEmpty.size()) return fallback("INCOMPLETE_LINE_COVERAGE");
         for (Map.Entry<Integer, List<ScanOcrToken>> entry : original.entrySet()) {
             entry.getValue().sort(Comparator.comparingInt(ScanOcrToken::getElementIndex));
@@ -59,10 +54,6 @@ final class ScanBackSpatialLayout {
         List<List<ScanOcrToken>> completeLines = new ArrayList<>(original.values());
         boolean globalVertical = isGlobalVerticalLayout(completeLines);
         if (globalVertical) {
-            // A whole label can be captured rotated by 90 degrees. Treat that
-            // as one coherent coordinate system; do not mistake it for a
-            // vertical package code. A minimum amount of evidence is required
-            // so a single rotated unknown token still falls back safely.
             for (List<ScanOcrToken> line : completeLines) primary.addAll(line);
             Log.d("VENUS_BACK_PARSE", "BACK_LAYOUT_ORIENTATION=GLOBAL_VERTICAL lines="
                     + completeLines.size() + " tokens=" + primary.size());
@@ -72,7 +63,6 @@ final class ScanBackSpatialLayout {
                 if (horizontal) {
                     primary.addAll(line);
                 } else {
-                    // Separate complete lines only. Never lose an ingredient by filtering tokens.
                     float orientation = line.get(0).getRotation();
                     String text = ScanIngredientPolicy.normalize(join(line));
                     boolean code = text.matches("[A-Z0-9 ]+") && text.matches(".*[0-9].*")
@@ -118,9 +108,6 @@ final class ScanBackSpatialLayout {
         }
         Comparator<Point> projectedOrder = Comparator.comparingDouble((Point p) -> p.y)
                 .thenComparingDouble(p -> p.x);
-        // A counter-clockwise 90-degree capture reverses both projected axes
-        // relative to the clockwise case. Apply the same correction to row
-        // order and token order so the canonical reading direction is stable.
         if (globalVertical && angle < 0) {
             projectedOrder = Comparator.comparingDouble((Point p) -> p.y).reversed()
                     .thenComparing(Comparator.comparingDouble((Point p) -> p.x).reversed());
@@ -155,8 +142,6 @@ final class ScanBackSpatialLayout {
             for (Point p : group) row.add(p.token);
             result.add(row);
         }
-        // Keep peripheral codes as separate trailing rows, never merged with composition.
-        // The caller also retains the untouched fullText and original lines for audit.
         result.addAll(peripheral);
         if (!peripheral.isEmpty()) Log.d("VENUS_BACK_PARSE",
                 "BACK_ORIENTATION_GROUPS primaryTokens=" + primary.size()
@@ -164,12 +149,6 @@ final class ScanBackSpatialLayout {
         return result;
     }
 
-    /**
-     * Distinguishes a complete 90-degree capture from an isolated vertical
-     * code. The latter must remain a peripheral line so it cannot reorder the
-     * ingredient paragraph; the former can safely be projected into the
-     * canonical horizontal coordinate system below.
-     */
     private static boolean isGlobalVerticalLayout(List<List<ScanOcrToken>> lines) {
         if (lines.size() < MIN_GLOBAL_ROTATED_LINES) return false;
         int tokenCount = 0;

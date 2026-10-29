@@ -23,17 +23,6 @@ import java.util.concurrent.Executors;
 
 import retrofit2.Response;
 
-/**
- * As opcoes da pergunta de alergias, vindas do catalogo GET /api/allergies.
- *
- * O catalogo e o mesmo que o site mostra e que a analise sabe checar, entao
- * as duas telas oferecem sempre as mesmas alergias. A ultima resposta fica
- * guardada no aparelho: com o Render dormindo a API leva ~100s, e a tela nao
- * pode esperar isso para ter opcoes. Antes da primeira resposta vale a lista
- * reserva do arrays.xml.
- *
- * Nao e separado por conta (ver DadosDaConta): o catalogo e igual para todos.
- */
 public class CatalogoAlergiasRepository {
 
     public interface AoAtualizar {
@@ -43,7 +32,6 @@ public class CatalogoAlergiasRepository {
     private static final String ARQUIVO = "venus_catalogo_alergias";
     private static final String CHAVE_NOMES = "nomes";
 
-    // O mesmo separador do PerfilRepository: nao aparece em nome de alergia.
     private static final String SEPARADOR = String.valueOf((char) 31);
 
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
@@ -65,7 +53,6 @@ public class CatalogoAlergiasRepository {
         this.principal = principal;
     }
 
-    /** O que mostrar agora: o ultimo catalogo recebido, ou a lista reserva. */
     public List<String> nomes() {
         String salvo = prefs.getString(CHAVE_NOMES, "");
         if (salvo != null && !salvo.isEmpty()) {
@@ -75,10 +62,6 @@ public class CatalogoAlergiasRepository {
                 context.getResources().getStringArray(R.array.alergias)));
     }
 
-    /**
-     * Busca o catalogo sem travar a tela e avisa na thread principal. Se a API
-     * nao responder, nao avisa: a tela continua com o que ja mostrava.
-     */
     public void atualizarEmSegundoPlano(AoAtualizar aoAtualizar) {
         EXECUTOR.execute(() -> {
             List<String> nomes = buscarAgora();
@@ -88,11 +71,6 @@ public class CatalogoAlergiasRepository {
         });
     }
 
-    /**
-     * @return os nomes do catalogo, ou null se a API nao respondeu ou mandou
-     * uma lista vazia - sem nenhuma opcao a pergunta ficaria inutil, entao
-     * vale mais continuar com a anterior.
-     */
     @WorkerThread
     @VisibleForTesting
     @Nullable

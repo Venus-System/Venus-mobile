@@ -14,8 +14,6 @@ public final class ClienteApi {
 
     public static final String URL_BASE = "https://34-192-194-32.sslip.io/";
 
-    // A API roda na EC2 por tras do Nginx/HTTPS. O limite de leitura continua
-    // alto porque catalogo e submissao podem envolver banco e servicos externos.
     private static final long LIMITE_CONEXAO = 30L;
     private static final long LIMITE_LEITURA = 180L;
 
@@ -38,7 +36,6 @@ public final class ClienteApi {
 
     public static synchronized ScanSubmissionApi scans() {
         if (scanApi == null) {
-            // No redirects or logging: signatures and auth must stay on the intended host.
             OkHttpClient http = new OkHttpClient.Builder()
                     .connectTimeout(LIMITE_CONEXAO, TimeUnit.SECONDS)
                     .readTimeout(LIMITE_LEITURA, TimeUnit.SECONDS)
@@ -63,7 +60,6 @@ public final class ClienteApi {
 
     private static VenusApi criar() {
         HttpLoggingInterceptor log = new HttpLoggingInterceptor();
-        // BASIC nao registra cabecalho, entao o token nao vai pro log.
         log.setLevel(BuildConfig.DEBUG
                 ? HttpLoggingInterceptor.Level.BASIC
                 : HttpLoggingInterceptor.Level.NONE);

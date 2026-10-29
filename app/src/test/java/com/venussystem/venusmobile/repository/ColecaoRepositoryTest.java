@@ -35,8 +35,6 @@ public class ColecaoRepositoryTest {
         listas = new ColecaoRepository(context, "uid-ana");
     }
 
-    // ---- Nome repetido ----
-
     @Test
     public void nomeEmUso_ignoraMaiusculasEEspacos() {
         listas.criar("Rotina da noite", "", null);
@@ -49,11 +47,8 @@ public class ColecaoRepositoryTest {
     public void nomeEmUso_naoContaAPropriaLista() {
         long id = listas.criar("Viagem", "", null).getId();
 
-        // Renomear "Viagem" para "viagem" e a mesma lista, nao uma repetida.
         assertFalse(listas.nomeEmUso("viagem", id));
     }
-
-    // ---- Listas de exemplo ----
 
     private static final String FAVORITOS_COMO_NASCEU =
             "{\"id\":1,\"nome\":\"Produtos favoritados\",\"chaveImagem\":\"favoritos\"}";
@@ -62,7 +57,6 @@ public class ColecaoRepositoryTest {
     private static final String SKINCARE_COMO_NASCEU =
             "{\"id\":3,\"nome\":\"Rotina de skincare\",\"chaveImagem\":\"skincare\"}";
 
-    /** Grava as listas como uma versao anterior do app deixou. */
     private void listasGravadas(String... json) {
         DadosDaConta.prefs(context, ColecaoRepository.ARQUIVO, "uid-ana").edit()
                 .putString("minhas_listas", "[" + String.join(",", json) + "]")
@@ -120,7 +114,6 @@ public class ColecaoRepositoryTest {
     @Test
     public void listaDeExemploQueSaiu_naoDeixaProdutoParaEnviar() {
         ListaItemRepository itens = new ListaItemRepository(context, "uid-ana");
-        // Entrou um produto e saiu: a lista esta vazia, mas a versao subiu.
         itens.adicionar(3L, 100L);
         itens.remover(3L, 100L);
         listasGravadas(SKINCARE_COMO_NASCEU);
@@ -144,14 +137,10 @@ public class ColecaoRepositoryTest {
         listasGravadas(FAVORITOS_COMO_NASCEU);
         listas.minhasListas();
 
-        // Depois da revisao, uma lista assim e legitima: por exemplo, a que veio
-        // da API com capa padrao e teve o id esquecido.
         listasGravadas(FAVORITOS_COMO_NASCEU);
 
         assertEquals(Collections.singletonList("Produtos favoritados"), nomesNaTela());
     }
-
-    // ---- Ids ----
 
     @Test
     public void idDeListaExcluida_naoEReaproveitado() {
@@ -164,8 +153,6 @@ public class ColecaoRepositoryTest {
         assertEquals(primeira + 1, segunda);
         assertEquals(segunda + 1, terceira);
     }
-
-    // ---- Controle do envio para a API ----
 
     @Test
     public void excluirListaQueJaEstavaNaApi_entraNaFilaDeApagar() {
@@ -205,7 +192,6 @@ public class ColecaoRepositoryTest {
 
     @Test
     public void listasSalvasAntesDestaVersao_carregamSemIdDaApi() {
-        // Formato gravado pelas versoes anteriores, sem idApi nem nomeNaApi.
         DadosDaConta.prefs(context, ColecaoRepository.ARQUIVO, "uid-ana").edit()
                 .putString("minhas_listas",
                         "[{\"id\":4,\"nome\":\"Viagem\",\"descricao\":\"\"}]")

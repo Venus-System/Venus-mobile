@@ -7,13 +7,6 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.venussystem.venusmobile.model.FiltroProdutos;
 
-/**
- * O filtro escolhido, compartilhado entre a Home, a busca e a escolha de
- * produto para uma lista: o que se marca numa tela continua valendo nas outras.
- *
- * Fica so em memoria, como o catalogo do ProdutoRepository: vale enquanto o
- * app esta aberto e comeca vazio na proxima vez.
- */
 public class FiltroRepository {
 
     private static final MutableLiveData<FiltroProdutos> FILTRO =

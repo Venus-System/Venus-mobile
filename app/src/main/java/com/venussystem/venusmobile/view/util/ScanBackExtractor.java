@@ -33,63 +33,11 @@ import static com.venussystem.venusmobile.view.util.ScanBackText.joinLines;
 import static com.venussystem.venusmobile.view.util.ScanBackText.normalizar;
 import static com.venussystem.venusmobile.view.util.ScanBackText.normalizarLinhas;
 
-/**
- * Parser estrutural do verso de embalagens.
- *
- * V7.1
- *
- * Objetivos:
- *
- * 1) preservar a maior quantidade possível de texto da composição;
- * 2) não transformar texto administrativo em ingrediente;
- * 3) não inventar fabricante, lote, país, conteúdo ou código de barras;
- * 4) tolerar OCR ruim em português/espanhol/inglês;
- * 5) entregar candidatos de ingredientes para um matcher posterior;
- * 6) impedir vazamento de telefone, e-mail, URL, CNPJ e CEP para ingredientes;
- * 7) tratar marcadores administrativos colados ao final de um ingrediente;
- * 8) manter candidatos OCR imperfeitos como UNRESOLVED.
- *
- * IMPORTANTE:
- *
- * Esta classe NÃO consulta banco, API, Mongo ou Cloudinary.
- *
- * O status inicial dos ingredientes permanece UNRESOLVED.
- *
- * Exemplo:
- *
- * OCR:
- *
- * INGREDIENTES: AQUA, GLYCNE, PARFUM
- * LINALOOL .FABRICADO
- * POR UNILEVER BRASIL LTDA
- * AUTFUNC: 2.05610-6
- *
- * O parser deve preservar:
- *
- * AQUA
- * GLYCNE
- * PARFUM
- * LINALOOL
- *
- * e impedir:
- *
- * FABRICADO
- * UNILEVER
- * AUTFUNC
- * 2.05610-6
- *
- * de entrarem como ingredientes.
- */
 public final class ScanBackExtractor {
 
     private ScanBackExtractor() {
     }
 
-    /*
-     * ================================================================
-     * ENTRADAS PÚBLICAS
-     * ================================================================
-     */
     @NonNull
     public static ScanBackData extract(
             @NonNull ScanOcrResult ocr
@@ -151,9 +99,6 @@ public final class ScanBackExtractor {
                             t.getConfidence(), t.getRotation(), t.getBlockIndex(), rowIndex, element));
                 }
             }
-            // A geometric layout is usable only when it carries every source
-            // token. If a future layout change drops or duplicates one, use
-            // the untouched text fallback instead of silently losing OCR.
             if (orderedTokens.size() != spatialTokens.size()) {
                 Log.d(TAG, "BACK_LAYOUT_FALLBACK_REASON=TOKEN_COVERAGE_MISMATCH");
                 visualRows = Collections.emptyList();
@@ -169,11 +114,6 @@ public final class ScanBackExtractor {
                                 fullText
                         )
                 );
-        /*
-         * Mantemos esta variável por compatibilidade e diagnóstico.
-         * O parser trabalha principalmente com as linhas originais
-         * normalizadas, porque a estrutura de linhas é importante.
-         */
         if (normalizedFullText.isEmpty()) {
             Log.d(
                     TAG,
@@ -266,11 +206,6 @@ public final class ScanBackExtractor {
                 + (!section.found || ingredients.isEmpty() || uncertain > 0
                 || ScanIngredientPolicy.hasAdministrativeText(section.rawText))
                 + " uncertain=" + uncertain + " candidates=" + ingredients.size());
-        /*
-         * ============================================================
-         * OBJETO FINAL
-         * ============================================================
-         */
         return new ScanBackData(
                 fullText == null
                         ? EMPTY

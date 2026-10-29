@@ -57,19 +57,14 @@ public class ListasFragment extends Fragment {
         avisoVazio = new AvisoListasVazioAdapter();
 
         lista = view.findViewById(R.id.listaColecoes);
-        // 1 coluna no celular; vira grade no tablet (values-w600dp/w900dp).
         int colunas = getResources().getInteger(R.integer.colunas_grade);
         GridLayoutManager grade = new GridLayoutManager(requireContext(), colunas);
         lista.setLayoutManager(grade);
-        // "Listas fixas" (curtidos e em analise) sempre em cima, depois
-        // "Listas criadas" com as do usuario e, sem nenhuma, o aviso.
         ListaFixaAdapter fixas = new ListaFixaAdapter();
         ConcatAdapter tudo = new ConcatAdapter(
                 new TituloSecaoAdapter(R.string.listas_secao_fixas), fixas,
                 new TituloSecaoAdapter(R.string.listas_secao_criadas), adapter, avisoVazio);
         lista.setAdapter(tudo);
-        // No tablet os separadores e o aviso ocupam a linha inteira, nao uma
-        // celula da grade.
         int tituloCriadas = 1 + fixas.getItemCount();
         grade.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
             @Override
@@ -87,8 +82,6 @@ public class ListasFragment extends Fragment {
 
         carregar();
 
-        // Ao abrir a aba, traz o que mudou no servidor (pelo site ou em outro
-        // aparelho) e recarrega se veio alguma coisa.
         new SincronizacaoListas(requireContext()).atualizarEmSegundoPlano(this::recarregarSeAberta);
     }
 
@@ -101,16 +94,9 @@ public class ListasFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        // Recarrega ao voltar de CriarListaActivity ou DetalheListaActivity: a
-        // view do fragment sobrevive nessa navegacao, entao sem isto uma lista
-        // criada/editada/excluida so apareceria depois de sair e voltar desta aba.
         carregar();
     }
 
-    /**
-     * Excluir arrastando acontece aqui, sem abrir o detalhe; o envio para a
-     * API fica para quando a pessoa sai da aba. Sem mudanca, nao vai na rede.
-     */
     @Override
     public void onStop() {
         super.onStop();
@@ -120,7 +106,6 @@ public class ListasFragment extends Fragment {
     private void carregar() {
         repository.minhasListas().observe(getViewLifecycleOwner(), colecoes -> {
             adapter.atualizar(colecoes);
-            // A conta comeca sem listas: sem o aviso, so o cartao fixo apareceria.
             avisoVazio.mostrar(colecoes.isEmpty());
         });
     }
@@ -134,15 +119,7 @@ public class ListasFragment extends Fragment {
         startActivity(intent);
     }
 
-    /**
-     * Arrastar uma lista pra esquerda pede confirmacao antes de excluir - se o
-     * usuario cancelar, carregar() de novo traz a linha de volta, porque o
-     * proprio ItemTouchHelper ja a tirou de tela ao terminar o gesto.
-     */
     private class SwipeParaExcluir extends ItemTouchHelper.SimpleCallback {
-
-        // Mesmo raio do bg_card_lista - senao o fundo vermelho aparece com
-        // canto reto ao lado do canto arredondado do card por cima dele.
         private static final float RAIO_CARD_DP = 14f;
 
         private final Paint pincelFundo = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -152,7 +129,6 @@ public class ListasFragment extends Fragment {
             super(0, ItemTouchHelper.LEFT);
         }
 
-        /** So as listas do usuario arrastam; as fixas, os separadores e o aviso nao. */
         @Override
         public int getSwipeDirs(@NonNull RecyclerView recyclerView,
                                 @NonNull RecyclerView.ViewHolder viewHolder) {

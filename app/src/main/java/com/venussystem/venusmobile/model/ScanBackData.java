@@ -7,13 +7,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Dados estruturados extraídos da foto traseira.
- *
- * A estrutura já contempla os campos necessários para uma futura
- * submissão ao Mongo e posterior aprovação administrativa no PostgreSQL,
- * mas esta classe não realiza persistência nem upload.
- */
 public class ScanBackData implements Serializable {
 
     private static final long serialVersionUID = 1L;

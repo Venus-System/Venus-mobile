@@ -1,6 +1,5 @@
 package com.venussystem.venusmobile.model;
 
-/** Uma categoria do catalogo junto com quantos produtos ela tem hoje. */
 public class CategoriaContagem {
 
     private final long id;

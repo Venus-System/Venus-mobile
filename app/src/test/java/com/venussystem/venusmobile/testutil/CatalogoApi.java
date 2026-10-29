@@ -19,14 +19,6 @@ import okhttp3.mockwebserver.MockWebServer;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-/**
- * Monta, para os testes, as seis respostas que o ProdutoRepository junta para
- * formar o catalogo (produtos, marcas, categorias, versoes, notas e modelo de
- * scoring ativo), sem repetir esse cadastro em cada classe de teste.
- *
- * Cada produto ganha uma versao atual; se tiver nota, ganha tambem a nota do
- * modelo ativo.
- */
 public final class CatalogoApi {
 
     private static final long MODELO_ATIVO = 1L;
@@ -59,7 +51,6 @@ public final class CatalogoApi {
         return this;
     }
 
-    /** @param nota null para um produto sem nota */
     public CatalogoApi produto(long id, long marcaId, Long categoriaId, String nome, Integer nota) {
         ProductResponse p = new ProductResponse();
         p.id = id;
@@ -102,7 +93,6 @@ public final class CatalogoApi {
         return d;
     }
 
-    /** So a resposta da lista de produtos, para o teste atrasar ou trocar. */
     public MockResponse respostaProdutos() {
         return json(produtos);
     }

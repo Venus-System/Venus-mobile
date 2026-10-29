@@ -8,27 +8,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/** Internal collaborator for ScanProductMatchRepository; not a second scan entry point. */
 final class ScanCatalogText {
     private ScanCatalogText() { }
 
     private static final double MIN_SHORT_BRAND_SCORE = 0.92;
 
-    /**
-     * Termos realmente genéricos.
-     *
-     * Importante:
-     * MEN / WOMEN / UNISEX / 72H etc. NÃO são mais
-     * descartados aqui, pois podem diferenciar produtos
-     * da mesma marca.
-     */
     static boolean isTermoFraco(
             @NonNull String token
     ) {
         switch (token) {
-            /*
-             * Tipos genéricos de produto.
-             */
             case "GEL":
             case "LOCAO":
             case "LOÇÃO":
@@ -39,26 +27,17 @@ final class ScanCatalogText {
             case "CREAM":
             case "SPRAY":
             case "AEROSOL":
-                /*
-                 * Desodorante / antitranspirante.
-                 */
             case "DESODORANTE":
             case "DEODORANTE":
             case "ANTITRANSPIRANTE":
             case "ANTIPERSPIRANTE":
             case "ANTITRANSPIRANT":
             case "ANTIPERSPIRANT":
-                /*
-                 * Categorias / descrições genéricas.
-                 */
             case "SHAMPOO":
             case "CONDICIONADOR":
             case "CONDITIONER":
             case "SABONETE":
             case "SOAP":
-                /*
-                 * Termos genéricos de proteção/descrição.
-                 */
             case "PROTECAO":
             case "PROTECCION":
             case "PROTECTION":
@@ -68,9 +47,6 @@ final class ScanCatalogText {
             case "BODY":
             case "SKIN":
             case "HAIR":
-                /*
-                 * Termos muito genéricos de descrição.
-                 */
             case "DRY":
             case "LONG":
             case "LASTING":
@@ -138,15 +114,6 @@ final class ScanCatalogText {
         return resultado;
     }
 
-    /**
-     * Remove a marca de uma string.
-     *
-     * Também funciona para marcas compostas:
-     *
-     * O BOTICARIO
-     * LA ROCHE POSAY
-     * VICTORIA SECRET
-     */
     @NonNull
     static String removerMarcaDoTexto(
             @NonNull String texto,
@@ -163,9 +130,6 @@ final class ScanCatalogText {
         if (marcaNormalizada.isEmpty()) {
             return resultado;
         }
-        /*
-         * Remove a expressão inteira.
-         */
         resultado =
                 resultado
                         .replace(
@@ -177,16 +141,6 @@ final class ScanCatalogText {
                                 " "
                         )
                         .trim();
-        /*
-         * Exemplo:
-         *
-         * OCR = OBOTICARIO
-         * Banco = O BOTICARIO
-         *
-         * O matcher de marca pode reconhecer os dois.
-         * Aqui apenas evitamos que um texto composto
-         * só da marca entre como nome de produto.
-         */
         String marcaSemEspacos =
                 marcaNormalizada
                         .replace(
@@ -229,9 +183,6 @@ final class ScanCatalogText {
                             variante,
                             alvo
                     );
-            /*
-             * Marcas curtas exigem mais precisão.
-             */
             if (campoMarca
                     && variante.length() <= 4
                     && score
@@ -258,9 +209,6 @@ final class ScanCatalogText {
         variantes.add(
                 base
         );
-        /*
-         * Substituições comuns de OCR.
-         */
         variantes.add(
                 base.replace(
                         '0',
@@ -495,24 +443,6 @@ final class ScanCatalogText {
                 ];
     }
 
-    /**
-     * Retorna somente os tokens que realmente ajudam
-     * a identificar o produto.
-     *
-     * Palavras como CREME, LOCAO, PARA, DE etc. não servem
-     * como identidade.
-     *
-     * Já:
-     *
-     * CLINICAL
-     * CLEAN
-     * MEN
-     * NATIVA
-     * SPA
-     * QUINOA
-     *
-     * continuam.
-     */
     @NonNull
     static Set<String> tokensProdutoIdentidade(
             @NonNull String texto
@@ -535,9 +465,6 @@ final class ScanCatalogText {
             )) {
                 continue;
             }
-            /*
-             * Capacidades não devem pesar como identidade.
-             */
             if (token.matches(
                     "\\d+(?:[.,]\\d+)?(?:ML|G|GR|KG|L)"
             )) {
@@ -548,9 +475,6 @@ final class ScanCatalogText {
             )) {
                 continue;
             }
-            // OCR/extraction may split "150 ML" into two tokens. Neither
-            // side is product identity, and keeping it makes two variants
-            // with the same capacity look artificially equivalent.
             if (token.matches("\\d+(?:[.,]\\d+)?")
                     && hasCapacityUnitAfter(sourceTokens, token)) {
                 continue;
@@ -586,9 +510,6 @@ final class ScanCatalogText {
         return false;
     }
 
-    /**
-     * Palavras estruturais sem poder de identificação.
-     */
     private static boolean isStopwordProduto(
             @NonNull String token
     ) {

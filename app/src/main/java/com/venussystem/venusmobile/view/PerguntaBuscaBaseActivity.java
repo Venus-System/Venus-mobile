@@ -28,13 +28,11 @@ public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
     @LayoutRes
     protected abstract int getLayout();
 
-    /** As opcoes do campo de busca quando a tela abre. */
     protected abstract List<String> getOpcoes();
 
     @Nullable
     protected abstract Class<?> getProximaTela();
 
-    /** Onde a lista desta tela e guardada. Ver PerfilRepository. */
     protected abstract String getChave();
 
     @Override
@@ -45,7 +43,6 @@ public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
         lista = findViewById(R.id.listaSelecionados);
         perfil = new PerfilRepository(this);
 
-        // Se ja havia algo salvo para esta pergunta, os chips vem pre-montados.
         for (String salvo : perfil.getLista(getChave())) {
             adicionar(salvo);
         }
@@ -66,10 +63,6 @@ public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Para opcoes que chegam depois da tela aberta (as alergias vem da API).
-     * Os chips ja escolhidos ficam como estao.
-     */
     protected void trocarOpcoes(List<String> opcoes) {
         campo.setAdapter(new ArrayAdapter<>(
                 this, android.R.layout.simple_list_item_1, opcoes));

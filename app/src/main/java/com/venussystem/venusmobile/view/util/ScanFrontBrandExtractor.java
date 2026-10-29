@@ -19,17 +19,9 @@ import static com.venussystem.venusmobile.view.util.ScanFrontVocabulary.CAPACIDA
 import static com.venussystem.venusmobile.view.util.ScanFrontVocabulary.CONCENTRACAO_PATTERN;
 import static com.venussystem.venusmobile.view.util.ScanFrontVocabulary.NOISE_WORDS;
 
-/** Internal collaborator for ScanFrontExtractor; not a second scan entry point. */
 final class ScanFrontBrandExtractor {
     private ScanFrontBrandExtractor() { }
 
-    /*
-     * =========================================================
-     * TERMOS QUE NÃO DEVEM SER MARCA
-     *
-     * Eles continuam podendo ser candidatos de PRODUTO.
-     * =========================================================
-     */
     private static final Set<String> NON_BRAND_WORDS =
             new LinkedHashSet<>(
                     Arrays.asList(
@@ -131,11 +123,6 @@ final class ScanFrontBrandExtractor {
                     )
             );
 
-    /*
-     * =========================================================
-     * CONTINUAÇÕES DE MARCAS COMPOSTAS
-     * =========================================================
-     */
     private static final Set<String> BRAND_CONTINUATION_WORDS =
             new LinkedHashSet<>(
                     Arrays.asList(
@@ -166,11 +153,6 @@ final class ScanFrontBrandExtractor {
                     )
             );
 
-    /*
-     * =========================================================
-     * EXTRAÇÃO DE MARCA
-     * =========================================================
-     */
     @NonNull
     static String extrairPossivelMarca(
             @NonNull String linha
@@ -193,9 +175,6 @@ final class ScanFrontBrandExtractor {
             if (token.isEmpty()) {
                 continue;
             }
-            /*
-             * Ignora número no começo do OCR.
-             */
             if (token.matches(
                     "\\d+"
             )) {
@@ -204,10 +183,6 @@ final class ScanFrontBrandExtractor {
                 }
                 break;
             }
-            /*
-             * A partir daqui começou algo que claramente
-             * parece produto/descritivo, não marca.
-             */
             if (isBloqueadoComoMarca(
                     token
             )) {
@@ -238,26 +213,6 @@ final class ScanFrontBrandExtractor {
         return resultado;
     }
 
-    /*
-     * =========================================================
-     * COMPLETAR MARCA
-     * =========================================================
-     *
-     * Casos:
-     *
-     * VICTORIA
-     * SECRET
-     *
-     * -> VICTORIA SECRET
-     *
-     * NATIVA
-     * SPA
-     *
-     * -> NATIVA SPA
-     *
-     * Não é usado para decidir se a marca é verdadeira.
-     * Apenas reconstrói texto.
-     */
     @NonNull
     static String completarMarcaEmLinhas(
             @NonNull String marcaInicial,
@@ -382,24 +337,6 @@ final class ScanFrontBrandExtractor {
         return marca.trim();
     }
 
-    /*
-     * =========================================================
-     * MARCA COMPOSTA INICIADA POR FRAGMENTO
-     * =========================================================
-     *
-     * Resolve:
-     *
-     * O
-     * BOTICARIO
-     *
-     * LA
-     * ROCHE
-     * POSAY
-     *
-     * THE
-     * BODY
-     * SHOP
-     */
     @NonNull
     static String extrairMarcaCompostaNasLinhas(
             @NonNull List<String> linhas,
@@ -420,10 +357,6 @@ final class ScanFrontBrandExtractor {
                 atual.split(
                         "\\s+"
                 );
-        /*
-         * Caso já seja uma expressão de duas ou mais palavras,
-         * ainda podemos verificar uma continuação conhecida.
-         */
         if (tokensAtuais.length >= 2) {
             if (!todosPodemFazerParteDeMarca(
                     tokensAtuais
@@ -477,15 +410,6 @@ final class ScanFrontBrandExtractor {
             }
             return resultado;
         }
-        /*
-         * -----------------------------------------------------
-         * CASO DE UMA PALAVRA:
-         *
-         * VICTORIA
-         * SECRET
-         *
-         * -----------------------------------------------------
-         */
         if (tokensAtuais.length == 1
                 && pareceMarca(atual)) {
             String completa =
@@ -498,22 +422,6 @@ final class ScanFrontBrandExtractor {
                 return completa;
             }
         }
-        /*
-         * -----------------------------------------------------
-         * CASO DE PREFIXO:
-         *
-         * O
-         * BOTICARIO
-         *
-         * LA
-         * ROCHE
-         * POSAY
-         *
-         * THE
-         * BODY
-         * SHOP
-         * -----------------------------------------------------
-         */
         if (!ehPrefixoDeMarca(atual)) {
             return "";
         }
@@ -555,10 +463,6 @@ final class ScanFrontBrandExtractor {
                     proxima.split(
                             "\\s+"
                     );
-            /*
-             * Para um fragmento inicial queremos uma palavra
-             * por linha.
-             */
             if (tokens.length != 1) {
                 break;
             }
@@ -572,10 +476,6 @@ final class ScanFrontBrandExtractor {
             )) {
                 break;
             }
-            /*
-             * Se a palavra não é permitida como continuação,
-             * paramos imediatamente.
-             */
             if (!BRAND_CONTINUATION_WORDS.contains(
                     token
             )) {
@@ -589,10 +489,6 @@ final class ScanFrontBrandExtractor {
                 resultado
                         .toString()
                         .trim();
-        /*
-         * Uma marca composta válida precisa ter pelo menos
-         * duas palavras.
-         */
         if (candidata.equals(atual)) {
             return "";
         }
@@ -604,11 +500,6 @@ final class ScanFrontBrandExtractor {
         return candidata;
     }
 
-    /*
-     * =========================================================
-     * VALIDAÇÃO DE MARCA COMPOSTA
-     * =========================================================
-     */
     private static boolean marcaPodeSerMarcaComposta(
             @NonNull String texto
     ) {
@@ -635,15 +526,6 @@ final class ScanFrontBrandExtractor {
             )) {
                 return false;
             }
-            /*
-             * Variantes de produto não fazem parte da marca.
-             *
-             * Ex:
-             *
-             * ABOVE EXTREME
-             *
-             * não pode virar uma marca composta.
-             */
             if (NON_BRAND_WORDS.contains(
                     token
             )
@@ -716,11 +598,6 @@ final class ScanFrontBrandExtractor {
         return true;
     }
 
-    /*
-     * =========================================================
-     * PREFIXOS DE MARCAS
-     * =========================================================
-     */
     private static boolean ehPrefixoDeMarca(
             @NonNull String token
     ) {
@@ -731,11 +608,6 @@ final class ScanFrontBrandExtractor {
                 || token.equals("DE");
     }
 
-    /*
-     * =========================================================
-     * CONECTORES DE MARCA
-     * =========================================================
-     */
     private static boolean ehConectorDeMarca(
             @NonNull String token
     ) {
@@ -749,11 +621,6 @@ final class ScanFrontBrandExtractor {
                 || token.equals("CO");
     }
 
-    /*
-     * =========================================================
-     * MARCA
-     * =========================================================
-     */
     private static boolean pareceMarca(
             String texto
     ) {
@@ -851,11 +718,6 @@ final class ScanFrontBrandExtractor {
         );
     }
 
-    /*
-     * =========================================================
-     * LIMPEZA FINAL DA MARCA
-     * =========================================================
-     */
     static void limparMarcas(
             @NonNull List<String> marcas
     ) {
@@ -888,11 +750,6 @@ final class ScanFrontBrandExtractor {
         );
     }
 
-    /**
-     * OCR can expose a short artefact before the actual brand. Prefer an
-     * exact known cosmetic brand while retaining every other candidate for
-     * catalog matching and audit.
-     */
     static void priorizarMarcaCosmeticaConhecida(
             @NonNull List<String> marcas
     ) {

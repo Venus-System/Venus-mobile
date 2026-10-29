@@ -76,8 +76,6 @@ public class ProdutosEmAnaliseRepositoryTest {
         TimeZone.setDefault(fusoOriginal);
     }
 
-    // ---- Montagem do JSON que a API devolve ----
-
     private static JsonObject scan(String id, String status) {
         JsonObject scan = new JsonObject();
         scan.addProperty("id", id);
@@ -147,8 +145,6 @@ public class ProdutosEmAnaliseRepositoryTest {
         return situacoes;
     }
 
-    // ---- Status ----
-
     @Test
     public void osSeisStatusDaApi_viramOsQuatroSelos() {
         apiDevolve(scan("1", "PENDING_REVIEW"), scan("2", "IN_REVIEW"), scan("3", "APPROVED"),
@@ -176,8 +172,6 @@ public class ProdutosEmAnaliseRepositoryTest {
         assertEquals("b", produtos.get(0).getId());
         assertEquals("a", produtos.get(1).getId());
     }
-
-    // ---- O que aparece no cartao ----
 
     @Test
     public void nomeEMarca_vemDoOcrDaFrente() {
@@ -218,7 +212,6 @@ public class ProdutosEmAnaliseRepositoryTest {
     public void dataDeEnvio_eODiaNoFusoDoAparelho() {
         JsonObject comFusoDoBrasil = scan("1", "PENDING_REVIEW");
         comFusoDoBrasil.addProperty("createdAt", "2026-10-02T23:30:00-03:00");
-        // Mesmo instante em UTC: ja e dia 3 la, mas no aparelho ainda e dia 2.
         JsonObject emUtc = scan("2", "PENDING_REVIEW");
         emUtc.addProperty("createdAt", "2026-10-03T02:30:00Z");
 
@@ -243,8 +236,6 @@ public class ProdutosEmAnaliseRepositoryTest {
         assertNull(produtos.get(1).getEnviadoEm());
     }
 
-    // ---- Decisao ----
-
     @Test
     public void recusado_trazOMotivoEODiaDaDecisao() {
         apiDevolve(comDecisao(scan("1", "REJECTED"),
@@ -265,8 +256,6 @@ public class ProdutosEmAnaliseRepositoryTest {
 
     @Test
     public void aprovadoQueAindaNaoEntrouNoCatalogo_naoTemProduto() {
-        // Sem SYNCED o produto pode nao existir no catalogo: abrir a tela dele
-        // daria "produto nao encontrado".
         apiDevolve(comProduto(scan("1", "APPROVED"), 57L),
                 comProduto(scan("2", "SYNC_FAILED"), 58L));
 
@@ -275,8 +264,6 @@ public class ProdutosEmAnaliseRepositoryTest {
         assertNull(produtos.get(0).getProdutoId());
         assertNull(produtos.get(1).getProdutoId());
     }
-
-    // ---- Falhas ----
 
     @Test
     public void semNenhumEnvio_devolveListaVazia() {
@@ -313,7 +300,6 @@ public class ProdutosEmAnaliseRepositoryTest {
 
     @Test
     public void proibido_esqueceOIdParaBuscarDeNovoNaProximaVez() {
-        // 403 com id guardado: o id pode ser de outra conta (banco recriado).
         api.em(SCANS, 403, "{}");
         repositorio.buscarAgora();
         apiDevolve();
@@ -344,8 +330,6 @@ public class ProdutosEmAnaliseRepositoryTest {
 
         assertEquals(1, api.pedidosEm(BUSCA_USUARIO).size());
     }
-
-    // ---- Segundo plano ----
 
     @Test
     public void buscar_entregaOResultadoPeloExecutorPrincipal() {

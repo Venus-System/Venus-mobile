@@ -28,8 +28,6 @@ import static org.junit.Assert.assertNull;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = Config.OLDEST_SDK)
 public class MensagemRapidaTest {
-
-    // Qualquer tela do app serve de ancora; esta abre sem ir na rede.
     private DetalheProdutoEmAnaliseActivity tela;
 
     @Before
@@ -50,9 +48,6 @@ public class MensagemRapidaTest {
     private static Drawable iconeInicial(Snackbar barra) {
         return texto(barra).getCompoundDrawablesRelative()[0];
     }
-
-    // A duracao nao entra: o Snackbar.getDuration() passa pelo
-    // AccessibilityManager, que no Robolectric devolve 0.
 
     @Test
     public void sucesso_mostraOTextoComOCheck() {

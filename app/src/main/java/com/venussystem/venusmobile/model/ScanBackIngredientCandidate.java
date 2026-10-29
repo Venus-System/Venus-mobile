@@ -5,7 +5,6 @@ import androidx.annotation.Nullable;
 
 import java.io.Serializable;
 
-/** Ingrediente identificado no OCR do verso. */
 public class ScanBackIngredientCandidate implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -15,16 +15,6 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * O que a Venus-Classificacao manda no POST e nao devolve no GET da analise
- * salva: o motivo de alergia (com os ingredientes) e os pontos da nota
- * (qualidade de 35 e perfil de 65). Fica guardado no aparelho, separado por
- * conta (ver DadosDaConta), e volta para a mesma analise (versao e
- * calculatedAt) quando ela vier pelo GET. A analise feita na web ou em outro
- * aparelho fica sem isso.
- *
- * Sair da conta apaga (AutenticacaoRepository.sair): alergia e dado de saude.
- */
 public class AnaliseDoPostRepository {
 
     static final String ARQUIVO = "venus_analise_do_post";
@@ -50,7 +40,6 @@ public class AnaliseDoPostRepository {
         this.prefs = DadosDaConta.prefs(context, ARQUIVO, uid);
     }
 
-    /** Guarda o que veio num POST, no lugar da analise anterior da versao. */
     public void guardar(ClassificationResponse analise) {
         Long calculadaEm = emMilissegundos(analise.calculatedAt);
         if (analise.productVersionId == null || calculadaEm == null) return;
@@ -73,7 +62,6 @@ public class AnaliseDoPostRepository {
         prefs.edit().putString(chave, gson.toJson(gravada)).apply();
     }
 
-    /** Devolve a analise do GET o que o POST dela trouxe. */
     public void completar(ClassificationResponse analise) {
         if (analise.productVersionId == null) return;
         Long calculadaEm = emMilissegundos(analise.calculatedAt);
@@ -89,7 +77,6 @@ public class AnaliseDoPostRepository {
             List<ClassificationResponse.Reason> motivos = analise.reasons == null
                     ? new ArrayList<>()
                     : new ArrayList<>(analise.reasons);
-            // Como no POST: bloqueio e alergia vem antes dos outros motivos.
             motivos.add(0, alergia);
             analise.reasons = motivos;
         }
@@ -104,7 +91,6 @@ public class AnaliseDoPostRepository {
     }
 
     public void apagar() {
-        // commit, e nao apply: quem chama sai da conta logo em seguida.
         prefs.edit().clear().commit();
     }
 
@@ -119,10 +105,6 @@ public class AnaliseDoPostRepository {
         }
     }
 
-    /**
-     * Em ms: o POST manda o horario com nanossegundos e o banco devolve no GET
-     * com microssegundos, entao a comparacao ignora o que passa do milissegundo.
-     */
     @Nullable
     private static Long emMilissegundos(@Nullable String calculadaEm) {
         if (calculadaEm == null || calculadaEm.trim().isEmpty()) return null;

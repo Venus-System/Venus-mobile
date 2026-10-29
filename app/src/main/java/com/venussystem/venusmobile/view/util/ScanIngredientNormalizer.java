@@ -2,7 +2,6 @@ package com.venussystem.venusmobile.view.util;
 
 import com.venussystem.venusmobile.domain.scan.ScanIngredientPolicy;
 
-/** Correct one candidate only after segmentation. Never rewrite raw OCR. */
 final class ScanIngredientNormalizer {
     private ScanIngredientNormalizer() { }
 

@@ -23,11 +23,6 @@ public class InsetsSistema {
         });
     }
 
-    /**
-     * Como aplicar(), mas para telas com campo de texto: quando o teclado esta
-     * aberto, a margem de baixo passa a ser a altura dele, e nao a da barra de
-     * navegacao - senao o teclado cobriria o que fica embaixo.
-     */
     public static void aplicarComTeclado(ComponentActivity activity, @LayoutRes int layout) {
         EdgeToEdge.enable(activity);
         activity.setContentView(layout);
