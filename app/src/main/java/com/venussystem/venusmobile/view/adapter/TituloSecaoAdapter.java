@@ -11,10 +11,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.venussystem.venusmobile.R;
 
-/**
- * Um separador da aba Listas ("Listas fixas", "Listas criadas") como item da
- * propria lista, entre os adapters do ConcatAdapter. Sempre 1 item.
- */
 public class TituloSecaoAdapter extends RecyclerView.Adapter<TituloSecaoAdapter.TituloViewHolder> {
 
     @StringRes

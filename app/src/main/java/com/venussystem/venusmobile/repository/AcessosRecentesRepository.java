@@ -15,31 +15,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.LongSupplier;
 
-/**
- * Os produtos que a pessoa abriu no detalhe, guardados no aparelho e separados
- * por conta (ver DadosDaConta). Alimentam o historico da tela de busca, junto
- * com os scans.
- *
- * Guarda so o id do produto e a hora da abertura: nome, marca e nota vem do
- * catalogo em memoria na hora de mostrar, entao nunca ficam velhos aqui.
- *
- * Reabrir um produto nao cria outra linha, so move a que ja existe para o
- * topo. A lista e curta de proposito (LIMITE), como o historico da tela.
- */
 public class AcessosRecentesRepository {
 
     static final String ARQUIVO = "venus_acessos";
     private static final String CHAVE = "acessos";
 
-    // O historico da tela mostra 20 itens, entao guardar mais que isso so
-    // ocuparia espaco.
     @VisibleForTesting
     static final int LIMITE = 20;
 
-    // A tela grava e o historico le, cada um na sua thread.
     private static final Object TRAVA = new Object();
 
-    /** Um produto aberto: o id e quando foi a ultima vez, em milissegundos. */
     public static final class Acesso {
         public final long produtoId;
         public final long momento;
@@ -50,8 +35,6 @@ public class AcessosRecentesRepository {
         }
     }
 
-    // Formato gravado. Separado do Acesso para mudar o modelo da tela sem
-    // perder o que ja esta salvo nos aparelhos.
     private static final class Gravado {
         long produtoId;
         long momento;
@@ -76,7 +59,6 @@ public class AcessosRecentesRepository {
         this.relogio = relogio;
     }
 
-    /** Os acessos da conta, do mais recente para o mais antigo. */
     @NonNull
     public List<Acesso> listar() {
         List<Acesso> acessos = new ArrayList<>();
@@ -86,7 +68,6 @@ public class AcessosRecentesRepository {
         return Collections.unmodifiableList(acessos);
     }
 
-    /** Anota que o produto foi aberto agora; se ja estava na lista, sobe para o topo. */
     public void registrar(long produtoId) {
         if (produtoId <= 0) {
             return;
@@ -111,7 +92,6 @@ public class AcessosRecentesRepository {
         }
     }
 
-    // Chamado sempre de dentro da TRAVA, ou so para ler.
     private List<Gravado> ler() {
         List<Gravado> gravados = new ArrayList<>();
         String json = prefs.getString(CHAVE, null);
@@ -128,7 +108,6 @@ public class AcessosRecentesRepository {
                 }
             }
         } catch (JsonParseException e) {
-            // Arquivo estragado nao pode travar a busca: comeca do zero.
             gravados.clear();
         }
         return gravados;

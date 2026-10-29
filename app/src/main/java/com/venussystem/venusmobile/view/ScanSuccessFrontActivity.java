@@ -29,17 +29,6 @@ import com.venussystem.venusmobile.viewmodel.ScanViewModel;
 
 import java.io.File;
 
-/**
- * Tela de transição/processamento após a foto frontal.
- *
- * Não altera o processamento existente:
- * - OCR continua no ScanViewModel;
- * - extração continua no ScanFrontExtractor;
- * - match continua no ScanProductMatchRepository via ViewModel;
- * - classificação cosmética continua no ScanCosmeticClassifier.
- *
- * Esta Activity somente garante que a navegação ocorra no resultado final.
- */
 public class ScanSuccessFrontActivity extends AppCompatActivity {
 
     private static final String TAG_OCR = "VENUS_OCR";
@@ -419,11 +408,6 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Encerra completamente o contexto do scan e retorna à tela principal.
-     * É usado somente quando não há dados suficientes, a imagem é inválida
-     * ou não foi possível confirmar um produto cosmético.
-     */
     private void fecharFluxoParaPrincipal(@Nullable String mensagem) {
         if (navegando || isFinishing() || isDestroyed()) {
             return;

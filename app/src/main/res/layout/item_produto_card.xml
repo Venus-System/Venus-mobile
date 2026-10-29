@@ -39,8 +39,6 @@
         app:layout_constraintTop_toBottomOf="@+id/imgProduto"
         tools:text="Nivea" />
 
-    <!-- Duas linhas fixas: os cards de uma mesma fileira da grade ficam da
-         mesma altura, tenha o nome uma linha ou duas. -->
     <TextView
         android:id="@+id/textNome"
         android:layout_width="0dp"

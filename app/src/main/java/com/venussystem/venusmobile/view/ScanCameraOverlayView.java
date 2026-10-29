@@ -9,7 +9,6 @@ import android.view.View;
 
 import androidx.annotation.Nullable;
 
-/** Guia visual da câmera, alinhada com a foto vertical produzida pelo CameraX. */
 public class ScanCameraOverlayView extends View {
 
     private final Paint framePaint = new Paint(Paint.ANTI_ALIAS_FLAG);

@@ -78,7 +78,6 @@ public class FiltroViewModelTest {
         FiltroViewModel viewModel = new FiltroViewModel(application, repository, filtros);
         criados.add(viewModel);
         aguardarValor(repository.getCatalogo(), valor -> valor != null);
-        // As marcas sao a ultima opcao publicada: depois delas nada mais roda.
         aguardarValor(viewModel.getMarcas(), valor -> valor != null);
         return viewModel;
     }
@@ -98,8 +97,6 @@ public class FiltroViewModelTest {
         }
         return nomes;
     }
-
-    // ---- Categorias ----
 
     @Test
     public void categoria_respeitaOMinimoDeTresProdutos() {
@@ -164,8 +161,6 @@ public class FiltroViewModelTest {
         assertEquals(Arrays.asList("Beta", "Alfa", "Zeta"), nomesDasCategorias(viewModel));
     }
 
-    // ---- Marcas ----
-
     @Test
     public void marcas_vemDoCatalogoEmOrdemAlfabeticaSemDiferenciarCaixa() {
         FiltroViewModel viewModel = criarViewModel(CatalogoApi.novo()
@@ -202,8 +197,6 @@ public class FiltroViewModelTest {
                 .dispatcher());
         assertFalse(semBrasileira.getTemMarcaBrasileira().getValue());
     }
-
-    // ---- Rascunho ----
 
     private FiltroViewModel comCatalogoSimples() {
         return criarViewModel(CatalogoApi.novo()

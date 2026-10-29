@@ -8,13 +8,6 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-/**
- * O filtro do catalogo, igual na Home e na busca.
- *
- * Dentro de um grupo (marca, categoria, faixa) vale qualquer uma das opcoes
- * marcadas; entre grupos, todos precisam bater. Grupo sem nada marcado nao
- * filtra. Imutavel: cada mudanca devolve um filtro novo.
- */
 public final class FiltroProdutos {
 
     private static final FiltroProdutos VAZIO = new FiltroProdutos(
@@ -66,11 +59,9 @@ public final class FiltroProdutos {
         if (!categorias.isEmpty() && !categorias.contains(produto.getCategoryId())) {
             return false;
         }
-        // Sem nota nao ha faixa: com faixa marcada, o produto sem nota sai.
         if (!faixas.isEmpty() && !faixas.contains(FaixaNota.de(produto.getOverallScore()))) {
             return false;
         }
-        // Brasileira so quando a API disse que e; sem a informacao, fica de fora.
         return !soBrasileiras || Boolean.TRUE.equals(produto.getBrazilianBrand());
     }
 

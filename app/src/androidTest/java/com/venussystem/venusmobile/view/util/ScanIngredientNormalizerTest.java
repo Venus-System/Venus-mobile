@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-/** Captured text regressions. Coordinates are tested separately with synthetic boxes. */
 public class ScanIngredientNormalizerTest {
     @Test public void preservesKnownNamesAndDoesNotCascadeReplacements() {
         for (String name : ScanIngredientVocabulary.NAMES) {
@@ -189,8 +188,6 @@ public class ScanIngredientNormalizerTest {
         r.ingredients = new ArrayList<>();
         data.getIngredients().forEach(i -> r.ingredients.add(
                 new ScanSessionRequest.Ingredient(i.getPosition(), i.getNormalizedName())));
-        // Unknown candidates are intentionally allowed through to Mongo/PENDING_REVIEW.
-        // Administrative residue is still rejected by the validator's dedicated tests.
         ScanSubmissionValidator.validateIngredientQuality(r);
         assertFalse(r.ingredients.isEmpty());
     }

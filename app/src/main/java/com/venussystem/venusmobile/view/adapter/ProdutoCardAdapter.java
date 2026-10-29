@@ -16,10 +16,6 @@ import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Cards de produto em grade, usados nas sugestões da Home e nos resultados da
- * busca: foto no topo, marca e nome embaixo.
- */
 public class ProdutoCardAdapter extends RecyclerView.Adapter<ProdutoCardAdapter.CardViewHolder> {
 
     public interface AoClicar {
@@ -81,11 +77,6 @@ public class ProdutoCardAdapter extends RecyclerView.Adapter<ProdutoCardAdapter.
             itemView.setOnClickListener(v -> aoClicar.noProduto(produto));
         }
 
-        /**
-         * O nome costuma vir com a marca na frente ("Nivea Creme") e a marca
-         * ja aparece em negrito acima, entao tira o prefixo so na exibicao.
-         * Se sobrar nada (nome igual a marca), mantem o nome inteiro.
-         */
         static String semMarca(String nome, String marca) {
             if (nome == null || marca == null) {
                 return nome;
@@ -98,7 +89,6 @@ public class ProdutoCardAdapter extends RecyclerView.Adapter<ProdutoCardAdapter.
             }
 
             String depois = nomeLimpo.substring(marcaLimpa.length());
-            // "Nivea" nao deve cortar o inicio de "Niveaxyz".
             if (!depois.isEmpty() && Character.isLetterOrDigit(depois.charAt(0))) {
                 return nome;
             }

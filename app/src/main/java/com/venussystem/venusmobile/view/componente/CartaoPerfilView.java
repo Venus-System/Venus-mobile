@@ -17,16 +17,6 @@ import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.domain.perfil.ProgressoPerfil;
 import com.venussystem.venusmobile.view.PesquisaInicialActivity;
 
-/**
- * O cartao "Seu perfil Venus", o mesmo do Dashboard do site: um chamado discreto,
- * em roxo, para responder (ou completar) o questionario, porque sem ele o Match
- * com voce e as analises nao levam em conta a pele da pessoa.
- *
- * Tres estados, vindos de {@link ProgressoPerfil}: sem questionario (subtitulo e
- * "Responder agora"), incompleto (barra de progresso e "Completar agora") e
- * completo (o cartao some). Quem usa so chama {@link #atualizar} quando a tela
- * aparece; o toque no botao abre o questionario.
- */
 public class CartaoPerfilView extends LinearLayout {
 
     private final ProgressBar barra;
@@ -82,7 +72,6 @@ public class CartaoPerfilView extends LinearLayout {
         contexto.startActivity(intent);
     }
 
-    /** Para quem quer saber se o cartao esta aparecendo (testes e a aba Match). */
     public boolean estaVisivel() {
         return getVisibility() == View.VISIBLE;
     }

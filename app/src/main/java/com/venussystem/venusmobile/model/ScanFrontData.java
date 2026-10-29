@@ -6,12 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Resultado da interpretação do OCR da FRENTE.
- *
- * Os candidatos ainda não são uma identificação definitiva.
- * A confirmação será feita posteriormente pelo catálogo.
- */
 public class ScanFrontData {
 
     private final List<String> brandCandidates;

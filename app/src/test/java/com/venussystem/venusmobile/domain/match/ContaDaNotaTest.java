@@ -11,7 +11,6 @@ public class ContaDaNotaTest {
 
     @Test
     public void usaOsPontosDaApiSemRefazerAConta() {
-        // breakdown do README da Classificacao: 25,9 + 15,3 = nota 41.
         ContaDaNota conta = ContaDaNota.de(74, 25.9, 15.3, 41);
 
         assertEquals(25.9, conta.pontosQualidade, 0.0);
@@ -21,7 +20,6 @@ public class ContaDaNotaTest {
 
     @Test
     public void notaBemAbaixoDaSomaFoiLimitada() {
-        // A soma daria 72, mas uma alergia alta prende a nota em 15.
         assertTrue(ContaDaNota.de(74, 25.9, 46.2, 15).limitada);
     }
 

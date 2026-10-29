@@ -23,20 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * A tela do filtro. As escolhas ficam num rascunho e so valem para o app
- * quando a pessoa aperta Aplicar; a seta de voltar descarta o rascunho.
- *
- * As opcoes (categorias e marcas) saem do que existe no catalogo, e nao das
- * listas da API: opcao sem produto nenhum nunca aparece.
- */
 public class FiltroViewModel extends AndroidViewModel {
-
-    /**
-     * Categoria com menos produtos que isso nao vira opcao: levaria a um
-     * resultado so, ou a nenhum. A API tem 119 categorias mas so umas 36 sao
-     * usadas por algum produto.
-     */
     private static final int MINIMO_PRODUTOS_CATEGORIA = 3;
 
     private final ProdutoRepository repository;
@@ -82,7 +69,6 @@ public class FiltroViewModel extends AndroidViewModel {
         return marcas;
     }
 
-    /** Sem nenhuma marca brasileira no catalogo, a opcao nao faz sentido. */
     public LiveData<Boolean> getTemMarcaBrasileira() {
         return temMarcaBrasileira;
     }
@@ -111,7 +97,6 @@ public class FiltroViewModel extends AndroidViewModel {
         rascunho.setValue(rascunhoAtual().comSoBrasileiras(valor));
     }
 
-    /** Zera o que esta marcado na tela; o filtro do app so muda em aplicar(). */
     public void limpar() {
         rascunho.setValue(FiltroProdutos.vazio());
     }

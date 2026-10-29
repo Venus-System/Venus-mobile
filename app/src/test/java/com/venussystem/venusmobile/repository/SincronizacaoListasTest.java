@@ -52,7 +52,6 @@ public class SincronizacaoListasTest {
     private static final String CAPA_7 = "POST /api/user-lists/7/cover";
     private static final String LINK_CAPA_7 = "https://res.cloudinary.com/venus/user-lists/7/cover/a.jpg";
 
-    // Ids das 3 listas de exemplo numa conta antiga (ver contaComAsListasDeExemplo).
     private static final long FAVORITOS = 1L;
     private static final long ESCANEADOS = 2L;
     private static final long SKINCARE = 3L;
@@ -77,7 +76,6 @@ public class SincronizacaoListasTest {
         itens = new ListaItemRepository(context, "uid-ana");
         VenusApi venusApi = ApiDeTeste.criar(server, VenusApi.class);
         usuarios = new UsuarioApiRepository(context, venusApi, new SessaoFalsa());
-        // Nos testes a capa vai sem reduzir: o ImageDecoder nao abre os bytes de mentira.
         sincronizacao = new SincronizacaoListas(listas, itens, usuarios, venusApi,
                 original -> original, Runnable::run);
 
@@ -92,17 +90,12 @@ public class SincronizacaoListasTest {
         server.shutdown();
     }
 
-    /** Cria a "Viagem" no aparelho e ja manda para a API, que devolve o id 7. */
     private long viagemJaNaApi() {
         long id = listas.criar("Viagem", "", null).getId();
         assertTrue(sincronizacao.sincronizarAgora());
         return id;
     }
 
-    /**
-     * Conta de antes desta versao em que as 3 listas de exemplo ficaram no
-     * aparelho, ja revistas (ver ColecaoRepository.tirarExemplosIntocados).
-     */
     private void contaComAsListasDeExemplo() {
         DadosDaConta.prefs(context, ColecaoRepository.ARQUIVO, "uid-ana").edit()
                 .putString("minhas_listas", "["
@@ -113,7 +106,6 @@ public class SincronizacaoListasTest {
                 .commit();
     }
 
-    /** Uma foto de capa ja copiada para o aparelho, como a tela deixa. */
     private String capaNoAparelho(String nome) throws IOException {
         File pasta = new File(context.getFilesDir(), "capas_lista");
         pasta.mkdirs();
@@ -123,8 +115,6 @@ public class SincronizacaoListasTest {
         }
         return arquivo.toURI().toString();
     }
-
-    // ---- Quando nao tem nada para mandar ----
 
     @Test
     public void contaSemListas_nemVaiNaRede() {
@@ -154,8 +144,6 @@ public class SincronizacaoListasTest {
 
         assertEquals(antes, api.pedidos.size());
     }
-
-    // ---- Criar ----
 
     @Test
     public void listaCriadaPelaPessoa_sobeComoPersonalizadaMesmoVazia() {
@@ -202,7 +190,6 @@ public class SincronizacaoListasTest {
         for (String corpo : api.corposEm(POST_LISTA)) {
             capas.add(JsonParser.parseString(corpo).getAsJsonObject().get("coverKey").getAsString());
         }
-        // A API so aceita em maiusculo: "favoritos" da 400.
         assertEquals(new HashSet<>(Arrays.asList("FAVORITOS", "ESCANEADOS", "SKINCARE")), capas);
     }
 
@@ -230,8 +217,6 @@ public class SincronizacaoListasTest {
 
         assertTrue(sincronizacao.sincronizarAgora());
 
-        // Na tela o 200 vem primeiro (mais recente); na API ele fica com a
-        // maior posicao, e a ordem da maior para a menor e a mesma da tela.
         List<String> corpos = api.corposEm(POST_ITEM);
         assertEquals(2, corpos.size());
         assertEquals("{\"userListId\":7,\"productId\":100,\"positionOrder\":1}", corpos.get(0));
@@ -252,8 +237,6 @@ public class SincronizacaoListasTest {
         assertEquals(6, corpo.get("positionOrder").getAsInt());
         assertEquals(1, api.corposEm(POST_ITEM).size());
     }
-
-    // ---- Renomear e apagar ----
 
     @Test
     public void renomear_mandaSoONome() {
@@ -297,8 +280,6 @@ public class SincronizacaoListasTest {
         assertEquals(Collections.singletonList(TIRAR_100_DA_7), api.pedidosEm(TIRAR_100_DA_7));
     }
 
-    // ---- Descricao e capa padrao ----
-
     @Test
     public void descricaoEditada_mandaSoADescricao() {
         long viagem = viagemJaNaApi();
@@ -321,7 +302,6 @@ public class SincronizacaoListasTest {
 
         assertTrue(sincronizacao.sincronizarAgora());
 
-        // No PATCH, campo omitido mantem o valor; so o null apaga.
         JsonObject corpo = api.corpo(PATCH_7);
         assertTrue(corpo.has("description"));
         assertTrue(corpo.get("description").isJsonNull());
@@ -342,7 +322,6 @@ public class SincronizacaoListasTest {
 
     @Test
     public void listaDeExemploQueSubiuSemCapaPadrao_recebeACapaDepois() {
-        // Gravado pela versao que ja mandava as listas, mas ainda sem a capa.
         DadosDaConta.prefs(context, ColecaoRepository.ARQUIVO, "uid-ana").edit()
                 .putString("minhas_listas", "[{\"id\":1,\"nome\":\"Produtos favoritados\","
                         + "\"chaveImagem\":\"favoritos\",\"idApi\":7,"
@@ -357,8 +336,6 @@ public class SincronizacaoListasTest {
         assertFalse(corpo.has("name"));
         assertFalse(corpo.has("description"));
     }
-
-    // ---- Foto de capa ----
 
     @Test
     public void capaEscolhidaAoCriar_vaiNoCampoFileDepoisDaLista() throws IOException {
@@ -417,7 +394,6 @@ public class SincronizacaoListasTest {
         assertTrue(sincronizacao.sincronizarAgora());
         sincronizacao.sincronizarAgora();
 
-        // Mandar a mesma imagem de novo nao adianta.
         assertEquals(1, api.corposEm(CAPA_7).size());
     }
 
@@ -448,11 +424,8 @@ public class SincronizacaoListasTest {
         assertTrue(api.pedidosEm(CAPA_7).isEmpty());
     }
 
-    // ---- Quando a API discorda ----
-
     @Test
     public void nomeQueJaExisteNaApi_assumeAListaDeLa() {
-        // Uma tentativa anterior criou a lista mas perdeu a resposta.
         api.em(POST_LISTA, 409, "{\"status\":409}");
         api.em(LISTAS_DA_ANA, 200, "{\"content\":[{\"id\":9,\"name\":\"Viagem\"}],\"last\":true}");
         api.em(ITENS_9, 200, "[]");
@@ -468,7 +441,6 @@ public class SincronizacaoListasTest {
         long viagem = viagemJaNaApi();
         itens.adicionar(viagem, 100L);
         listas.renomear(viagem, "Férias");
-        // PATCH sem resposta configurada cai no 404 do ApiPorRota.
 
         sincronizacao.sincronizarAgora();
         sincronizacao.sincronizarAgora();
@@ -502,8 +474,6 @@ public class SincronizacaoListasTest {
         assertEquals(2, buscas);
         assertEquals(2, api.corposEm(POST_LISTA).size());
     }
-
-    // ---- Mudancas no meio do envio ----
 
     @Test
     public void produtoAdicionadoDuranteOEnvio_continuaPendente() {
@@ -539,8 +509,6 @@ public class SincronizacaoListasTest {
         assertEquals("Viagem", naTela.get(0).getName());
     }
 
-    // ---- Ler do servidor ----
-
     private void naApi(String... listas) {
         api.em(LISTAS_DA_ANA, 200,
                 "{\"content\":[" + String.join(",", listas) + "],\"last\":true}");
@@ -568,7 +536,6 @@ public class SincronizacaoListasTest {
         Colecao doSite = telaToda.get(0);
         assertEquals("Do site", doSite.getName());
         assertEquals("Feita no site", doSite.getDescricao());
-        // Na tela o mais recente vem primeiro: a maior posicao.
         assertEquals(Arrays.asList(200L, 100L), itens.getProdutoIds(doSite.getId()));
         assertFalse("o que veio da API nao volta para ela", sincronizacao.sincronizarAgora());
     }
@@ -588,7 +555,6 @@ public class SincronizacaoListasTest {
 
     @Test
     public void listaComCapaPadraoNaApi_entraNaContaSemListas() {
-        // Celular novo: a conta ja tem favoritos no servidor.
         naApi("{\"id\":9,\"name\":\"Produtos favoritados\",\"coverKey\":\"FAVORITOS\"}");
         api.em(ITENS_9, 200, "[{\"productId\":100,\"positionOrder\":1}]");
 
@@ -603,7 +569,6 @@ public class SincronizacaoListasTest {
 
     @Test
     public void listaDeExemploNaApi_eAMesmaDoAparelho() {
-        // Celular com as listas de exemplo antigas; a conta ja tem favoritos no servidor.
         contaComAsListasDeExemplo();
         naApi("{\"id\":9,\"name\":\"Produtos favoritados\",\"coverKey\":\"FAVORITOS\"}");
         api.em(ITENS_9, 200, "[{\"productId\":100,\"positionOrder\":1}]");
@@ -728,7 +693,6 @@ public class SincronizacaoListasTest {
     @Test
     public void bancoRecriadoComOutroIdDaPessoa_recriaAsListasEmVezDeApagar() {
         long viagem = viagemJaNaApi();
-        // O banco foi recriado: a pessoa agora e a 43 e nao tem lista nenhuma.
         usuarios.esquecerId();
         api.em(BUSCA, 200, "{\"content\":[{\"id\":43,\"firebaseUid\":\"uid-ana\"}]}");
         api.em(POST_LISTA, 201, "{\"id\":8,\"name\":\"Viagem\"}");

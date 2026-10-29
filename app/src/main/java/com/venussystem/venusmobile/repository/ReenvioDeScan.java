@@ -14,32 +14,13 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 
-/**
- * Termina sozinho os envios de produto que ficaram pela metade (sem internet,
- * API dormindo, a pessoa saiu da tela do scan). O rascunho de cada scan ja esta
- * guardado no aparelho com as fotos e o que o OCR leu; aqui so se repete o que a
- * tela do scan faz - assinaturas, fotos, consulta dos ingredientes e cadastro -
- * pulando o que ja foi confirmado.
- *
- * E seguro repetir: o servidor devolve o scan que ja existe quando o mesmo
- * scanId chega de novo, e as fotos ja enviadas nao sobem outra vez.
- *
- * Roda numa thread de fundo (cada passo bloqueia). Em 403/401 desiste: ali a
- * pessoa precisa agir na tela do scan ("Conectar minha conta"), nunca
- * automaticamente.
- */
 public class ReenvioDeScan {
 
     private static final String TAG = "VENUS_SCAN_RESEND";
 
-    /**
-     * Um rascunho alterado ha pouco pode estar sendo enviado agora pela tela do
-     * scan; so mexe nos que ficaram parados.
-     */
     @VisibleForTesting
     static final long IDADE_MINIMA_MS = 2 * 60_000L;
 
-    /** Os passos do envio, cada um bloqueante. A versao real fica em {@link EtapasDoScan}. */
     public interface Etapas {
         List<ScanDraftStore.SavedDraft> pendentes(String uid) throws IOException;
 
@@ -55,9 +36,7 @@ public class ReenvioDeScan {
     }
 
     public static final class Resultado {
-        /** O nome (como o OCR leu) de cada produto que subiu nesta rodada. */
         public final List<String> enviados;
-        /** Sobrou algo que vale tentar de novo (rede, servidor) ou que ainda esta sendo enviado. */
         public final boolean tentarDepois;
 
         Resultado(List<String> enviados, boolean tentarDepois) {
@@ -74,9 +53,6 @@ public class ReenvioDeScan {
         this.cancelado = cancelado;
     }
 
-    /**
-     * @throws IOException se nem foi possivel listar os rascunhos - quem chama tenta de novo.
-     */
     public Resultado tentar(String uid, long agoraMs) throws IOException {
         List<String> enviados = new ArrayList<>();
         boolean tentarDepois = false;
@@ -111,7 +87,6 @@ public class ReenvioDeScan {
         return new Resultado(enviados, tentarDepois);
     }
 
-    /** Vale tentar de novo mais tarde (sem rede, servidor ocupado)? Auth e erro de dado, nao. */
     @VisibleForTesting
     static boolean transitorio(Throwable erro) {
         if (erro instanceof ScanApiException) {

@@ -22,7 +22,6 @@ import static com.venussystem.venusmobile.view.util.ScanBackText.pareceAdministr
 import static com.venussystem.venusmobile.view.util.ScanBackText.substringSafe;
 import static com.venussystem.venusmobile.view.util.ScanBackText.temQualquerToken;
 
-/** Internal collaborator for ScanBackExtractor; not a second scan entry point. */
 final class ScanBackLabelSections {
     private ScanBackLabelSections() { }
 
@@ -58,11 +57,6 @@ final class ScanBackLabelSections {
             "PRECAUTION"
     };
 
-    /*
-     * ================================================================
-     * CLAIMS
-     * ================================================================
-     */
     private static final String[] CLAIM_TOKENS = {
             "VEGANO",
             "VEGAN",
@@ -118,11 +112,6 @@ final class ScanBackLabelSections {
             "TESTADO CLINICAMENTE"
     };
 
-    /*
-     * ================================================================
-     * SEGURANÇA
-     * ================================================================
-     */
     private static final String[] SECURITY_TOKENS = {
             "NAO APLICAR",
             "NO APLICAR",
@@ -169,18 +158,10 @@ final class ScanBackLabelSections {
                             + "INGREDIENTS(?:INGREDIENTES)?)"
             );
 
-    /*
-     * ================================================================
-     * USO
-     * ================================================================
-     */
     static String extrairUso(
             List<String> lines,
             IngredientSection section
     ) {
-        /*
-         * Heading explícito.
-         */
         for (
                 int i = 0;
                 i < lines.size();
@@ -260,9 +241,6 @@ final class ScanBackLabelSections {
                 return value;
             }
         }
-        /*
-         * Fallback OCR.
-         */
         List<String> fallback =
                 new ArrayList<>();
         boolean collecting =
@@ -361,9 +339,6 @@ final class ScanBackLabelSections {
             if (!collecting) {
                 continue;
             }
-            /*
-             * Mudança de responsabilidade para segurança.
-             */
             if (
                     n.contains(
                             "PROTEGER OS OLHOS"
@@ -436,11 +411,6 @@ final class ScanBackLabelSections {
         return compactarEspacos(result);
     }
 
-    /*
-     * ================================================================
-     * SEGURANÇA
-     * ================================================================
-     */
     static String extrairSeguranca(
             List<String> lines,
             boolean warnings,
@@ -529,9 +499,6 @@ final class ScanBackLabelSections {
                     1400
             );
         }
-        /*
-         * Fallback por frases.
-         */
         List<String> safety =
                 new ArrayList<>();
         for (
@@ -630,11 +597,6 @@ final class ScanBackLabelSections {
         );
     }
 
-    /*
-     * ================================================================
-     * CLAIMS
-     * ================================================================
-     */
     static List<String> extrairClaims(
             List<String> lines
     ) {
@@ -675,11 +637,6 @@ final class ScanBackLabelSections {
         );
     }
 
-    /*
-     * ================================================================
-     * OTHER TEXT
-     * ================================================================
-     */
     static String extrairOtherText(
             List<String> lines,
             IngredientSection section

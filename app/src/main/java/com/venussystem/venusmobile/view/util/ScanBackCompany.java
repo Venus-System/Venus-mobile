@@ -26,15 +26,9 @@ import static com.venussystem.venusmobile.view.util.ScanBackText.temContextoAdmi
 import static com.venussystem.venusmobile.view.util.ScanBackText.temRuidoAdministrativo;
 import static com.venussystem.venusmobile.view.util.ScanBackText.temRuidoAdministrativoExcessivo;
 
-/** Internal collaborator for ScanBackExtractor; not a second scan entry point. */
 final class ScanBackCompany {
     private ScanBackCompany() { }
 
-    /*
-     * ================================================================
-     * EMPRESA / FABRICANTE
-     * ================================================================
-     */
     private static final String[] MANUFACTURER_MARKERS = {
             "FABRICADO POR",
             "FABRICADO",
@@ -68,11 +62,6 @@ final class ScanBackCompany {
             "DISTRIBUTED BY"
     };
 
-    /*
-     * ================================================================
-     * EMPRESAS
-     * ================================================================
-     */
     private static final String[] COMPANY_SUFFIXES = {
             "LTDA",
             "S A",
@@ -129,11 +118,6 @@ final class ScanBackCompany {
             "SHISEIDO"
     };
 
-    /*
-     * ================================================================
-     * PAÍSES
-     * ================================================================
-     */
     private static final String[] COUNTRY_NAMES = {
             "BRASIL",
             "BRAZIL",
@@ -199,11 +183,6 @@ final class ScanBackCompany {
             "BRASILEIRAINDUSTRIA"
     };
 
-    /**
-     * V7.1: preserva o texto que sobra depois de um heading de contato.
-     * O OCR pode reconhecer o e-mail de forma incompleta, portanto este
-     * padrão não exige que o endereço tenha um domínio válido.
-     */
     private static final Pattern CONTACT_RESIDUAL_PATTERN =
             Pattern.compile(
                     "(?i)\\b(?:QUESTIONS?|CONTACT|CUSTOMER\\s+SERVICE|"
@@ -220,11 +199,6 @@ final class ScanBackCompany {
                             + "(?!\\d)"
             );
 
-    /*
-     * ================================================================
-     * FABRICANTE / IMPORTADOR / ENDEREÇO
-     * ================================================================
-     */
     static String extrairFabricante(
             List<String> lines
     ) {
@@ -251,10 +225,6 @@ final class ScanBackCompany {
             if (!remainder.isEmpty()) {
                 return remainder;
             }
-            /*
-             * Só aceita texto anterior ao marcador quando
-             * já parece empresa.
-             */
             if (
                     !marker.prefix.isEmpty()
                             && ehEmpresaClara(
@@ -265,9 +235,6 @@ final class ScanBackCompany {
                         marker.prefix
                 );
             }
-            /*
-             * Nome da empresa pode estar na linha seguinte.
-             */
             for (
                     int j = i + 1;
                     j <= Math.min(
@@ -293,16 +260,6 @@ final class ScanBackCompany {
                 }
             }
         }
-        /*
-         * Caso de OCR em que o nome da empresa aparece colado ao final
-         * da composição e não existe um marcador explícito como
-         * "FABRICADO POR":
-         *
-         *   ... PEEL OIL cial Farmacêutica Ltda. Av. Rui Barbosa
-         *
-         * A expressão empresarial já usada como barreira do extractor
-         * permite recuperar somente o bloco da empresa.
-         */
         for (String line : lines) {
             if (line == null || line.trim().isEmpty()) {
                 continue;
@@ -317,10 +274,6 @@ final class ScanBackCompany {
                 }
             }
         }
-        /*
-         * Fallback conservador:
-         * empresa conhecida + sufixo empresarial.
-         */
         for (
                 int i = 0;
                 i < lines.size();
@@ -509,11 +462,6 @@ final class ScanBackCompany {
         ) {
             return false;
         }
-        /*
-         * Sufixos empresariais fazem parte da própria identidade da
-         * empresa e, portanto, não podem ser tratados como "lixo
-         * administrativo" durante a validação do candidato.
-         */
         String adminCheck =
                 s;
         for (String suffix : COMPANY_SUFFIXES) {
@@ -830,11 +778,6 @@ final class ScanBackCompany {
                                 EMPTY
                         )
                         .trim();
-        /*
-         * Quando empresa + endereço aparecem na mesma linha, não podemos
-         * guardar o prefixo da composição como se fosse parte do endereço.
-         * O endereço começa no primeiro marcador de via.
-         */
         Matcher streetStart =
                 STREET_PATTERN.matcher(s);
         if (streetStart.find() && streetStart.start() > 0) {
@@ -900,11 +843,6 @@ final class ScanBackCompany {
         return s;
     }
 
-    /*
-     * ================================================================
-     * CONTATO
-     * ================================================================
-     */
     static String extrairContato(
             List<String> lines
     ) {
@@ -1041,18 +979,10 @@ final class ScanBackCompany {
                 .trim();
     }
 
-    /*
-     * ================================================================
-     * PAÍS
-     * ================================================================
-     */
     static String extrairPais(
             List<String> lines,
             String manufacturer
     ) {
-        /*
-         * 1) Evidência explícita de origem.
-         */
         for (
                 String line
                 : lines
@@ -1113,9 +1043,6 @@ final class ScanBackCompany {
                 return explicit;
             }
         }
-        /*
-         * 2) Fabricante explicitamente brasileiro.
-         */
         if (
                 manufacturer != null
                         && !manufacturer.isEmpty()
@@ -1135,9 +1062,6 @@ final class ScanBackCompany {
                 return "BRASIL";
             }
         }
-        /*
-         * 3) País em linha isolada.
-         */
         for (
                 String line
                 : lines

@@ -17,13 +17,6 @@ import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.view.ProdutosCurtidosActivity;
 import com.venussystem.venusmobile.view.ProdutosEmAnaliseActivity;
 
-/**
- * As listas fixas do topo da aba Listas, com o mesmo cartao das listas do
- * usuario: "Produtos curtidos" (o coracao da tela do produto) e "Produtos em
- * analise". So existem na tela: nao sao Colecao do ColecaoRepository, entao
- * nao sobem para /api/user-lists, nao aparecem no "salvar na lista" do
- * produto e nao podem ser arrastadas nem excluidas. Cada uma abre a sua tela.
- */
 public class ListaFixaAdapter extends RecyclerView.Adapter<ListaFixaAdapter.CartaoViewHolder> {
 
     private static final class Cartao {

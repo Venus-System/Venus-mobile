@@ -7,10 +7,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Resultado da classificação conservadora da foto frontal.
- * O score é uma pontuação heurística interna, não uma probabilidade estatística.
- */
 public class ScanCosmeticClassification implements Serializable {
 
     private static final long serialVersionUID = 1L;

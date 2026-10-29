@@ -19,7 +19,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-/** Signed multipart upload to a fixed HTTPS host. Never uses the Venus/Firebase HTTP client. */
 public final class CloudinaryUploadClient {
     private final Call.Factory http;
     private final Clock clock;
@@ -55,7 +54,6 @@ public final class CloudinaryUploadClient {
                 .addFormDataPart("type", s.type)
                 .addFormDataPart("overwrite", Boolean.toString(s.overwrite));
         if (!blank(s.uploadPreset)) form.addFormDataPart("upload_preset", s.uploadPreset);
-        // Cloudinary detects image content; private .photo snapshots do not retain an extension.
         form.addFormDataPart("file", side + ".photo", RequestBody.create(MediaType.get("application/octet-stream"), file));
         HttpUrl url = new HttpUrl.Builder().scheme("https").host("api.cloudinary.com")
                 .addPathSegment("v1_1").addPathSegment(s.cloudName).addPathSegment("image").addPathSegment("upload").build();

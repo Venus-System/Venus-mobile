@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/** Local recognition vocabulary, not an exhaustive list of valid ingredients. */
 public final class ScanIngredientVocabulary {
     private ScanIngredientVocabulary() { }
     public static final Set<String> NAMES = Collections.unmodifiableSet(new LinkedHashSet<>(

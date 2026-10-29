@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Os avisos do catalogo (carregando, servidor acordando, erro, vazio) que a
-     Home e a busca mostram no lugar da grade. Quem liga isto tudo e o
-     EstadoCatalogo. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -22,8 +19,6 @@
             android:layout_height="wrap_content"
             android:indeterminateTint="@color/roxo_venus" />
 
-        <!-- O servidor gratuito hiberna, e acordar ele foi medido em ~100s. Sem
-             aviso, esse tempo parado passa impressao de travamento. -->
         <TextView
             android:id="@+id/textAcordando"
             android:layout_width="match_parent"

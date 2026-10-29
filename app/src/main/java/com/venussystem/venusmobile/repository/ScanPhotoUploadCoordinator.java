@@ -6,7 +6,6 @@ import com.venussystem.venusmobile.repository.api.dto.ScanUploadedPhoto;
 import java.io.File;
 import java.io.IOException;
 
-/** Worker only. Uploads photos; never submits product data. Production calls are serialized. */
 public final class ScanPhotoUploadCoordinator {
     public interface Signer { ScanUploadSignaturesResponse get() throws IOException; }
     public interface Guard { void check() throws IOException; }
@@ -43,14 +42,12 @@ public final class ScanPhotoUploadCoordinator {
             catch (ScanUploadException e) {
                 if (e.kind != ScanUploadException.Kind.EXPIRED_SIGNATURE) throw e;
                 guard.check();
-                signatures = signer.get(); // One refresh only, never an unbounded retry.
+                signatures = signer.get();
                 if (saved.frontUpload != null) checkDestination(saved.frontUpload, signatures);
                 if (saved.backUpload != null) checkDestination(saved.backUpload, signatures);
                 guard.check();
                 receipt = uploader.send(signatures, id, side, new File(path));
             }
-            // Even if logout happened during upload, record the receipt under the original owner.
-            // This cannot upload anything else; the following guard prevents continuing as another user.
             saved = store.recordUpload(uid, id, side, receipt);
             guard.check();
             progress.update("UPLOADED", side);

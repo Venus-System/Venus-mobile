@@ -34,17 +34,11 @@ import java.util.concurrent.Executors;
 
 import retrofit2.Response;
 
-/**
- * Carrega o historico da conta logada: os produtos que ela abriu no detalhe
- * (AcessosRecentesRepository) junto com os scans recentes, do mais novo para o
- * mais antigo.
- */
 public class HistoricoRepository {
 
     private static final int TAMANHO_PAGINA = 20;
     private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
 
-    /** O catalogo que ja esta em memoria; a consulta por id nunca vai a rede. */
     @VisibleForTesting
     interface Catalogo {
         @Nullable
@@ -60,10 +54,6 @@ public class HistoricoRepository {
     private final ScanDraftStore drafts;
     private final MutableLiveData<List<ItemHistorico>> historico = new MutableLiveData<>();
 
-    // Os scans do ultimo carregamento, guardados para encaixar os acessos de
-    // novo quando o catalogo chega depois (recombinar). Trocar os scans e
-    // publicar andam juntos sob a trava: o ultimo valor publicado sempre
-    // reflete os scans mais novos.
     private final Object trava = new Object();
     private List<ItemHistorico> scans = Collections.emptyList();
 
@@ -99,7 +89,6 @@ public class HistoricoRepository {
         return historico;
     }
 
-    /** Busca so o historico da conta atual, nunca o de outra conta. */
     public void carregar() {
         executor.execute(() -> {
             String uid = usuarios.uidAtual();
@@ -126,18 +115,12 @@ public class HistoricoRepository {
                 Log.d("VENUS_HISTORY", "REMOTE_COUNT=" + remoto.size());
                 publicar(unir(local, remoto), true);
             } catch (IOException | RuntimeException exception) {
-                // A home continua utilizável mesmo quando a API está dormindo ou offline.
                 Log.w("VENUS_HISTORY", "REMOTE_ERROR type=" + exception.getClass().getSimpleName());
                 if (!temAlgo) publicar(local, true);
             }
         });
     }
 
-    /**
-     * O catalogo chegou depois do historico (a busca aberta logo no inicio do
-     * app): sem ele os produtos acessados ficaram de fora, entao junta de novo,
-     * sem ir a rede.
-     */
     public void recombinar() {
         executor.execute(() -> {
             synchronized (trava) {
@@ -147,13 +130,6 @@ public class HistoricoRepository {
         });
     }
 
-    /**
-     * Guarda os scans e publica o historico com os acessos juntos.
-     *
-     * @param mesmoVazio false para nao publicar uma lista vazia enquanto ainda
-     *                   nao ha nada para mostrar.
-     * @return true se ha algo para mostrar.
-     */
     private boolean publicar(@NonNull List<ItemHistorico> novosScans, boolean mesmoVazio) {
         synchronized (trava) {
             scans = novosScans;
@@ -182,7 +158,6 @@ public class HistoricoRepository {
         }
     }
 
-    /** Mantém o cache local quando a API ainda não indexou o scan. */
     @NonNull
     private static List<ItemHistorico> unir(
             @NonNull List<ItemHistorico> local,
@@ -194,12 +169,6 @@ public class HistoricoRepository {
         return ordenar(new ArrayList<>(porScan.values()));
     }
 
-    /**
-     * Soma os produtos acessados aos scans. Quem foi escaneado e tambem aberto
-     * fica numa linha so, na data da ultima vez, com o selo do scan; o acesso
-     * sozinho nao tem selo. Produto que o catalogo ainda nao conhece fica de
-     * fora: nao ha o que mostrar dele.
-     */
     @NonNull
     private List<ItemHistorico> combinar(@NonNull List<ItemHistorico> scansDaConta) {
         List<ItemHistorico> itens = new ArrayList<>(scansDaConta);
@@ -224,7 +193,6 @@ public class HistoricoRepository {
             @NonNull AcessosRecentesRepository.Acesso acesso
     ) {
         LocalDate data = dataDoMomento(acesso.momento);
-        // Os scans vem primeiro na lista e do mais novo para o mais antigo.
         for (int i = 0; i < quantidadeDeScans; i++) {
             ItemHistorico scan = itens.get(i);
             Long idDoScan = scan.getProduto() == null ? null : scan.getProduto().getId();
@@ -256,7 +224,6 @@ public class HistoricoRepository {
                 + "|" + item.getData() + "|" + item.getStatus();
     }
 
-    /** Do mais novo para o mais antigo (a data separa os dias, o momento ordena dentro do dia), no maximo uma pagina. */
     @NonNull
     private static List<ItemHistorico> ordenar(@NonNull List<ItemHistorico> itens) {
         itens.sort(Comparator.comparing(ItemHistorico::getData)
@@ -329,14 +296,12 @@ public class HistoricoRepository {
                 try {
                     return LocalDateTime.parse(data).toLocalDate();
                 } catch (RuntimeException ignoredSemFuso) {
-                    // Resposta antiga ou fora do formato: o item ainda pode aparecer na home.
                 }
             }
         }
         return LocalDate.now();
     }
 
-    /** A hora do scan, para ordenar os do mesmo dia; 0 quando a API nao mandou uma data legivel. */
     private static long momentoDoScan(ScanSessionResponse scan) {
         String data = textoDaData(scan);
         if (!data.isEmpty()) {
@@ -347,7 +312,6 @@ public class HistoricoRepository {
                     return LocalDateTime.parse(data).atZone(ZoneId.systemDefault())
                             .toInstant().toEpochMilli();
                 } catch (RuntimeException ignoredSemFuso) {
-                    // Sem hora legivel o item fica no fim do proprio dia.
                 }
             }
         }

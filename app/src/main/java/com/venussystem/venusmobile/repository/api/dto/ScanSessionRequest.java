@@ -2,7 +2,6 @@ package com.venussystem.venusmobile.repository.api.dto;
 
 import java.util.List;
 
-/** Wire contract of Venus-CRUD POST /api/scan-sessions. No local paths or secrets. */
 public final class ScanSessionRequest {
     public String scanId;
     public String firebaseUid;

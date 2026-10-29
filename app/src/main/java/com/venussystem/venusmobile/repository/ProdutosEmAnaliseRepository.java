@@ -27,20 +27,12 @@ import java.util.concurrent.Executors;
 
 import retrofit2.Response;
 
-/**
- * Os produtos que a pessoa escaneou e mandou para a equipe conferir (o envio
- * e do fluxo de scan). Sempre lidos da API, sem copia no aparelho: o status
- * muda do lado do servidor, quando alguem aprova ou recusa.
- */
 public class ProdutosEmAnaliseRepository {
 
     public interface AoCarregar {
-        /** @param produtos do mais recente para o mais antigo; null se nao deu para buscar. */
         void aoCarregar(@Nullable List<ProdutoEmAnalise> produtos);
     }
 
-    // Uma pagina so: e mais do que alguem escaneia de produto novo, e a API ja
-    // manda os mais recentes primeiro.
     private static final int TAMANHO_PAGINA = 50;
 
     private static final int PROIBIDO = 403;
@@ -65,7 +57,6 @@ public class ProdutosEmAnaliseRepository {
         this.principal = principal;
     }
 
-    /** Busca em segundo plano e avisa na thread principal. */
     public void buscar(AoCarregar aoCarregar) {
         REDE.execute(() -> {
             List<ProdutoEmAnalise> produtos = buscarAgora();
@@ -73,10 +64,6 @@ public class ProdutosEmAnaliseRepository {
         });
     }
 
-    /**
-     * @return a lista (vazia se a pessoa nunca mandou nada), ou null se nao deu
-     * para descobrir quem e a pessoa na API ou a API respondeu erro.
-     */
     @WorkerThread
     @Nullable
     public List<ProdutoEmAnalise> buscarAgora() {
@@ -88,8 +75,6 @@ public class ProdutosEmAnaliseRepository {
             Response<FatiaResponse<ScanEnviadoResponse>> resposta =
                     api.scansDoUsuario(userId, 0, TAMANHO_PAGINA).execute();
             if (!resposta.isSuccessful()) {
-                // Id guardado de um banco que foi recriado: pode ser de outra
-                // pessoa (403) ou de ninguem (404). Esquece para buscar de novo.
                 if (resposta.code() == PROIBIDO || resposta.code() == NAO_ENCONTRADO) {
                     usuarios.esquecerId();
                 }
@@ -104,7 +89,6 @@ public class ProdutosEmAnaliseRepository {
             }
             return produtos;
         } catch (IOException | RuntimeException e) {
-            // Sem rede, ou um JSON que o Gson nao conseguiu ler.
             return null;
         }
     }
@@ -126,7 +110,6 @@ public class ProdutosEmAnaliseRepository {
                 dia(scan.createdAt),
                 decisao == null ? null : dia(decisao.decidedAt),
                 decisao == null ? null : texto(decisao.reason),
-                // Antes do SYNCED o produto pode nao estar no catalogo ainda.
                 "SYNCED".equals(scan.status) && scan.sync != null ? scan.sync.productId : null);
     }
 
@@ -144,8 +127,6 @@ public class ProdutosEmAnaliseRepository {
             case "REJECTED":
                 return Situacao.RECUSADO;
             default:
-                // PENDING_REVIEW, ou um status novo que o app ainda nao conhece:
-                // foi enviado e ninguem decidiu.
                 return Situacao.AGUARDANDO;
         }
     }
@@ -155,10 +136,6 @@ public class ProdutosEmAnaliseRepository {
         return valor == null || valor.trim().isEmpty() ? null : valor.trim();
     }
 
-    /**
-     * O dia no fuso do aparelho: um envio as 23h30 em Sao Paulo ja e dia
-     * seguinte em UTC, mas para a pessoa foi "hoje".
-     */
     @Nullable
     private static LocalDate dia(@Nullable String dataHora) {
         if (dataHora == null) {

@@ -22,43 +22,25 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-/**
- * Conversa com a Venus pela Venus-AI-api (POST /v1/chat).
- *
- * A API identifica a pessoa pelo token do Firebase, nunca pelo corpo, e guarda
- * o historico da conversa do lado dela - o app so manda a mensagem nova e o id
- * da conversa.
- */
 public class ConversaRepository {
 
     public enum Falha {
-        /** Nenhuma URL da API de IA foi configurada neste build. */
         NAO_CONFIGURADO,
         SEM_CONEXAO,
         DEMOROU,
         SESSAO_EXPIRADA,
-        /** 429: passou do limite de mensagens por minuto ou por dia da API. */
         MUITAS_MENSAGENS,
-        /** 422: a API recusou a mensagem (vazia ou longa demais). */
         MENSAGEM_INVALIDA,
         FALHA_SERVIDOR
     }
 
     public interface AoResponder {
-        /**
-         * @param conversationId o id que a API usou nesta conversa; e ele que
-         *                       vai nas proximas mensagens.
-         * @param expressao      a cara da Veninha que a API mandou com a
-         *                       resposta ("neutra" ou "magoada"); null se nao veio.
-         */
         void aoResponder(String resposta, @Nullable String conversationId,
                          @Nullable String expressao);
 
         void aoFalhar(Falha falha);
     }
 
-    // Uma mensagem por vez: a API nao trava a conversa, entao duas perguntas em
-    // paralelo podiam chegar fora de ordem no historico.
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
     private static final Handler PRINCIPAL = new Handler(Looper.getMainLooper());
 
@@ -81,11 +63,6 @@ public class ConversaRepository {
         this.sessao = sessao;
     }
 
-    /**
-     * Acorda o servidor sem esperar resposta. A primeira mensagem depois de o
-     * Render dormir leva mais de um minuto; disparado ao abrir a tela, esse
-     * tempo corre enquanto a pessoa ainda escreve.
-     */
     public void acordar() {
         if (api == null) {
             return;
@@ -93,22 +70,14 @@ public class ConversaRepository {
         api.acordar().enqueue(new Callback<Void>() {
             @Override
             public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
-                // So interessava o servidor de pe.
             }
 
             @Override
             public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
-                // Sem rede aqui, a mensagem de verdade avisa quando for enviada.
             }
         });
     }
 
-    /**
-     * @param conversationId o mesmo em todas as mensagens de uma conversa; a
-     *                       API guarda o historico por ele. Null na primeira:
-     *                       a API escolhe e devolve no callback.
-     * @param callback       sempre chamado na thread principal.
-     */
     public void enviar(String mensagem, @Nullable String conversationId, AoResponder callback) {
         if (api == null) {
             PRINCIPAL.post(() -> callback.aoFalhar(Falha.NAO_CONFIGURADO));
@@ -141,9 +110,6 @@ public class ConversaRepository {
             }
             Response<ChatResponse> resposta = api.conversar(PREFIXO_BEARER + token, corpo).execute();
 
-            // O Firebase so troca o token perto de vencer. Se a API recusou, pede
-            // um novo e tenta uma vez - repetir no 401 e seguro porque a API
-            // recusou antes de a mensagem entrar na conversa.
             if (resposta.code() == NAO_AUTORIZADO) {
                 token = sessao.token(true);
                 if (token == null) {
@@ -167,15 +133,12 @@ public class ConversaRepository {
                     || corpoResposta.resposta == null || corpoResposta.resposta.trim().isEmpty()) {
                 return Resultado.falha(Falha.FALHA_SERVIDOR);
             }
-            // A API sempre devolve o id; se um dia vier vazio, segue o enviado.
             String idUsado = corpoResposta.conversationId == null
                     || corpoResposta.conversationId.trim().isEmpty()
                     ? conversationId
                     : corpoResposta.conversationId;
             return Resultado.sucesso(corpoResposta.resposta.trim(), idUsado, corpoResposta.expressao);
         } catch (SocketTimeoutException e) {
-            // Estourar o tempo NAO e repetido: a API pode ter recebido a mensagem
-            // e ainda estar respondendo, e a pergunta entraria duas vezes.
             return Resultado.falha(Falha.DEMOROU);
         } catch (IOException e) {
             return Resultado.falha(Falha.SEM_CONEXAO);

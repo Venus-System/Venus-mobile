@@ -12,9 +12,7 @@ import retrofit2.http.Header;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 
-/** Separate from public catalogue calls; Firebase credentials never go to Cloudinary. */
 public interface ScanSubmissionApi {
-    /** Idempotent self-provisioning for the authenticated Firebase account. */
     @POST("api/users")
     Call<UserResponse> registerAccount(@Header("Authorization") String bearer, @Body UserRequest request);
 

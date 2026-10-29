@@ -61,7 +61,6 @@ public class Produto {
         return brandId;
     }
 
-    /** Null quando a API nao informou (ou o produto nao veio do catalogo). */
     public Boolean getBrazilianBrand() {
         return brazilianBrand;
     }

@@ -10,7 +10,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-/** Worker-thread only. Tokens are neither persisted nor logged. */
 public final class FirebaseScanAuthSession implements ScanAuthSession {
     @Override public String bearerFor(String expectedUid, boolean forceRefresh) throws IOException {
         if (Looper.myLooper() == Looper.getMainLooper())

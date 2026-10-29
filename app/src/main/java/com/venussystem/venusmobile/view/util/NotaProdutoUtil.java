@@ -6,7 +6,6 @@ import androidx.annotation.Nullable;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.FaixaNota;
 
-/** Banda de cor da nota (boa/media/ruim), usada nas telas que mostram o selo. */
 public final class NotaProdutoUtil {
 
     private NotaProdutoUtil() {
@@ -28,7 +27,6 @@ public final class NotaProdutoUtil {
         }
     }
 
-    /** Para o numero da nota sobre fundo claro: a versao escura da banda, que le melhor. */
     @ColorRes
     public static int textoPara(@Nullable Integer nota) {
         FaixaNota faixa = FaixaNota.de(nota);
@@ -45,7 +43,6 @@ public final class NotaProdutoUtil {
         }
     }
 
-    /** Fundo do selo circular - sempre a versao clara da mesma banda de corPara(). */
     @ColorRes
     public static int fundoPara(@Nullable Integer nota) {
         FaixaNota faixa = FaixaNota.de(nota);

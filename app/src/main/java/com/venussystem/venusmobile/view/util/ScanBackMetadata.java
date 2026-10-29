@@ -9,7 +9,6 @@ import static com.venussystem.venusmobile.view.util.ScanBackRules.REGISTRATION_M
 import static com.venussystem.venusmobile.view.util.ScanBackText.compactarEspacos;
 import static com.venussystem.venusmobile.view.util.ScanBackText.normalizar;
 
-/** Internal collaborator for ScanBackExtractor; not a second scan entry point. */
 final class ScanBackMetadata {
     private ScanBackMetadata() { }
 
@@ -47,11 +46,6 @@ final class ScanBackMetadata {
                     "(?<!\\d)(\\d{8}|\\d{12}|\\d{13}|\\d{14})(?!\\d)"
             );
 
-    /*
-     * ================================================================
-     * LOTE
-     * ================================================================
-     */
     static String extrairLote(
             List<String> lines
     ) {
@@ -74,7 +68,6 @@ final class ScanBackMetadata {
                             )
                             .matcher(n);
             if (!matcher.find()) {
-                // Alguns rótulos colocam o código na linha seguinte ao heading.
                 if (ehHeadingLoteIsolado(n) && i + 1 < lines.size()) {
                     String next = normalizar(lines.get(i + 1));
                     if (ehValorLoteValido(next)) {
@@ -127,7 +120,6 @@ final class ScanBackMetadata {
         if (n.matches("^[0-9]{8,14}$")) {
             return false;
         }
-        // Um lote exclusivamente alfabético é muito propenso a ser texto OCR.
         boolean hasLetter = n.matches(".*[A-Z].*");
         boolean hasDigit = n.matches(".*\\d.*");
         return (hasLetter && hasDigit)
@@ -141,11 +133,6 @@ final class ScanBackMetadata {
                 || "BATCH".equals(value);
     }
 
-    /*
-     * ================================================================
-     * REGISTRO
-     * ================================================================
-     */
     static String extrairRegistro(
             List<String> lines
     ) {
@@ -187,9 +174,6 @@ final class ScanBackMetadata {
                 }
             }
         }
-        /*
-         * Marcador em uma linha e valor na próxima.
-         */
         if (values.isEmpty()) {
             for (
                     int i = 0;
@@ -237,17 +221,9 @@ final class ScanBackMetadata {
         );
     }
 
-    /*
-     * ================================================================
-     * CONTEÚDO
-     * ================================================================
-     */
     static String extrairConteudo(
             List<String> lines
     ) {
-        /*
-         * 1) Contextual.
-         */
         for (
                 String line
                 : lines
@@ -281,9 +257,6 @@ final class ScanBackMetadata {
                 }
             }
         }
-        /*
-         * 2) Tamanho solto, somente quando parece conteúdo.
-         */
         for (
                 String line
                 : lines
@@ -313,7 +286,6 @@ final class ScanBackMetadata {
     }
 
     private static boolean conteudoPlausivel(String value) {
-        // Long numeric package codes are not a retail cosmetic quantity.
         return value.matches("\\d{1,5}(?:[.,]\\d{1,3})?")
                 && Double.parseDouble(value.replace(',', '.')) > 0;
     }
@@ -391,11 +363,6 @@ final class ScanBackMetadata {
                 + u;
     }
 
-    /*
-     * ================================================================
-     * BARCODE
-     * ================================================================
-     */
     static String extrairBarcode(
             List<String> lines
     ) {

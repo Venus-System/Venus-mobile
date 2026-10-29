@@ -21,7 +21,7 @@ public class ScanSubmissionPreparationTest {
     private ScanSubmissionDraft draft() throws Exception {
         Path front = temporary.newFile().toPath();
         Path back = temporary.newFile().toPath();
-        Files.write(front, new byte[]{1, 2, 3}); // File-copy fixture, not an image quality test.
+        Files.write(front, new byte[]{1, 2, 3});
         Files.write(back, new byte[]{4, 5, 6});
         ScanSubmissionDraft d = ScanSubmissionDraft.fromFront(front.toString(),
                 new ScanOcrResult("MARCA PRODUTO", Arrays.asList("MARCA", "PRODUTO")),
@@ -42,7 +42,7 @@ public class ScanSubmissionPreparationTest {
     private ScanSessionRequest request() throws Exception {
         return ScanSubmissionMapper.prepare(draft(), "user-a",
                 new ScanSessionRequest.Device("installation-1", "Android", "1.0", "Test device"),
-                new ScanSessionRequest.QualityCheck(.1, .5, true, "COMPLETED")); // Synthetic measured values.
+                new ScanSessionRequest.QualityCheck(.1, .5, true, "COMPLETED"));
     }
 
     @Test public void mapsOnlyServerFieldsAndKeepsRawNames() throws Exception {
@@ -69,8 +69,6 @@ public class ScanSubmissionPreparationTest {
         ScanSubmissionValidator.validate(r, false);
     }
     @Test public void capsDerivedBackFieldsAtApiLimitAndKeepsFullOcr() throws Exception {
-        // Verso real de 2659 caracteres em que 2200 caíram no otherText: a API
-        // aceita 2000 por campo extraído, e o envio parava no validador.
         String sobra = String.join("", Collections.nCopies(220, "TEXTO SOLTO"));
         String verso = "INGREDIENTES: AQUA, PARFUM " + sobra;
         ScanSubmissionDraft d = draft();

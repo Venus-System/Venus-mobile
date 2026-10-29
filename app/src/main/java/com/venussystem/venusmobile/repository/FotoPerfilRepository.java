@@ -25,21 +25,9 @@ import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import retrofit2.Response;
 
-/**
- * A foto de perfil da pessoa.
- *
- * A foto escolhida vira uma copia reduzida no aparelho, guardada por conta (ver
- * DadosDaConta): a tela mostra essa copia na hora, sem esperar a rede. Depois
- * ela vai para POST /api/users/{id}/avatar em segundo plano e, se falhar, fica
- * pendente para a proxima abertura do app.
- *
- * Sem foto no aparelho (outro celular, app reinstalado, foto posta pelo site),
- * o perfil pergunta a API e guarda o link que vier.
- */
 public class FotoPerfilRepository {
 
     public interface AoTerminar {
-        /** @param caminho o file:// ou o link da foto; null se nao deu para usar a imagem. */
         void aoTerminar(@Nullable String caminho);
     }
 
@@ -54,14 +42,9 @@ public class FotoPerfilRepository {
     private static final int PROIBIDO = 403;
     private static final int NAO_ENCONTRADO = 404;
 
-    // Duas filas: preparar a foto (abrir e reduzir) nao pode esperar o envio,
-    // que pode estar parado no cold start do Render - a pessoa quer ver a foto
-    // nova na hora. Cada fila tem uma thread so, entao dois envios da foto
-    // nunca correm juntos.
     private static final ExecutorService PREPARO = Executors.newSingleThreadExecutor();
     private static final ExecutorService REDE = Executors.newSingleThreadExecutor();
 
-    // A tela grava a foto nova e o envio marca o fim, cada um na sua thread.
     private static final Object TRAVA = new Object();
 
     private final Context context;
@@ -85,16 +68,11 @@ public class FotoPerfilRepository {
         this.principal = principal;
     }
 
-    /** O que mostrar agora: a copia no aparelho, o link da API, ou null se nao tem foto. */
     @Nullable
     public String caminho() {
         return prefs.getString(CHAVE_CAMINHO, null);
     }
 
-    /**
-     * Reduz e guarda a imagem escolhida (galeria ou camera) e avisa na thread
-     * principal. Quem chama manda enviar para a API depois.
-     */
     public void trocar(Uri origem, AoTerminar aoTerminar) {
         PREPARO.execute(() -> {
             String caminho;
@@ -102,7 +80,6 @@ public class FotoPerfilRepository {
                 caminho = salvarReduzida(origem);
                 guardarNova(caminho);
             } catch (IOException | RuntimeException e) {
-                // Imagem corrompida ou num formato que o Android nao abre.
                 caminho = null;
             }
             String resultado = caminho;
@@ -114,9 +91,6 @@ public class FotoPerfilRepository {
         REDE.execute(this::enviarAgora);
     }
 
-    /**
-     * @return true se a foto foi para a API nesta chamada.
-     */
     @WorkerThread
     @VisibleForTesting
     public boolean enviarAgora() {
@@ -126,7 +100,6 @@ public class FotoPerfilRepository {
         String caminho = caminho();
         File arquivo = arquivoLocal(caminho);
         if (arquivo == null || !arquivo.exists()) {
-            // O arquivo sumiu (limpeza do sistema): nao ha o que mandar.
             marcarEnviada(caminho);
             return false;
         }
@@ -147,14 +120,10 @@ public class FotoPerfilRepository {
                 return true;
             }
             if (codigo == 400 || codigo == 413 || codigo == 422) {
-                // A API recusou esta imagem (tipo, tamanho ou dimensao). Mandar
-                // a mesma de novo nao adianta: ela fica so no aparelho.
                 marcarEnviada(caminho);
                 return false;
             }
             if (codigo == PROIBIDO || codigo == NAO_ENCONTRADO) {
-                // O id guardado nao e mais desta pessoa (banco recriado): a
-                // proxima tentativa busca o cadastro de novo.
                 usuarios.esquecerId();
             }
             return false;
@@ -163,10 +132,6 @@ public class FotoPerfilRepository {
         }
     }
 
-    /**
-     * Sem foto no aparelho, pergunta a API e avisa na thread principal so se
-     * achou uma foto nova.
-     */
     public void buscarDaApiEmSegundoPlano(AoTerminar aoAchar) {
         REDE.execute(() -> {
             String link = buscarDaApiAgora();
@@ -176,16 +141,10 @@ public class FotoPerfilRepository {
         });
     }
 
-    /**
-     * @return o link da foto na API, se mudou; null se nao tem foto la, se
-     * nao mudou, ou se ja existe uma foto escolhida neste aparelho.
-     */
     @WorkerThread
     @VisibleForTesting
     @Nullable
     public String buscarDaApiAgora() {
-        // A foto escolhida aqui e a mais nova: a da API e a anterior a ela, ou
-        // a mesma, ja enviada.
         if (arquivoLocal(caminho()) != null) {
             return null;
         }
@@ -207,7 +166,6 @@ public class FotoPerfilRepository {
 
         synchronized (TRAVA) {
             String atual = caminho();
-            // Uma foto escolhida enquanto a API respondia vale mais que a de la.
             if (arquivoLocal(atual) != null || foto.url.equals(atual)) {
                 return null;
             }
@@ -216,7 +174,6 @@ public class FotoPerfilRepository {
         }
     }
 
-    /** Guarda a foto nova como a atual e apaga o arquivo da anterior. */
     @VisibleForTesting
     void guardarNova(String caminho) {
         synchronized (TRAVA) {
@@ -231,7 +188,6 @@ public class FotoPerfilRepository {
         }
     }
 
-    /** So desmarca se a foto continua a mesma: uma trocada no meio do envio segue pendente. */
     private void marcarEnviada(@Nullable String caminhoEnviado) {
         synchronized (TRAVA) {
             String atual = caminho();
@@ -251,7 +207,6 @@ public class FotoPerfilRepository {
         return destino.toURI().toString();
     }
 
-    /** O arquivo de uma foto escolhida neste aparelho; null para link da API ou sem foto. */
     @Nullable
     private static File arquivoLocal(@Nullable String caminho) {
         return ImagemReduzida.arquivoLocal(caminho);

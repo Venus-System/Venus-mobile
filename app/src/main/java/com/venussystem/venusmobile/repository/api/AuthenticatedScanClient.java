@@ -17,7 +17,6 @@ import retrofit2.Call;
 import retrofit2.Response;
 import okhttp3.ResponseBody;
 
-/** Synchronous worker-thread client with one bounded refresh on HTTP 401. */
 public final class AuthenticatedScanClient {
     private final ScanSubmissionApi api;
     private final ScanAuthSession session;
@@ -50,7 +49,6 @@ public final class AuthenticatedScanClient {
         return result;
     }
 
-    /** Creates only the authenticated user's account; never updates an existing account. */
     public UserResponse registerOwnAccount(String uid, String name, String email) throws IOException {
         if (blank(uid)) throw new ScanApiException(ScanApiException.Kind.AUTH, 0, "Entre novamente na sua conta.");
         UserRequest request = new UserRequest();
@@ -65,7 +63,6 @@ public final class AuthenticatedScanClient {
         return result;
     }
 
-    /** A duplicate account is not proof of authorization: confirm it with the protected GET. */
     public ScanUploadSignaturesResponse connectAccountAndGetSignatures(
             String uid, String name, String email, String scanId) throws IOException {
         validateScanId(scanId);
@@ -73,7 +70,6 @@ public final class AuthenticatedScanClient {
             registerOwnAccount(uid, name, email);
         } catch (ScanApiException e) {
             if (e.httpCode != 409) throw e;
-            // UID/email may already exist. Do not look up an admin route, modify or recreate it.
         }
         return signatures(uid, scanId);
     }
@@ -106,10 +102,6 @@ public final class AuthenticatedScanClient {
         throw new IOException("A sessão expirou. Entre novamente.");
     }
 
-    /**
-     * Reads only the generic error fields emitted by the API. OCR, identifiers,
-     * tokens and image data are deliberately ignored and never enter the log.
-     */
     private static String readSafeDiagnostic(ResponseBody body) {
         if (body == null) return null;
         try (ResponseBody closable = body) {

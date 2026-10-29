@@ -15,9 +15,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class SessaoFirebase implements SessaoUsuario {
-
-    // Com o token ainda valido o Firebase responde na hora, sem rede. So passa
-    // perto disso quando precisa renovar e a conexao esta ruim.
     private static final long LIMITE_TOKEN_SEGUNDOS = 30L;
 
     private final FirebaseAuth auth = FirebaseAuth.getInstance();
@@ -59,8 +56,6 @@ public class SessaoFirebase implements SessaoUsuario {
             if (e.getCause() instanceof FirebaseNetworkException) {
                 throw new IOException("Sem conexao para renovar o token.", e.getCause());
             }
-            // Conta desativada, apagada ou com a sessao revogada: nao adianta
-            // tentar de novo, a pessoa precisa entrar de novo.
             return null;
         } catch (TimeoutException e) {
             throw new IOException("O Firebase demorou para entregar o token.", e);

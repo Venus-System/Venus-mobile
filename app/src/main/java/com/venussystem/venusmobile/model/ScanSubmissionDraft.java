@@ -12,12 +12,6 @@ import java.util.List;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/**
- * Rascunho local de uma submissão de produto não cadastrado.
- *
- * Não salva em Mongo e não faz upload.
- * Apenas transporta os dados entre as Activities durante o fluxo atual.
- */
 public class ScanSubmissionDraft implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -60,13 +54,10 @@ public class ScanSubmissionDraft implements Serializable {
     }
 
     private String frontPhotoPath;
-    /** SHA-256 of the immutable local evidence copy; retained after redaction. */
     private String frontPhotoSha256;
     private String frontOcrText;
     private List<String> frontOcrLines;
-    /** Raw spatial evidence retained locally for section/audit tooling. */
     private List<ScanOcrTokenEvidence> frontOcrTokens;
-    /** Local OCR-pass metadata; excluded from the server request contract. */
     private List<ScanOcrAttempt> frontOcrAttempts;
 
     private List<String> brandCandidates;
@@ -79,13 +70,10 @@ public class ScanSubmissionDraft implements Serializable {
     private ScanCosmeticClassification classification;
 
     private String backPhotoPath;
-    /** SHA-256 of the immutable local evidence copy; retained after redaction. */
     private String backPhotoSha256;
     private String backOcrText;
     private List<String> backOcrLines;
-    /** Raw spatial evidence retained locally for section/audit tooling. */
     private List<ScanOcrTokenEvidence> backOcrTokens;
-    /** Local OCR-pass metadata; excluded from the server request contract. */
     private List<ScanOcrAttempt> backOcrAttempts;
     private ScanBackData backData;
 
@@ -321,10 +309,6 @@ public class ScanSubmissionDraft implements Serializable {
         }
     }
 
-    /**
-     * Removes the local copy of the label after the server acknowledged the
-     * submission. The server response remains as an idempotency receipt.
-     */
     public void redactSensitiveDataAfterSubmission() {
         frontPhotoPath = null;
         frontOcrText = "";

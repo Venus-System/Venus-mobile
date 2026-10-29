@@ -3,13 +3,7 @@ package com.venussystem.venusmobile.model;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-/**
- * Resultado da tentativa de identificar um produto
- * a partir dos dados extraídos da frente da embalagem.
- */
 public class ScanProductMatch {
-
-    /** Decision produced by the local catalogue resolver. */
     public enum ResolutionStatus {
         RESOLVED,
         NOT_FOUND,
@@ -49,9 +43,6 @@ public class ScanProductMatch {
         this.scoreGap = scoreGap;
     }
 
-    /**
-     * Cria resultado com produto identificado.
-     */
     @NonNull
     public static ScanProductMatch encontrado(
             @NonNull Produto produto,
@@ -83,9 +74,6 @@ public class ScanProductMatch {
         );
     }
 
-    /**
-     * Cria resultado quando nenhum produto foi identificado.
-     */
     @NonNull
     public static ScanProductMatch semMatch() {
         return new ScanProductMatch(
@@ -101,12 +89,6 @@ public class ScanProductMatch {
         );
     }
 
-    /**
-     * Creates an explicit unresolved result when the best catalogue candidate
-     * is too weak or too close to a second candidate. It is intentionally not
-     * considered found, so the UI can continue the review/new-product flow
-     * without opening the wrong catalogue item.
-     */
     @NonNull
     public static ScanProductMatch ambiguo(
             double score,
@@ -127,9 +109,6 @@ public class ScanProductMatch {
         );
     }
 
-    /**
-     * Cria resultado quando ocorreu erro durante o processo.
-     */
     @NonNull
     public static ScanProductMatch comErro(
             @Nullable String mensagem
@@ -189,7 +168,6 @@ public class ScanProductMatch {
         return needsReview;
     }
 
-    /** Difference between the best and second-best candidate, when available. */
     public double getScoreGap() {
         return scoreGap;
     }

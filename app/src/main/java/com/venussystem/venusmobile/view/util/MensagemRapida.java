@@ -12,12 +12,6 @@ import androidx.core.content.ContextCompat;
 import com.google.android.material.snackbar.Snackbar;
 import com.venussystem.venusmobile.R;
 
-/**
- * Aviso curto na base da tela, no lugar do Toast: uma barra por cima do
- * conteudo que some sozinha, sem botao. sucesso() e verde com o check (produto
- * salvo numa lista); neutra() e a mesma barra em cinza escuro, para o que nao
- * e um "deu certo" (produto tirado da lista).
- */
 public final class MensagemRapida {
 
     private MensagemRapida() {

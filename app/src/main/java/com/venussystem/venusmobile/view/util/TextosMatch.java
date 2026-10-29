@@ -18,14 +18,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Textos curtos da aba "Match com voce": titulo e uma linha por ponto, rotulo
- * dos chips, a conta e os erros da nota. A descricao longa do catalogo nao
- * entra, a tela ficava com texto demais.
- */
 public final class TextosMatch {
-
-    /** getString da tela; nos testes, um falso. */
     public interface Recursos {
         String texto(@StringRes int id, Object... argumentos);
     }
@@ -36,7 +29,6 @@ public final class TextosMatch {
     private static final Map<String, Integer> TITULO_GRAVE = new HashMap<>();
     private static final Map<String, Integer> TITULO_BENEFICIO = new HashMap<>();
     private static final Map<String, Integer> TITULO_AUSENCIA = new HashMap<>();
-    // Preferencias de evitar algo: a linha lembra que foi a pessoa que marcou.
     private static final Map<String, Integer> LINHA_EVITAR = new HashMap<>();
     private static final Map<String, Integer> CHIP = new HashMap<>();
     private static final Map<String, Integer> ERRO_DA_NOTA = new HashMap<>();
@@ -100,7 +92,6 @@ public final class TextosMatch {
         Integer id = tabelaDeTitulo(ponto.tipo).get(ponto.slug);
         if (id != null) return r.texto(id);
         if (ponto.efeito != null && !ponto.efeito.trim().isEmpty()) return ponto.efeito;
-        // Etiqueta que so a Classificacao conhece, sem texto do catalogo.
         String rotulo = EtiquetasDoPerfil.rotulos(Collections.singleton(ponto.slug),
                 Collections.emptySet()).get(0);
         switch (ponto.tipo) {
@@ -113,7 +104,6 @@ public final class TextosMatch {
         }
     }
 
-    /** Vazio para a ausencia: o titulo ja diz tudo. */
     public static String linha(Recursos r, ResultadoMatch.Ponto ponto) {
         if (ponto.tipo == ResultadoMatch.Tipo.AUSENCIA || ponto.ingredientes.isEmpty()) {
             return "";
@@ -128,7 +118,6 @@ public final class TextosMatch {
                 : r.texto(R.string.match_linha_encontrado, ingredientes);
     }
 
-    /** Rotulos dos chips, sem repetir, no maximo {@code maximo}. */
     public static List<String> chips(Recursos r, List<ResultadoMatch.Destaque> destaques,
                                      int maximo) {
         Set<String> rotulos = new LinkedHashSet<>();
@@ -141,7 +130,6 @@ public final class TextosMatch {
         return new ArrayList<>(rotulos);
     }
 
-    /** "Glycerin", "Glycerin e Panthenol" ou "Glycerin e mais 4". */
     public static String ingredientes(Recursos r, List<String> nomes) {
         if (nomes.isEmpty()) return "";
         String primeiro = formatoTitulo(nomes.get(0));
@@ -152,7 +140,6 @@ public final class TextosMatch {
         return r.texto(R.string.match_ingredientes_mais, primeiro, nomes.size() - 1);
     }
 
-    /** Pontos da conta da nota com ate uma casa: "24,5", "46,2" ou "0". */
     public static String pontos(double valor) {
         NumberFormat formato = NumberFormat.getNumberInstance(PT_BR);
         formato.setMaximumFractionDigits(1);
@@ -160,18 +147,12 @@ public final class TextosMatch {
         return formato.format(valor);
     }
 
-    /**
-     * Texto para o "code" do erro da Classificacao; a message e para dev. Null
-     * quando nao e para mostrar nada, como o ANALYSIS_NOT_FOUND de quem nunca
-     * analisou o produto e a falha de rede.
-     */
     @Nullable
     @StringRes
     public static Integer erroDaNota(@Nullable String codigo) {
         return codigo == null ? null : ERRO_DA_NOTA.get(codigo);
     }
 
-    /** INCI vem em maiusculas ("BUTYLENE GLYCOL"); na tela fica "Butylene Glycol". */
     static String formatoTitulo(String nome) {
         if (nome == null || !nome.equals(nome.toUpperCase(Locale.ROOT))) {
             return nome == null ? "" : nome;

@@ -4,7 +4,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.venussystem.venusmobile.R;
 
-/** Câmera da frente: foto usada para procurar o produto no catálogo. */
 public class ScanCameraFrontActivity extends ScanCameraBaseActivity {
 
     @Override

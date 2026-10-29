@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Caixa de "lista vazia". O tracejado precisa de <stroke dashWidth/dashGap>;
-     um shape com solid nao consegue desenhar borda pontilhada. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <solid android:color="@android:color/transparent" />

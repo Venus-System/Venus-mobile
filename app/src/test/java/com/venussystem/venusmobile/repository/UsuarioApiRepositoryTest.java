@@ -63,8 +63,6 @@ public class UsuarioApiRepositoryTest {
         return "{\"id\":" + id + ",\"firebaseUid\":\"" + uid + "\",\"name\":\"Ana\",\"status\":\"ACTIVE\"}";
     }
 
-    // ---- Buscar ----
-
     @Test
     public void usuarioJaCadastrado_devolveOIdDaBusca() throws InterruptedException {
         server.enqueue(fatia(usuario(42, "uid-ana")));
@@ -97,8 +95,6 @@ public class UsuarioApiRepositoryTest {
         server.takeRequest();
         assertEquals("POST", server.takeRequest().getMethod());
     }
-
-    // ---- Criar ----
 
     @Test
     public void usuarioNovo_criaComNomeEmailEStatusAtivo() throws InterruptedException {
@@ -144,8 +140,6 @@ public class UsuarioApiRepositoryTest {
         assertEquals(3, server.getRequestCount());
     }
 
-    // ---- Falhas ----
-
     @Test
     public void buscaComErro_naoCriaParaNaoDuplicar() {
         server.enqueue(json(503, "{\"status\":503}"));
@@ -171,8 +165,6 @@ public class UsuarioApiRepositoryTest {
         assertNull(repository.idEmCache());
         assertEquals(0, server.getRequestCount());
     }
-
-    // ---- Cache por UID ----
 
     @Test
     public void trocarDeConta_naoReaproveitaOIdDaOutraPessoa() {

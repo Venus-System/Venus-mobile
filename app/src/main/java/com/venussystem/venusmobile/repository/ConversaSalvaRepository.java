@@ -21,33 +21,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * A conversa com a Venus guardada no aparelho, no banco SQLite (tabelas
- * conversa e mensagem do VenusDatabase), separada por conta.
- *
- * A Venus-AI-api guarda o historico do lado dela, mas nao tem rota para
- * devolve-lo. Sem esta copia, reabrir o chat mostraria uma tela vazia enquanto
- * a Venus ainda lembra de tudo. So entram perguntas que tiveram resposta: o
- * "Digitando..." e os avisos de erro sao da tela, nao da conversa.
- *
- * Sair da conta apaga (AutenticacaoRepository.sair), porque a conversa costuma
- * ter pele, alergias e saude da pessoa.
- */
 public class ConversaSalvaRepository {
 
-    // O arquivo de preferencias onde a conversa ficava antes do banco. So e
-    // lido uma vez, para trazer a conversa de quem atualizou o app.
     static final String ARQUIVO = "venus_conversa";
     private static final String CHAVE = "conversa";
 
-    // As mais antigas saem primeiro. A Venus nao perde nada com isso: o
-    // historico completo continua com ela.
     @VisibleForTesting
     static final int LIMITE_MENSAGENS = 100;
 
-    /** O que a tela precisa para retomar a conversa. */
     public static final class Conversa {
-        /** Null antes da primeira resposta: a API escolhe o id. */
         @Nullable
         public final String conversationId;
         public final List<Mensagem> mensagens;
@@ -58,7 +40,6 @@ public class ConversaSalvaRepository {
         }
     }
 
-    // Formato do arquivo antigo, so para a migracao.
     private static final class Gravada {
         String conversationId;
         List<MensagemGravada> mensagens;
@@ -96,16 +77,6 @@ public class ConversaSalvaRepository {
         return new Conversa(conversa == null ? null : conversa.conversationId, mensagens);
     }
 
-    /**
-     * Guarda uma pergunta e a resposta dela.
-     *
-     * @param idEnviado o id com que a pergunta foi mandada. Se a conversa
-     *                  guardada ja e outra (a pessoa comecou uma nova enquanto
-     *                  a resposta vinha), o par e descartado em vez de cair na
-     *                  conversa errada.
-     * @param idUsado   o id que a API devolveu; vale para as proximas.
-     * @return false quando o par foi descartado.
-     */
     public boolean adicionarPar(@Nullable String idEnviado, String pergunta, String resposta,
                                 @Nullable String idUsado) {
         return banco.runInTransaction(() -> {
@@ -123,14 +94,6 @@ public class ConversaSalvaRepository {
         });
     }
 
-    /**
-     * Esquece as mensagens e comeca outra conversa na API.
-     *
-     * O id novo ja fica gravado: sem id, a API cairia de volta na conversa
-     * pelo UID, que e justamente a antiga.
-     *
-     * @return o id da conversa nova.
-     */
     public String novaConversa() {
         String id = UUID.randomUUID().toString();
         banco.runInTransaction(() -> {
@@ -141,18 +104,12 @@ public class ConversaSalvaRepository {
     }
 
     public void apagar() {
-        // Sincrono: quem chama sai da conta logo em seguida.
         banco.runInTransaction(() -> {
             dao.apagarMensagens(uid);
             dao.apagarConversa(uid);
         });
     }
 
-    /**
-     * Traz para o banco a conversa que estava no arquivo de preferencias, de
-     * antes do banco existir, e apaga o arquivo. Depois da primeira vez nao
-     * acha mais nada.
-     */
     private void trazerDoArquivoAntigo(Context context, @Nullable String uidDaConta) {
         SharedPreferences antigo = DadosDaConta.prefs(context, ARQUIVO, uidDaConta);
         String json = antigo.getString(CHAVE, null);
@@ -163,7 +120,6 @@ public class ConversaSalvaRepository {
         try {
             gravada = new Gson().fromJson(json, Gravada.class);
         } catch (JsonParseException e) {
-            // Arquivo estragado nao pode travar o chat: fica so o banco.
         }
         if (gravada != null && dao.conversa(uid) == null) {
             List<MensagemEntity> mensagens = new ArrayList<>();

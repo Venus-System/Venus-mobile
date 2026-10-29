@@ -19,23 +19,14 @@ import static com.venussystem.venusmobile.repository.ScanCatalogText.melhorSimil
 import static com.venussystem.venusmobile.repository.ScanCatalogText.normalizarCampo;
 import static com.venussystem.venusmobile.repository.ScanCatalogText.removerMarcaDoTexto;
 
-/** Internal collaborator for ScanProductMatchRepository; not a second scan entry point. */
 final class ScanCatalogMatcher {
     private ScanCatalogMatcher() { }
 
     private static final double MIN_BRAND_SCORE = 0.80;
     private static final double MIN_BRAND_SCORE_GAP = 0.05;
 
-    /*
-     * Com marca encontrada, usamos um threshold de produto
-     * suficientemente seguro, mas sem exigir similaridade
-     * entre o texto inteiro do OCR e o nome inteiro do produto.
-     */
     private static final double MIN_PRODUCT_SCORE_WITH_BRAND = 0.72;
 
-    /*
-     * Sem marca, continuamos muito mais rigorosos.
-     */
     private static final double MIN_PRODUCT_SCORE_WITHOUT_BRAND = 0.90;
 
     private static final double MIN_SCORE_GAP_WITH_BRAND = 0.05;
@@ -59,21 +50,11 @@ final class ScanCatalogMatcher {
                 && produtosOCR.isEmpty()) {
             return ScanProductMatch.semMatch();
         }
-        /*
-         * =========================================================
-         * 1. MARCA PRIMEIRO
-         * =========================================================
-         */
         BrandMatch marcaEncontrada =
                 encontrarMarca(
                         marcasOCR,
                         catalogo
                 );
-        /*
-         * Fallback controlado:
-         * se o extractor não colocou a marca em brandCandidates,
-         * também procuramos nos candidatos de produto.
-         */
         if (marcaEncontrada == null) {
             marcaEncontrada =
                     encontrarMarca(
@@ -81,11 +62,6 @@ final class ScanCatalogMatcher {
                             catalogo
                     );
         }
-        /*
-         * =========================================================
-         * 2. MARCA ENCONTRADA
-         * =========================================================
-         */
         if (marcaEncontrada != null) {
             if (marcaEncontrada.segundoScore > 0.0
                     && marcaEncontrada.score - marcaEncontrada.segundoScore
@@ -97,10 +73,6 @@ final class ScanCatalogMatcher {
                         null
                 );
             }
-            /*
-             * Restringe o catálogo somente aos produtos
-             * pertencentes à marca identificada.
-             */
             List<Produto> produtosDaMarca =
                     new ArrayList<>();
             for (Produto produto :
@@ -124,10 +96,6 @@ final class ScanCatalogMatcher {
                 return ScanProductMatch
                         .semMatch();
             }
-            /*
-             * Agora procura o produto somente dentro
-             * dos produtos daquela marca.
-             */
             ProductMatch produtoEncontrado =
                     encontrarProduto(
                             produtosOCR,
@@ -151,14 +119,6 @@ final class ScanCatalogMatcher {
                                     - produtoEncontrado
                                     .segundoScore
                     ) < MIN_SCORE_GAP_WITH_BRAND;
-            /*
-             * Um nome mais específico pode saturar o mesmo score do nome
-             * curto. Ex.: "CLINICAL CLEAN MEN" e "CLINICAL CLEAN" recebem
-             * as mesmas evidências de uma leitura que contém os três termos,
-             * embora o primeiro explique mais texto identificado. O matcher
-             * guarda essa evidência como desempate; não é uma autorização
-             * para aceitar dois candidatos com a mesma especificidade.
-             */
             if (ambiguo
                     && produtoEncontrado.tokensAlvoExatos
                     > produtoEncontrado.segundoTokensAlvoExatos
@@ -182,19 +142,6 @@ final class ScanCatalogMatcher {
                         produtoEncontrado.candidatoOCR
                 );
             }
-            /*
-             * =====================================================
-             * PRODUTO ENCONTRADO
-             * =====================================================
-             *
-             * Aqui devolvemos o OBJETO REAL DO CATÁLOGO.
-             *
-             * O ScanSuccessFrontActivity pega:
-             *
-             * match.getProduto().getId()
-             *
-             * e abre a DetalheProdutoActivity.
-             */
             return ScanProductMatch.encontrado(
                     produtoEncontrado.produto,
                     produtoEncontrado.score,
@@ -203,11 +150,6 @@ final class ScanCatalogMatcher {
                     produtoEncontrado.score - produtoEncontrado.segundoScore
             );
         }
-        /*
-         * =========================================================
-         * 3. SEM MARCA
-         * =========================================================
-         */
         ProductMatch fallback =
                 encontrarProduto(
                         produtosOCR,
@@ -250,9 +192,6 @@ final class ScanCatalogMatcher {
         );
     }
 
-    /**
-     * Encontra a marca mais provável no catálogo.
-     */
     private static BrandMatch encontrarMarca(
             @NonNull List<String> candidatosOCR,
             @NonNull List<Produto> catalogo
@@ -305,9 +244,6 @@ final class ScanCatalogMatcher {
         return melhor;
     }
 
-    /**
-     * Procura o melhor produto dentro do catálogo recebido.
-     */
     private static ProductMatch encontrarProduto(
             @NonNull List<String> candidatosOCR,
             @NonNull List<Produto> catalogo,
@@ -315,16 +251,6 @@ final class ScanCatalogMatcher {
     ) {
         List<String> candidatos =
                 new ArrayList<>();
-        /*
-         * Remove a marca das strings de produto para que,
-         * por exemplo:
-         *
-         * REXONA CLINICAL
-         *
-         * vire:
-         *
-         * CLINICAL
-         */
         for (String candidato :
                 candidatosOCR) {
             if (candidato == null) {
@@ -348,11 +274,6 @@ final class ScanCatalogMatcher {
         if (candidatos.isEmpty()) {
             return null;
         }
-        /*
-         * Termos fortes continuam sendo úteis como evidência,
-         * mas NÃO serão mais usados como denominador principal
-         * do score.
-         */
         List<String> termosFortes =
                 extrairTermosFortes(
                         candidatos
@@ -360,17 +281,6 @@ final class ScanCatalogMatcher {
         if (termosFortes.isEmpty()) {
             return null;
         }
-        /*
-         * Gera frases a partir das próprias linhas/candidatos.
-         *
-         * Isso permite reconhecer:
-         *
-         * NATIVA SPA
-         * CREMA INVISIBLE
-         * CONTROL DEL OLOR
-         *
-         * quando essas frases aparecem dentro do nome do produto.
-         */
         List<String> frases =
                 gerarFrasesProduto(
                         candidatos

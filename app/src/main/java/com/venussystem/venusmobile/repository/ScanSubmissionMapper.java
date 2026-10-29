@@ -13,13 +13,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/** Preserves raw OCR and selects the strongest front candidate without trusting OCR blindly. */
 public final class ScanSubmissionMapper {
     private ScanSubmissionMapper() { }
-    // The API accepts up to 2000 characters per extracted field. These fields are
-    // derived from the back OCR, which still goes whole in fullText (up to 20000),
-    // so capping them loses nothing; letting them through made the validator
-    // reject the whole scan, and a retry resent the same text.
     private static final int EXTRACTED_FIELD_LIMIT = 2000;
     private static final Set<String> GENERIC_FRONT_WORDS = new HashSet<>(Arrays.asList(
             "CREME", "LOCAO", "GEL", "SPRAY", "AEROSOL", "FRESH", "ORIGINAL",
@@ -35,11 +30,6 @@ public final class ScanSubmissionMapper {
         return prepare(draft, uid, device, quality, null);
     }
 
-    /**
-     * Builds the wire request using the catalogue preflight when available.
-     * Only a unique resolved match is promoted to the canonical INCI name;
-     * uncertain tokens remain as their original OCR text for admin review.
-     */
     public static ScanSessionRequest prepare(ScanSubmissionDraft draft, String uid,
             ScanSessionRequest.Device device, ScanSessionRequest.QualityCheck quality,
             ScanIngredientCatalog.Report ingredientCatalog) {
@@ -75,7 +65,6 @@ public final class ScanSubmissionMapper {
         front.productName = bestFrontCandidate(draft.getProductCandidates());
         front.presentation = bestFrontCandidate(draft.getPresentationCandidates());
         front.capacity = draft.getCapacity();
-        // Product type is not a backend category, nor are back claims front claims.
         request.ocr.front.extracted = front;
         request.ocr.back = new ScanSessionRequest.Back();
         request.ocr.back.fullText = draft.getBackOcrText();
@@ -114,11 +103,6 @@ public final class ScanSubmissionMapper {
         return request;
     }
 
-    /**
-     * The existing API accepts only rawName and computes normalizedName server-side.
-     * For high-confidence OCR corrections, send the canonical value so Mongo matching
-     * can resolve it; the original OCR remains in fullText/ingredientsText for audit.
-     */
     private static String ingredientNameForWire(ScanBackIngredientCandidate candidate,
                                                 ScanIngredientCatalog.Report report) {
         if (report != null && report.matches != null) {
@@ -128,13 +112,10 @@ public final class ScanSubmissionMapper {
                             && match.inciName != null && !match.inciName.trim().isEmpty()) {
                         return match.inciName.trim();
                     }
-                    // Do not apply a local guess after the catalogue report
-                    // has classified the token as uncertain.
                     return candidate.getRawName();
                 }
             }
         }
-        // Re-evaluate saved candidates too; do not trust old aggressive corrections.
         String raw = candidate.getRawName();
         String corrected = ScanIngredientPolicy.correct(raw);
         return corrected.equals(ScanIngredientPolicy.normalize(raw)) ? raw : corrected;
@@ -145,7 +126,6 @@ public final class ScanSubmissionMapper {
                 ? value : value.substring(0, EXTRACTED_FIELD_LIMIT);
     }
 
-    /** Preserve the API enum contract for the quality check payload. */
     private static String qualityStatusForApi(String status) {
         return status;
     }

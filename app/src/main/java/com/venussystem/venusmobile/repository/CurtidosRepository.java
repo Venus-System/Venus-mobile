@@ -18,23 +18,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Os produtos que a pessoa curtiu (o coracao na tela do produto), guardados no
- * banco SQLite do aparelho (tabela curtido do VenusDatabase) e separados por
- * conta, como as listas. A copia em /api/favorites e mantida pela
- * SincronizacaoCurtidos.
- *
- * A ordem guardada e a da tela: o mais recente primeiro.
- *
- * Cada toque deixa o produto pendente de curtir ou de descurtir na API, e so
- * vale a ultima vontade: curtir tira o produto da fila de descurtir e
- * vice-versa. Assim um envio que termina depois de a pessoa mudar de ideia
- * nao apaga a mudanca - ela continua na outra fila e vai no proximo envio.
- */
 public class CurtidosRepository {
 
-    // O arquivo de preferencias onde os curtidos ficavam antes do banco. So e
-    // lido uma vez, para trazer os curtidos de quem atualizou o app.
     static final String ARQUIVO = "venus_curtidos";
 
     private static final String CHAVE_PRODUTOS = CurtidoEntity.PRODUTOS;
@@ -64,9 +49,6 @@ public class CurtidosRepository {
     public boolean contem(long produtoId) {
         return getProdutoIds().contains(produtoId);
     }
-
-    // A tela grava e a sincronizacao marca o envio, cada uma na sua thread: a
-    // transacao do banco faz o papel da trava que existia antes.
 
     public void curtir(long produtoId) {
         banco.runInTransaction(() -> {
@@ -98,8 +80,6 @@ public class CurtidosRepository {
         });
     }
 
-    // ---- O que a SincronizacaoCurtidos usa ----
-
     List<Long> paraCurtirNaApi() {
         return ler(CHAVE_PARA_CURTIR);
     }
@@ -112,31 +92,20 @@ public class CurtidosRepository {
         return !paraCurtirNaApi().isEmpty() || !paraDescurtirNaApi().isEmpty();
     }
 
-    /** O POST desse produto foi aceito (ou ele ja estava curtido na API). */
     void marcarCurtidaEnviada(long produtoId) {
         tirarDaFila(CHAVE_PARA_CURTIR, produtoId);
     }
 
-    /** O DELETE desse produto foi aceito (ou ele ja nao estava curtido na API). */
     void marcarDescurtidaEnviada(long produtoId) {
         tirarDaFila(CHAVE_PARA_DESCURTIR, produtoId);
     }
 
-    /**
-     * Troca os curtidos pelos da API: o servidor vence (o que foi curtido ou
-     * descurtido pelo site aparece aqui), menos o que mudou no aparelho e
-     * ainda esta na fila - esses continuam como a pessoa deixou.
-     *
-     * @param daApi na ordem da tela, o mais recente primeiro.
-     * @return true se os curtidos mudaram.
-     */
     boolean trocarPelosDaApi(List<Long> daApi) {
         return banco.runInTransaction(() -> {
             List<Long> atuais = ler(CHAVE_PRODUTOS);
             Set<Long> paraCurtir = new LinkedHashSet<>(ler(CHAVE_PARA_CURTIR));
             Set<Long> paraDescurtir = new LinkedHashSet<>(ler(CHAVE_PARA_DESCURTIR));
 
-            // Os curtidos aqui que ainda nao subiram ficam no topo, na ordem da tela.
             Set<Long> novos = new LinkedHashSet<>();
             for (Long produtoId : atuais) {
                 if (paraCurtir.contains(produtoId)) {
@@ -171,7 +140,6 @@ public class CurtidosRepository {
         return new ArrayList<>(dao.ids(uid, lista));
     }
 
-    // Chamado sempre de dentro de uma transacao.
     private void gravar(List<Long> produtos, List<Long> paraCurtir, List<Long> paraDescurtir) {
         gravarLista(CHAVE_PRODUTOS, produtos);
         gravarLista(CHAVE_PARA_CURTIR, paraCurtir);
@@ -187,11 +155,6 @@ public class CurtidosRepository {
         dao.inserir(linhas);
     }
 
-    /**
-     * Traz para o banco os curtidos que estavam no arquivo de preferencias, de
-     * antes do banco existir, e apaga o arquivo. Depois da primeira vez nao
-     * acha mais nada.
-     */
     private void trazerDoArquivoAntigo(Context context, @Nullable String uidDaConta) {
         SharedPreferences antigo = DadosDaConta.prefs(context, ARQUIVO, uidDaConta);
         if (antigo.getAll().isEmpty()) {
@@ -222,7 +185,6 @@ public class CurtidosRepository {
         if (ids == null) {
             return new ArrayList<>();
         }
-        // Sem repetidos nem nulos: no banco o produto e chave dentro da lista.
         Set<Long> unicos = new LinkedHashSet<>(Arrays.asList(ids));
         unicos.remove(null);
         return new ArrayList<>(unicos);

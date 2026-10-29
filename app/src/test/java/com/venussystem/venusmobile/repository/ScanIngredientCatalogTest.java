@@ -103,7 +103,7 @@ public class ScanIngredientCatalogTest {
         assertEquals(" novel official ingredient ", r.matches.get(0).rawName);
         assertEquals(Long.valueOf(2), r.matches.get(1).ingredientId);
         assertEquals("NOT_FOUND", r.matches.get(2).status);
-        assertEquals(8, api.calls); // 4 INCI + 3 alias lookups + 1 canonical alias lookup.
+        assertEquals(8, api.calls);
     }
     @Test public void inciIsPreferredOverAliasAndAliasUsesCanonicalIngredient() throws Exception {
         Fake api = new Fake();

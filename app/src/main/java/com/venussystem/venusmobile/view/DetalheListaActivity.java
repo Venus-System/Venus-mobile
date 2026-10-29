@@ -45,14 +45,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Uma lista do proprio usuario. Recebe pelo Intent o que ja se sabe dela; os
- * produtos vem do catalogo ja em memoria (ver ProdutoRepository) filtrados
- * pelos ids guardados no aparelho para esta lista (ver ListaItemRepository).
- *
- * O que muda aqui e salvo no aparelho na hora e vai para a API quando a tela
- * fecha (ver SincronizacaoListas), juntando todas as mudancas num envio so.
- */
 public class DetalheListaActivity extends AppCompatActivity {
 
     public static final String EXTRA_ID = "id";
@@ -145,15 +137,12 @@ public class DetalheListaActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Recarrega toda vez que a tela volta: um produto aberto daqui pode ter
-        // sido tirado desta lista (ou salvo nela) pelo marcador da tela dele.
         carregarItens();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        // Se nada mudou, a sincronizacao nao vai na rede.
         new SincronizacaoListas(this).sincronizarEmSegundoPlano();
     }
 
@@ -235,9 +224,6 @@ public class DetalheListaActivity extends AppCompatActivity {
                 .setNegativeButton(R.string.lista_cancelar, null)
                 .create();
 
-        // Botao positivo tratado a mao (sem passar o listener pro Builder):
-        // um nome vazio precisa manter o dialog aberto mostrando o erro, e o
-        // listener do Builder sempre fecha o dialog depois de rodar.
         dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             String novoNome = campo.getText().toString().trim();
             if (novoNome.isEmpty()) {
@@ -259,7 +245,6 @@ public class DetalheListaActivity extends AppCompatActivity {
     private void mostrarDialogoEditarDescricao() {
         View conteudo = getLayoutInflater().inflate(R.layout.dialog_editar_texto, null);
         EditText campo = conteudo.findViewById(R.id.editTexto);
-        // O layout do dialogo e o mesmo do nome, entao o limite vem aqui.
         int limite = getResources().getInteger(R.integer.limite_descricao_lista);
         campo.setFilters(new InputFilter[]{new InputFilter.LengthFilter(limite)});
         campo.setText(descricaoAtual);
@@ -292,11 +277,6 @@ public class DetalheListaActivity extends AppCompatActivity {
                 .show();
     }
 
-    /**
-     * Le os ids guardados para esta lista e busca cada produto no catalogo ja
-     * em memoria. Um id sem produto correspondente (catalogo ainda carregando,
-     * ou produto removido) e simplesmente ignorado.
-     */
     private void carregarItens() {
         List<Produto> produtos = new ArrayList<>();
         for (Long id : itemRepository.getProdutoIds(listaId)) {

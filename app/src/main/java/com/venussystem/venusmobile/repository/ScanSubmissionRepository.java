@@ -30,10 +30,6 @@ public class ScanSubmissionRepository {
     public ScanSubmissionRepository(Context context) {
         java.nio.file.Path noBackup = context.getApplicationContext().getNoBackupFilesDir().toPath();
         store = new ScanDraftStore(noBackup.resolve("scan-submissions"));
-        // The catalogue is public reference data, not user evidence. Keep one
-        // atomic app-private snapshot so a scan with many ingredients does not
-        // issue one network request per token. It is refreshed by
-        // ScanIngredientCatalog after its bounded TTL and is safe to discard.
         ingredientCatalogCache = new ScanIngredientCatalogCache(
                 noBackup.resolve("scan-catalog").resolve("ingredients.json"));
     }
@@ -59,7 +55,6 @@ public class ScanSubmissionRepository {
         void failed(Exception exception);
     }
 
-    /** Envios desta conta que ficaram pela metade (ver ReenvioDeScan). */
     public java.util.List<ScanDraftStore.SavedDraft> pendentes(String uid) throws java.io.IOException {
         return store.pending(uid);
     }
@@ -68,7 +63,6 @@ public class ScanSubmissionRepository {
         return store.lastModifiedMs(uid, scanId);
     }
 
-    /** Sends the durable, uploaded draft to MongoDB exactly once from the app's perspective. */
     public void submitToMongo(String uid, String scanId, Context context, SubmissionCallback callback) {
         IO.execute(() -> {
             String stage = "AUTH";
@@ -88,9 +82,6 @@ public class ScanSubmissionRepository {
                     throw new IllegalStateException("As duas fotos precisam estar confirmadas antes do cadastro.");
                 saved.frontUpload.validate(scanId, "front");
                 saved.backUpload.validate(scanId, "back");
-                // A catalogue outage must not erase OCR evidence or prevent a
-                // draft from reaching the existing PENDING_REVIEW workflow.
-                // The backend will keep these raw names pending for administrative review.
                 if (saved.ingredientCatalog == null) {
                     saved.ingredientCatalog = unresolvedCatalog(saved.draft);
                 }
@@ -100,8 +91,6 @@ public class ScanSubmissionRepository {
                             saved.draft.getBackData().getIngredients()
                     );
                 } catch (IllegalArgumentException invalidReport) {
-                    // A report from an older app/cache version must never
-                    // promote an ID against a different OCR position.
                     Log.w("VENUS_SCAN_SUBMISSION", "CATALOG_REPORT_RESET scanId=" + scanId);
                     saved.ingredientCatalog = unresolvedCatalog(saved.draft);
                 }
@@ -111,7 +100,6 @@ public class ScanSubmissionRepository {
                 String version;
                 try { version = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName; }
                 catch (Exception ignored) { version = "unknown"; }
-                // Mongo's persisted contract uses lowercase platform tokens.
                 ScanSessionRequest.Device device = new ScanSessionRequest.Device(deviceId, "android", version,
                         Build.MANUFACTURER + " " + Build.MODEL);
                 ScanSessionRequest request = ScanSubmissionMapper.prepare(saved.draft, uid, device, null,
@@ -172,7 +160,6 @@ public class ScanSubmissionRepository {
         return report;
     }
 
-    /** Read-only catalog preflight. Does not submit to Mongo or mark the product approved. */
     public void checkIngredients(String uid, String scanId, Callback callback) {
         IO.execute(() -> {
             try {
@@ -206,8 +193,6 @@ public class ScanSubmissionRepository {
                         main.post(() -> callback.saved(result));
                         return;
                     } catch (Exception ignored) {
-                        // Fall through to the normal error callback if the
-                        // draft/account cannot be verified locally.
                     }
                 }
                 Log.w("VENUS_SCAN_INGREDIENTS", "FAILED scanId=" + scanId
@@ -228,7 +213,6 @@ public class ScanSubmissionRepository {
         return error instanceof java.io.IOException;
     }
 
-    /** Uploads both photos and leaves the durable draft ready for the catalog/POST stages. */
     public void uploadPhotos(String uid, String scanId, ScanUploadSignaturesResponse signatures, UploadCallback callback) {
         IO.execute(() -> {
             try {
@@ -258,12 +242,10 @@ public class ScanSubmissionRepository {
         });
     }
 
-    /** Only a GET. Signatures stay in memory and are never written into the draft. */
     public void requestUploadSignatures(String uid, String scanId, SignaturesCallback callback) {
         requestUploadSignatures(uid, scanId, false, callback);
     }
 
-    /** Explicit account-connection action. Never called automatically because of a 403. */
     public void connectAccountAndRequestSignatures(String uid, String scanId, SignaturesCallback callback) {
         requestUploadSignatures(uid, scanId, true, callback);
     }
@@ -290,7 +272,6 @@ public class ScanSubmissionRepository {
                 }
                 main.post(() -> {
                     try {
-                        // Discard the response if the account changed while the GET was running.
                         auth.requireSameUser(saved.firebaseUid);
                     } catch (Exception e) {
                         logSignatureFailure(scanId, e);
@@ -313,7 +294,6 @@ public class ScanSubmissionRepository {
         Log.w("VENUS_SCAN_SIGNATURES", "FAILED scanId=" + scanId + " reason=" + reason + " http=" + code);
     }
 
-    /** Computes quality and saves the durable local snapshot before any network operation. */
     public void prepareLocally(String uid, ScanSubmissionDraft draft, Callback callback) {
         IO.execute(() -> {
             try {

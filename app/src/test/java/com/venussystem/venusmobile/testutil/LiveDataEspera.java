@@ -17,16 +17,6 @@ public final class LiveDataEspera {
     private LiveDataEspera() {
     }
 
-    /**
-     * Espera um LiveData satisfazer uma condicao lendo getValue() ate dar certo.
-     *
-     * Nao registra Observer de proposito: com o InstantTaskExecutorRule o
-     * repositorio entrega o valor na propria thread de fundo, e um
-     * removeObserver() na thread do teste ao mesmo tempo dava, as vezes,
-     * ConcurrentModificationException dentro do LiveData (SafeIterableMap).
-     * Todas as condicoes usadas sao estados finais (erro, catalogo pronto,
-     * carregando false), entao ler o valor atual basta.
-     */
     public static <T> void aguardarValor(LiveData<T> liveData, Predicate<T> condicao) {
         aguardarValor(liveData, condicao, TIMEOUT_PADRAO_MS);
     }
@@ -46,10 +36,6 @@ public final class LiveDataEspera {
         }
     }
 
-    /**
-     * Espera uma condicao generica que nao depende de LiveData nem de Looper
-     * (ex.: contador do MockWebServer). Sem idle(), so um spin leve.
-     */
     public static void aguardarAte(BooleanSupplier condicao) {
         aguardarAte(condicao, TIMEOUT_PADRAO_MS);
     }
@@ -67,11 +53,6 @@ public final class LiveDataEspera {
         } while (true);
     }
 
-    /**
-     * Espera um callback que chega via Handler(Looper.getMainLooper()) real
-     * (nao passa pelo ArchTaskExecutor/InstantTaskExecutorRule). Com o
-     * Robolectric em modo PAUSED, e preciso girar o Looper manualmente.
-     */
     public static void aguardarLatch(CountDownLatch latch, long timeoutMs) {
         long prazo = System.currentTimeMillis() + timeoutMs;
         do {

@@ -27,19 +27,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-/**
- * Listas do proprio usuario, guardadas no aparelho, separadas por conta (ver
- * DadosDaConta): quem entra com outro e-mail no mesmo celular nao ve as listas
- * da conta anterior.
- *
- * A tela mostra o que esta guardado aqui. A SincronizacaoListas manda para
- * /api/user-lists o que mudou no aparelho e traz de la o que mudou no
- * servidor. Para saber o que falta mandar, cada lista guarda o id da API e o
- * ultimo nome, descricao, capa padrao e foto de capa enviados.
- *
- * A conta comeca sem nenhuma lista: so existe o que a pessoa criou (aqui ou
- * no site).
- */
 public class ColecaoRepository {
 
     static final String ARQUIVO = "venus_listas";
@@ -50,8 +37,6 @@ public class ColecaoRepository {
     @VisibleForTesting
     static final String CHAVE_EXEMPLOS_REVISTOS = "exemplos_revistos";
 
-    // Ate esta versao, toda conta nascia com estas 3 listas (chave da capa ->
-    // nome). Sao usadas so para achar as que ficaram como nasceram e tirar.
     private static final Map<String, String> EXEMPLOS_ANTIGOS = new HashMap<>();
 
     static {
@@ -63,12 +48,9 @@ public class ColecaoRepository {
     private static final Type TIPO_LISTA_SALVA = new TypeToken<List<ColecaoSalva>>() {
     }.getType();
 
-    // A tela e a sincronizacao (em outra thread) leem e regravam a mesma lista
-    // de listas. Sem a trava, uma gravacao de uma apagava a da outra.
     private static final Object TRAVA = new Object();
 
     private final SharedPreferences prefs;
-    // So para saber se uma lista de exemplo antiga ganhou produto.
     private final ListaItemRepository itens;
     private final Gson gson = new Gson();
 
@@ -82,10 +64,6 @@ public class ColecaoRepository {
         this.itens = new ListaItemRepository(context, uid);
     }
 
-    /**
-     * Apaga as listas de antes da separacao por conta, junto com as capas
-     * delas: nao da para saber de qual conta eram. Ver DadosDaConta.
-     */
     static void descartarListasSemDono(Context app) {
         SharedPreferences antigas = app.getSharedPreferences(ARQUIVO, Context.MODE_PRIVATE);
         String salvo = antigas.getString(CHAVE_LISTAS, null);
@@ -98,7 +76,6 @@ public class ColecaoRepository {
                     }
                 }
             } catch (JsonParseException ignorado) {
-                // Sem conseguir ler, as capas ficam; as listas vao embora igual.
             }
         }
         app.deleteSharedPreferences(ARQUIVO);
@@ -128,13 +105,6 @@ public class ColecaoRepository {
         }
     }
 
-    /**
-     * A API nao aceita duas listas com o mesmo nome para a mesma pessoa. A
-     * tela checa antes de criar ou renomear, ignorando maiusculas e espacos,
-     * para "Rotina" e "rotina " nao virarem duas listas que parecem iguais.
-     *
-     * @param ignorarId a propria lista, quando e uma renomeacao (-1 ao criar).
-     */
     public boolean nomeEmUso(String nome, long ignorarId) {
         String procurado = comparavel(nome);
         synchronized (TRAVA) {
@@ -147,11 +117,6 @@ public class ColecaoRepository {
         return false;
     }
 
-    /**
-     * Troca a capa de uma lista ja existente (a de exemplo ou uma criada) e
-     * apaga o arquivo da anterior. Silenciosamente nao faz nada se o id nao
-     * existir mais - a tela que chamou ja teria fechado nesse caso.
-     */
     public void atualizarImagem(long id, String caminhoImagem) {
         synchronized (TRAVA) {
             List<ColecaoSalva> atualizadas = new ArrayList<>();
@@ -189,10 +154,6 @@ public class ColecaoRepository {
         }
     }
 
-    /**
-     * Se a lista ja estava na API, o id dela entra numa fila para a
-     * sincronizacao apagar la tambem.
-     */
     public void excluir(long id) {
         synchronized (TRAVA) {
             List<ColecaoSalva> atualizadas = new ArrayList<>();
@@ -210,9 +171,6 @@ public class ColecaoRepository {
         }
     }
 
-    // ---- O que a SincronizacaoListas usa ----
-
-    /** Como cada lista esta agora, para decidir o que mandar para a API. */
     List<ListaLocal> paraSincronizar() {
         synchronized (TRAVA) {
             List<ListaLocal> listas = new ArrayList<>();
@@ -225,32 +183,17 @@ public class ColecaoRepository {
         }
     }
 
-    /**
-     * Os ids da API guardados aqui sao da pessoa com esse id. Se ele mudou, o
-     * banco foi recriado e a conta ganhou outro id: os ids antigos nao valem
-     * mais. Esquecer faz as listas subirem de novo para a conta nova - sem
-     * isso, elas sairiam do aparelho por nao estarem nela.
-     */
     void conferirDono(long userId) {
         synchronized (TRAVA) {
             long anterior = prefs.getLong(CHAVE_DONO_NA_API, -1L);
             if (anterior != -1L && anterior != userId) {
                 esquecerTodosIdsApi();
-                // As da fila sao do banco antigo: nao ha mais o que apagar.
                 prefs.edit().remove(CHAVE_APAGAR_NA_API).apply();
             }
             prefs.edit().putLong(CHAVE_DONO_NA_API, userId).apply();
         }
     }
 
-    /**
-     * Guarda o id que a API deu para a lista e o que foi mandado na criacao.
-     *
-     * @param enviada a lista como estava quando foi mandada. Se ela mudou no
-     *                meio do envio, a mudanca continua pendente.
-     * @return false se a lista foi excluida no aparelho enquanto era criada na
-     * API: ai o id vai direto para a fila de apagar, senao ficaria orfa la.
-     */
     boolean marcarCriadaNaApi(long idApi, ListaLocal enviada) {
         synchronized (TRAVA) {
             boolean achou = false;
@@ -272,7 +215,6 @@ public class ColecaoRepository {
         }
     }
 
-    /** Ver marcarCriadaNaApi. */
     void marcarEnviada(ListaLocal enviada) {
         synchronized (TRAVA) {
             List<ColecaoSalva> atualizadas = new ArrayList<>();
@@ -284,13 +226,6 @@ public class ColecaoRepository {
         }
     }
 
-    /**
-     * A foto de capa nesse caminho ja foi tratada: subiu ou a API recusou.
-     * Uma foto trocada no meio do envio continua pendente.
-     *
-     * @param linkNaApi o link que a API deu para a foto; null mantem o que
-     *                  estava (a API recusou e ficou com a anterior).
-     */
     void marcarCapaEnviada(long id, String caminhoEnviado, @Nullable String linkNaApi) {
         synchronized (TRAVA) {
             List<ColecaoSalva> atualizadas = new ArrayList<>();
@@ -301,10 +236,6 @@ public class ColecaoRepository {
         }
     }
 
-    /**
-     * Ids que nao valem mais (o 403 de banco recriado): na proxima, as listas
-     * sao criadas de novo, com os produtos e a foto.
-     */
     void esquecerTodosIdsApi() {
         synchronized (TRAVA) {
             List<ColecaoSalva> atualizadas = new ArrayList<>();
@@ -315,10 +246,6 @@ public class ColecaoRepository {
         }
     }
 
-    /**
-     * A lista foi apagada no servidor (pelo site ou por outro aparelho): sai
-     * daqui tambem, sem entrar na fila de apagar.
-     */
     void removerApagadaNaApi(long id) {
         synchronized (TRAVA) {
             List<ColecaoSalva> atualizadas = new ArrayList<>();
@@ -333,19 +260,6 @@ public class ColecaoRepository {
         }
     }
 
-    /**
-     * Deixa as listas do aparelho iguais as do servidor, menos o que mudou
-     * aqui e ainda nao subiu (ver ColecaoSalva.comDadosDaApi).
-     *
-     * - A que o aparelho tem e o servidor nao: foi apagada la e sai daqui.
-     * - A que so o servidor tem: se e uma do aparelho que ainda nao tinha
-     *   subido (pela capa padrao ou pelo nome), as duas viram uma; senao,
-     *   entra no topo.
-     * - A que esta na fila de apagar nao volta.
-     *
-     * @param daApi todas as listas da pessoa na API. Uma lista incompleta
-     *              apagaria daqui as que faltassem.
-     */
     DaApiAplicada aplicarDaApi(List<ListaDaApi> daApi) {
         synchronized (TRAVA) {
             DaApiAplicada resultado = new DaApiAplicada();
@@ -394,7 +308,6 @@ public class ColecaoRepository {
                 resultado.mudou |= !c.mesmaNaTela(nova);
             }
 
-            // A mais nova primeiro, como as criadas aqui.
             novas.sort((a, b) -> Long.compare(b.id, a.id));
             long proximo = proximoId(atualizadas);
             List<ColecaoSalva> todas = new ArrayList<>();
@@ -414,7 +327,6 @@ public class ColecaoRepository {
         }
     }
 
-    /** A lista do aparelho ainda sem id que e a mesma do servidor; -1 se nenhuma. */
     private static int mesmaListaSemId(List<ColecaoSalva> listas, ListaDaApi doServidor) {
         if (doServidor.chave != null) {
             for (int i = 0; i < listas.size(); i++) {
@@ -434,7 +346,6 @@ public class ColecaoRepository {
         return -1;
     }
 
-    /** A foto local que deu lugar a do servidor nao serve mais. */
     private static void trocarArquivoDaCapa(ColecaoSalva antes, ColecaoSalva depois) {
         if (!Objects.equals(antes.caminhoImagem, depois.caminhoImagem)) {
             excluirArquivoDaCapa(antes.caminhoImagem);
@@ -459,20 +370,12 @@ public class ColecaoRepository {
         }
     }
 
-    // Chamado sempre de dentro da TRAVA.
     private void adicionarParaApagar(long idApi) {
-        // Copia: o Set devolvido pelo SharedPreferences nao pode ser alterado.
         Set<String> ids = new HashSet<>(prefs.getStringSet(CHAVE_APAGAR_NA_API, new HashSet<>()));
         ids.add(String.valueOf(idApi));
         prefs.edit().putStringSet(CHAVE_APAGAR_NA_API, ids).apply();
     }
 
-    /**
-     * A capa de uma lista criada pelo usuario e um arquivo proprio do app (ver
-     * ImagemLocalUtil); sem apagar aqui, ele ficaria orfao no armazenamento
-     * depois que a lista some. As de exemplo usam drawable, e a capa que veio
-     * do servidor e um link: nenhuma das duas tem arquivo a apagar.
-     */
     private static void excluirArquivoDaCapa(@Nullable String caminhoImagem) {
         if (caminhoImagem == null || !caminhoImagem.startsWith("file:")) {
             return;
@@ -483,7 +386,6 @@ public class ColecaoRepository {
                 new File(caminho).delete();
             }
         } catch (Exception ignorado) {
-            // Falha ao limpar o arquivo nao pode impedir a lista de ser excluida.
         }
     }
 
@@ -499,21 +401,10 @@ public class ColecaoRepository {
         return lista;
     }
 
-    /**
-     * Roda uma vez por conta: tira as listas de exemplo que ficaram como
-     * nasceram - vazias, com o nome e a capa padrao, sem descricao e sem ter
-     * subido. Se a pessoa mexeu em alguma, ela fica.
-     *
-     * Uma vez so porque, depois, uma lista assim pode ser legitima: uma que
-     * veio da API com capa padrao e teve o id esquecido (ver esquecerTodosIdsApi).
-     *
-     * Chamado sempre de dentro da TRAVA.
-     */
     private List<ColecaoSalva> tirarExemplosIntocados(List<ColecaoSalva> salvas) {
         List<ColecaoSalva> ficam = new ArrayList<>();
         for (ColecaoSalva c : salvas) {
             if (c.exemploIntocado() && itens.getProdutoIds(c.id).isEmpty()) {
-                // Um produto que entrou e saiu deixa o controle de envio para tras.
                 itens.excluirTodos(c.id);
             } else {
                 ficam.add(c);
@@ -521,7 +412,6 @@ public class ColecaoRepository {
         }
         prefs.edit()
                 .putString(CHAVE_LISTAS, gson.toJson(ficam))
-                // Os ids das que sairam nao voltam (ver proximoId).
                 .putLong(CHAVE_PROXIMO_ID, proximoId(salvas))
                 .putBoolean(CHAVE_EXEMPLOS_REVISTOS, true)
                 .apply();
@@ -532,11 +422,6 @@ public class ColecaoRepository {
         prefs.edit().putString(CHAVE_LISTAS, gson.toJson(listas)).apply();
     }
 
-    /**
-     * Um id nunca e reaproveitado, nem depois de excluir a lista mais nova.
-     * Os produtos de cada lista e o controle do envio para a API sao guardados
-     * por esse id: reaproveitar faria uma lista nova herdar o que era de outra.
-     */
     private long proximoId(List<ColecaoSalva> atuais) {
         long maior = 0;
         for (ColecaoSalva c : atuais) {
@@ -551,7 +436,6 @@ public class ColecaoRepository {
         return nome == null ? "" : nome.trim().toLowerCase(Locale.ROOT);
     }
 
-    /** As de exemplo nao tem descricao (null); a tela grava "" quando a pessoa apaga. */
     @Nullable
     private static String semTextoVazio(@Nullable String texto) {
         return texto == null || texto.trim().isEmpty() ? null : texto;
@@ -565,20 +449,11 @@ public class ColecaoRepository {
         return lista;
     }
 
-    /**
-     * Retrato de uma lista para a SincronizacaoListas, sem nada da tela. Os
-     * campos "NaApi" e capaEnviada sao o que foi mandado da ultima vez; o que
-     * difere do valor atual ainda falta enviar.
-     */
     static final class ListaLocal {
         final long id;
         final String nome;
-        // null quando a lista nao tem descricao, nunca "".
         @Nullable final String descricao;
-        // So tem chave (favoritos, escaneados, skincare) a lista que veio da API
-        // com capa padrao ou uma das listas de exemplo antigas que a pessoa usou.
         @Nullable final String chaveImagem;
-        // Arquivo da foto escolhida aqui (file:), link da foto do servidor, ou null.
         @Nullable final String caminhoImagem;
         @Nullable final Long idApi;
         @Nullable final String nomeNaApi;
@@ -602,18 +477,15 @@ public class ColecaoRepository {
             this.capaEnviada = capaEnviada;
         }
 
-        /** Uma foto escolhida aqui que ainda nao foi para a API. */
         boolean capaPendente() {
             return fotoPendente(caminhoImagem, capaEnviada);
         }
     }
 
-    /** Uma lista como a API devolve, ja no formato do aparelho. */
     static final class ListaDaApi {
         final long id;
         final String nome;
         @Nullable final String descricao;
-        // Em minusculo, como a chaveImagem das listas de exemplo.
         @Nullable final String chave;
         @Nullable final String linkCapa;
 
@@ -627,13 +499,9 @@ public class ColecaoRepository {
         }
     }
 
-    /** O que aplicarDaApi mudou, para a SincronizacaoListas trazer os produtos. */
     static final class DaApiAplicada {
-        /** id na API -> id no aparelho, de toda lista que esta nos dois. */
         final Map<Long, Long> ligadas = new HashMap<>();
-        /** Listas do aparelho que ainda nao tinham subido e viraram uma do servidor. */
         final Set<Long> juntadas = new HashSet<>();
-        /** Listas que sairam do aparelho porque nao existem mais no servidor. */
         final List<Long> removidas = new ArrayList<>();
         boolean mudou;
     }
@@ -643,21 +511,6 @@ public class ColecaoRepository {
                 && !caminhoImagem.equals(capaEnviada);
     }
 
-    /**
-     * Formato gravado no SharedPreferences. Guarda a CHAVE do drawable de
-     * exemplo, nao o id do resource: um resource id pode mudar entre builds,
-     * e um valor salvo assim ficaria apontando pro drawable errado.
-     *
-     * idApi e os campos "NaApi" ficam null ate a lista chegar na API - e em
-     * quem salvou antes desta versao do app, ja que o Gson deixa null o campo
-     * que nao estava no texto salvo. Uma lista que subiu antes de a API ter
-     * descricao e capa padrao fica com esses dois null e recebe os dois depois;
-     * uma foto escolhida antes desta versao fica com capaEnviada null e sobe.
-     *
-     * capaEnviada e o caminho da ultima foto daqui que foi para a API (ou que
-     * ela recusou). linkCapaNaApi e o link da foto que o servidor tem: quando
-     * ele muda, a foto foi trocada no site ou em outro aparelho.
-     */
     private static class ColecaoSalva {
         final long id;
         final String nome;
@@ -694,7 +547,6 @@ public class ColecaoRepository {
             this.linkCapaNaApi = linkCapaNaApi;
         }
 
-        /** Uma lista que so o servidor tinha. */
         static ColecaoSalva vindaDaApi(long id, ListaDaApi daApi) {
             return new ColecaoSalva(id, daApi.nome, daApi.descricao, daApi.chave, daApi.linkCapa,
                     daApi.id, daApi.nome, daApi.descricao, daApi.chave, null, daApi.linkCapa);
@@ -721,7 +573,6 @@ public class ColecaoRepository {
                     linkNaApi != null ? linkNaApi : linkCapaNaApi);
         }
 
-        /** @param enviada null esquece tudo o que foi mandado (junto com o id). */
         ColecaoSalva naApi(@Nullable Long novoIdApi, @Nullable ListaLocal enviada) {
             if (enviada == null) {
                 return new ColecaoSalva(id, nome, descricao, chaveImagem, caminhoImagem,
@@ -732,10 +583,6 @@ public class ColecaoRepository {
                     capaEnviada, linkCapaNaApi);
         }
 
-        /**
-         * Pega do servidor cada campo que nao mudou aqui desde o ultimo envio.
-         * O que mudou aqui e ainda nao subiu fica: o proximo envio manda.
-         */
         ColecaoSalva comDadosDaApi(ListaDaApi daApi) {
             String novoNome = nome;
             String novoNomeNaApi = nomeNaApi;
@@ -769,17 +616,12 @@ public class ColecaoRepository {
                     novaCapaEnviada, novoLink);
         }
 
-        /**
-         * Esta lista ainda nao tinha subido e e a mesma do servidor: fica com
-         * os dados de la. So uma foto escolhida aqui fica, para subir depois.
-         */
         ColecaoSalva juntadaCom(ListaDaApi daApi) {
             String caminho = fotoPendente(caminhoImagem, capaEnviada) ? caminhoImagem : daApi.linkCapa;
             return new ColecaoSalva(id, daApi.nome, daApi.descricao, daApi.chave, caminho,
                     daApi.id, daApi.nome, daApi.descricao, daApi.chave, null, daApi.linkCapa);
         }
 
-        /** Uma das 3 listas de exemplo antigas, do jeito que nasceu. */
         boolean exemploIntocado() {
             return chaveImagem != null
                     && nome != null && nome.equals(EXEMPLOS_ANTIGOS.get(chaveImagem))
@@ -796,8 +638,6 @@ public class ColecaoRepository {
         }
 
         Colecao paraColecao() {
-            // Uma capa com foto sempre vence o drawable de exemplo - e como
-            // uma lista de exemplo troca de capa.
             if (caminhoImagem != null) {
                 return new Colecao(id, nome, caminhoImagem, 0, descricao);
             }

@@ -19,7 +19,6 @@ import org.robolectric.annotation.Config;
 import java.util.Arrays;
 import java.util.Collections;
 
-/** O progresso do perfil sobre as respostas que o app guarda de verdade. */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = Config.OLDEST_SDK)
 public class PerfilProgressoTest {
@@ -71,7 +70,6 @@ public class PerfilProgressoTest {
 
         ProgressoPerfil progresso = perfil.progresso();
 
-        // Falta so as condicoes de pele.
         assertEquals(Estado.INCOMPLETO, progresso.estado);
         assertEquals(89, progresso.porcentagem);
         assertEquals(Collections.singletonList(PerfilRepository.CONDICOES_PELE), progresso.faltando);

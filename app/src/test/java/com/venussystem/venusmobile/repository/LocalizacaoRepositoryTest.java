@@ -53,7 +53,6 @@ public class LocalizacaoRepositoryTest {
 
         VenusApi api = ApiDeTeste.criar(server, VenusApi.class);
         UsuarioApiRepository usuarios = new UsuarioApiRepository(context, api, new SessaoFalsa());
-        // O id ja esta guardado: o teste e so do envio da localizacao.
         context.getSharedPreferences("venus_usuario_api", Context.MODE_PRIVATE)
                 .edit().putLong("id_uid-ana", 42L).commit();
 

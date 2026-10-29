@@ -66,8 +66,6 @@ public class SincronizacaoCurtidosTest {
         server.shutdown();
     }
 
-    // ---- Mandar ----
-
     @Test
     public void nadaNaFila_nemVaiNaRede() {
         assertFalse(sincronizacao.sincronizarAgora());
@@ -140,8 +138,6 @@ public class SincronizacaoCurtidosTest {
         assertNull(usuarios.idEmCache());
         assertTrue(curtidos.temAlgoParaEnviar());
     }
-
-    // ---- Trazer ----
 
     @Test
     public void atualizar_trazOsCurtidosDoSite_doMaisRecenteParaOMaisAntigo() {

@@ -79,7 +79,7 @@ public class CartaoPerfilViewTest {
 
     @Test
     public void incompleto_mostraABarraEOQueFaltaComOBotaoCompletarAgora() {
-        cartao.atualizar(progresso(false, 5)); // 56%
+        cartao.atualizar(progresso(false, 5));
 
         assertTrue(cartao.estaVisivel());
         assertEquals(View.VISIBLE, barra().getVisibility());
@@ -122,7 +122,6 @@ public class CartaoPerfilViewTest {
         Intent aberta = shadowOf(app).getNextStartedActivity();
         assertNotNull(aberta);
         assertEquals(PesquisaInicialActivity.class.getName(), aberta.getComponent().getClassName());
-        // O contexto do teste nao e uma tela: sem a flag o Android recusaria abrir.
         assertTrue((aberta.getFlags() & Intent.FLAG_ACTIVITY_NEW_TASK) != 0);
     }
 }

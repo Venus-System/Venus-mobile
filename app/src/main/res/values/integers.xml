@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Colunas da grade de Listas. -->
     <integer name="colunas_grade">1</integer>
 
-    <!-- Colunas da grade de cards de produto (Home e busca). -->
     <integer name="colunas_card_produto">2</integer>
 
-    <!-- O mesmo limite da API: uma descricao maior volta 400 e a lista nao sobe. -->
     <integer name="limite_descricao_lista">500</integer>
 </resources>

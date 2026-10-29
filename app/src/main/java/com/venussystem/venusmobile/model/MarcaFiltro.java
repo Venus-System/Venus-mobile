@@ -1,6 +1,5 @@
 package com.venussystem.venusmobile.model;
 
-/** Uma marca do catalogo, como opcao do filtro. */
 public class MarcaFiltro {
 
     private final long id;

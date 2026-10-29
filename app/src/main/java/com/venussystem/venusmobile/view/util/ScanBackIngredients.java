@@ -31,15 +31,9 @@ import static com.venussystem.venusmobile.view.util.ScanBackText.normalizar;
 import static com.venussystem.venusmobile.view.util.ScanBackText.normalizarOCRBasico;
 import static com.venussystem.venusmobile.view.util.ScanBackText.substringSafe;
 
-/** Internal collaborator for ScanBackExtractor; not a second scan entry point. */
 final class ScanBackIngredients {
     private ScanBackIngredients() { }
 
-    /*
-     * ================================================================
-     * EXTRAÇÃO DE CANDIDATOS
-     * ================================================================
-     */
     static List<ScanBackIngredientCandidate> extrairIngredientes(
             IngredientSection section,
             List<ScanOcrToken> spatialTokens
@@ -88,7 +82,6 @@ final class ScanBackIngredients {
                             position++,
                             cleaned,
                             correction.normalized,
-                            // Correction improves matching but does not confirm the ingredient.
                             status,
                             "UNRESOLVED".equals(status) ? null : status
                     )
@@ -100,11 +93,6 @@ final class ScanBackIngredients {
         return result;
     }
 
-    /**
-     * Rows were already ordered geometrically before section detection.
-     * A paragraph stays a paragraph. Only repeated, aligned column pairs with
-     * recognized INCI evidence may introduce translation parentheses.
-     */
     private static String reconstruirBlocoIngredientesEspacialmente(
             IngredientSection section, List<ScanOcrToken> tokens) {
         if (tokens == null || tokens.isEmpty()) return section.rawText;
@@ -122,7 +110,6 @@ final class ScanBackIngredients {
             String text = ScanBackSpatialLayout.join(row);
             HeadingMatch heading = encontrarHeadingIngredientesRobusto(text);
             if (heading != null) {
-                // Standalone heading is harmless; inline heading uses paragraph parsing.
                 if (limparRestoHeading(substringSafe(text, heading.endInOriginal)).isEmpty()) continue;
                 return section.rawText;
             }
@@ -131,7 +118,6 @@ final class ScanBackIngredients {
                 if (extrairPrefixoAntesDoStop(text, stop).isEmpty()) break;
                 return section.rawText;
             }
-            // Punctuation is direct evidence of a running ingredient list.
             if (text.matches(".*[,;()|].*") || row.size() < 2) return section.rawText;
             int split = -1, gap = 0;
             List<Integer> heights = new ArrayList<>();
@@ -148,7 +134,6 @@ final class ScanBackIngredients {
             columnX = columnX == null ? x : columnX;
             String left = ScanBackSpatialLayout.join(row.subList(0, split));
             String right = ScanBackSpatialLayout.join(row.subList(split, row.size()));
-            // A known ingredient on the right is not evidence of a translation.
             if (linhaComecaComInciConhecido(right)) return section.rawText;
             if (!pendingLeft.isEmpty()) {
                 if (row.get(0).getBoundingBox().top - lastBottom > height * 2) return section.rawText;
@@ -183,30 +168,11 @@ final class ScanBackIngredients {
                 normalizarOCRBasico(
                         s
                 );
-        /*
-         * Letras isoladas usadas pelo OCR como separadores.
-         *
-         * Exemplos:
-         *
-         * DIMETHICONOL E ALPHA...
-         * DIMETHICONOL I ALPHA...
-         * DIMETHICONOL L ALPHA...
-         *
-         * Só aplicamos quando existe outro token imediatamente depois.
-         */
         s =
                 s.replaceAll(
                         "(?i)\\s+[EIL]\\s+(?=[A-Z0-9])",
                         ", "
                 );
-        /*
-         * Ponto como separador.
-         *
-         * Exemplos:
-         *
-         * LINALOOL. LIMONENE
-         * LINALOOL .FABRICADO
-         */
         s =
                 s.replaceAll(
                         "(?i)(?<=[A-Z0-9\\)])"
@@ -223,11 +189,6 @@ final class ScanBackIngredients {
         );
     }
 
-    /**
-     * Restores boundaries that are routinely lost by the OCR on small INCI
-     * print. These replacements are deliberately phrase-scoped; unknown text
-     * remains untouched for administrative review instead of being guessed.
-     */
     private static String corrigirSeparadoresOCRConhecidos(String value) {
         String s = value == null ? EMPTY : value;
         s = s.replaceAll("(?i)\\bPPG[- ]?14\\s+BUT[L1I]\\s*E[T7]E\\b",
@@ -240,10 +201,7 @@ final class ScanBackIngredients {
         s = s.replaceAll("(?i)\\b0CTYLDODECAN(?:O|L)\\b", "OCTYLDODECANOL");
         s = s.replaceAll("(?i)\\bROPYLENE\\s+CARBONATE\\b", "PROPYLENE CARBONATE");
         s = s.replaceAll("(?i)\\bONN\\s+INIO\\b", "IONONE");
-        // The OCR commonly reads the C12-15 alkyl benzoate line as CI2494 + OATE.
         s = s.replaceAll("(?i)\\bCI2494\\s+TOATE\\b", "C12-15 ALKYL BENZOATE,");
-        // Rexona Clinical capture: restore only spellings evidenced by the
-        // label. Unknown fragments remain intact for administrative review.
         s = s.replaceAll("(?i)\\bALUMNUM\\s+SESQUICHLOROEYDRRATE\\b",
                 "ALUMINUM SESQUICHLOROHYDRATE,");
         s = s.replaceAll("(?i)\\bSTEAYE\\s+ALOOHOL\\b",
@@ -278,17 +236,10 @@ final class ScanBackIngredients {
                 compactarEspacos(
                         raw
                 );
-        /*
-         * Primeiro:
-         * separadores reais.
-         */
         String[] explicit =
                 prepared.split(
                         "\\s*[,;|•]\\s*"
                 );
-        /*
-         * Caso o OCR tenha perdido as vírgulas e criado grandes espaços.
-         */
         if (explicit.length <= 1) {
             explicit =
                     prepared.split(
@@ -327,8 +278,6 @@ final class ScanBackIngredients {
                 consolidarFragmentos(
                         result
                 );
-        // Repeated occurrences are evidence and retain their original order;
-        // the backend/admin review can decide whether they are semantically duplicate.
         return result;
     }
 
@@ -348,19 +297,6 @@ final class ScanBackIngredients {
                 );
         List<Boundary> found =
                 new ArrayList<>();
-        /*
-         * A partir da V7.0, um INCI conhecido representa o INÍCIO
-         * de um candidato, e não o candidato inteiro.
-         *
-         * Isso é importante porque o OCR frequentemente devolve:
-         *
-         *     PROPANE (PROPANO)
-         *     GLYCERIN GUCEROL
-         *     GLYCERYL STEARATE (MONOESTEARATO ...)
-         *
-         * O texto após o INCI continua pertencendo ao mesmo candidato
-         * até encontrarmos o próximo INCI conhecido.
-         */
         for (
                 String known
                 : inciOrdenadosPorComprimento()
@@ -443,9 +379,6 @@ final class ScanBackIngredients {
                         a -> a.start
                 )
         );
-        /*
-         * Remove boundaries duplicadas ou sobrepostas.
-         */
         List<Boundary> unique =
                 new ArrayList<>();
         int lastStart = -1;
@@ -478,15 +411,6 @@ final class ScanBackIngredients {
                     working
             );
         }
-        /*
-         * Se o primeiro INCI conhecido não começa o chunk, não temos
-         * evidência estrutural suficiente para separar o prefixo.
-         *
-         * Em vez de correr o risco de transformar a tradução OCR de
-         * um ingrediente anterior em um novo ingrediente, preservamos
-         * o chunk inteiro. O matcher posterior continua responsável
-         * pela resolução semântica.
-         */
         if (unique.get(0).start > 0) {
             return Collections.singletonList(
                     working
@@ -585,21 +509,12 @@ final class ScanBackIngredients {
                     normalizar(
                             s
                     );
-            // Preserve short fragments as TRUNCATED_TOKEN evidence instead of
-            // silently losing OCR text.
-            /*
-             * CI pode ser prefixo de Color Index.
-             */
             if ("CI".equals(n)) {
                 out.add(
                         s
                 );
                 continue;
             }
-            /*
-             * Join a Color Index continuation. Other numeric fragments remain
-             * candidates for review instead of silently disappearing.
-             */
             if (
                     n.matches(
                             "^[0-9 .:/-]+$"
@@ -716,11 +631,6 @@ final class ScanBackIngredients {
                 .trim();
     }
 
-    /*
-     * ================================================================
-     * ASSINATURA
-     * ================================================================
-     */
     static String gerarAssinaturaOCR(
             List<ScanBackIngredientCandidate> ingredients
     ) {

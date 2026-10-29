@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-/** App-private durable snapshots. Root must be under Context.getNoBackupFilesDir(). */
 public final class ScanDraftStore {
     private static final Gson GSON = new Gson();
     private final Path root;
@@ -35,7 +34,6 @@ public final class ScanDraftStore {
         public ScanSessionResponse submission;
     }
 
-    /** Immutable initial snapshot. Repeated saves never overwrite images under the same scanId. */
     public SavedDraft save(String uid, ScanSubmissionDraft draft) throws IOException {
         synchronized (ScanDraftStore.class) {
             if (draft == null || draft.getBackData() == null)
@@ -64,7 +62,7 @@ public final class ScanDraftStore {
                 force(temporary);
                 Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
             } finally {
-                Files.deleteIfExists(temporary); // Only this write's temporary file.
+                Files.deleteIfExists(temporary);
             }
             return snapshot;
         }
@@ -79,7 +77,6 @@ public final class ScanDraftStore {
                 if (saved == null || saved.schemaVersion != 1 || !uid.equals(saved.firebaseUid)
                         || saved.draft == null || !scanId.equals(saved.draft.getScanId()))
                     throw new IOException("Rascunho incompatível ou de outra conta.");
-                // Do not trust serialized absolute paths; derive from the validated identity.
                 if (saved.submission == null && !"SUBMITTED".equals(saved.state)) {
                     Path front = directory.resolve("front.photo");
                     Path back = directory.resolve("back.photo");
@@ -119,16 +116,10 @@ public final class ScanDraftStore {
         return result;
     }
 
-    /** Quando o rascunho foi gravado pela ultima vez: cada etapa do envio o regrava. */
     public long lastModifiedMs(String uid, String scanId) throws IOException {
         return Files.getLastModifiedTime(directory(uid, scanId).resolve("draft.json")).toMillis();
     }
 
-    /**
-     * Submissões já confirmadas pelo servidor. Elas funcionam como cache
-     * imediato do histórico enquanto a listagem remota ainda não refletiu o
-     * scan recém-enviado.
-     */
     public List<SavedDraft> submitted(String uid) throws IOException {
         List<SavedDraft> result = new ArrayList<>();
         Path account = account(uid);
@@ -142,14 +133,12 @@ public final class ScanDraftStore {
                         result.add(saved);
                     }
                 } catch (IOException ignored) {
-                    // Um rascunho corrompido não deve esconder os demais itens.
                 }
             }
         }
         return result;
     }
 
-    /** Atomically acknowledges just one side, preserving the immutable OCR/photo snapshot. */
     public SavedDraft recordUpload(String uid, String scanId, String side, ScanUploadedPhoto receipt) throws IOException {
         synchronized (ScanDraftStore.class) {
             if (receipt == null) throw new IOException("Confirmação ausente.");
@@ -175,7 +164,6 @@ public final class ScanDraftStore {
         }
     }
 
-    /** Stores lookup evidence separately, without rewriting OCR or changing upload state. */
     public SavedDraft recordIngredientCatalog(String uid, String scanId, ScanIngredientCatalog.Report report) throws IOException {
         synchronized (ScanDraftStore.class) {
             if (report == null) throw new IOException("Consulta ausente.");
@@ -192,7 +180,6 @@ public final class ScanDraftStore {
         }
     }
 
-    /** Acknowledges the idempotent MongoDB submission after the API confirms it. */
     public SavedDraft recordSubmission(String uid, String scanId, ScanSessionResponse response) throws IOException {
         synchronized (ScanDraftStore.class) {
             if (response == null || response.id == null || response.id.trim().isEmpty()
@@ -212,9 +199,6 @@ public final class ScanDraftStore {
                 force(temporary);
                 Files.move(temporary, directory.resolve("draft.json"), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
             } finally { Files.deleteIfExists(temporary); }
-            // A submitted scan no longer needs local photos. Delete only the
-            // validated scan directory files; the receipt remains for retry
-            // idempotency and resume-after-process-death.
             Files.deleteIfExists(directory.resolve("front.photo"));
             Files.deleteIfExists(directory.resolve("back.photo"));
             return saved;

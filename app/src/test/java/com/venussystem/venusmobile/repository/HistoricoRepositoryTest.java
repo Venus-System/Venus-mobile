@@ -86,8 +86,6 @@ public class HistoricoRepositoryTest {
         TimeZone.setDefault(fusoOriginal);
     }
 
-    // ---- Montagem do cenario ----
-
     private static long momento(int mes, int dia, int hora, int minuto) {
         return LocalDateTime.of(2026, mes, dia, hora, minuto)
                 .atZone(FUSO).toInstant().toEpochMilli();
@@ -149,8 +147,6 @@ public class HistoricoRepositoryTest {
         return nomes;
     }
 
-    // ---- Acessos ----
-
     @Test
     public void produtoAcessado_apareceNoHistoricoSemSeloDeStatus() {
         noCatalogo(7L, "Hidratante X", 82);
@@ -182,7 +178,6 @@ public class HistoricoRepositoryTest {
 
         assertEquals(Arrays.asList("Hidratante X", "Serum A", "Protetor Y", "Batom B"),
                 nomes(itens));
-        // Quem e scan continua com o selo; quem so foi aberto, nao.
         assertNull(itens.get(0).getStatus());
         assertEquals("PENDING_REVIEW", itens.get(1).getStatus());
         assertNull(itens.get(2).getStatus());
@@ -200,11 +195,9 @@ public class HistoricoRepositoryTest {
 
         assertEquals(1, itens.size());
         ItemHistorico item = itens.get(0);
-        // A data e a do acesso, que e a mais recente; o selo e do scan.
         assertEquals(LocalDate.of(2026, 10, 10), item.getData());
         assertEquals("APPROVED", item.getStatus());
         assertEquals("scan-1", item.getScanId());
-        // E a nota vem do catalogo, que o scan nao tem.
         assertEquals("Hidratante X", item.getProduto().getName());
         assertEquals(Integer.valueOf(82), item.getProduto().getOverallScore());
     }
@@ -249,11 +242,8 @@ public class HistoricoRepositoryTest {
         assertEquals(20, nomes.size());
         assertEquals(Arrays.asList("Scan 3", "Scan 2", "Scan 1"), nomes.subList(0, 3));
         assertEquals("Produto 20", nomes.get(3));
-        // Os tres mais antigos dos acessos ficaram de fora.
         assertEquals("Produto 4", nomes.get(19));
     }
-
-    // ---- Contas e falhas ----
 
     @Test
     public void acessoDeOutraConta_naoApareceNoHistorico() {
@@ -274,8 +264,6 @@ public class HistoricoRepositoryTest {
 
         assertEquals(Arrays.asList("Hidratante X"), nomes(carregar()));
     }
-
-    // ---- Catalogo que chega depois ----
 
     @Test
     public void catalogoQueChegaDepois_encaixaOsAcessosSemPerderOsScans() {

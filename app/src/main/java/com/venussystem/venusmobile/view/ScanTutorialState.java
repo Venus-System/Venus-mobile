@@ -8,16 +8,6 @@ import androidx.annotation.NonNull;
 import com.venussystem.venusmobile.model.Usuario;
 import com.venussystem.venusmobile.repository.AutenticacaoRepository;
 
-/**
- * Controla individualmente quais telas de tutorial do Scan o usuário já viu.
- *
- * Importante: "tutorial visto" é diferente de "fluxo concluído".
- * Cada passo é persistido separadamente para permitir:
- * - Passo 1 apenas uma vez;
- * - Passo 2 apenas uma vez;
- * - Passo 3 apenas uma vez;
- * - a tela "Produto não cadastrado" continuar aparecendo sempre que necessária.
- */
 public final class ScanTutorialState {
 
     public static final String PREFS = "scan_preferences_v3";
@@ -28,7 +18,6 @@ public final class ScanTutorialState {
     private static final String KEY_TUTORIAL_3 = "tutorial_3_visto_";
     private static final String KEY_COMPLETED = "fluxo_completo_";
 
-    /** Chave antiga, mantida somente para migração. */
     private static final String LEGACY_PREFS = "scan_preferences_v2";
     private static final String LEGACY_PREFIX = "scan_onboarding_completo_";
 
@@ -45,7 +34,6 @@ public final class ScanTutorialState {
                 return uid.trim();
             }
         } catch (Exception ignored) {
-            // Mantemos o fluxo funcionando mesmo se a autenticação estiver indisponível.
         }
 
         return "anonymous";
@@ -127,7 +115,6 @@ public final class ScanTutorialState {
                 && isTutorial3Seen(context);
     }
 
-    /** Compatibilidade com classes antigas do projeto. */
     public static boolean isCompleted(Context context) {
         return prefs(context).getBoolean(
                 key(KEY_COMPLETED, context),
@@ -135,7 +122,6 @@ public final class ScanTutorialState {
         ) || areAllTutorialsSeen(context);
     }
 
-    /** Compatibilidade com classes antigas do projeto. */
     public static void markCompleted(Context context) {
         prefs(context)
                 .edit()

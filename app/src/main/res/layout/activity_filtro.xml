@@ -95,7 +95,6 @@
 
             </com.google.android.material.chip.ChipGroup>
 
-            <!-- So aparece quando o catalogo tem alguma marca brasileira. -->
             <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/switchBrasileiras"
                 android:layout_width="match_parent"

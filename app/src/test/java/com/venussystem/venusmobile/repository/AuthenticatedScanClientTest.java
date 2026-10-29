@@ -70,7 +70,7 @@ public class AuthenticatedScanClientTest {
         assertEquals(java.util.Arrays.asList(SCAN_ID, SCAN_ID), api.scanIds);
         assertEquals(java.util.Arrays.asList(false, true), refreshes);
         assertEquals(java.util.Arrays.asList("Bearer test-false", "Bearer test-true"), api.tokens);
-        assertTrue(api.requests.isEmpty()); // No POST is performed.
+        assertTrue(api.requests.isEmpty());
     }
     @Test public void incompleteSignaturesAreRejected() {
         FakeApi api = new FakeApi(200); api.signatureBody.back = null;

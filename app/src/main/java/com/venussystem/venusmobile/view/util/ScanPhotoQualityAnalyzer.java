@@ -7,12 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import com.venussystem.venusmobile.model.ScanPhotoQuality;
 
-/**
- * Small deterministic quality check executed locally. It never mutates or
- * discards OCR evidence; the separate quality policy decides whether capture
- * should be retried. blurScore is normalized to [0,1], where higher means
- * more blur; brightness is [0,1].
- */
 public final class ScanPhotoQualityAnalyzer {
     private static final int MAX_SIDE = 640;
     private static final int MIN_LONG_SIDE = 720;
@@ -27,11 +21,6 @@ public final class ScanPhotoQualityAnalyzer {
         return combine(front, back);
     }
 
-    /**
-     * Combines both sides conservatively: blur uses the worst side, while
-     * brightness is descriptive (mean) and background validity requires both
-     * sides. A background warning remains advisory in ScanPhotoQualityPolicy.
-     */
     static ScanPhotoQuality combine(ScanPhotoQuality front, ScanPhotoQuality back) {
         if (front == null || back == null) {
             throw new IllegalArgumentException("As duas medições são obrigatórias.");
@@ -76,8 +65,6 @@ public final class ScanPhotoQualityAnalyzer {
     static ScanPhotoQuality measure(Bitmap bitmap) {
         int width = bitmap.getWidth(), height = bitmap.getHeight();
         if (width < 16 || height < 16) throw new IllegalArgumentException("Foto pequena demais.");
-        // The decoded image is already capped at 640 px. Sampling every 4 px
-        // skipped the thin label text and made every photo look uniformly blurry.
         int step = 1;
         double sum = 0, sum2 = 0, lapSum = 0, lap2 = 0;
         long count = 0;
@@ -100,9 +87,6 @@ public final class ScanPhotoQualityAnalyzer {
         double mean = sum / count;
         double variance = Math.max(0, sum2 / count - mean * mean);
         double lapVariance = Math.max(0, lap2 / count - Math.pow(lapSum / count, 2));
-        // A high Laplacian variance means edges are preserved and therefore less blur.
-        // Pixels are normalized to [0,1], so the old 1800-scale (appropriate
-        // for 0..255 pixels) collapsed every score to almost exactly 1.
         double blur = 1d / (1d + lapVariance / .0025d);
         double borderVariance = borderCount == 0 ? 1 : Math.max(0,
                 border2 / borderCount - Math.pow(borderSum / borderCount, 2));

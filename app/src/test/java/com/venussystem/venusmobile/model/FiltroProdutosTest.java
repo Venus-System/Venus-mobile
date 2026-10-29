@@ -18,8 +18,6 @@ public class FiltroProdutosTest {
                 marcaId, brasileira);
     }
 
-    // ---- FaixaNota ----
-
     @Test
     public void faixa_limitesSao70e40() {
         assertEquals(FaixaNota.BOA, FaixaNota.de(100));
@@ -34,8 +32,6 @@ public class FiltroProdutosTest {
     public void faixa_semNotaNaoTemFaixa() {
         assertNull(FaixaNota.de(null));
     }
-
-    // ---- FiltroProdutos ----
 
     @Test
     public void filtroVazio_naoEstaAtivoEAceitaTudo() {

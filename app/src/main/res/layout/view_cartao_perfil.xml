@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Dentro do CartaoPerfilView (um LinearLayout vertical, fundo roxo). -->
 <merge xmlns:android="http://schemas.android.com/apk/res/android">
 
     <TextView
@@ -31,8 +30,6 @@
         android:progressTint="@color/white"
         android:visibility="gone" />
 
-    <!-- AppCompatButton, nao Button: no tema Material 3 um Button comum vira
-         MaterialButton, que ignora este fundo e sai translucido. -->
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/botaoCartaoPerfil"
         android:layout_width="wrap_content"

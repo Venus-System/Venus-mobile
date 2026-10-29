@@ -7,17 +7,7 @@ import com.venussystem.venusmobile.repository.api.dto.IngredientResponse;
 
 import java.util.Locale;
 
-/**
- * Um ingrediente do produto como a tela de avaliacao mostra: o nome e, quando
- * o catalogo tem algo util a dizer, a descricao.
- */
 public class IngredienteProduto {
-
-    /**
-     * Texto que o catalogo grava quando ainda nao sabe a funcao do ingrediente.
-     * Repetido em quase metade da lista, so atrapalha - por isso nao vira
-     * descricao.
-     */
     private static final String PREFIXO_DESCRICAO_GENERICA = "faz parte da fórmula";
 
     private final String nome;
@@ -32,7 +22,6 @@ public class IngredienteProduto {
         this.descricao = descricao;
     }
 
-    /** Null quando o ingrediente nao traz nome nenhum. */
     @Nullable
     public static IngredienteProduto de(@Nullable IngredientResponse ingrediente) {
         if (ingrediente == null) {
@@ -74,7 +63,6 @@ public class IngredienteProduto {
         return nome;
     }
 
-    /** Nome INCI, so quando difere do nome mostrado. */
     @Nullable
     public String getNomeInci() {
         return nomeInci;

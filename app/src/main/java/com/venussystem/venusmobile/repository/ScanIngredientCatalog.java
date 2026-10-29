@@ -18,16 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import retrofit2.Response;
 
-/**
- * Resolves OCR ingredient candidates against a locally cached catalogue.
- *
- * Resolution is strictly read-only: this class may return an identifier that
- * already exists in the catalogue, but it never creates, updates or deletes
- * an ingredient. An unresolved candidate remains evidence for administrator
- * review and keeps its ingredientId null.
- */
 public final class ScanIngredientCatalog {
-    /** Canonical local states shared by the catalogue report and its validator. */
     public static final String STATUS_KNOWN = "KNOWN";
     public static final String STATUS_ALIAS = "ALIAS";
     public static final String STATUS_COMMON_NAME = "COMMON_NAME";
@@ -78,7 +69,6 @@ public final class ScanIngredientCatalog {
         public int expectedCount;
         public String validationStatus;
         public List<Match> matches = new ArrayList<>();
-        /** Auditable, user-reviewable issues; never used to invent a match. */
         public List<Issue> issues = new ArrayList<>();
         public int known, alias, commonName, fuzzy, ambiguous, notFound, errors, resolved, unresolved;
         public boolean needsReview;
@@ -112,7 +102,7 @@ public final class ScanIngredientCatalog {
         ScanIngredientCatalogCache.Snapshot snapshot = null;
         boolean fresh = false;
         try { snapshot = snapshotCache.readFresh(CACHE_TTL_MS); }
-        catch (IOException ignored) { /* corrupted/unreadable cache: refresh below */ }
+        catch (IOException ignored) { }
         if (snapshot != null) {
             fresh = true;
         } else {

@@ -8,19 +8,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/** Rejects invalid data rather than silently truncating OCR to fit the server. */
 public final class ScanSubmissionValidator {
 
     private ScanSubmissionValidator() { }
 
-    /**
-     * Validates only the ingredient portion before any future Mongo POST.
-     * OCR text is preserved for audit. Obvious package/company residue may
-     * remain as an unresolved candidate so the administrator can review it;
-     * it is never promoted automatically to a canonical ingredient. The
-     * mobile submission contains only the OCR candidate; ingredient creation
-     * is deliberately outside this flow and has no mobile API path.
-     */
     public static void validateIngredientQuality(ScanSessionRequest r) {
         require(r != null, "Submissão ausente.");
         require(r.ingredients != null, "Lista de ingredientes ausente.");
@@ -38,10 +29,6 @@ public final class ScanSubmissionValidator {
             }
             String name = ingredient.rawName.trim();
             require(!name.isEmpty() && name.length() <= 300, "Nome de ingrediente inválido.");
-            // Unknown or administrative-looking OCR is retained as a draft
-            // candidate. It remains NEEDS_REVIEW; the administrator decides
-            // whether to link or discard it during review. The mobile flow
-            // never creates an ingredient.
         }
     }
 

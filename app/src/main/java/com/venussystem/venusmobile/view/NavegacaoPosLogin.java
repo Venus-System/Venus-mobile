@@ -21,11 +21,6 @@ public class NavegacaoPosLogin {
     private NavegacaoPosLogin() {
     }
 
-    /**
-     * Ponto unico de "a pessoa entrou": antes de seguir, pede a permissao de
-     * localizacao (uma vez por conta) e manda a localizacao para a API. Negar
-     * ou falhar nunca impede de entrar.
-     */
     public static void seguir(Activity origem) {
         LocalizacaoRepository localizacao = new LocalizacaoRepository(origem);
 
@@ -40,12 +35,8 @@ public class NavegacaoPosLogin {
     }
 
     private static void pedirPermissao(ComponentActivity origem, LocalizacaoRepository localizacao) {
-        // Marca antes de mostrar: se o app for fechado com o dialogo aberto, nao
-        // volta a perguntar toda hora.
         localizacao.marcarPediuPermissao();
 
-        // registry.register sem LifecycleOwner pode ser chamado a qualquer
-        // momento (o seguir roda depois do onCreate, de um observer ou do onStart).
         AtomicReference<ActivityResultLauncher<String>> launcher = new AtomicReference<>();
         launcher.set(origem.getActivityResultRegistry().register(
                 CHAVE_PERMISSAO_LOCALIZACAO,

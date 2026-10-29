@@ -31,15 +31,6 @@ import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
 import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 import com.venussystem.venusmobile.viewmodel.AssistenteViewModel;
 
-/**
- * Conversa com a assistente, que responde pela Venus-AI-api.
- *
- * A tela so desenha: a conversa e o envio moram no AssistenteViewModel. Como
- * aba da tela principal e o chat geral. Aberta pelo detalhe de um produto
- * (AssistenteActivity.paraProduto), mostra o produto no topo, as perguntas vao
- * falando dele e a seta de voltar leva de volta ao produto. Nos dois casos a
- * conversa e a mesma, porque ela fica salva por conta.
- */
 public class AssistenteFragment extends Fragment {
 
     public static final String EXTRA_PRODUTO_ID = "assistente_produto_id";
@@ -50,15 +41,12 @@ public class AssistenteFragment extends Fragment {
 
     private static final String ARG_COM_VOLTAR = "assistente_com_voltar";
 
-    // Extra de int nao aceita null: nota fora de 0-100 quer dizer "sem nota".
     private static final int SEM_NOTA = -1;
 
-    // Enquanto a Venus responde, o botao e as sugestoes ficam apagados assim.
     private static final float ALFA_DESABILITADO = 0.4f;
 
     private static final int MAXIMO_LINHAS_CAMPO = 4;
 
-    /** Os dados do produto, no formato dos extras da AssistenteActivity. */
     public static Bundle extrasDoProduto(@Nullable Produto produto) {
         Bundle extras = new Bundle();
         if (produto == null) {
@@ -74,7 +62,6 @@ public class AssistenteFragment extends Fragment {
         return extras;
     }
 
-    /** O chat aberto a partir de um produto: com a seta de voltar. */
     public static AssistenteFragment doProduto(@Nullable Bundle extrasDoProduto) {
         Bundle args = extrasDoProduto == null ? new Bundle() : new Bundle(extrasDoProduto);
         args.putBoolean(ARG_COM_VOLTAR, true);
@@ -94,8 +81,6 @@ public class AssistenteFragment extends Fragment {
     @Nullable
     private ViewTreeObserver.OnGlobalLayoutListener aoMudarLayout;
 
-    // A primeira lista pode ter a conversa salva inteira: pula direto para o
-    // fim em vez de rolar mensagem por mensagem.
     private boolean jaRolou = false;
 
     @Nullable
@@ -117,13 +102,9 @@ public class AssistenteFragment extends Fragment {
         linhaSugestoes = view.findViewById(R.id.linhaSugestoes);
         veninha = view.findViewById(R.id.veninha);
 
-        // O teclado abre e fecha sem avisar o fragment; cada vez a tela refaz o
-        // layout, e e ai que a Veninha confere se precisa encolher.
         aoMudarLayout = () -> ajustarVeninhaAoTeclado(view);
         view.getViewTreeObserver().addOnGlobalLayoutListener(aoMudarLayout);
 
-        // Pergunta longa quebra a linha, mas o campo continua de uma linha so
-        // para o teclado: um campo multilinha troca o "enviar" por "nova linha".
         campo.setHorizontallyScrolling(false);
         campo.setMaxLines(MAXIMO_LINHAS_CAMPO);
 
@@ -148,9 +129,6 @@ public class AssistenteFragment extends Fragment {
 
         Produto produto = produtoDe(argumentos());
 
-        // No escopo da activity, e nao do fragment: a aba e trocada por outras
-        // e sai da tela, e uma resposta que demora mais de um minuto nao pode
-        // se perder no caminho.
         viewModel = new ViewModelProvider(requireActivity()).get(AssistenteViewModel.class);
         viewModel.sincronizarComSalva();
         if (produto != null) {
@@ -229,7 +207,6 @@ public class AssistenteFragment extends Fragment {
         marca.setText(temMarca ? textoMarca : "");
         marca.setVisibility(temMarca ? View.VISIBLE : View.GONE);
 
-        // Mesmo selo das outras telas (ver AlternativaAdapter).
         TextView nota = view.findViewById(R.id.textNotaProduto);
         Integer valor = produto.getOverallScore();
         nota.setText(valor == null ? getString(R.string.nota_indisponivel) : String.valueOf(valor));
@@ -264,17 +241,11 @@ public class AssistenteFragment extends Fragment {
     }
 
     private void enviar() {
-        // So limpa o campo se a pergunta foi aceita: enquanto a Venus responde a
-        // anterior, o texto digitado fica esperando ali.
         if (viewModel.perguntar(campo.getText().toString())) {
             campo.setText("");
         }
     }
 
-    /**
-     * A pergunta sem resposta volta para o campo, e tentar de novo e so tocar
-     * em enviar. Se a pessoa ja comecou a escrever outra, nada e trocado.
-     */
     private void devolverAoCampo(@Nullable String pergunta) {
         if (pergunta == null) {
             return;
@@ -300,7 +271,6 @@ public class AssistenteFragment extends Fragment {
         int tamanho = raiz.getResources().getDimensionPixelSize(
                 comTeclado ? R.dimen.veninha_chat_teclado : R.dimen.veninha_chat);
         ViewGroup.LayoutParams params = veninha.getLayoutParams();
-        // Trocar o tamanho refaz o layout e chama de novo: so mexe se mudou.
         if (params.height == tamanho) {
             return;
         }

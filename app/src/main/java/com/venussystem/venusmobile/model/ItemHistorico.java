@@ -38,10 +38,6 @@ public class ItemHistorico {
         return data;
     }
 
-    /**
-     * Status do scan no ciclo de revisão, por exemplo PENDING_REVIEW. Null
-     * quando o produto só foi aberto, sem scan.
-     */
     public String getStatus() {
         return status;
     }
@@ -50,10 +46,6 @@ public class ItemHistorico {
         return scanId;
     }
 
-    /**
-     * Quando aconteceu, em milissegundos; 0 se não se sabe. A data só separa os
-     * dias: é isto que ordena as entradas de um mesmo dia.
-     */
     public long getMomento() {
         return momento;
     }

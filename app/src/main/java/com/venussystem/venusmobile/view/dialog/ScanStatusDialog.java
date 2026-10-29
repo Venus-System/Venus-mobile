@@ -17,7 +17,6 @@ import androidx.appcompat.widget.AppCompatButton;
 import androidx.core.content.ContextCompat;
 import com.venussystem.venusmobile.R;
 
-/** Scan feedback using the same palette, rounded card and buttons as the profile dialogs. */
 public final class ScanStatusDialog {
     private ScanStatusDialog() { }
 

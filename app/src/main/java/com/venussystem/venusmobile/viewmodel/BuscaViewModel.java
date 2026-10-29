@@ -20,14 +20,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Sugestoes da Home e resultados da busca, os dois sobre o catalogo em memoria
- * e os dois com o mesmo filtro (FiltroRepository).
- *
- * Existe o endpoint /api/products/search e ele funciona, mas o catalogo
- * inteiro ja vem para a memoria uma vez so, e ir na rede a cada tecla exporia
- * a pessoa ao cold start do servidor gratuito.
- */
 public class BuscaViewModel extends AndroidViewModel {
 
     private final ProdutoRepository repository;
@@ -36,8 +28,6 @@ public class BuscaViewModel extends AndroidViewModel {
     private final MutableLiveData<List<Produto>> sugestoes = new MutableLiveData<>();
     private final MutableLiveData<List<Produto>> resultados = new MutableLiveData<>();
 
-    // O ViewModel observa o catalogo e o filtro por conta propria, em vez de
-    // depender de quem esta olhando a tela: as listas ficam sempre em dia.
     private final Observer<List<Produto>> aoMudarCatalogo = catalogo -> recalcular();
     private final Observer<FiltroProdutos> aoMudarFiltro = filtro -> recalcular();
 
@@ -65,18 +55,10 @@ public class BuscaViewModel extends AndroidViewModel {
         filtros.getFiltro().removeObserver(aoMudarFiltro);
     }
 
-    /**
-     * O catalogo filtrado, da maior nota para a menor; produto sem nota fica
-     * por ultimo. Null ate o catalogo chegar.
-     */
     public LiveData<List<Produto>> getSugestoes() {
         return sugestoes;
     }
 
-    /**
-     * O que bate com o termo digitado (no nome ou na marca) e com o filtro.
-     * Vazio enquanto nao ha termo: nesse caso a tela mostra o historico.
-     */
     public LiveData<List<Produto>> getResultados() {
         return resultados;
     }
@@ -101,7 +83,6 @@ public class BuscaViewModel extends AndroidViewModel {
         return filtros.atual().isAtivo();
     }
 
-    /** Sem termo, a tela de busca mostra o historico em vez de resultados. */
     public boolean isMostrandoHistorico() {
         return termo.trim().isEmpty();
     }
@@ -110,7 +91,6 @@ public class BuscaViewModel extends AndroidViewModel {
         repository.carregar(true);
     }
 
-    /** Caminho de cada tecla digitada. */
     public void buscar(String novoTermo) {
         termo = novoTermo == null ? "" : novoTermo;
         recalcular();

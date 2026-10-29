@@ -5,20 +5,7 @@ import androidx.annotation.Nullable;
 import java.io.Serializable;
 import java.time.LocalDate;
 
-/**
- * Um produto que a pessoa escaneou, nao achou no catalogo e mandou para a
- * equipe conferir. A lista vem de GET /api/scan-sessions/user/{userId}.
- *
- * Serializable para ir inteiro no Intent da lista para o detalhe, sem pedir
- * de novo para a API.
- */
 public class ProdutoEmAnalise implements Serializable {
-
-    /**
-     * Os seis status da API viram quatro para a pessoa: APPROVED, SYNCED e
-     * SYNC_FAILED sao todos "aprovado" - a diferenca e so se o produto ja
-     * entrou no catalogo, e isso aparece como o botao "Ver produto".
-     */
     public enum Situacao {
         AGUARDANDO, EM_ANALISE, APROVADO, RECUSADO
     }
@@ -59,7 +46,6 @@ public class ProdutoEmAnalise implements Serializable {
         return situacao;
     }
 
-    /** O nome que o OCR leu na frente; null quando nao leu nada. */
     @Nullable
     public String getNome() {
         return nome;
@@ -85,19 +71,16 @@ public class ProdutoEmAnalise implements Serializable {
         return enviadoEm;
     }
 
-    /** Quando a equipe aprovou ou recusou; null enquanto ninguem decidiu. */
     @Nullable
     public LocalDate getDecididoEm() {
         return decididoEm;
     }
 
-    /** Por que foi recusado (ou a observacao da aprovacao). */
     @Nullable
     public String getMotivo() {
         return motivo;
     }
 
-    /** O produto no catalogo, so depois que ele entrou la (status SYNCED). */
     @Nullable
     public Long getProdutoId() {
         return produtoId;

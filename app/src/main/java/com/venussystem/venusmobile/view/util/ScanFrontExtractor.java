@@ -26,49 +26,11 @@ import static com.venussystem.venusmobile.view.util.ScanFrontText.isSomenteNumer
 import static com.venussystem.venusmobile.view.util.ScanFrontText.normalizar;
 import static com.venussystem.venusmobile.view.util.ScanFrontText.removerDadosNumericos;
 
-/**
- * Extrai dados úteis da frente da embalagem.
- *
- * Responsabilidades:
- *
- * - candidatos de marca;
- * - candidatos de produto;
- * - apresentações;
- * - capacidade;
- * - concentração.
- *
- * IMPORTANTE:
- *
- * O extractor não escolhe o produto do banco.
- *
- * Ele somente preserva e organiza evidências do OCR.
- * A decisão final fica no ScanProductMatchRepository.
- *
- * ESTRATÉGIA:
- *
- * - mantém a lógica original de extração;
- * - amplia referências para diferentes categorias cosméticas;
- * - adiciona ativos de destaque;
- * - adiciona variantes comerciais;
- * - adiciona FPS/SPF e PA;
- * - suporta marcas compostas na mesma linha;
- * - suporta marcas compostas quebradas em várias linhas;
- * - não assume que a primeira linha comercial é necessariamente
- *   a marca verdadeira;
- * - preserva múltiplas candidatas de marca para validação
- *   posterior no catálogo.
- */
 public final class ScanFrontExtractor {
 
     private ScanFrontExtractor() {
-        // Utility class.
     }
 
-    /*
-     * =========================================================
-     * MÉTODO PRINCIPAL
-     * =========================================================
-     */
     @NonNull
     public static ScanFrontData extract(
             @NonNull List<String> linhas
@@ -90,11 +52,6 @@ public final class ScanFrontExtractor {
                     concentracao
             );
         }
-        /*
-         * -----------------------------------------------------
-         * NORMALIZA AS LINHAS SEM PERDER A ORDEM
-         * -----------------------------------------------------
-         */
         List<String> normalizadas =
                 new ArrayList<>();
         for (String linha :
@@ -113,11 +70,6 @@ public final class ScanFrontExtractor {
                     normalizada
             );
         }
-        /*
-         * -----------------------------------------------------
-         * PASSAGEM 1
-         * -----------------------------------------------------
-         */
         for (String linha :
                 normalizadas) {
             if (capacidade.isEmpty()) {
@@ -141,11 +93,6 @@ public final class ScanFrontExtractor {
                     productCandidates
             );
         }
-        /*
-         * -----------------------------------------------------
-         * PASSAGEM 2
-         * -----------------------------------------------------
-         */
         for (String linha :
                 normalizadas) {
             if (isSomenteNumero(
@@ -181,25 +128,6 @@ public final class ScanFrontExtractor {
                 );
             }
         }
-        /*
-         * -----------------------------------------------------
-         * PASSAGEM 3
-         *
-         * MARCA
-         *
-         * NÃO usamos break na primeira candidata.
-         *
-         * O OCR pode mostrar:
-         *
-         * NATIVA SPA
-         * ...
-         * OBOTICARIO
-         *
-         * A marca verdadeira pode ser a segunda.
-         *
-         * O catálogo é quem valida.
-         * -----------------------------------------------------
-         */
         int limiteMarca =
                 Math.min(
                         normalizadas.size(),
@@ -223,9 +151,6 @@ public final class ScanFrontExtractor {
             )) {
                 continue;
             }
-            /*
-             * Primeiro tenta a lógica original.
-             */
             String semNumeros =
                     removerDadosNumericos(
                             linha
@@ -250,18 +175,6 @@ public final class ScanFrontExtractor {
                     }
                 }
             }
-            /*
-             * Segundo:
-             *
-             * tenta detectar marcas quebradas onde a primeira
-             * palavra isoladamente não passaria pelo
-             * "pareceMarca".
-             *
-             * Ex:
-             *
-             * O
-             * BOTICARIO
-             */
             String marcaComposta =
                     extrairMarcaCompostaNasLinhas(
                             normalizadas,
@@ -274,20 +187,10 @@ public final class ScanFrontExtractor {
                 );
             }
         }
-        /*
-         * -----------------------------------------------------
-         * GARANTIA FINAL DOS DESCRITORES
-         * -----------------------------------------------------
-         */
         adicionarDescritoresDetectados(
                 normalizadas,
                 productCandidates
         );
-        /*
-         * -----------------------------------------------------
-         * EXTENSÃO GENERALISTA
-         * -----------------------------------------------------
-         */
         adicionarReferenciasExpandidas(
                 normalizadas,
                 productCandidates
@@ -296,11 +199,6 @@ public final class ScanFrontExtractor {
                 normalizadas,
                 productCandidates
         );
-        /*
-         * -----------------------------------------------------
-         * LIMPEZA FINAL
-         * -----------------------------------------------------
-         */
         limparMarcas(
                 brandCandidates
         );
@@ -319,11 +217,6 @@ public final class ScanFrontExtractor {
         );
     }
 
-    /*
-     * =========================================================
-     * RESULTADO
-     * =========================================================
-     */
     @NonNull
     private static ScanFrontData criarResultado(
             @NonNull List<String> marcas,

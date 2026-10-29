@@ -72,7 +72,6 @@ public class SincronizacaoRepositoryTest {
 
         api.em(BUSCA, 200, "{\"content\":[{\"id\":42,\"firebaseUid\":\"uid-ana\"}]}");
 
-        // Catalogos e listas da Ana: por padrao ela ainda nao tem nada na API.
         api.em(CATALOGO_ALERGIAS, 200,
                 "[{\"id\":9,\"allergyName\":\"Látex\"},{\"id\":12,\"allergyName\":\"Soja\"}]");
         api.em(ALERGIAS_DA_ANA, 200, NADA_SALVO);
@@ -103,7 +102,6 @@ public class SincronizacaoRepositoryTest {
     }
 
     private void apiSemPerfilAinda() {
-        // PUT sem resposta configurada ja cai no 404 do ApiPorRota.
         api.em(POST_PERFIL, 201, "{}");
         api.em(POST_PREFERENCIAS, 201, "{}");
     }
@@ -112,8 +110,6 @@ public class SincronizacaoRepositoryTest {
         api.em(PUT_PERFIL, 200, "{}");
         api.em(PUT_PREFERENCIAS, 200, "{}");
     }
-
-    // ---- Primeiro envio ----
 
     @Test
     public void primeiroEnvio_putDa404EEntaoCriaComPost() {
@@ -159,8 +155,6 @@ public class SincronizacaoRepositoryTest {
         assertEquals(Arrays.asList(PUT_PERFIL, PUT_PREFERENCIAS),
                 api.pedidosEm(PUT_PERFIL, POST_PERFIL, PUT_PREFERENCIAS, POST_PREFERENCIAS));
     }
-
-    // ---- Alergias ----
 
     @Test
     public void alergiaEscolhida_vaiComOIdDoCatalogoEGravidadeHigh() {
@@ -218,8 +212,6 @@ public class SincronizacaoRepositoryTest {
 
     @Test
     public void alergiaCadastradaPeloSite_naoEApagada() {
-        // Soja foi cadastrada no site. O app nao le isso de volta, entao a Ana
-        // nunca viu Soja aqui - apagar seria tirar uma alergia sem ela saber.
         responderQuestionarioCompleto();
         perfil.salvarLista(PerfilRepository.ALERGIAS, Arrays.asList("Látex"));
         apiComPerfil();
@@ -238,8 +230,6 @@ public class SincronizacaoRepositoryTest {
         apiComPerfil();
         assertTrue(sincronizacao.sincronizarAgora());
 
-        // "Refazer questionario" apaga as respostas; a Ana responde de novo
-        // sem Latex, e a API ainda tem o Latex que o app gravou antes.
         perfil.limpar();
         assertNull(perfil.getTag(PerfilRepository.GENERO));
         responderQuestionarioCompleto();
@@ -264,8 +254,6 @@ public class SincronizacaoRepositoryTest {
         assertTrue("parou antes das etiquetas", api.pedidosEm(CATALOGO_ETIQUETAS).isEmpty());
     }
 
-    // ---- Etiquetas ----
-
     @Test
     public void preferenciaSemColuna_vaiComoEtiqueta() {
         responderQuestionarioCompleto();
@@ -274,7 +262,6 @@ public class SincronizacaoRepositoryTest {
 
         assertTrue(sincronizacao.sincronizarAgora());
 
-        // Vegano vai pela coluna preferVegan, e so Natural vira etiqueta.
         assertEquals(1, api.corposEm(POST_ETIQUETA).size());
         JsonObject corpo = api.corpo(POST_ETIQUETA);
         assertEquals(42, corpo.get("userId").getAsLong());
@@ -292,8 +279,6 @@ public class SincronizacaoRepositoryTest {
         assertTrue(perfil.temAlteracaoParaEnviar());
     }
 
-    // ---- Quando nao envia ----
-
     @Test
     public void jaEnviado_naoMandaDeNovo() {
         responderQuestionarioCompleto();
@@ -303,7 +288,6 @@ public class SincronizacaoRepositoryTest {
 
         assertFalse(sincronizacao.sincronizarAgora());
 
-        // O id ja esta guardado e nada mudou: nem a busca de usuario sai.
         assertEquals(antes, api.pedidos.size());
     }
 
@@ -329,11 +313,8 @@ public class SincronizacaoRepositoryTest {
 
     @Test
     public void respostasAntigasSemContador_tambemSaoEnviadas() {
-        // Quem respondeu antes desta versao do app nao tem contador salvo.
         assertTrue(perfil.temAlteracaoParaEnviar());
     }
-
-    // ---- Falhas ----
 
     @Test
     public void edicaoDuranteOEnvio_continuaPendente() {
@@ -371,8 +352,6 @@ public class SincronizacaoRepositoryTest {
 
     @Test
     public void idGuardadoDeOutraPessoa_403_eBuscadoDeNovoNaProxima() {
-        // Banco recriado: o id 42 guardado agora e de outra conta, e a API
-        // recusa o token da Ana nele.
         responderQuestionarioCompleto();
         api.em(PUT_PERFIL, 403, "{\"status\":403,\"message\":\"Acesso negado\"}");
 
