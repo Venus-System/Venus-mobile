@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
-val urlVenusIaPadrao = "http://44.222.132.139/ai/"
+val urlVenusIaPadrao = "http://13.222.7.185/"
 val propriedadesLocais = Properties().apply {
     val arquivo = rootProject.file("local.properties")
     if (arquivo.exists()) {
