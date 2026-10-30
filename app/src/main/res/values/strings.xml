@@ -183,7 +183,7 @@
     <string name="em_breve">Em breve</string>
     <string name="hint_buscar_produto">Buscar produtos, ingredientes, marcas…</string>
     <string name="busca_sem_resultado">Nenhum produto encontrado</string>
-    <string name="home_sugestoes">Produtos</string>
+    <string name="home_sugestoes">Sugestões</string>
     <string name="home_sem_resultado_filtro">Nenhum produto com esse filtro</string>
     <string name="busca_hint_escolher">Buscar produto para adicionar</string>
     <string name="desc_filtro">Filtrar produtos</string>
