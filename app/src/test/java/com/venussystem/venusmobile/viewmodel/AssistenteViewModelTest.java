@@ -95,9 +95,8 @@ public class AssistenteViewModelTest {
     }
 
     @Test
-    public void comecaSoComASaudacao() {
-        assertEquals(1, mensagens().size());
-        assertEquals(app.getString(R.string.assistente_saudacao), ultima().getTexto());
+    public void comecaSemMensagens() {
+        assertTrue(mensagens().isEmpty());
         assertFalse(viewModel.getAguardando().getValue());
     }
 
@@ -111,12 +110,12 @@ public class AssistenteViewModelTest {
         assertTrue(viewModel.perguntar("  tem álcool?  "));
 
         List<Mensagem> lista = mensagens();
-        assertEquals(3, lista.size());
-        assertEquals(Mensagem.DO_USUARIO, lista.get(1).getAutor());
-        assertEquals("tem álcool?", lista.get(1).getTexto());
-        assertEquals(app.getString(R.string.assistente_digitando), lista.get(2).getTexto());
-        assertTrue(lista.get(2).isDigitando());
-        assertFalse(lista.get(1).isDigitando());
+        assertEquals(2, lista.size());
+        assertEquals(Mensagem.DO_USUARIO, lista.get(0).getAutor());
+        assertEquals("tem álcool?", lista.get(0).getTexto());
+        assertEquals(app.getString(R.string.assistente_digitando), lista.get(1).getTexto());
+        assertTrue(lista.get(1).isDigitando());
+        assertFalse(lista.get(0).isDigitando());
         assertTrue(viewModel.getAguardando().getValue());
         assertEquals("tem álcool?", conversa.mensagens.get(0));
     }
@@ -125,7 +124,7 @@ public class AssistenteViewModelTest {
     public void resposta_tomaOLugarDoDigitando() {
         conversarUmaVez("oi", "Oi! Como posso ajudar?", UID);
 
-        assertEquals(3, mensagens().size());
+        assertEquals(2, mensagens().size());
         assertEquals(Mensagem.DO_ASSISTENTE, ultima().getAutor());
         assertEquals("Oi! Como posso ajudar?", ultima().getTexto());
         assertFalse(ultima().isDigitando());
@@ -139,7 +138,7 @@ public class AssistenteViewModelTest {
         assertFalse(viewModel.perguntar("segunda"));
 
         assertEquals(1, conversa.mensagens.size());
-        assertEquals(3, mensagens().size());
+        assertEquals(2, mensagens().size());
     }
 
     @Test
@@ -147,7 +146,7 @@ public class AssistenteViewModelTest {
         assertFalse(viewModel.perguntar("   "));
 
         assertEquals(0, conversa.mensagens.size());
-        assertEquals(1, mensagens().size());
+        assertEquals(0, mensagens().size());
     }
 
     @Test
@@ -167,11 +166,10 @@ public class AssistenteViewModelTest {
         reaberto.perguntar("e agora?");
 
         List<Mensagem> lista = mensagens(reaberto);
-        assertEquals(app.getString(R.string.assistente_saudacao), lista.get(0).getTexto());
-        assertEquals("oi", lista.get(1).getTexto());
-        assertEquals(Mensagem.DO_USUARIO, lista.get(1).getAutor());
-        assertEquals("Olá!", lista.get(2).getTexto());
-        assertEquals(Mensagem.DO_ASSISTENTE, lista.get(2).getAutor());
+        assertEquals("oi", lista.get(0).getTexto());
+        assertEquals(Mensagem.DO_USUARIO, lista.get(0).getAutor());
+        assertEquals("Olá!", lista.get(1).getTexto());
+        assertEquals(Mensagem.DO_ASSISTENTE, lista.get(1).getAutor());
         assertEquals(UID, conversa.conversas.get(1));
     }
 
@@ -184,8 +182,8 @@ public class AssistenteViewModelTest {
         chegando.aoResponder("Olá!", UID, null);
 
         List<Mensagem> lista = mensagens(abrirChat());
-        assertEquals(3, lista.size());
-        assertEquals("Olá!", lista.get(2).getTexto());
+        assertEquals(2, lista.size());
+        assertEquals("Olá!", lista.get(1).getTexto());
     }
 
     @Test
@@ -193,7 +191,7 @@ public class AssistenteViewModelTest {
         viewModel.perguntar("oi");
         conversa.ultimoCallback.aoFalhar(ConversaRepository.Falha.SEM_CONEXAO);
 
-        assertEquals(1, mensagens(abrirChat()).size());
+        assertEquals(0, mensagens(abrirChat()).size());
     }
 
     @Test
@@ -201,14 +199,14 @@ public class AssistenteViewModelTest {
         AssistenteViewModel telaDoProduto = abrirChat();
         telaDoProduto.perguntar("e este produto?");
         conversa.ultimoCallback.aoResponder("Parece bom.", UID, null);
-        assertEquals(1, mensagens().size());
+        assertEquals(0, mensagens().size());
 
         viewModel.sincronizarComSalva();
 
         List<Mensagem> lista = mensagens();
-        assertEquals(3, lista.size());
-        assertEquals("e este produto?", lista.get(1).getTexto());
-        assertEquals("Parece bom.", lista.get(2).getTexto());
+        assertEquals(2, lista.size());
+        assertEquals("e este produto?", lista.get(0).getTexto());
+        assertEquals("Parece bom.", lista.get(1).getTexto());
     }
 
     @Test
@@ -229,7 +227,7 @@ public class AssistenteViewModelTest {
 
         viewModel.sincronizarComSalva();
 
-        assertEquals(3, mensagens().size());
+        assertEquals(2, mensagens().size());
         assertTrue(viewModel.getAguardando().getValue());
         conversa.ultimoCallback.aoResponder("Ola!", UID, null);
         assertEquals("Ola!", ultima().getTexto());
@@ -242,11 +240,11 @@ public class AssistenteViewModelTest {
         assertTrue(viewModel.novaConversa());
         viewModel.perguntar("de novo");
 
-        assertEquals(3, mensagens().size());
+        assertEquals(2, mensagens().size());
         String idNovo = conversa.conversas.get(1);
         assertNotNull(idNovo);
         assertNotEquals(UID, idNovo);
-        assertEquals(1, mensagens(abrirChat()).size());
+        assertEquals(0, mensagens(abrirChat()).size());
     }
 
     @Test
@@ -254,7 +252,7 @@ public class AssistenteViewModelTest {
         viewModel.perguntar("oi");
 
         assertFalse(viewModel.novaConversa());
-        assertEquals(3, mensagens().size());
+        assertEquals(2, mensagens().size());
     }
 
     @Test
@@ -266,7 +264,7 @@ public class AssistenteViewModelTest {
         outraTela.novaConversa();
         antigo.aoResponder("Olá!", UID, null);
 
-        assertEquals(1, mensagens(abrirChat()).size());
+        assertEquals(0, mensagens(abrirChat()).size());
     }
 
     @Test
@@ -278,8 +276,8 @@ public class AssistenteViewModelTest {
 
         assertEquals("Sobre o produto \"Hidratante Firmador\" da marca Nivea: Tem álcool?",
                 conversa.mensagens.get(0));
-        assertEquals("Tem álcool?", mensagens().get(1).getTexto());
-        assertEquals("Tem álcool?", mensagens(abrirChat()).get(1).getTexto());
+        assertEquals("Tem álcool?", mensagens().get(0).getTexto());
+        assertEquals("Tem álcool?", mensagens(abrirChat()).get(0).getTexto());
     }
 
     @Test
