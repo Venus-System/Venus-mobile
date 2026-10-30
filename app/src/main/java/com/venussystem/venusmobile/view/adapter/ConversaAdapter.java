@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -72,7 +73,8 @@ public class ConversaAdapter extends RecyclerView.Adapter<ConversaAdapter.Mensag
 
     static class MensagemViewHolder extends RecyclerView.ViewHolder {
         private final TextView texto;
-        private final Runnable proximosPontos = this::andarPontos;
+        @Nullable
+        private Runnable pontos;
         private int passo;
 
         MensagemViewHolder(@NonNull View item) {
@@ -86,7 +88,19 @@ public class ConversaAdapter extends RecyclerView.Adapter<ConversaAdapter.Mensag
                 texto.setContentDescription(mensagem.getTexto());
                 passo = 0;
                 mostrarPontos();
-                texto.postDelayed(proximosPontos, INTERVALO_PONTOS_MS);
+                Runnable proximos = new Runnable() {
+                    @Override
+                    public void run() {
+                        if (pontos != this) {
+                            return;
+                        }
+                        passo++;
+                        mostrarPontos();
+                        texto.postDelayed(this, INTERVALO_PONTOS_MS);
+                    }
+                };
+                pontos = proximos;
+                texto.postDelayed(proximos, INTERVALO_PONTOS_MS);
             } else {
                 texto.setContentDescription(null);
                 texto.setText(mensagem.getTexto());
@@ -94,13 +108,10 @@ public class ConversaAdapter extends RecyclerView.Adapter<ConversaAdapter.Mensag
         }
 
         void pararPontos() {
-            texto.removeCallbacks(proximosPontos);
-        }
-
-        private void andarPontos() {
-            passo++;
-            mostrarPontos();
-            texto.postDelayed(proximosPontos, INTERVALO_PONTOS_MS);
+            if (pontos != null) {
+                texto.removeCallbacks(pontos);
+                pontos = null;
+            }
         }
 
         private void mostrarPontos() {
