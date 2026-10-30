@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -88,6 +89,29 @@ public class NotificadorTest {
         assertEquals("Hidratante foi enviado para análise.",
                 n.extras.getCharSequence(Notification.EXTRA_TEXT).toString());
         assertEquals(Notificador.Canal.ENVIO_DE_PRODUTOS.id, n.getChannelId());
+    }
+
+    @Test
+    public void comVisual_usaCartaoColoridoMantendoTituloETexto() {
+        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS);
+
+        Notificador.mostrar(app, Notificador.Canal.ANALISE_DE_PRODUTOS, 1, "Aprovado!", "Creme no catálogo.",
+                Notificador.Visual.APROVADO);
+
+        Notification n = publicadas().get(0);
+        assertNotNull(n.contentView);
+        assertNotNull(n.bigContentView);
+        assertEquals("Aprovado!", n.extras.getCharSequence(Notification.EXTRA_TITLE).toString());
+        assertEquals("Creme no catálogo.", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString());
+    }
+
+    @Test
+    public void semVisual_mantemANotificacaoPadrao() {
+        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS);
+
+        Notificador.mostrar(app, Notificador.Canal.LEMBRETES, 1, "T", "X");
+
+        assertNull(publicadas().get(0).bigContentView);
     }
 
     @Test

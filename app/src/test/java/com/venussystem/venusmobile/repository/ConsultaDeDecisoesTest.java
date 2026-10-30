@@ -84,7 +84,7 @@ public class ConsultaDeDecisoesTest {
         ConsultaDeDecisoes.Resultado resultado = consulta.verificar();
 
         assertEquals(1, resultado.avisos.size());
-        assertEquals("Produto aprovado", resultado.avisos.get(0).titulo);
+        assertEquals("Aprovado! 🎉", resultado.avisos.get(0).titulo);
         assertEquals(AvisoDeAnalise.Destino.PRODUTO, resultado.avisos.get(0).destino);
         assertFalse(resultado.aindaAguardando);
     }
@@ -99,7 +99,7 @@ public class ConsultaDeDecisoesTest {
         ConsultaDeDecisoes.Resultado resultado = consulta.verificar();
 
         assertEquals(1, resultado.avisos.size());
-        assertEquals("Produto não aprovado", resultado.avisos.get(0).titulo);
+        assertEquals("Ops, não foi dessa vez 😢", resultado.avisos.get(0).titulo);
         assertEquals("Produto a: Foto ruim", resultado.avisos.get(0).texto);
     }
 

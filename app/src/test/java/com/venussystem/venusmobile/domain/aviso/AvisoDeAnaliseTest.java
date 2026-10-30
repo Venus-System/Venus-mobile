@@ -22,7 +22,7 @@ public class AvisoDeAnaliseTest {
         AvisoDeAnalise aviso = AvisoDeAnalise.de(produto(Situacao.APROVADO, "Creme Hidratante", "Cerave", null, 57L));
 
         assertNotNull(aviso);
-        assertEquals("Produto aprovado", aviso.titulo);
+        assertEquals("Aprovado! 🎉", aviso.titulo);
         assertEquals("Cerave Creme Hidratante já está no catálogo da Venus.", aviso.texto);
         assertEquals(Destino.PRODUTO, aviso.destino);
         assertEquals(57L, aviso.produtoId);
@@ -48,7 +48,7 @@ public class AvisoDeAnaliseTest {
     public void aprovadoSemEntrarNoCatalogo_dizQueLogoApareceEAbreProdutosEmAnalise() {
         AvisoDeAnalise aviso = AvisoDeAnalise.de(produto(Situacao.APROVADO, "Creme Hidratante", "Cerave", null, null));
 
-        assertEquals("Produto aprovado", aviso.titulo);
+        assertEquals("Aprovado! 🎉", aviso.titulo);
         assertEquals("Creme Hidratante foi aprovado e logo aparece no catálogo.", aviso.texto);
         assertEquals(Destino.PRODUTOS_EM_ANALISE, aviso.destino);
     }
@@ -66,7 +66,7 @@ public class AvisoDeAnaliseTest {
         AvisoDeAnalise aviso = AvisoDeAnalise.de(
                 produto(Situacao.RECUSADO, "Tônico Facial", "Vichy", "Foto do verso ilegível", null));
 
-        assertEquals("Produto não aprovado", aviso.titulo);
+        assertEquals("Ops, não foi dessa vez 😢", aviso.titulo);
         assertEquals("Tônico Facial: Foto do verso ilegível", aviso.texto);
         assertEquals(Destino.PRODUTOS_EM_ANALISE, aviso.destino);
     }
