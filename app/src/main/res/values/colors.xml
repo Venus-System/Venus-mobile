@@ -54,4 +54,8 @@
     <color name="nota_boa_texto">#FF1F6E4A</color>
     <color name="nota_media_texto">#FF8A5A12</color>
     <color name="nota_ruim_texto">#FFB23A5A</color>
+    <color name="notificacao_aprovado_inicio">#FF58CC02</color>
+    <color name="notificacao_aprovado_fim">#FF2E9E6B</color>
+    <color name="notificacao_recusado_inicio">#FF7B2FF2</color>
+    <color name="notificacao_recusado_fim">#FF45147A</color>
 </resources>

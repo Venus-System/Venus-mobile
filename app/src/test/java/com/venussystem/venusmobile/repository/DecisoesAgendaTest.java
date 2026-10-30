@@ -139,7 +139,7 @@ public class DecisoesAgendaTest {
 
         assertEquals(1, avisos().size());
         Notification notificacao = avisos().get(0);
-        assertEquals("Produto aprovado", notificacao.extras.getCharSequence(Notification.EXTRA_TITLE).toString());
+        assertEquals("Aprovado! 🎉", notificacao.extras.getCharSequence(Notification.EXTRA_TITLE).toString());
         assertEquals("Cerave Creme já está no catálogo da Venus.",
                 notificacao.extras.getCharSequence(Notification.EXTRA_TEXT).toString());
         assertEquals("analise_de_produtos", notificacao.getChannelId());

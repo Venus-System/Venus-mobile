@@ -51,6 +51,7 @@ public class DecisoesWorker extends Worker {
                         .putExtra(DetalheProdutoActivity.EXTRA_ID, aviso.produtoId)
                 : new Intent(contexto, ProdutosEmAnaliseActivity.class);
         Notificador.mostrar(contexto, Notificador.Canal.ANALISE_DE_PRODUTOS, aviso.scanId.hashCode(),
-                aviso.titulo, aviso.texto, tela);
+                aviso.titulo, aviso.texto,
+                aviso.aprovado ? Notificador.Visual.APROVADO : Notificador.Visual.RECUSADO, tela);
     }
 }

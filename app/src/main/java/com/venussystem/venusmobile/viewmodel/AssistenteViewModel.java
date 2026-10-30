@@ -158,7 +158,6 @@ public class AssistenteViewModel extends AndroidViewModel {
     private void mostrar(ConversaSalvaRepository.Conversa salvaAgora) {
         conversationId = salvaAgora.conversationId;
         mensagens.clear();
-        mensagens.add(Mensagem.doAssistente(getApplication().getString(R.string.assistente_saudacao)));
         mensagens.addAll(salvaAgora.mensagens);
         publicar();
     }

@@ -9,6 +9,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 
+import android.widget.RemoteViews;
+
+import androidx.annotation.ColorRes;
+import androidx.annotation.DrawableRes;
+import androidx.annotation.LayoutRes;
+import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
@@ -39,6 +45,23 @@ public final class Notificador {
         }
     }
 
+    public enum Visual {
+        APROVADO(R.drawable.bg_notificacao_aprovado, R.drawable.veninha_cara_feliz,
+                R.color.notificacao_aprovado_fim),
+        RECUSADO(R.drawable.bg_notificacao_recusado, R.drawable.veninha_cara_chorando,
+                R.color.notificacao_recusado_fim);
+
+        private final int fundo;
+        private final int mascote;
+        private final int cor;
+
+        Visual(@DrawableRes int fundo, @DrawableRes int mascote, @ColorRes int cor) {
+            this.fundo = fundo;
+            this.mascote = mascote;
+            this.cor = cor;
+        }
+    }
+
     private Notificador() {
     }
 
@@ -57,9 +80,14 @@ public final class Notificador {
                 == PackageManager.PERMISSION_GRANTED;
     }
 
-    @SuppressLint("MissingPermission")
     public static boolean mostrar(Context context, Canal canal, int id, String titulo,
                                   String texto, Intent... telas) {
+        return mostrar(context, canal, id, titulo, texto, null, telas);
+    }
+
+    @SuppressLint("MissingPermission")
+    public static boolean mostrar(Context context, Canal canal, int id, String titulo,
+                                  String texto, @Nullable Visual visual, Intent... telas) {
         if (!temPermissao(context)) {
             return false;
         }
@@ -81,8 +109,26 @@ public final class Notificador {
                 .setAutoCancel(true)
                 .setContentIntent(toque);
 
+        if (visual != null) {
+            notificacao.setColor(ContextCompat.getColor(context, visual.cor))
+                    .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
+                    .setCustomContentView(cartao(context, R.layout.notificacao_decisao, visual, titulo, texto))
+                    .setCustomBigContentView(cartao(context, R.layout.notificacao_decisao_expandida,
+                            visual, titulo, texto));
+        }
+
         NotificationManagerCompat.from(context).notify(id, notificacao.build());
         return true;
+    }
+
+    private static RemoteViews cartao(Context context, @LayoutRes int layout, Visual visual,
+                                      String titulo, String texto) {
+        RemoteViews cartao = new RemoteViews(context.getPackageName(), layout);
+        cartao.setInt(R.id.notificacao_fundo, "setBackgroundResource", visual.fundo);
+        cartao.setImageViewResource(R.id.notificacao_mascote, visual.mascote);
+        cartao.setTextViewText(R.id.notificacao_titulo, titulo);
+        cartao.setTextViewText(R.id.notificacao_texto, texto);
+        return cartao;
     }
 
     public static void cancelarTodas(Context context) {
