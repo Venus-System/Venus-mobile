@@ -82,7 +82,9 @@
             android:orientation="vertical"
             android:paddingBottom="@dimen/espaco_medio">
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="NORMAL">
 
                 <ImageView
                     style="@style/FioTipoCabelo"
@@ -108,7 +110,9 @@
 
             </LinearLayout>
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="DRY">
 
                 <ImageView
                     style="@style/FioTipoCabelo"
@@ -134,7 +138,9 @@
 
             </LinearLayout>
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="SENSITIVE">
 
                 <ImageView
                     style="@style/FioTipoCabelo"
@@ -160,7 +166,9 @@
 
             </LinearLayout>
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="OILY">
 
                 <ImageView
                     style="@style/FioTipoCabelo"
@@ -186,7 +194,9 @@
 
             </LinearLayout>
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="DANDRUFF">
 
                 <ImageView
                     style="@style/FioTipoCabelo"

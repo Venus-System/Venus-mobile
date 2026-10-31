@@ -96,6 +96,37 @@ public class PerfilProgressoTest {
     }
 
     @Test
+    public void homem_naoTemPerguntaDeGestacao_eNaoPrecisaResponderParaCompletar() {
+        responderOsSeteDeEscolhaUnica();
+        perfil.salvarResposta(PerfilRepository.GENERO, "MALE", "Masculino");
+        perfil.salvarLista(PerfilRepository.CONDICOES_PELE, Collections.singletonList(PerfilRepository.NENHUMA));
+
+        assertEquals(false, perfil.perguntaGestacao());
+        assertEquals(Estado.COMPLETO, perfil.progresso().estado);
+        assertEquals(100, perfil.progresso().porcentagem);
+    }
+
+    @Test
+    public void quemNaoEhHomem_continuaComAPerguntaDeGestacao() {
+        perfil.salvarResposta(PerfilRepository.GENERO, "FEMALE", "Feminino");
+        assertTrue(perfil.perguntaGestacao());
+
+        perfil.salvarResposta(PerfilRepository.GENERO, "NON_BINARY", "Não binário");
+        assertTrue(perfil.perguntaGestacao());
+    }
+
+    @Test
+    public void virarHomem_limpaGravidezQueJaTinhaSidoMarcada() {
+        perfil.salvarResposta(PerfilRepository.GENERO, "FEMALE", "Feminino");
+        perfil.salvarLista(PerfilRepository.GESTACAO, Collections.singletonList("isPregnant"));
+
+        perfil.salvarResposta(PerfilRepository.GENERO, "MALE", "Masculino");
+
+        assertEquals(Collections.singletonList(PerfilRepository.NENHUMA),
+                perfil.getLista(PerfilRepository.GESTACAO));
+    }
+
+    @Test
     public void prefiroNaoDizerContaComoRespondido() {
         perfil.salvarResposta(PerfilRepository.GENERO, "PREFER_NOT_SAY", "Prefiro não dizer");
 

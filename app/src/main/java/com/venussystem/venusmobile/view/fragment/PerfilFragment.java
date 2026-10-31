@@ -40,12 +40,15 @@ import com.venussystem.venusmobile.view.dialog.ModalEscolhaMultipla;
 import com.venussystem.venusmobile.view.dialog.ModalEscolhaUnica;
 import com.venussystem.venusmobile.view.dialog.ModalFaixaEtaria;
 import com.venussystem.venusmobile.view.util.ImagemLocalUtil;
+import com.venussystem.venusmobile.view.util.SheetAjuda;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PerfilFragment extends Fragment {
     private static class Atributo {
@@ -78,6 +81,16 @@ public class PerfilFragment extends Fragment {
                     (String) paresTagRotulo[i], (Integer) paresTagRotulo[i + 1]));
         }
         return lista;
+    }
+
+    private static final Map<String, Integer> AJUDAS = new HashMap<>();
+
+    static {
+        AJUDAS.put(PerfilRepository.TIPO_PELE, R.layout.sheet_tipo_pele);
+        AJUDAS.put(PerfilRepository.FOTOTIPO, R.layout.sheet_fototipo);
+        AJUDAS.put(PerfilRepository.SENSIBILIDADE, R.layout.sheet_sensibilidade);
+        AJUDAS.put(PerfilRepository.TIPO_CABELO, R.layout.sheet_tipo_cabelo);
+        AJUDAS.put(PerfilRepository.COURO_CABELUDO, R.layout.sheet_couro);
     }
 
     private static final Atributo[] ATRIBUTOS = {
@@ -321,11 +334,22 @@ public class PerfilFragment extends Fragment {
         listaAtributos.removeAllViews();
 
         for (Atributo atributo : ATRIBUTOS) {
+            if (PerfilRepository.GESTACAO.equals(atributo.chave) && !perfil.perguntaGestacao()) {
+                continue;
+            }
             View card = getLayoutInflater()
                     .inflate(R.layout.item_perfil_atributo, listaAtributos, false);
 
             ((TextView) card.findViewById(R.id.textRotulo)).setText(atributo.rotulo);
             mostrarValor(card.findViewById(R.id.textValor), valorAtual(atributo));
+
+            Integer layoutAjuda = AJUDAS.get(atributo.chave);
+            if (layoutAjuda != null) {
+                ImageButton ajuda = card.findViewById(R.id.btnAjuda);
+                ajuda.setVisibility(View.VISIBLE);
+                ajuda.setOnClickListener(v ->
+                        SheetAjuda.mostrar(requireContext(), layoutAjuda, null));
+            }
 
             ImageButton editar = card.findViewById(R.id.btnEditar);
             editar.setOnClickListener(v -> abrirModal(atributo));

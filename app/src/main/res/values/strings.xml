@@ -263,6 +263,7 @@
     <string name="perfil_secao_valores_sub">O que você não abre mão nas suas escolhas.</string>
     <string name="perfil_pendente">Aviso: Pendente</string>
     <string name="perfil_editar">Editar</string>
+    <string name="perfil_ajuda">Ver explicação</string>
     <string name="perfil_hint_alergia">Pesquisar alergia</string>
     <string name="perfil_hint_preferencia">Pesquisar preferência</string>
     <string name="perfil_sem_nome">Perfil Venus</string>
