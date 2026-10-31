@@ -19,6 +19,7 @@ import com.venussystem.venusmobile.repository.api.dto.BrandResponse;
 import com.venussystem.venusmobile.repository.api.dto.IngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.MediaAssetResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductCategoryResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductFullIngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductFullResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductIngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductResponse;
@@ -236,6 +237,19 @@ public class ProdutoRepository {
     }
 
     private List<IngredienteProduto> obterIngredientesDoProduto(long produtoId) {
+        List<ProductFullIngredientResponse> embutidos = ingredientesEmbutidos(produtoId);
+        if (!embutidos.isEmpty()) {
+            List<IngredienteProduto> resultado = new ArrayList<>();
+            for (ProductFullIngredientResponse embutido : embutidos) {
+                IngredienteProduto item = IngredienteProduto.de(embutido.ingredient);
+                if (item == null) {
+                    return Collections.emptyList();
+                }
+                resultado.add(item);
+            }
+            return resultado;
+        }
+
         Long versaoId = buscarVersaoAtual(produtoId);
         if (versaoId == null) {
             return Collections.emptyList();
@@ -327,22 +341,23 @@ public class ProdutoRepository {
 
     private DetalheProduto obterDetalheCompleto(long produtoId) {
         try {
-            Response<ProductFullResponse> resposta =
-                    api.buscarProdutoCompleto(produtoId).execute();
-            if (!resposta.isSuccessful() || resposta.body() == null) {
+            ProductFullResponse corpo = ProdutoCompletoCache.obter(api, produtoId);
+            if (corpo == null) {
                 return new DetalheProduto(null, null);
             }
 
-            ProductFullResponse corpo = resposta.body();
             String textoRotulo = corpo.label == null
                     ? null
                     : rotuloParaExibicao(corpo.label.normalizedText);
             Long versaoId = corpo.currentVersion == null ? null : corpo.currentVersion.id;
-            if (versaoId == null) {
-                versaoId = buscarVersaoAtual(produtoId);
+            String textoIngredientes = textoDosEmbutidos(corpo.ingredients);
+            if (textoIngredientes == null) {
+                if (versaoId == null) {
+                    versaoId = buscarVersaoAtual(produtoId);
+                }
+                textoIngredientes = obterTextoIngredientes(versaoId);
             }
             guardarVersaoAtual(produtoId, versaoId);
-            String textoIngredientes = obterTextoIngredientes(versaoId);
             registrarDiagnostico("COMPOSITION_RESULT product=" + produtoId
                     + " version=" + versaoId
                     + " source=" + (textoIngredientes == null ? "LABEL_FALLBACK" : "CATALOG"));
@@ -352,6 +367,51 @@ public class ProdutoRepository {
         } catch (IOException | RuntimeException e) {
             return new DetalheProduto(null, null);
         }
+    }
+
+    private List<ProductFullIngredientResponse> ingredientesEmbutidos(long produtoId) {
+        try {
+            ProductFullResponse corpo = ProdutoCompletoCache.obter(api, produtoId);
+            return corpo == null ? Collections.emptyList() : embutidosOrdenados(corpo.ingredients);
+        } catch (IOException | RuntimeException e) {
+            return Collections.emptyList();
+        }
+    }
+
+    private List<ProductFullIngredientResponse> embutidosOrdenados(
+            @Nullable List<ProductFullIngredientResponse> embutidos) {
+        List<ProductFullIngredientResponse> validos = new ArrayList<>();
+        if (embutidos == null) {
+            return validos;
+        }
+        for (ProductFullIngredientResponse embutido : embutidos) {
+            if (embutido != null && embutido.ingredient != null) {
+                validos.add(embutido);
+            }
+        }
+        validos.sort((esquerda, direita) -> Integer.compare(
+                posicaoDoEmbutido(esquerda), posicaoDoEmbutido(direita)));
+        return validos;
+    }
+
+    @Nullable
+    private String textoDosEmbutidos(@Nullable List<ProductFullIngredientResponse> embutidos) {
+        StringBuilder texto = new StringBuilder();
+        for (ProductFullIngredientResponse embutido : embutidosOrdenados(embutidos)) {
+            String nome = nomeDoIngrediente(embutido.ingredient);
+            if (nome.isEmpty()) {
+                continue;
+            }
+            if (texto.length() > 0) {
+                texto.append(", ");
+            }
+            texto.append(nome);
+        }
+        return texto.length() == 0 ? null : texto.toString();
+    }
+
+    private int posicaoDoEmbutido(ProductFullIngredientResponse embutido) {
+        return embutido.position == null ? Integer.MAX_VALUE : embutido.position;
     }
 
     @Nullable

@@ -711,6 +711,65 @@ public class ProdutoRepositoryTest {
         assertTrue(buscarIngredientes().isEmpty());
     }
 
+    private static com.venussystem.venusmobile.repository.api.dto.ProductFullIngredientResponse embutido(
+            int posicao, IngredientResponse ingrediente) {
+        com.venussystem.venusmobile.repository.api.dto.ProductFullIngredientResponse e =
+                new com.venussystem.venusmobile.repository.api.dto.ProductFullIngredientResponse();
+        e.position = posicao;
+        e.ingredient = ingrediente;
+        return e;
+    }
+
+    @Test
+    public void buscarDetalhe_ingredientesVindosNoFull_naoConsultaCadaIngrediente()
+            throws InterruptedException {
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        ProductFullResponse corpo = full("texto antigo do rotulo", Collections.emptyList());
+        corpo.ingredients = Arrays.asList(
+                embutido(2, ingrediente(101L, "Glycerin")),
+                embutido(1, ingrediente(100L, "Aqua")));
+        dispatcher.em(PATH_FULL_PRODUTO_1, json(corpo));
+        server.setDispatcher(dispatcher);
+
+        String[] resultado = buscarDetalhe();
+
+        assertEquals("Aqua, Glycerin", resultado[0]);
+        assertEquals(1, server.getRequestCount());
+    }
+
+    @Test
+    public void buscarIngredientes_vindosNoFull_devolveNaOrdemDaPosicaoSemOutrasChamadas()
+            throws InterruptedException {
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        ProductFullResponse corpo = full(null, Collections.emptyList());
+        corpo.ingredients = Arrays.asList(
+                embutido(2, ingrediente(20L, "GLYCERIN", "GLICERINA", "Hidrata a pele.")),
+                embutido(1, ingrediente(10L, "AQUA", "ÁGUA", "Solvente.")));
+        dispatcher.em(PATH_FULL_PRODUTO_1, json(corpo));
+        server.setDispatcher(dispatcher);
+
+        List<com.venussystem.venusmobile.model.IngredienteProduto> lista = buscarIngredientes();
+
+        assertEquals(2, lista.size());
+        assertEquals("ÁGUA", lista.get(0).getNome());
+        assertEquals("GLICERINA", lista.get(1).getNome());
+        assertEquals(1, server.getRequestCount());
+    }
+
+    @Test
+    public void detalheEIngredientesJuntos_buscamOFullUmaSoVez() throws InterruptedException {
+        FakeApiDispatcher dispatcher = new FakeApiDispatcher();
+        ProductFullResponse corpo = full(null, Collections.emptyList());
+        corpo.ingredients = Collections.singletonList(embutido(1, ingrediente(10L, "AQUA", "ÁGUA", "x")));
+        dispatcher.em(PATH_FULL_PRODUTO_1, json(corpo));
+        server.setDispatcher(dispatcher);
+
+        buscarDetalhe();
+        buscarIngredientes();
+
+        assertEquals(1, server.getRequestCount());
+    }
+
     @Test
     public void buscarDetalhe_falhaDeRede_devolveTudoNulo() throws InterruptedException, IOException {
         server.shutdown();

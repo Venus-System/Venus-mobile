@@ -16,6 +16,7 @@ import com.venussystem.venusmobile.repository.api.VenusApi;
 import com.venussystem.venusmobile.repository.api.dto.IngredientEffectResponse;
 import com.venussystem.venusmobile.repository.api.dto.IngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.PreferenceCatalogResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductFullIngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductFullResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductIngredientResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
@@ -45,8 +46,9 @@ public class MatchProdutoRepository {
     }
 
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
-    private static final ExecutorService REDE = Executors.newFixedThreadPool(6);
+    private static final ExecutorService REDE = Executors.newFixedThreadPool(12);
     private static final Handler PRINCIPAL = new Handler(Looper.getMainLooper());
+    private static final Guardados CACHE = new Guardados();
 
     private final VenusApi api;
     private final MapeadorPerfilApi.Respostas respostas;
@@ -78,11 +80,13 @@ public class MatchProdutoRepository {
 
     private Resultado calcularAgora(long produtoId)
             throws IOException, InterruptedException, ExecutionException {
-        Response<ProductFullResponse> completo = api.buscarProdutoCompleto(produtoId).execute();
-        if (!completo.isSuccessful() || completo.body() == null) {
-            throw new IOException("produto " + completo.code());
+        Future<Map<Long, String>> pedidoCatalogo =
+                questionarioRespondido ? REDE.submit(this::catalogoDeEtiquetas) : null;
+
+        ProductFullResponse produto = ProdutoCompletoCache.obter(api, produtoId);
+        if (produto == null) {
+            throw new IOException("produto");
         }
-        ProductFullResponse produto = completo.body();
         ProductScoreResponse nota = produto.score;
 
         if (!questionarioRespondido) {
@@ -90,32 +94,40 @@ public class MatchProdutoRepository {
                     new HashSet<>(), new HashSet<>(), new ArrayList<>()), nota, new ArrayList<>());
         }
 
-        Long versaoId = produto.currentVersion == null ? null : produto.currentVersion.id;
-        if (versaoId == null) {
-            Response<com.venussystem.venusmobile.repository.api.dto.ProductVersionResponse>
-                    versao = api.versaoAtual(produtoId).execute();
-            if (!versao.isSuccessful() || versao.body() == null || versao.body().id == null) {
-                throw new IOException("versao " + versao.code());
-            }
-            versaoId = versao.body().id;
-        }
-
         Set<String> slugsDoPerfil = EtiquetasDoPerfil.slugs(respostas);
-        Map<Long, String> catalogo = catalogoDeEtiquetas();
         Set<String> alergias = EtiquetasDoPerfil.alergias(respostas);
 
-        Response<List<ProductIngredientResponse>> composicao =
-                api.listarIngredientesDaVersao(versaoId).execute();
-        if (!composicao.isSuccessful() || composicao.body() == null) {
-            throw new IOException("composicao " + composicao.code());
-        }
-
         List<Future<IngredienteAnalisado>> pedidos = new ArrayList<>();
-        for (ProductIngredientResponse item : composicao.body()) {
-            if (item == null || item.ingredientId == null) continue;
-            long ingredienteId = item.ingredientId;
-            pedidos.add(REDE.submit(() -> analisar(ingredienteId)));
+        if (temEmbutidos(produto.ingredients)) {
+            for (ProductFullIngredientResponse item : produto.ingredients) {
+                if (item == null || item.ingredient == null || item.ingredient.id == null) continue;
+                IngredientResponse ingrediente = item.ingredient;
+                pedidos.add(REDE.submit(() -> analisar(ingrediente.id, ingrediente)));
+            }
+        } else {
+            Long versaoId = produto.currentVersion == null ? null : produto.currentVersion.id;
+            if (versaoId == null) {
+                Response<com.venussystem.venusmobile.repository.api.dto.ProductVersionResponse>
+                        versao = api.versaoAtual(produtoId).execute();
+                if (!versao.isSuccessful() || versao.body() == null || versao.body().id == null) {
+                    throw new IOException("versao " + versao.code());
+                }
+                versaoId = versao.body().id;
+            }
+
+            Response<List<ProductIngredientResponse>> composicao =
+                    api.listarIngredientesDaVersao(versaoId).execute();
+            if (!composicao.isSuccessful() || composicao.body() == null) {
+                throw new IOException("composicao " + composicao.code());
+            }
+
+            for (ProductIngredientResponse item : composicao.body()) {
+                if (item == null || item.ingredientId == null) continue;
+                long ingredienteId = item.ingredientId;
+                pedidos.add(REDE.submit(() -> analisar(ingredienteId, null)));
+            }
         }
+        Map<Long, String> catalogo = pedidoCatalogo.get();
 
         List<IngredienteAnalisado> ingredientes = new ArrayList<>();
         int falhas = 0;
@@ -138,7 +150,18 @@ public class MatchProdutoRepository {
                 nota, consideradas);
     }
 
+    private static boolean temEmbutidos(@Nullable List<ProductFullIngredientResponse> embutidos) {
+        if (embutidos == null) return false;
+        for (ProductFullIngredientResponse item : embutidos) {
+            if (item != null && item.ingredient != null && item.ingredient.id != null) return true;
+        }
+        return false;
+    }
+
     private Map<Long, String> catalogoDeEtiquetas() throws IOException {
+        synchronized (CACHE) {
+            if (CACHE.etiquetasValidas(api)) return CACHE.etiquetas;
+        }
         Response<List<PreferenceCatalogResponse>> catalogo = api.listarEtiquetas(500).execute();
         if (!catalogo.isSuccessful() || catalogo.body() == null) {
             throw new IOException("etiquetas " + catalogo.code());
@@ -149,36 +172,94 @@ public class MatchProdutoRepository {
                 slugs.put(etiqueta.id, etiqueta.slug);
             }
         }
+        synchronized (CACHE) {
+            CACHE.guardarEtiquetas(api, slugs);
+        }
         return slugs;
     }
 
     @Nullable
-    private IngredienteAnalisado analisar(long ingredienteId) {
+    private IngredienteAnalisado analisar(long ingredienteId,
+                                          @Nullable IngredientResponse embutido) {
         try {
-            Response<IngredientResponse> dados = api.buscarIngrediente(ingredienteId).execute();
-            if (!dados.isSuccessful() || dados.body() == null) return null;
-
-            IngredientResponse ingrediente = dados.body();
+            IngredientResponse ingrediente = embutido;
+            if (ingrediente == null) {
+                Response<IngredientResponse> dados = api.buscarIngrediente(ingredienteId).execute();
+                if (!dados.isSuccessful() || dados.body() == null) return null;
+                ingrediente = dados.body();
+            }
             String nome = ingrediente.inciName != null && !ingrediente.inciName.trim().isEmpty()
                     ? ingrediente.inciName : ingrediente.commonName;
 
-            Response<List<IngredientEffectResponse>> lista =
-                    api.listarEfeitosDoIngrediente(ingredienteId).execute();
-            if (!lista.isSuccessful() || lista.body() == null) return null;
+            List<IngredienteAnalisado.Efeito> efeitos;
+            synchronized (CACHE) {
+                efeitos = CACHE.efeitosDe(api, ingredienteId);
+            }
+            if (efeitos == null) {
+                Response<List<IngredientEffectResponse>> lista =
+                        api.listarEfeitosDoIngrediente(ingredienteId).execute();
+                if (!lista.isSuccessful() || lista.body() == null) return null;
 
-            List<IngredienteAnalisado.Efeito> efeitos = new ArrayList<>();
-            Map<Long, Boolean> vistos = new HashMap<>();
-            for (IngredientEffectResponse e : lista.body()) {
-                if (e == null || e.id == null || e.profileTagId == null
-                        || vistos.put(e.id, true) != null) {
-                    continue;
+                efeitos = new ArrayList<>();
+                Map<Long, Boolean> vistos = new HashMap<>();
+                for (IngredientEffectResponse e : lista.body()) {
+                    if (e == null || e.id == null || e.profileTagId == null
+                            || vistos.put(e.id, true) != null) {
+                        continue;
+                    }
+                    efeitos.add(new IngredienteAnalisado.Efeito(e.profileTagId,
+                            e.effectCategory, e.effectName, e.effectDescription));
                 }
-                efeitos.add(new IngredienteAnalisado.Efeito(e.profileTagId,
-                        e.effectCategory, e.effectName, e.effectDescription));
+                synchronized (CACHE) {
+                    CACHE.guardarEfeitos(api, ingredienteId, efeitos);
+                }
             }
             return new IngredienteAnalisado(nome, efeitos);
         } catch (IOException | RuntimeException e) {
             return null;
+        }
+    }
+
+    private static final class Guardados {
+        private static final long VALIDADE_MS = 600_000L;
+
+        private VenusApi api;
+        private long em;
+        private Map<Long, String> etiquetas;
+        private final Map<Long, List<IngredienteAnalisado.Efeito>> efeitos = new HashMap<>();
+
+        boolean etiquetasValidas(VenusApi atual) {
+            return etiquetas != null && api == atual && !vencido();
+        }
+
+        void guardarEtiquetas(VenusApi atual, Map<Long, String> valor) {
+            reiniciarSeMudou(atual);
+            etiquetas = valor;
+        }
+
+        @Nullable
+        List<IngredienteAnalisado.Efeito> efeitosDe(VenusApi atual, long ingredienteId) {
+            if (api != atual || vencido()) return null;
+            return efeitos.get(ingredienteId);
+        }
+
+        void guardarEfeitos(VenusApi atual, long ingredienteId,
+                            List<IngredienteAnalisado.Efeito> valor) {
+            reiniciarSeMudou(atual);
+            efeitos.put(ingredienteId, valor);
+        }
+
+        private boolean vencido() {
+            return System.currentTimeMillis() - em > VALIDADE_MS;
+        }
+
+        private void reiniciarSeMudou(VenusApi atual) {
+            if (api != atual || vencido()) {
+                api = atual;
+                em = System.currentTimeMillis();
+                etiquetas = null;
+                efeitos.clear();
+            }
         }
     }
 

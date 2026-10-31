@@ -141,10 +141,9 @@ public class ClassificacaoRepository {
 
     @Nullable
     private Long versaoAtual(long produtoId) throws IOException {
-        Response<ProductFullResponse> completo = crud.buscarProdutoCompleto(produtoId).execute();
-        if (completo.isSuccessful() && completo.body() != null
-                && completo.body().currentVersion != null) {
-            return completo.body().currentVersion.id;
+        ProductFullResponse completo = ProdutoCompletoCache.obter(crud, produtoId);
+        if (completo != null && completo.currentVersion != null) {
+            return completo.currentVersion.id;
         }
         Response<ProductVersionResponse> versao = crud.versaoAtual(produtoId).execute();
         return versao.isSuccessful() && versao.body() != null ? versao.body().id : null;
