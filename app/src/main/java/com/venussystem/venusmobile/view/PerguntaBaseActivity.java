@@ -11,9 +11,9 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.repository.PerfilRepository;
+import com.venussystem.venusmobile.view.util.SheetAjuda;
 
 public abstract class PerguntaBaseActivity extends AppCompatActivity {
 
@@ -53,16 +53,19 @@ public abstract class PerguntaBaseActivity extends AppCompatActivity {
         if (link == null || getLayoutAjuda() == 0) {
             return;
         }
-        link.setOnClickListener(v -> {
-            BottomSheetDialog sheet = new BottomSheetDialog(this);
-            View conteudo = getLayoutInflater().inflate(getLayoutAjuda(), null);
-            sheet.setContentView(conteudo);
-
-            conteudo.findViewById(R.id.btnFecharSheet).setOnClickListener(x -> sheet.dismiss());
-            conteudo.findViewById(R.id.btnEntendi).setOnClickListener(x -> sheet.dismiss());
-
-            sheet.show();
-        });
+        link.setOnClickListener(v -> SheetAjuda.mostrar(this, getLayoutAjuda(), (conteudo, sheet) -> {
+            LinearLayout lista = findViewById(R.id.listaOpcoes);
+            for (int i = 0; i < lista.getChildCount(); i++) {
+                View opcao = lista.getChildAt(i);
+                View cartao = conteudo.findViewWithTag(opcao.getTag());
+                if (cartao != null) {
+                    cartao.setOnClickListener(x -> {
+                        selecionar(lista, opcao);
+                        sheet.dismiss();
+                    });
+                }
+            }
+        }));
     }
 
     private void prepararOpcoes() {
@@ -98,6 +101,11 @@ public abstract class PerguntaBaseActivity extends AppCompatActivity {
         }
 
         perfil.salvarResposta(getChave(), respostaSelecionada, rotuloSelecionado);
+
+        if (FluxoPerguntas.avulso(getIntent())) {
+            FluxoPerguntas.seguir(this, getChave());
+            return;
+        }
 
         Class<?> proxima = getProximaTela();
         if (proxima != null) {

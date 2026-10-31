@@ -46,6 +46,7 @@ public class PerfilRepository implements MapeadorPerfilApi.Respostas {
     public static final String ALERGIAS_NA_API = "alergias_na_api";
     public static final String ETIQUETAS_NA_API = "etiquetas_na_api";
 
+    public static final String MASCULINO = "MALE";
     public static final String NENHUMA = "NENHUMA";
     public static final String PREFIRO_NAO_DIZER = "PREFIRO_NAO_DIZER";
 
@@ -70,8 +71,16 @@ public class PerfilRepository implements MapeadorPerfilApi.Respostas {
     private static final Set<String> CAMPOS_DE_LISTA =
             new HashSet<>(Arrays.asList(GESTACAO, CONDICOES_PELE));
 
+    public boolean perguntaGestacao() {
+        return !MASCULINO.equals(getTag(GENERO));
+    }
+
     public ProgressoPerfil progresso() {
-        return ProgressoPerfil.calcular(jaRespondeuQuestionario(), CAMPOS_DO_PROGRESSO,
+        List<String> campos = new ArrayList<>(CAMPOS_DO_PROGRESSO);
+        if (!perguntaGestacao()) {
+            campos.remove(GESTACAO);
+        }
+        return ProgressoPerfil.calcular(jaRespondeuQuestionario(), campos,
                 chave -> CAMPOS_DE_LISTA.contains(chave)
                         ? !getLista(chave).isEmpty()
                         : getTag(chave) != null);
@@ -82,12 +91,15 @@ public class PerfilRepository implements MapeadorPerfilApi.Respostas {
     }
 
     public void salvarResposta(String chave, String tag, String rotulo) {
-        prefs.edit()
+        SharedPreferences.Editor editor = prefs.edit()
                 .putString(chave + SUFIXO_TAG, tag)
                 .putString(chave + SUFIXO_ROTULO, rotulo)
                 .putLong(CHAVE_VERSAO, versaoAtual() + 1)
-                .putLong(CHAVE_ALTERADO_EM, System.currentTimeMillis())
-                .apply();
+                .putLong(CHAVE_ALTERADO_EM, System.currentTimeMillis());
+        if (GENERO.equals(chave) && MASCULINO.equals(tag) && !getLista(GESTACAO).isEmpty()) {
+            editor.putString(GESTACAO, NENHUMA);
+        }
+        editor.apply();
     }
 
     @Override

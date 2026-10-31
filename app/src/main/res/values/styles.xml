@@ -157,6 +157,7 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginBottom">@dimen/espaco_pequeno</item>
         <item name="android:background">@drawable/bg_item_tipo</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
         <item name="android:gravity">center_vertical</item>
         <item name="android:orientation">horizontal</item>
         <item name="android:paddingStart">@dimen/espaco_medio</item>

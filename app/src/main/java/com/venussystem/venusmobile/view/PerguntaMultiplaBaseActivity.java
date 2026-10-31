@@ -84,6 +84,11 @@ public abstract class PerguntaMultiplaBaseActivity extends AppCompatActivity {
 
         perfil.salvarLista(getChave(), selecionados);
 
+        if (FluxoPerguntas.avulso(getIntent())) {
+            FluxoPerguntas.seguir(this, getChave());
+            return;
+        }
+
         Class<?> proxima = getProximaTela();
         if (proxima != null) {
             startActivity(new Intent(this, proxima));

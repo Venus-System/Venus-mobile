@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.domain.perfil.ProgressoPerfil;
+import com.venussystem.venusmobile.view.FluxoPerguntas;
 import com.venussystem.venusmobile.view.PesquisaInicialActivity;
 
 public class CartaoPerfilView extends LinearLayout {
@@ -22,6 +23,9 @@ public class CartaoPerfilView extends LinearLayout {
     private final ProgressBar barra;
     private final TextView subtitulo;
     private final AppCompatButton botao;
+
+    @Nullable
+    private ProgressoPerfil ultimo;
 
     public CartaoPerfilView(Context context) {
         this(context, null);
@@ -42,6 +46,7 @@ public class CartaoPerfilView extends LinearLayout {
     }
 
     public void atualizar(ProgressoPerfil progresso) {
+        ultimo = progresso;
         if (progresso.estado == ProgressoPerfil.Estado.COMPLETO) {
             setVisibility(GONE);
             return;
@@ -65,6 +70,10 @@ public class CartaoPerfilView extends LinearLayout {
 
     private void abrirQuestionario() {
         Context contexto = getContext();
+        if (ultimo != null && ultimo.estado == ProgressoPerfil.Estado.INCOMPLETO
+                && FluxoPerguntas.iniciar(contexto, ultimo.faltando)) {
+            return;
+        }
         Intent intent = new Intent(contexto, PesquisaInicialActivity.class);
         if (!(contexto instanceof Activity)) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

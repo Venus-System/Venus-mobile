@@ -82,7 +82,9 @@
             android:orientation="vertical"
             android:paddingBottom="@dimen/espaco_medio">
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="LOW">
 
                 <ImageView
                     style="@style/FioTipoCabelo"
@@ -108,7 +110,9 @@
 
             </LinearLayout>
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="MEDIUM">
 
                 <ImageView
                     style="@style/FioTipoCabelo"
@@ -134,7 +138,9 @@
 
             </LinearLayout>
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="HIGH">
 
                 <ImageView
                     style="@style/FioTipoCabelo"
