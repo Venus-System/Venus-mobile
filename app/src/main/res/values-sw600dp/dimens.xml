@@ -7,4 +7,6 @@
     <dimen name="texto_titulo_aba">24sp</dimen>
 
     <dimen name="altura_capa_lista">180dp</dimen>
+
+    <dimen name="veninha_chat_teclado">160dp</dimen>
 </resources>
