@@ -36,8 +36,11 @@ public class PrincipalActivity extends AppCompatActivity {
     private static final long DURACAO_ANIMACAO = 260L;
     private static final float ESCALA_ATIVO = 1.18f;
 
+    private static final String ESTADO_ITEM_ATIVO = "item_ativo";
+
     private final List<View> itens = new ArrayList<>();
     private View indicador;
+    private View itemAtivo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,13 +65,23 @@ public class PrincipalActivity extends AppCompatActivity {
         indicador = findViewById(R.id.indicadorAtivo);
 
         montarItem(R.id.navInicio, R.drawable.ic_nav_inicio, InicioFragment.class);
-        montarItem(R.id.navChat, R.drawable.ic_chat, AssistenteFragment.class);
+        montarItem(R.id.navChat, R.drawable.ic_nav_chat, AssistenteFragment.class);
         montarItem(R.id.navListas, R.drawable.ic_nav_listas, ListasFragment.class);
         montarItem(R.id.navPerfil, R.drawable.ic_nav_perfil, PerfilFragment.class);
 
+        findViewById(R.id.linhaItens).addOnLayoutChangeListener(
+                (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                    if (itemAtivo != null && (left != oldLeft || right != oldRight)) {
+                        posicionarIndicador(false);
+                    }
+                });
+
         findViewById(R.id.btnScan).setOnClickListener(v -> iniciarScan());
 
-        if (savedInstanceState == null) {
+        if (savedInstanceState != null) {
+            int posicao = savedInstanceState.getInt(ESTADO_ITEM_ATIVO, 0);
+            marcar(itens.get(Math.max(0, Math.min(posicao, itens.size() - 1))), false);
+        } else {
             selecionar(findViewById(R.id.navInicio), new InicioFragment(), false);
 
             new SincronizacaoRepository(this).sincronizarEmSegundoPlano();
@@ -79,6 +92,12 @@ public class PrincipalActivity extends AppCompatActivity {
             ReenvioDeScanAgenda.agendarSePreciso(this);
             DecisoesAgenda.verificarAgora(this);
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(ESTADO_ITEM_ATIVO, Math.max(0, itens.indexOf(itemAtivo)));
     }
 
     @Override
@@ -103,6 +122,17 @@ public class PrincipalActivity extends AppCompatActivity {
     }
 
     private void selecionar(View escolhido, Fragment fragment, boolean animar) {
+        marcar(escolhido, animar);
+
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.containerConteudo, fragment)
+                .commit();
+    }
+
+    private void marcar(View escolhido, boolean animar) {
+        itemAtivo = escolhido;
+
         for (View item : itens) {
             boolean ativo = item == escolhido;
             ImageView icone = item.findViewById(R.id.iconeNav);
@@ -124,12 +154,7 @@ public class PrincipalActivity extends AppCompatActivity {
             }
         }
 
-        moverIndicador(escolhido, animar);
-
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.containerConteudo, fragment)
-                .commit();
+        posicionarIndicador(animar);
     }
 
     private void iniciarScan() {
@@ -140,19 +165,23 @@ public class PrincipalActivity extends AppCompatActivity {
         ));
     }
 
-    private void moverIndicador(View item, boolean animar) {
-        indicador.post(() -> {
-            View linha = (View) item.getParent();
-            float destino = linha.getX() + item.getX() + (item.getWidth() - indicador.getWidth()) / 2f;
-            if (animar) {
-                indicador.animate()
-                        .translationX(destino)
-                        .setDuration(DURACAO_ANIMACAO)
-                        .setInterpolator(new FastOutSlowInInterpolator())
-                        .start();
-            } else {
-                indicador.setTranslationX(destino);
-            }
-        });
+    private void posicionarIndicador(boolean animar) {
+        View linha = (View) itemAtivo.getParent();
+        if (itemAtivo.getWidth() == 0) {
+            return;
+        }
+
+        float larguraIndicador = getResources().getDimension(R.dimen.largura_indicador);
+        float destino = linha.getX() + itemAtivo.getX() + (itemAtivo.getWidth() - larguraIndicador) / 2f;
+        indicador.animate().cancel();
+        if (animar) {
+            indicador.animate()
+                    .translationX(destino)
+                    .setDuration(DURACAO_ANIMACAO)
+                    .setInterpolator(new FastOutSlowInInterpolator())
+                    .start();
+        } else {
+            indicador.setTranslationX(destino);
+        }
     }
 }
