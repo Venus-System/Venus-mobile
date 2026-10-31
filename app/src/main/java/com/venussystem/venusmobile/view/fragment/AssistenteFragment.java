@@ -47,6 +47,12 @@ public class AssistenteFragment extends Fragment {
 
     private static final int MAXIMO_LINHAS_CAMPO = 4;
 
+    private static final long DURACAO_SUBIDA_MS = 300L;
+
+    private static final float ESCALA_MAXIMA_CENTRO = 2.4f;
+
+    private static final float FRACAO_DO_ESPACO_NO_CENTRO = 0.45f;
+
     public static Bundle extrasDoProduto(@Nullable Produto produto) {
         Bundle extras = new Bundle();
         if (produto == null) {
@@ -82,6 +88,9 @@ public class AssistenteFragment extends Fragment {
     private ViewTreeObserver.OnGlobalLayoutListener aoMudarLayout;
 
     private boolean jaRolou = false;
+    private boolean semMensagens = true;
+    private boolean tecladoAberto = false;
+    private boolean veninhaPosicionada = false;
 
     @Nullable
     @Override
@@ -140,6 +149,8 @@ public class AssistenteFragment extends Fragment {
 
         viewModel.getMensagens().observe(getViewLifecycleOwner(), mensagens -> {
             adapter.definir(mensagens);
+            semMensagens = mensagens.isEmpty();
+            posicionarVeninha(view);
             if (mensagens.isEmpty()) {
                 return;
             }
@@ -268,15 +279,50 @@ public class AssistenteFragment extends Fragment {
     private void ajustarVeninhaAoTeclado(View raiz) {
         WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(raiz);
         boolean comTeclado = insets != null && insets.isVisible(WindowInsetsCompat.Type.ime());
+        tecladoAberto = comTeclado;
         int tamanho = raiz.getResources().getDimensionPixelSize(
                 comTeclado ? R.dimen.veninha_chat_teclado : R.dimen.veninha_chat);
         ViewGroup.LayoutParams params = veninha.getLayoutParams();
-        if (params.height == tamanho) {
+        if (params.height != tamanho) {
+            params.width = tamanho;
+            params.height = tamanho;
+            veninha.setLayoutParams(params);
             return;
         }
-        params.width = tamanho;
-        params.height = tamanho;
-        veninha.setLayoutParams(params);
+        posicionarVeninha(raiz);
+    }
+
+    private void posicionarVeninha(View raiz) {
+        if (veninha == null || veninha.getHeight() == 0
+                || veninha.getHeight() != veninha.getLayoutParams().height) {
+            return;
+        }
+        View limiteInferior = raiz.findViewById(R.id.rolagemSugestoes);
+        float alvo = 0f;
+        float escala = 1f;
+        if (semMensagens && !tecladoAberto) {
+            int espaco = limiteInferior.getTop() - veninha.getTop();
+            alvo = Math.max(0, (espaco - veninha.getHeight()) / 2f);
+            escala = Math.max(1f, Math.min(ESCALA_MAXIMA_CENTRO,
+                    espaco * FRACAO_DO_ESPACO_NO_CENTRO / veninha.getHeight()));
+        }
+        if (veninha.getTranslationY() == alvo && veninha.getScaleX() == escala) {
+            return;
+        }
+        veninha.animate().cancel();
+        if (!veninhaPosicionada) {
+            veninha.setTranslationY(alvo);
+            veninha.setScaleX(escala);
+            veninha.setScaleY(escala);
+            veninhaPosicionada = true;
+            return;
+        }
+        veninha.animate()
+                .translationY(alvo)
+                .scaleX(escala)
+                .scaleY(escala)
+                .setDuration(DURACAO_SUBIDA_MS)
+                .start();
     }
 
     private void confirmarNovaConversa() {
