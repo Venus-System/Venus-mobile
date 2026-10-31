@@ -5,6 +5,7 @@ import com.venussystem.venusmobile.repository.SessaoFirebase;
 
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -16,6 +17,7 @@ public final class ClienteApi {
 
     private static final long LIMITE_CONEXAO = 30L;
     private static final long LIMITE_LEITURA = 180L;
+    private static final int MAXIMO_POR_HOST = 12;
 
     private static VenusApi instancia;
     private static ScanSubmissionApi scanApi;
@@ -66,7 +68,11 @@ public final class ClienteApi {
 
         TokenFirebase token = new TokenFirebase(new SessaoFirebase());
 
+        Dispatcher despachante = new Dispatcher();
+        despachante.setMaxRequestsPerHost(MAXIMO_POR_HOST);
+
         OkHttpClient http = new OkHttpClient.Builder()
+                .dispatcher(despachante)
                 .connectTimeout(LIMITE_CONEXAO, TimeUnit.SECONDS)
                 .readTimeout(LIMITE_LEITURA, TimeUnit.SECONDS)
                 .addInterceptor(token)

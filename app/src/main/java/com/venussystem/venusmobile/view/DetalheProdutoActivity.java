@@ -138,6 +138,8 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     @Nullable
     private ClassificationResponse classificacaoMatch;
     private boolean classificacaoRespondeu = false;
+    private boolean classificacaoEmAndamento = false;
+    private int pedidoClassificacao = 0;
     @Nullable
     private String erroClassificacao;
     private boolean telaInicializada = false;
@@ -497,6 +499,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         preencherCabecalho();
         prepararAbas();
+        iniciarClassificacao();
 
         btnSalvarNaLista.setVisibility(
                 View.VISIBLE
@@ -730,9 +733,10 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         int pedido = ++pedidoMatch;
         resultadoMatch = null;
         notaGeralMatch = null;
-        classificacaoMatch = null;
-        classificacaoRespondeu = false;
-        erroClassificacao = null;
+
+        if (!classificacaoEmAndamento && classificacaoMatch == null) {
+            iniciarClassificacao();
+        }
 
         carregandoMatch.setVisibility(View.VISIBLE);
         textMatchMensagem.setVisibility(View.GONE);
@@ -764,12 +768,27 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 }
         );
 
+    }
+
+    private void iniciarClassificacao() {
+
+        if (produto == null || produto.getId() == null) {
+            return;
+        }
+
+        int pedido = ++pedidoClassificacao;
+        classificacaoEmAndamento = true;
+        classificacaoMatch = null;
+        classificacaoRespondeu = false;
+        erroClassificacao = null;
+
         new ClassificacaoRepository(this).classificar(
                 produto.getId(),
                 new ClassificacaoRepository.AoClassificar() {
                     @Override
                     public void aoConcluir(@NonNull ClassificationResponse classificacao) {
-                        if (isFinishing() || isDestroyed() || pedido != pedidoMatch) return;
+                        if (isFinishing() || isDestroyed() || pedido != pedidoClassificacao) return;
+                        classificacaoEmAndamento = false;
                         classificacaoMatch = classificacao;
                         classificacaoRespondeu = true;
                         atualizarNotaESelo();
@@ -778,7 +797,8 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
                     @Override
                     public void aoFalhar(@Nullable String codigo) {
-                        if (isFinishing() || isDestroyed() || pedido != pedidoMatch) return;
+                        if (isFinishing() || isDestroyed() || pedido != pedidoClassificacao) return;
+                        classificacaoEmAndamento = false;
                         classificacaoRespondeu = true;
                         erroClassificacao = codigo;
                         atualizarNotaESelo();
