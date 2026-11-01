@@ -16,6 +16,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import retrofit2.Call;
 import retrofit2.Response;
 
 public final class ScanIngredientCatalog {
@@ -38,6 +43,12 @@ public final class ScanIngredientCatalog {
     private static final double FUZZY_THRESHOLD_LONG = .84d;
     private static final double FUZZY_THRESHOLD_SHORT = .92d;
     private static final double AMBIGUITY_MARGIN = .05d;
+    private static final Object SNAPSHOT_REFRESH_LOCK = new Object();
+    private static final ExecutorService CATALOG_FETCH = Executors.newFixedThreadPool(2, runnable -> {
+        Thread thread = new Thread(runnable, "venus-catalog-fetch");
+        thread.setDaemon(true);
+        return thread;
+    });
     private static final Map<String, CachedMatch> CACHE = new LinkedHashMap<String, CachedMatch>(32, .75f, true) {
         @Override protected boolean removeEldestEntry(Map.Entry<String, CachedMatch> eldest) { return size() > 256; }
     };
@@ -98,6 +109,34 @@ public final class ScanIngredientCatalog {
         return snapshotCache == null ? lookupExactCompatibility(rawNames) : lookupFromSnapshot(rawNames);
     }
 
+    /**
+     * Starts/finishes the read-only catalogue snapshot before the scan reaches
+     * the ingredient dialog. The operation is idempotent and never creates a
+     * database record. A second caller rechecks the cache after waiting for the
+     * first refresh instead of downloading the same catalogue again.
+     */
+    public void warmSnapshot() throws IOException {
+        if (snapshotCache == null) return;
+        synchronized (SNAPSHOT_REFRESH_LOCK) {
+            SnapshotHolder holder = freshSnapshot();
+            if (holder.snapshot != null) return;
+            refreshSnapshot();
+        }
+    }
+
+    private static final class SnapshotHolder {
+        final ScanIngredientCatalogCache.Snapshot snapshot;
+        SnapshotHolder(ScanIngredientCatalogCache.Snapshot snapshot) { this.snapshot = snapshot; }
+    }
+
+    private SnapshotHolder freshSnapshot() throws IOException {
+        try {
+            return new SnapshotHolder(snapshotCache.readFresh(CACHE_TTL_MS));
+        } catch (IOException ignored) {
+            return new SnapshotHolder(null);
+        }
+    }
+
     private Report lookupFromSnapshot(List<String> rawNames) throws IOException {
         ScanIngredientCatalogCache.Snapshot snapshot = null;
         boolean fresh = false;
@@ -106,13 +145,21 @@ public final class ScanIngredientCatalog {
         if (snapshot != null) {
             fresh = true;
         } else {
-            try {
-                snapshot = refreshSnapshot();
-                fresh = true;
-            } catch (IOException refreshError) {
-                try { snapshot = snapshotCache.read(); }
-                catch (IOException ignored) { snapshot = null; }
-                if (snapshot == null) throw refreshError;
+            synchronized (SNAPSHOT_REFRESH_LOCK) {
+                // A warm-up may have completed while this worker was waiting.
+                SnapshotHolder holder = freshSnapshot();
+                snapshot = holder.snapshot;
+                fresh = snapshot != null;
+                if (snapshot == null) {
+                    try {
+                        snapshot = refreshSnapshot();
+                        fresh = true;
+                    } catch (IOException refreshError) {
+                        try { snapshot = snapshotCache.read(); }
+                        catch (IOException ignored) { snapshot = null; }
+                        if (snapshot == null) throw refreshError;
+                    }
+                }
             }
         }
         checkAccount.run();
@@ -123,10 +170,27 @@ public final class ScanIngredientCatalog {
 
     private ScanIngredientCatalogCache.Snapshot refreshSnapshot() throws IOException {
         checkAccount.run();
-        Response<List<ScanIngredientApi.Ingredient>> ingredients = api.allIngredients().execute();
-        checkResponse(ingredients, "CATALOG_INGREDIENTS");
+        Call<List<ScanIngredientApi.Ingredient>> ingredientCall = api.allIngredients();
+        Call<List<ScanIngredientApi.Alias>> aliasCall = api.allAliases();
+        Future<Response<List<ScanIngredientApi.Ingredient>>> ingredientsFuture = CATALOG_FETCH.submit(
+                ingredientCall::execute);
+        Future<Response<List<ScanIngredientApi.Alias>>> aliasesFuture = CATALOG_FETCH.submit(
+                aliasCall::execute);
+        Response<List<ScanIngredientApi.Ingredient>> ingredients;
+        Response<List<ScanIngredientApi.Alias>> aliases;
+        try {
+            ingredients = ingredientsFuture.get();
+            aliases = aliasesFuture.get();
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new IOException("CATALOG_REFRESH_INTERRUPTED", interrupted);
+        } catch (ExecutionException failed) {
+            Throwable cause = failed.getCause();
+            if (cause instanceof IOException) throw (IOException) cause;
+            throw new IOException("CATALOG_REFRESH_FAILED", cause);
+        }
         checkAccount.run();
-        Response<List<ScanIngredientApi.Alias>> aliases = api.allAliases().execute();
+        checkResponse(ingredients, "CATALOG_INGREDIENTS");
         checkResponse(aliases, "CATALOG_ALIASES");
         List<ScanIngredientCatalogCache.IngredientEntry> ingredientEntries = new ArrayList<>();
         Set<Long> ids = new HashSet<>();

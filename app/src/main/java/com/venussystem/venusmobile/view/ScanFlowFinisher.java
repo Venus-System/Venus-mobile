@@ -18,6 +18,7 @@ import com.venussystem.venusmobile.repository.DecisoesAgenda;
 import com.venussystem.venusmobile.repository.ReenvioDeScanAgenda;
 import com.venussystem.venusmobile.repository.ScanSubmissionRepository;
 import com.venussystem.venusmobile.repository.api.ScanApiException;
+import com.venussystem.venusmobile.repository.api.ScanUploadException;
 import com.venussystem.venusmobile.repository.api.dto.ScanUploadSignaturesResponse;
 import com.venussystem.venusmobile.domain.scan.ScanPhotoQualityPolicy;
 import com.venussystem.venusmobile.view.dialog.ScanStatusDialog;
@@ -120,7 +121,7 @@ public final class ScanFlowFinisher {
                                         if (activity.isFinishing() || activity.isDestroyed()) return;
                                         progress.dismiss();
                                         AlertDialog failure = ScanStatusDialog.create(activity,
-                                                  "Envio não concluído", "Tente novamente. Fotos confirmadas serão mantidas.",
+                                                  "Foto não enviada", mensagemFalhaUpload(error),
                                                 false, "Tentar novamente", () -> solicitarAssinaturas(activity, repository, saved,
                                                         false, accountAttempted || connectAccount),
                                                 () -> sairDeixandoPendente(activity));
@@ -168,6 +169,10 @@ public final class ScanFlowFinisher {
                         showWhileAlive(activity, failure);
                     }
                 };
+        // Antecipates o catálogo read-only enquanto a API prepara assinaturas
+        // e as fotos são enviadas, evitando que o popup de ingredientes fique
+        // aguardando duas consultas sequenciais.
+        repository.preloadIngredientCatalog(saved.firebaseUid, saved.draft.getScanId());
         if (connectAccount) repository.connectAccountAndRequestSignatures(saved.firebaseUid, saved.draft.getScanId(), callback);
         else repository.requestUploadSignatures(saved.firebaseUid, saved.draft.getScanId(), callback);
     }
@@ -230,17 +235,70 @@ public final class ScanFlowFinisher {
                         if (activity.isFinishing() || activity.isDestroyed()) return;
                         progress.dismiss();
                         ScanApiException apiError = error instanceof ScanApiException ? (ScanApiException) error : null;
-                        String message = apiError != null && apiError.kind == ScanApiException.Kind.FORBIDDEN
-                                ? "Sua conta não está habilitada para enviar este scan."
-                                : apiError != null && (apiError.kind == ScanApiException.Kind.NETWORK
-                                || apiError.kind == ScanApiException.Kind.TIMEOUT)
-                                ? "A conexão não respondeu. Tente novamente."
-                                : "Não foi possível confirmar o envio. Tente novamente.";
-                        showWhileAlive(activity, ScanStatusDialog.create(activity, "Envio não concluído", message,
+                        showWhileAlive(activity, ScanStatusDialog.create(activity, "Envio pausado",
+                                mensagemFalhaMongo(apiError),
                                 false, "Tentar novamente", () -> enviarParaMongo(activity, repository, saved, true),
                                 () -> sairDeixandoPendente(activity)));
                     }
                 });
+    }
+
+    private static String mensagemFalhaUpload(Exception error) {
+        if (error instanceof ScanApiException) {
+            return mensagemFalhaMongo((ScanApiException) error);
+        }
+        if (!(error instanceof ScanUploadException)) {
+            return "Não foi possível confirmar o envio da foto. A foto continua salva para tentar novamente.";
+        }
+        ScanUploadException upload = (ScanUploadException) error;
+        switch (upload.kind) {
+            case NETWORK:
+                return "A conexão com o serviço de imagens caiu. Verifique a internet e tente novamente.";
+            case TIMEOUT:
+                return "O envio da foto demorou. Verifique a internet e tente novamente.";
+            case EXPIRED_SIGNATURE:
+                return "A autorização do envio expirou. Vamos renová-la ao tentar novamente.";
+            case HTTP:
+                return upload.httpCode > 0
+                        ? "O serviço de imagens recusou a foto (HTTP " + upload.httpCode + ")."
+                        : "O serviço de imagens recusou a foto.";
+            case LOCAL:
+                return "A foto não está mais disponível neste aparelho.";
+            case CONFIGURATION:
+                return "O serviço de imagens está indisponível no momento.";
+            case INVALID_RESPONSE:
+            default:
+                return "O serviço de imagens respondeu de forma inválida. Tente novamente.";
+        }
+    }
+
+    private static String mensagemFalhaMongo(ScanApiException error) {
+        if (error == null) {
+            return "Não foi possível confirmar o envio. Os dados continuam salvos para tentar novamente.";
+        }
+        switch (error.kind) {
+            case FORBIDDEN:
+                return "Sua conta não está habilitada para enviar este scan.";
+            case AUTH:
+                return "Sua sessão expirou. Entre novamente e tente este scan.";
+            case NETWORK:
+                return "A API está indisponível ou sem conexão. Verifique a internet e tente novamente.";
+            case TIMEOUT:
+                return "A API demorou para responder. Os dados continuam salvos para tentar novamente.";
+            case HTTP:
+                if (error.httpCode == 422) {
+                    return "A API rejeitou os dados do rótulo (HTTP 422). Revise a foto do verso e tente novamente.";
+                }
+                if (error.httpCode >= 500) {
+                    return "O servidor está temporariamente indisponível (HTTP " + error.httpCode + ").";
+                }
+                return "A API recusou o envio (HTTP " + error.httpCode + ").";
+            case INVALID_REQUEST:
+                return "Os dados do scan ficaram incompletos. Tire as fotos novamente.";
+            case INVALID_RESPONSE:
+            default:
+                return "A API respondeu de forma inválida. Os dados continuam salvos para tentar novamente.";
+        }
     }
 
     private static void showWhileAlive(Activity activity, AlertDialog dialog) {

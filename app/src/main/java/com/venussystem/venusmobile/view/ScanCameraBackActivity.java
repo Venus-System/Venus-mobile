@@ -73,6 +73,9 @@ public class ScanCameraBackActivity extends ScanCameraBaseActivity {
 
         if (draft != null) {
             draft.setBackPhotoPath(path);
+            draft.setQualityReviewOverride(
+                    draft.isQualityReviewOverride()
+                            || getIntent().getBooleanExtra(EXTRA_QUALITY_REVIEW_OVERRIDE, false));
             draft.putInto(intent);
         }
 

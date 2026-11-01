@@ -23,6 +23,11 @@ import java.util.concurrent.Executors;
 
 public class ScanSubmissionRepository {
     private static final ExecutorService IO = Executors.newSingleThreadExecutor();
+    private static final ExecutorService CATALOG_WARMUP = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "venus-catalog-warmup");
+        thread.setDaemon(true);
+        return thread;
+    });
     private final ScanDraftStore store;
     private final ScanIngredientCatalogCache ingredientCatalogCache;
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -203,6 +208,26 @@ public class ScanSubmissionRepository {
         });
     }
 
+    /**
+     * Warms the public ingredient snapshot while signatures and photos are
+     * being prepared. It is deliberately best-effort: the real catalogue
+     * lookup still handles stale/offline snapshots and preserves OCR evidence.
+     */
+    public void preloadIngredientCatalog(String uid, String scanId) {
+        CATALOG_WARMUP.execute(() -> {
+            try {
+                FirebaseScanAuthSession auth = new FirebaseScanAuthSession();
+                auth.requireSameUser(uid);
+                new ScanIngredientCatalog(ClienteApi.ingredients(),
+                        () -> auth.requireSameUser(uid), ingredientCatalogCache).warmSnapshot();
+                Log.d("VENUS_SCAN_INGREDIENTS", "WARM_READY scanId=" + scanId);
+            } catch (Exception error) {
+                Log.d("VENUS_SCAN_INGREDIENTS", "WARM_SKIPPED scanId=" + scanId
+                        + " reason=" + error.getClass().getSimpleName());
+            }
+        });
+    }
+
     private static boolean isDeferrableCatalogFailure(Exception error) {
         if (error instanceof ScanApiException) {
             ScanApiException apiError = (ScanApiException) error;
@@ -304,9 +329,13 @@ public class ScanSubmissionRepository {
                         + " brightness=" + quality.getBrightness()
                         + " backgroundOk=" + quality.isBackgroundOk()
                         + " status=" + quality.getStatus());
-                if (ScanPhotoQualityPolicy.shouldBlock(quality)) {
+                if (ScanPhotoQualityPolicy.shouldBlock(quality)
+                        && !draft.isQualityReviewOverride()) {
                     throw new IllegalArgumentException("A qualidade das fotos não permite uma leitura segura ("
                             + ScanPhotoQualityPolicy.blockReason(quality) + "). Tire novas fotos do rótulo.");
+                }
+                if (ScanPhotoQualityPolicy.shouldBlock(quality) && draft.isQualityReviewOverride()) {
+                    Log.d("VENUS_SCAN_QUALITY", "QUALITY_ADVISORY_AFTER_RETAKE=true");
                 }
                 if (ScanPhotoQualityPolicy.backgroundIsAdvisory(quality)) {
                     Log.d("VENUS_SCAN_QUALITY", "BACKGROUND_ADVISORY=true");

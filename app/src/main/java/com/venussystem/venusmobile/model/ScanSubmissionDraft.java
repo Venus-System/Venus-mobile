@@ -39,6 +39,8 @@ public class ScanSubmissionDraft implements Serializable {
     private String finishedAt;
     private String ownerUid;
     private ScanPhotoQuality photoQuality;
+    /** True after the camera already offered one retake for poor quality. */
+    private boolean qualityReviewOverride;
 
     public String getScanId() { return scanId; }
     public String getStartedAt() { return startedAt; }
@@ -46,6 +48,8 @@ public class ScanSubmissionDraft implements Serializable {
     public String getOwnerUid() { return ownerUid; }
     public ScanPhotoQuality getPhotoQuality() { return photoQuality; }
     public void setPhotoQuality(ScanPhotoQuality quality) { photoQuality = quality; }
+    public boolean isQualityReviewOverride() { return qualityReviewOverride; }
+    public void setQualityReviewOverride(boolean value) { qualityReviewOverride = value; }
     public void bindToUser(String uid) {
         if (uid == null || uid.trim().isEmpty()) throw new IllegalArgumentException("Usuário ausente.");
         if (ownerUid != null && !ownerUid.equals(uid))
