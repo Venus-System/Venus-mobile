@@ -11,10 +11,14 @@ import com.venussystem.venusmobile.model.ScanSubmissionDraft;
 
 public class ScanCameraBackActivity extends ScanCameraBaseActivity {
 
+    static final String EXTRA_BACK_RETAKE_MESSAGE = "scan_back_retake_message";
+
     private ScanSubmissionDraft draft;
+    private String retakeMessage;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        retakeMessage = getIntent().getStringExtra(EXTRA_BACK_RETAKE_MESSAGE);
         draft = ScanSubmissionDraft.fromIntent(getIntent());
         super.onCreate(savedInstanceState);
     }
@@ -36,12 +40,23 @@ public class ScanCameraBackActivity extends ScanCameraBaseActivity {
 
     @Override
     protected String initialInstruction() {
-        return "Fotografe o verso, principalmente os ingredientes.";
+        return hasRetakeMessage()
+                ? retakeMessage
+                : "Fotografe o verso, principalmente os ingredientes.";
     }
 
     @Override
     protected String readyInstruction() {
+        if (hasRetakeMessage()) {
+            String message = retakeMessage;
+            retakeMessage = null;
+            return message;
+        }
         return "Enquadre o verso. Deixe os ingredientes legíveis.";
+    }
+
+    private boolean hasRetakeMessage() {
+        return retakeMessage != null && !retakeMessage.trim().isEmpty();
     }
 
     @Override
