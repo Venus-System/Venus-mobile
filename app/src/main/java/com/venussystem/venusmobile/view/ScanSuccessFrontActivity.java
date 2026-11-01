@@ -342,7 +342,9 @@ public class ScanSuccessFrontActivity extends AppCompatActivity {
                 ultimaClassificacao
         );
         draft.setQualityReviewOverride(
-                getIntent().getBooleanExtra(EXTRA_QUALITY_REVIEW_OVERRIDE, false));
+                getIntent().getBooleanExtra(
+                        ScanCameraBaseActivity.EXTRA_QUALITY_REVIEW_OVERRIDE,
+                        false));
         draft.bindToUser(owner.getUid());
 
         Intent intent = new Intent(
