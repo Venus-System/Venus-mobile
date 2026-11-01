@@ -2,6 +2,7 @@ package com.venussystem.venusmobile.view;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,6 +22,9 @@ public class ScanCameraBackActivity extends ScanCameraBaseActivity {
         retakeMessage = getIntent().getStringExtra(EXTRA_BACK_RETAKE_MESSAGE);
         draft = ScanSubmissionDraft.fromIntent(getIntent());
         super.onCreate(savedInstanceState);
+        if (hasRetakeMessage()) {
+            Toast.makeText(this, retakeMessage, Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
@@ -40,18 +44,11 @@ public class ScanCameraBackActivity extends ScanCameraBaseActivity {
 
     @Override
     protected String initialInstruction() {
-        return hasRetakeMessage()
-                ? retakeMessage
-                : "Fotografe o verso, principalmente os ingredientes.";
+        return "Fotografe o verso, principalmente os ingredientes.";
     }
 
     @Override
     protected String readyInstruction() {
-        if (hasRetakeMessage()) {
-            String message = retakeMessage;
-            retakeMessage = null;
-            return message;
-        }
         return "Enquadre o verso. Deixe os ingredientes legíveis.";
     }
 
