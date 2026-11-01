@@ -121,25 +121,31 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
                         return;
                     }
 
-                    Log.e(TAG, "ERRO NO OCR BACK. Encerrando o scan.", exception);
+                    Log.e(TAG, "ERRO NO OCR BACK. Solicitando nova foto.", exception);
                     ocrProcessado = true;
-                    fecharFluxoParaPrincipal();
+                    solicitarNovaFotoDoVerso(
+                            "Não conseguimos ler o verso. Fotografe novamente o rótulo inteiro, com os ingredientes nítidos."
+                    );
                 }
         );
     }
 
     private void iniciarOcrBack() {
         if (photoPath == null || photoPath.trim().isEmpty()) {
-            Log.e(TAG, "PHOTO PATH BACK AUSENTE. Encerrando o scan.");
-            fecharFluxoParaPrincipal();
+            Log.e(TAG, "PHOTO PATH BACK AUSENTE. Solicitando nova foto.");
+            solicitarNovaFotoDoVerso(
+                    "A foto do verso não foi encontrada. Fotografe novamente o rótulo inteiro."
+            );
             return;
         }
 
         File file = new File(photoPath);
 
         if (!file.exists() || !file.isFile() || file.length() <= 0) {
-            Log.e(TAG, "FOTO BACK INVALIDA");
-            fecharFluxoParaPrincipal();
+            Log.e(TAG, "FOTO BACK INVALIDA. Solicitando nova foto.");
+            solicitarNovaFotoDoVerso(
+                    "A foto do verso ficou inválida. Fotografe novamente com o rótulo inteiro."
+            );
             return;
         }
 
@@ -154,9 +160,11 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
         String texto = result.getFullText();
 
         if (texto == null || texto.trim().isEmpty()) {
-            Log.e(TAG, "OCR BACK VAZIO. Encerrando o scan.");
+            Log.e(TAG, "OCR BACK VAZIO. Solicitando nova foto.");
             ocrProcessado = true;
-            fecharFluxoParaPrincipal();
+            solicitarNovaFotoDoVerso(
+                    "Não foi possível ler o verso. Aproxime o rótulo e deixe os ingredientes nítidos."
+            );
             return;
         }
 
@@ -176,13 +184,23 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
             backData = ScanBackExtractor.extract(result);
         } catch (Exception exception) {
             Log.e(TAG, "ERRO AO PROCESSAR O VERSO.", exception);
-            fecharFluxoParaPrincipal();
+            solicitarNovaFotoDoVerso(
+                    "Não conseguimos organizar os ingredientes. Fotografe novamente o verso inteiro."
+            );
             return;
         }
 
         if (backData == null) {
             Log.e(TAG, "ScanBackExtractor retornou null.");
             fecharFluxoParaPrincipal();
+            return;
+        }
+
+        if (backNeedsRetake(backData)) {
+            Log.w(TAG, "BACK_RETAKE_REQUIRED ingredientsSection="
+                    + backData.isIngredientSectionFound()
+                    + " candidates=" + backData.getIngredients().size());
+            solicitarNovaFotoDoVerso(backRetakeMessage(backData));
             return;
         }
 
@@ -222,6 +240,46 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
                 this::abrirProximaEtapaAutomaticamente,
                 NEXT_STEP_DELAY_MS
         );
+    }
+
+    private boolean backNeedsRetake(ScanBackData data) {
+        if (data == null) return true;
+        return !data.isIngredientSectionFound()
+                || data.getIngredients().isEmpty()
+                || data.getIngredientsRawText().trim().isEmpty();
+    }
+
+    private String backRetakeMessage(ScanBackData data) {
+        if (!data.isIngredientSectionFound()) {
+            return "Não encontramos a seção de ingredientes. Fotografe o verso inteiro do produto, sem cortar o rótulo.";
+        }
+        if (data.getIngredients().isEmpty()
+                || data.getIngredientsRawText().trim().isEmpty()) {
+            return "A seção de ingredientes ficou ilegível. Aproxime, toque para focar e fotografe novamente.";
+        }
+        return "Não foi possível confirmar os ingredientes. Fotografe novamente o verso com o texto nítido.";
+    }
+
+    private void solicitarNovaFotoDoVerso(String message) {
+        if (navegando || isFinishing() || isDestroyed() || draft == null) {
+            return;
+        }
+
+        navegando = true;
+        draft.clearBackCapture();
+
+        Intent intent = new Intent(this, ScanCameraBackActivity.class);
+        intent.putExtra(ScanCameraBackActivity.EXTRA_BACK_RETAKE_MESSAGE, message);
+        draft.putInto(intent);
+
+        try {
+            startActivity(intent);
+            finish();
+        } catch (Exception exception) {
+            Log.e(TAG, "Não foi possível reabrir a câmera do verso.", exception);
+            navegando = false;
+            fecharFluxoParaPrincipal();
+        }
     }
 
     private void abrirProximaEtapaAutomaticamente() {

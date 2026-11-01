@@ -48,6 +48,8 @@ import java.util.concurrent.TimeUnit;
 public abstract class ScanCameraBaseActivity extends AppCompatActivity {
 
     protected static final String EXTRA_OUTPUT_KEY = "scan_output_path";
+    protected static final String EXTRA_QUALITY_REVIEW_OVERRIDE =
+            "scan_quality_review_override";
 
     protected PreviewView previewView;
     protected ImageCapture imageCapture;
@@ -65,6 +67,9 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
 
     private boolean cameraInicializando = false;
     private boolean capturando = false;
+    /** One guided retake per camera side; the second attempt remains reviewable. */
+    private boolean qualityRetryUsed = false;
+    private boolean qualityReviewOverride = false;
 
     private final ActivityResultLauncher<String> cameraPermissionLauncher =
             registerForActivityResult(
@@ -104,6 +109,14 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
     }
 
     protected abstract String capturedInstruction();
+
+    /**
+     * The front side may be sent to administrative review after one retake.
+     * A subclass can require a valid capture before leaving its camera.
+     */
+    protected boolean allowQualityReviewAfterRetake() {
+        return true;
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -482,6 +495,16 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
         }
 
         final ScanPhotoQuality measuredQuality = quality;
+        final boolean allowForAdministrativeReview = failureMessage != null
+                && qualityRetryUsed
+                && allowQualityReviewAfterRetake()
+                && quality != null
+                && ScanPhotoQualityPolicy.shouldBlock(quality);
+        if (allowForAdministrativeReview) {
+            qualityReviewOverride = true;
+            failureMessage = null;
+            android.util.Log.d("VENUS_CAMERA", "QUALITY_ADVISORY_AFTER_RETAKE");
+        }
         final String message = failureMessage;
         mainHandler.post(() -> {
             if (isFinishing() || isDestroyed()) {
@@ -490,6 +513,7 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
 
             capturando = false;
             if (message != null) {
+                qualityRetryUsed = true;
                 if (photoFile.exists() && !photoFile.delete()) {
                     android.util.Log.w("VENUS_CAMERA", "QUALITY_REJECT_DELETE_FAILED");
                 }
@@ -555,6 +579,7 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
     protected void goToSuccess(String path) {
         Intent intent = new Intent(this, successActivity());
         intent.putExtra(EXTRA_OUTPUT_KEY, path);
+        intent.putExtra(EXTRA_QUALITY_REVIEW_OVERRIDE, qualityReviewOverride);
 
         ScanSubmissionDraft draft =
                 ScanSubmissionDraft.fromIntent(getIntent());

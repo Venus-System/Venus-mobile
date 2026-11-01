@@ -74,6 +74,21 @@ public class ScanIngredientCatalogTest {
         assertEquals(2, api.calls);
     }
 
+    @Test public void warmSnapshotPreloadsTheReadOnlyCatalogueForTheNextLookup() throws Exception {
+        Fake api = new Fake();
+        api.allIngredientsList.add(ingredient(2, "AQUA"));
+        ScanIngredientCatalogCache cache = new ScanIngredientCatalogCache(
+                temporary.newFolder("warm-catalog").toPath().resolve("catalog.json"));
+        ScanIngredientCatalog catalog = new ScanIngredientCatalog(api, () -> {}, cache);
+
+        catalog.warmSnapshot();
+
+        assertEquals(2, api.calls);
+        assertEquals("KNOWN", catalog.lookup(Collections.singletonList("AQUA"))
+                .matches.get(0).status);
+        assertEquals(2, api.calls);
+    }
+
     @Test public void fallsBackToStaleSnapshotWhenRefreshIsUnavailable() throws Exception {
         Fake api = new Fake();
         api.networkFailure = true;
@@ -86,7 +101,9 @@ public class ScanIngredientCatalogTest {
         cache.write(stale);
         ScanIngredientCatalog.Report report = new ScanIngredientCatalog(api, () -> {}, cache)
                 .lookup(Collections.singletonList("WATER"));
-        assertEquals(1, api.calls);
+        // Both read-only catalogue endpoints are attempted together; a stale
+        // local snapshot still remains the fallback when refresh is offline.
+        assertEquals(2, api.calls);
         assertEquals(1, report.resolved);
         assertFalse(report.cacheFresh);
     }
