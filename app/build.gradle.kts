@@ -5,7 +5,9 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
-val urlVenusIaPadrao = "http://13.222.7.185/"
+// FastAPI Venus AI publicada na EC2 v2. Use VENUS_IA_URL/local.properties
+// apenas para apontar para outro ambiente durante o desenvolvimento.
+val urlVenusIaPadrao = "https://44-210-151-48.sslip.io/"
 val propriedadesLocais = Properties().apply {
     val arquivo = rootProject.file("local.properties")
     if (arquivo.exists()) {

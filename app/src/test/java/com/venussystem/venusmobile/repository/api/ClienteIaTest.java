@@ -13,8 +13,8 @@ public class ClienteIaTest {
 
     @Test
     public void urlComBarraEEspacos_ficaComUmaBarraSo() {
-        assertEquals("http://13.222.7.185/",
-                ClienteIa.normalizar("  http://13.222.7.185/ "));
+        assertEquals("https://44-210-151-48.sslip.io/",
+                ClienteIa.normalizar("  https://44-210-151-48.sslip.io/ "));
     }
 
     @Test
