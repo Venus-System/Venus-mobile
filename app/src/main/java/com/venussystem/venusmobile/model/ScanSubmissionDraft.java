@@ -313,6 +313,22 @@ public class ScanSubmissionDraft implements Serializable {
         }
     }
 
+    /**
+     * Removes only the previous back-side capture so the user can retake it.
+     * Front OCR, product candidates and classification remain untouched.
+     */
+    public void clearBackCapture() {
+        backPhotoPath = null;
+        backPhotoSha256 = null;
+        backOcrText = null;
+        if (backOcrLines != null) backOcrLines.clear();
+        if (backOcrTokens != null) backOcrTokens.clear();
+        if (backOcrAttempts != null) backOcrAttempts.clear();
+        backData = null;
+        status = STATUS_WAITING_BACK;
+        finishedAt = null;
+    }
+
     public void redactSensitiveDataAfterSubmission() {
         frontPhotoPath = null;
         frontOcrText = "";

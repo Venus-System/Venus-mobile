@@ -29,6 +29,8 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
 
     private static final String TAG = "VENUS_BACK";
     private static final long NEXT_STEP_DELAY_MS = 250L;
+    private static final String BACK_RETAKE_MESSAGE =
+            "Não encontramos os ingredientes. Fotografe novamente o verso inteiro, com o rótulo legível.";
 
     private String photoPath;
     private ScanSubmissionDraft draft;
@@ -186,6 +188,14 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
             return;
         }
 
+        if (backNeedsRetake(backData)) {
+            Log.w(TAG, "BACK_RETAKE_REQUIRED ingredientsSection="
+                    + backData.isIngredientSectionFound()
+                    + " candidates=" + backData.getIngredients().size());
+            solicitarNovaFotoDoVerso();
+            return;
+        }
+
         Log.d(
                 TAG,
                 "SEÇÃO DE INGREDIENTES: "
@@ -222,6 +232,35 @@ public class ScanSuccessBackActivity extends AppCompatActivity {
                 this::abrirProximaEtapaAutomaticamente,
                 NEXT_STEP_DELAY_MS
         );
+    }
+
+    private boolean backNeedsRetake(ScanBackData data) {
+        if (data == null) return true;
+        return !data.isIngredientSectionFound()
+                || data.getIngredients().isEmpty()
+                || data.getIngredientsRawText().trim().isEmpty();
+    }
+
+    private void solicitarNovaFotoDoVerso() {
+        if (navegando || isFinishing() || isDestroyed() || draft == null) {
+            return;
+        }
+
+        navegando = true;
+        draft.clearBackCapture();
+        setBadge(BACK_RETAKE_MESSAGE);
+
+        Intent intent = new Intent(this, ScanCameraBackActivity.class);
+        draft.putInto(intent);
+
+        try {
+            startActivity(intent);
+            finish();
+        } catch (Exception exception) {
+            Log.e(TAG, "Não foi possível reabrir a câmera do verso.", exception);
+            navegando = false;
+            fecharFluxoParaPrincipal();
+        }
     }
 
     private void abrirProximaEtapaAutomaticamente() {
