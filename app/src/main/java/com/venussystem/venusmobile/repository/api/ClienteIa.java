@@ -13,7 +13,10 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public final class ClienteIa {
-    private static final long LIMITE_CONEXAO = 30L;
+    // Se a EC2 estiver indisponível, não deixe o usuário esperar 30 s antes
+    // de receber o erro. O tempo de leitura continua separado porque a IA
+    // pode consumir mais tempo depois que a conexão foi estabelecida.
+    private static final long LIMITE_CONEXAO = 10L;
 
     private static final long LIMITE_LEITURA = 240L;
 
