@@ -110,6 +110,14 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
 
     protected abstract String capturedInstruction();
 
+    /**
+     * The front side may be sent to administrative review after one retake.
+     * A subclass can require a valid capture before leaving its camera.
+     */
+    protected boolean allowQualityReviewAfterRetake() {
+        return true;
+    }
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -489,6 +497,7 @@ public abstract class ScanCameraBaseActivity extends AppCompatActivity {
         final ScanPhotoQuality measuredQuality = quality;
         final boolean allowForAdministrativeReview = failureMessage != null
                 && qualityRetryUsed
+                && allowQualityReviewAfterRetake()
                 && quality != null
                 && ScanPhotoQualityPolicy.shouldBlock(quality);
         if (allowForAdministrativeReview) {

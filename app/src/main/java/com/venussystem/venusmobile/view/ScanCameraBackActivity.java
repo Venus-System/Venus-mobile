@@ -60,6 +60,13 @@ public class ScanCameraBackActivity extends ScanCameraBaseActivity {
     }
 
     @Override
+    protected boolean allowQualityReviewAfterRetake() {
+        // The front draft is preserved, but the back must be readable before
+        // the OCR/submission pipeline can continue.
+        return false;
+    }
+
+    @Override
     protected void goToSuccess(String path) {
         Intent intent = new Intent(
                 this,
