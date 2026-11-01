@@ -28,21 +28,24 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guidelineCosmeticosTopo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.07" />
+
     <ImageView
         android:id="@+id/imgFormaFundo"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginTop="@dimen/espaco_medio"
         android:importantForAccessibility="no"
         android:scaleType="fitCenter"
         app:layout_constraintBottom_toTopOf="@+id/cardLogin"
-        app:layout_constraintDimensionRatio="H,317:642"
         app:layout_constraintEnd_toEndOf="@+id/cardLogin"
-        app:layout_constraintHorizontal_bias="0.52"
         app:layout_constraintStart_toStartOf="@+id/cardLogin"
-        app:layout_constraintTop_toTopOf="@+id/cardLogin"
-        app:layout_constraintVertical_bias="1.0"
-        app:layout_constraintWidth_max="@dimen/largura_max_ilustracao"
-        app:layout_constraintWidth_percent="0.35"
+        app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/vector_login" />
 
     <ImageView
@@ -52,14 +55,9 @@
         android:importantForAccessibility="no"
         android:scaleType="fitCenter"
         app:layout_constraintBottom_toTopOf="@+id/cardLogin"
-        app:layout_constraintDimensionRatio="H,252:257"
         app:layout_constraintEnd_toEndOf="@+id/cardLogin"
-        app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="@+id/cardLogin"
-        app:layout_constraintTop_toTopOf="@+id/cardLogin"
-        app:layout_constraintVertical_bias="1.0"
-        app:layout_constraintWidth_max="@dimen/largura_max_ilustracao"
-        app:layout_constraintWidth_percent="0.5"
+        app:layout_constraintTop_toBottomOf="@+id/guidelineCosmeticosTopo"
         app:srcCompat="@drawable/cosmedicos_entrar" />
 
     <androidx.core.widget.NestedScrollView
