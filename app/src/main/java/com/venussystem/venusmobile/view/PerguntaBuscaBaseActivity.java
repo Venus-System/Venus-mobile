@@ -3,17 +3,17 @@ package com.venussystem.venusmobile.view;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.LayoutRes;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.AppCompatAutoCompleteTextView;
 
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.repository.PerfilRepository;
+import com.venussystem.venusmobile.view.componente.SeletorDeOpcoes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,12 +23,15 @@ public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
     private final List<String> selecionados = new ArrayList<>();
     private LinearLayout lista;
     private PerfilRepository perfil;
-    private AppCompatAutoCompleteTextView campo;
+    private SeletorDeOpcoes seletor;
 
     @LayoutRes
     protected abstract int getLayout();
 
     protected abstract List<String> getOpcoes();
+
+    @StringRes
+    protected abstract int getHintOutro();
 
     @Nullable
     protected abstract Class<?> getProximaTela();
@@ -43,44 +46,39 @@ public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
         lista = findViewById(R.id.listaSelecionados);
         perfil = new PerfilRepository(this);
 
-        for (String salvo : perfil.getLista(getChave())) {
-            adicionar(salvo);
-        }
+        selecionados.addAll(perfil.getLista(getChave()));
+        desenharChips();
 
         findViewById(R.id.btnVoltar).setOnClickListener(v -> finish());
         findViewById(R.id.btnAvancar).setOnClickListener(v -> avancar());
 
-        prepararBusca();
-    }
-
-    private void prepararBusca() {
-        campo = findViewById(R.id.campoBusca);
-        trocarOpcoes(getOpcoes());
-
-        campo.setOnItemClickListener((parent, view, posicao, id) -> {
-            adicionar((String) parent.getItemAtPosition(posicao));
-            campo.setText("");
-        });
+        seletor = new SeletorDeOpcoes(findViewById(R.id.campoBusca),
+                findViewById(R.id.blocoOutro), getHintOutro(), getOpcoes(), this::adicionar);
     }
 
     protected void trocarOpcoes(List<String> opcoes) {
-        campo.setAdapter(new ArrayAdapter<>(
-                this, android.R.layout.simple_list_item_1, opcoes));
+        seletor.trocarOpcoes(opcoes);
     }
 
     private void adicionar(String item) {
-        if (selecionados.contains(item)) {
-            return;
-        }
-        selecionados.add(item);
+        List<String> novos = SeletorDeOpcoes.aplicar(selecionados, item);
+        selecionados.clear();
+        selecionados.addAll(novos);
+        desenharChips();
+    }
 
-        View chip = getLayoutInflater().inflate(R.layout.item_chip_selecionado, lista, false);
-        ((TextView) chip.findViewById(R.id.textChip)).setText(item);
-        chip.findViewById(R.id.btnRemoverChip).setOnClickListener(v -> {
-            selecionados.remove(item);
-            lista.removeView(chip);
-        });
-        lista.addView(chip);
+    private void desenharChips() {
+        lista.removeAllViews();
+        for (String item : selecionados) {
+            View chip = getLayoutInflater().inflate(R.layout.item_chip_selecionado, lista, false);
+            ((TextView) chip.findViewById(R.id.textChip))
+                    .setText(SeletorDeOpcoes.rotulo(this, item));
+            chip.findViewById(R.id.btnRemoverChip).setOnClickListener(v -> {
+                selecionados.remove(item);
+                desenharChips();
+            });
+            lista.addView(chip);
+        }
     }
 
     private void avancar() {
