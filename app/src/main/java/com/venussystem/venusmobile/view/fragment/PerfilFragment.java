@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -19,7 +18,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.widget.AppCompatAutoCompleteTextView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
@@ -36,6 +34,7 @@ import com.venussystem.venusmobile.repository.PerfilRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoRepository;
 import com.venussystem.venusmobile.view.BemVindoActivity;
 import com.venussystem.venusmobile.view.componente.AvatarPerfilView;
+import com.venussystem.venusmobile.view.componente.SeletorDeOpcoes;
 import com.venussystem.venusmobile.view.dialog.ModalEscolhaMultipla;
 import com.venussystem.venusmobile.view.dialog.ModalEscolhaUnica;
 import com.venussystem.venusmobile.view.dialog.ModalFaixaEtaria;
@@ -235,16 +234,17 @@ public class PerfilFragment extends Fragment {
         fotoPerfil.buscarDaApiEmSegundoPlano(this::mostrarFoto);
 
         CatalogoAlergiasRepository catalogo = new CatalogoAlergiasRepository(requireContext());
-        prepararSecaoDeLista(view, R.id.campoAlergia, R.id.chipsAlergias,
+        SeletorDeOpcoes seletorAlergias = prepararSecaoDeLista(view, R.id.campoAlergia,
+                R.id.outroAlergia, R.id.chipsAlergias, R.string.hint_outra_alergia,
                 catalogo.nomes(), PerfilRepository.ALERGIAS);
-        prepararSecaoDeLista(view, R.id.campoPreferencia, R.id.chipsPreferencias,
+        prepararSecaoDeLista(view, R.id.campoPreferencia, R.id.outroPreferencia,
+                R.id.chipsPreferencias, R.string.hint_outra_preferencia,
                 Arrays.asList(getResources().getStringArray(R.array.preferencias)),
                 PerfilRepository.PREFERENCIAS);
 
         catalogo.atualizarEmSegundoPlano(nomes -> {
-            View raiz = getView();
-            if (raiz != null) {
-                trocarOpcoes(raiz.findViewById(R.id.campoAlergia), nomes);
+            if (getView() != null) {
+                seletorAlergias.trocarOpcoes(nomes);
             }
         });
     }
@@ -412,46 +412,36 @@ public class PerfilFragment extends Fragment {
                 });
     }
 
-    private void prepararSecaoDeLista(View raiz, int idCampo, int idChips,
-                                      List<String> opcoes, String chave) {
-        AppCompatAutoCompleteTextView campo = raiz.findViewById(idCampo);
+    private SeletorDeOpcoes prepararSecaoDeLista(View raiz, int idCampo, int idOutro, int idChips,
+                                                 @StringRes int hintOutro, List<String> opcoes,
+                                                 String chave) {
         LinearLayout chips = raiz.findViewById(idChips);
+        desenharChips(chips, chave);
 
-        trocarOpcoes(campo, opcoes);
-
-        for (String salvo : perfil.getLista(chave)) {
-            adicionarChip(chips, chave, salvo);
-        }
-
-        campo.setOnItemClickListener((pai, v, posicao, id) -> {
-            adicionarChip(chips, chave, (String) pai.getItemAtPosition(posicao));
-            campo.setText("");
-        });
+        return new SeletorDeOpcoes(raiz.findViewById(idCampo), raiz.findViewById(idOutro),
+                hintOutro, opcoes, valor -> {
+                    perfil.salvarLista(chave,
+                            SeletorDeOpcoes.aplicar(perfil.getLista(chave), valor));
+                    desenharChips(chips, chave);
+                });
     }
 
-    private void trocarOpcoes(AppCompatAutoCompleteTextView campo, List<String> opcoes) {
-        campo.setAdapter(new ArrayAdapter<>(
-                requireContext(), android.R.layout.simple_list_item_1, opcoes));
-    }
+    private void desenharChips(LinearLayout chips, String chave) {
+        chips.removeAllViews();
+        for (String item : perfil.getLista(chave)) {
+            View chip = getLayoutInflater()
+                    .inflate(R.layout.item_chip_selecionado, chips, false);
+            ((TextView) chip.findViewById(R.id.textChip))
+                    .setText(SeletorDeOpcoes.rotulo(requireContext(), item));
 
-    private void adicionarChip(LinearLayout chips, String chave, String item) {
-        List<String> atuais = perfil.getLista(chave);
-        if (!atuais.contains(item)) {
-            atuais.add(item);
-            perfil.salvarLista(chave, atuais);
+            chip.findViewById(R.id.btnRemoverChip).setOnClickListener(v -> {
+                List<String> restantes = perfil.getLista(chave);
+                restantes.remove(item);
+                perfil.salvarLista(chave, restantes);
+                desenharChips(chips, chave);
+            });
+
+            chips.addView(chip);
         }
-
-        View chip = getLayoutInflater()
-                .inflate(R.layout.item_chip_selecionado, chips, false);
-        ((TextView) chip.findViewById(R.id.textChip)).setText(item);
-
-        chip.findViewById(R.id.btnRemoverChip).setOnClickListener(v -> {
-            List<String> restantes = perfil.getLista(chave);
-            restantes.remove(item);
-            perfil.salvarLista(chave, restantes);
-            chips.removeView(chip);
-        });
-
-        chips.addView(chip);
     }
 }

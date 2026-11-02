@@ -20,6 +20,11 @@ public class PerguntaPreferenciaActivity extends PerguntaBuscaBaseActivity {
     }
 
     @Override
+    protected int getHintOutro() {
+        return R.string.hint_outra_preferencia;
+    }
+
+    @Override
     @Nullable
     protected Class<?> getProximaTela() {
         return PerguntaAlergiaActivity.class;

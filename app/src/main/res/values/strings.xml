@@ -106,8 +106,13 @@
 
     <string name="pergunta_preferencia">Você possui alguma preferência?</string>
     <string name="pergunta_alergia">Você possui alguma alergia?</string>
-    <string name="hint_buscar_preferencia">Pesquisar preferência</string>
-    <string name="hint_buscar_alergia">Pesquisar alergia</string>
+    <string name="hint_escolher_preferencia">Toque para escolher suas preferências</string>
+    <string name="hint_escolher_alergia">Toque para escolher suas alergias</string>
+    <string name="hint_outra_preferencia">Escreva sua preferência</string>
+    <string name="hint_outra_alergia">Escreva sua alergia</string>
+    <string name="opcao_nenhuma">Nenhuma</string>
+    <string name="opcao_outro">Outro (escrever)</string>
+    <string name="acao_adicionar">Adicionar</string>
     <string name="desc_remover">Remover</string>
 
     <string name="perfil_pronto_titulo">Seu perfil está pronto! :)</string>
@@ -271,8 +276,6 @@
     <string name="perfil_pendente">Aviso: Pendente</string>
     <string name="perfil_editar">Editar</string>
     <string name="perfil_ajuda">Ver explicação</string>
-    <string name="perfil_hint_alergia">Pesquisar alergia</string>
-    <string name="perfil_hint_preferencia">Pesquisar preferência</string>
     <string name="perfil_sem_nome">Perfil Venus</string>
     <string name="assistente_titulo">Assistente</string>
     <string name="assistente_hint">Pergunte à Vênus…</string>

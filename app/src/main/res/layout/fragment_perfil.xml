@@ -110,10 +110,14 @@
                 style="@style/SubtituloSecaoPerfil"
                 android:text="@string/perfil_secao_alergias_sub" />
 
-            <androidx.appcompat.widget.AppCompatAutoCompleteTextView
+            <TextView
                 android:id="@+id/campoAlergia"
-                style="@style/CampoBuscaPerfil"
-                android:hint="@string/perfil_hint_alergia" />
+                style="@style/CampoEscolhaPerfil"
+                android:hint="@string/hint_escolher_alergia" />
+
+            <include
+                android:id="@+id/outroAlergia"
+                layout="@layout/include_campo_outro" />
 
             <LinearLayout
                 android:id="@+id/chipsAlergias"
@@ -129,10 +133,14 @@
                 style="@style/SubtituloSecaoPerfil"
                 android:text="@string/perfil_secao_valores_sub" />
 
-            <androidx.appcompat.widget.AppCompatAutoCompleteTextView
+            <TextView
                 android:id="@+id/campoPreferencia"
-                style="@style/CampoBuscaPerfil"
-                android:hint="@string/perfil_hint_preferencia" />
+                style="@style/CampoEscolhaPerfil"
+                android:hint="@string/hint_escolher_preferencia" />
+
+            <include
+                android:id="@+id/outroPreferencia"
+                layout="@layout/include_campo_outro" />
 
             <LinearLayout
                 android:id="@+id/chipsPreferencias"

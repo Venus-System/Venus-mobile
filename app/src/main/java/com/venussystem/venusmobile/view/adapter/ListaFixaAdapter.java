@@ -32,9 +32,9 @@ public class ListaFixaAdapter extends RecyclerView.Adapter<ListaFixaAdapter.Cart
     }
 
     private static final Cartao[] CARTOES = {
-            new Cartao(R.string.curtidos_titulo, R.drawable.capa_favoritos,
+            new Cartao(R.string.curtidos_titulo, R.drawable.capa_curtidos,
                     ProdutosCurtidosActivity.class),
-            new Cartao(R.string.analise_titulo, R.drawable.capa_escaneados,
+            new Cartao(R.string.analise_titulo, R.drawable.capa_em_analise,
                     ProdutosEmAnaliseActivity.class),
     };
 

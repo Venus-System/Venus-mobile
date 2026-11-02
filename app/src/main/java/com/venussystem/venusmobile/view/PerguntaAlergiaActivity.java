@@ -36,6 +36,11 @@ public class PerguntaAlergiaActivity extends PerguntaBuscaBaseActivity {
     }
 
     @Override
+    protected int getHintOutro() {
+        return R.string.hint_outra_alergia;
+    }
+
+    @Override
     @Nullable
     protected Class<?> getProximaTela() {
         return PerfilProntoActivity.class;
