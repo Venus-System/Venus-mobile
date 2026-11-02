@@ -44,7 +44,7 @@ A documentação complementar está em [`docs/`](docs/), por exemplo o fluxo de 
 | Serviço | Para quê | Propriedade | Padrão |
 | --- | --- | --- | --- |
 | API Venus (Spring) | usuários, perfil, catálogo, listas, scans | `VENUS_API_URL` | `https://34-192-194-32.sslip.io/` |
-| Venus IA (FastAPI) | chat com a Veninha | `VENUS_IA_URL` | `https://44-210-151-48.sslip.io/` |
+| Venus IA (FastAPI) | chat com a Veninha | `VENUS_IA_URL` | `https://3-238-136-90.sslip.io/` |
 | Venus Classificação | nota pessoal do produto | `VENUS_CLASSIFICACAO_URL` | `https://34-192-194-32.sslip.io/classificacao/` |
 
 As URLs não ficam no código: o Gradle lê cada propriedade e grava o valor no `BuildConfig`. Para apontar para outro ambiente, coloque a propriedade no `local.properties` da raiz:
