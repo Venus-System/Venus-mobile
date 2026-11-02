@@ -70,10 +70,10 @@ public class MapeadorPerfilDaApiTest {
     }
 
     @Test
-    public void cabeloTipo1DaApi_viraOTipo1UnicoDoApp() {
+    public void cabeloTipo1DaApi_mantemOSubtipo() {
         for (String tipo1 : Arrays.asList("TYPE_1A", "TYPE_1B", "TYPE_1C")) {
             perfil.hairPattern = tipo1;
-            assertEquals("TYPE_1",
+            assertEquals(tipo1,
                     MapeadorPerfilApi.daApi(completo, OPCOES).tags.get(PerfilRepository.TIPO_CABELO));
         }
     }

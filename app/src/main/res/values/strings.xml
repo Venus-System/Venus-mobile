@@ -116,7 +116,9 @@
     <string name="perfil_pronto_acao">Começar</string>
     <string name="pergunta_escolha_uma">Escolha uma opção para continuar</string>
 
-    <string name="cabelo_1">1</string>
+    <string name="cabelo_1a">1A</string>
+    <string name="cabelo_1b">1B</string>
+    <string name="cabelo_1c">1C</string>
     <string name="cabelo_2a">2A</string>
     <string name="cabelo_2b">2B</string>
     <string name="cabelo_2c">2C</string>
@@ -139,6 +141,9 @@
     <string name="sheet_secao_ondulado">Ondulado</string>
     <string name="sheet_secao_cacheado">Cacheado</string>
 
+    <string name="sheet_tipo_1a">1a</string>
+    <string name="sheet_tipo_1b">1b</string>
+    <string name="sheet_tipo_1c">1c</string>
     <string name="sheet_tipo_2a">2a</string>
     <string name="sheet_tipo_2b">2b</string>
     <string name="sheet_tipo_2c">2c</string>
@@ -146,7 +151,9 @@
     <string name="sheet_tipo_3b">3b</string>
     <string name="sheet_tipo_3c">3c</string>
 
-    <string name="sheet_desc_1">Sem ondas, cai reto</string>
+    <string name="sheet_desc_1a">Liso fino e escorrido, sem volume</string>
+    <string name="sheet_desc_1b">Liso com um pouco de corpo e volume</string>
+    <string name="sheet_desc_1c">Liso grosso, com leve curva nas pontas</string>
     <string name="sheet_desc_2a">Onda leve, quase reto</string>
     <string name="sheet_desc_2b">Onda em S definida</string>
     <string name="sheet_desc_2c">Onda marcada, quase cacho</string>

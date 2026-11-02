@@ -41,7 +41,7 @@ public class EtiquetasDoPerfilTest {
 
     @Test
     public void cabeloLisoNaoEntraComoControleDeFrizz() {
-        assertFalse(EtiquetasDoPerfil.slugs(respostas(PerfilRepository.TIPO_CABELO, "TYPE_1"))
+        assertFalse(EtiquetasDoPerfil.slugs(respostas(PerfilRepository.TIPO_CABELO, "TYPE_1B"))
                 .contains("controle-de-frizz"));
     }
 

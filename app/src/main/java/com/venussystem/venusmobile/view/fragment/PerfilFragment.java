@@ -137,7 +137,9 @@ public class PerfilFragment extends Fragment {
 
             new Atributo(R.string.perfil_tipo_cabelo, PerfilRepository.TIPO_CABELO,
                     R.string.pergunta_tipo_cabelo, opcoes(
-                    "TYPE_1", R.string.cabelo_1,
+                    "TYPE_1A", R.string.cabelo_1a,
+                    "TYPE_1B", R.string.cabelo_1b,
+                    "TYPE_1C", R.string.cabelo_1c,
                     "TYPE_2A", R.string.cabelo_2a,
                     "TYPE_2B", R.string.cabelo_2b,
                     "TYPE_2C", R.string.cabelo_2c,

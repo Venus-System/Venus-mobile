@@ -88,7 +88,7 @@
 
             <LinearLayout
                 style="@style/CardTipoCabelo"
-                android:tag="TYPE_1">
+                android:tag="TYPE_1A">
 
                 <ImageView
                     style="@style/FioTipoCabelo"
@@ -102,11 +102,63 @@
 
                     <TextView
                         style="@style/TituloTipoCabelo"
-                        android:text="@string/cabelo_1" />
+                        android:text="@string/sheet_tipo_1a" />
 
                     <TextView
                         style="@style/DescricaoTipoCabelo"
-                        android:text="@string/sheet_desc_1" />
+                        android:text="@string/sheet_desc_1a" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="TYPE_1B">
+
+                <ImageView
+                    style="@style/FioTipoCabelo"
+                    android:src="@drawable/fio_1" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/espaco_medio"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TituloTipoCabelo"
+                        android:text="@string/sheet_tipo_1b" />
+
+                    <TextView
+                        style="@style/DescricaoTipoCabelo"
+                        android:text="@string/sheet_desc_1b" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="TYPE_1C">
+
+                <ImageView
+                    style="@style/FioTipoCabelo"
+                    android:src="@drawable/fio_1" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/espaco_medio"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TituloTipoCabelo"
+                        android:text="@string/sheet_tipo_1c" />
+
+                    <TextView
+                        style="@style/DescricaoTipoCabelo"
+                        android:text="@string/sheet_desc_1c" />
 
                 </LinearLayout>
 
