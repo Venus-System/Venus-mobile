@@ -89,7 +89,7 @@ public class RestauracaoDoPerfilTest {
         assertTrue(perfil.jaRespondeuQuestionario());
         assertEquals("FEMALE", perfil.getTag(PerfilRepository.GENERO));
         assertEquals("DRY", perfil.getTag(PerfilRepository.TIPO_PELE));
-        assertEquals("TYPE_1", perfil.getTag(PerfilRepository.TIPO_CABELO));
+        assertEquals("TYPE_1B", perfil.getTag(PerfilRepository.TIPO_CABELO));
         assertEquals("AGE_18_24", perfil.getTag(PerfilRepository.FAIXA_ETARIA));
         assertEquals(Collections.singletonList("hasRosacea"),
                 perfil.getLista(PerfilRepository.CONDICOES_PELE));

@@ -73,7 +73,17 @@ public class MapeadorPerfilApiTest {
     }
 
     @Test
-    public void cabeloTipo1DaTela_vira1ANaApi() {
+    public void cabeloTipo1DaTela_vaiComOSubtipoParaAApi() {
+        respostas.tags.put(PerfilRepository.TIPO_CABELO, "TYPE_1C");
+
+        UserProfileRequest corpo = MapeadorPerfilApi.perfil(USER_ID, respostas);
+
+        assertNotNull(corpo);
+        assertEquals("TYPE_1C", corpo.hairPattern);
+    }
+
+    @Test
+    public void cabeloTipo1AntigoSalvoNoAparelho_vira1ANaApi() {
         respostas.tags.put(PerfilRepository.TIPO_CABELO, "TYPE_1");
 
         UserProfileRequest corpo = MapeadorPerfilApi.perfil(USER_ID, respostas);

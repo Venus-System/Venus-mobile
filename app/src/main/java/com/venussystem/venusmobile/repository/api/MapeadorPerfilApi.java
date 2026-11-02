@@ -48,15 +48,12 @@ public final class MapeadorPerfilApi {
 
     private static final Set<String> TIPOS_PELE_NO_APP =
             Set.of("NORMAL", "DRY", "OILY", "COMBINATION", "SENSITIVE");
-    private static final Set<String> CABELOS_NO_APP = Set.of(
-            "TYPE_1", "TYPE_2A", "TYPE_2B", "TYPE_2C",
-            "TYPE_3A", "TYPE_3B", "TYPE_3C", "TYPE_4A", "TYPE_4B", "TYPE_4C");
     private static final Set<String> SENSIBILIDADES_NO_APP = Set.of("LOW", "MEDIUM", "HIGH");
     private static final Set<String> FAIXAS_ETARIAS_NO_APP = Set.of(
             "AGE_13_17", "AGE_18_24", "AGE_25_34", "AGE_35_44", "AGE_45_54", "AGE_55_PLUS");
 
-    private static final String CABELO_TIPO_1_APP = "TYPE_1";
-    private static final String CABELO_TIPO_1_API = "TYPE_1A";
+    private static final String CABELO_TIPO_1_ANTIGO = "TYPE_1";
+    private static final String CABELO_TIPO_1A = "TYPE_1A";
 
     private static final String VEGANO = "vegano";
     private static final String CRUELTY_FREE = "cruelty-free";
@@ -184,7 +181,7 @@ public final class MapeadorPerfilApi {
         guardar(daApi, PerfilRepository.TIPO_PELE, valida(perfil.skinType, TIPOS_PELE_NO_APP));
         guardar(daApi, PerfilRepository.FOTOTIPO, valida(perfil.skinPhototype, FOTOTIPOS));
         guardar(daApi, PerfilRepository.TIPO_CABELO,
-                valida(cabeloNoApp(perfil.hairPattern), CABELOS_NO_APP));
+                valida(perfil.hairPattern, CABELOS));
         guardar(daApi, PerfilRepository.COURO_CABELUDO, valida(perfil.scalpType, COUROS));
         guardar(daApi, PerfilRepository.SENSIBILIDADE,
                 valida(perfil.skinSensitivity, SENSIBILIDADES_NO_APP));
@@ -310,13 +307,8 @@ public final class MapeadorPerfilApi {
     }
 
     @Nullable
-    private static String cabeloNoApp(@Nullable String tag) {
-        return tag != null && tag.startsWith(CABELO_TIPO_1_APP) ? CABELO_TIPO_1_APP : tag;
-    }
-
-    @Nullable
     private static String cabeloNaApi(@Nullable String tag) {
-        return CABELO_TIPO_1_APP.equals(tag) ? CABELO_TIPO_1_API : tag;
+        return CABELO_TIPO_1_ANTIGO.equals(tag) ? CABELO_TIPO_1A : tag;
     }
 
     @Nullable
