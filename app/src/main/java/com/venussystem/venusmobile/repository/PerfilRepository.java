@@ -8,11 +8,13 @@ import androidx.annotation.VisibleForTesting;
 
 import com.venussystem.venusmobile.domain.perfil.ProgressoPerfil;
 import com.venussystem.venusmobile.repository.api.MapeadorPerfilApi;
+import com.venussystem.venusmobile.repository.api.PerfilDaApi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class PerfilRepository implements MapeadorPerfilApi.Respostas {
@@ -90,6 +92,25 @@ public class PerfilRepository implements MapeadorPerfilApi.Respostas {
         prefs.edit().putBoolean(CHAVE_RESPONDEU, true).apply();
     }
 
+    public void restaurar(PerfilDaApi daApi) {
+        long versao = versaoAtual() + 1;
+        SharedPreferences.Editor editor = prefs.edit();
+        for (Map.Entry<String, String> resposta : daApi.tags.entrySet()) {
+            editor.putString(resposta.getKey() + SUFIXO_TAG, resposta.getValue())
+                    .remove(resposta.getKey() + SUFIXO_ROTULO);
+        }
+        for (Map.Entry<String, List<String>> lista : daApi.listas.entrySet()) {
+            editor.putString(lista.getKey(), String.join(SEPARADOR, lista.getValue()));
+        }
+        editor.putString(ALERGIAS_NA_API, juntarIds(daApi.alergiasNaApi))
+                .putString(ETIQUETAS_NA_API, juntarIds(daApi.etiquetasNaApi))
+                .putBoolean(CHAVE_RESPONDEU, true)
+                .putLong(CHAVE_VERSAO, versao)
+                .putLong(CHAVE_VERSAO_ENVIADA, versao)
+                .putLong(CHAVE_ALTERADO_EM, System.currentTimeMillis())
+                .apply();
+    }
+
     public void salvarResposta(String chave, String tag, String rotulo) {
         SharedPreferences.Editor editor = prefs.edit()
                 .putString(chave + SUFIXO_TAG, tag)
@@ -156,11 +177,15 @@ public class PerfilRepository implements MapeadorPerfilApi.Respostas {
     }
 
     public void salvarIdsNaApi(String chave, Set<Long> ids) {
+        prefs.edit().putString(chave, juntarIds(ids)).apply();
+    }
+
+    private static String juntarIds(Set<Long> ids) {
         List<String> textos = new ArrayList<>();
         for (Long id : ids) {
             textos.add(String.valueOf(id));
         }
-        prefs.edit().putString(chave, String.join(SEPARADOR, textos)).apply();
+        return String.join(SEPARADOR, textos);
     }
 
     public void limpar() {

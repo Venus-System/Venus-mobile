@@ -3,6 +3,10 @@ package com.venussystem.venusmobile.view;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.activity.ComponentActivity;
 import androidx.activity.result.ActivityResultLauncher;
@@ -12,11 +16,14 @@ import androidx.appcompat.app.AlertDialog;
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.repository.LocalizacaoRepository;
 import com.venussystem.venusmobile.repository.PerfilRepository;
+import com.venussystem.venusmobile.repository.RestauracaoDoPerfil;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class NavegacaoPosLogin {
     private static final String CHAVE_PERMISSAO_LOCALIZACAO = "venus_permissao_localizacao";
+    private static final long ESPERA_PERFIL_MS = 10_000L;
 
     private NavegacaoPosLogin() {
     }
@@ -72,6 +79,57 @@ public class NavegacaoPosLogin {
             return;
         }
 
+        buscarPerfilSalvo(origem, perfil);
+    }
+
+    private static void buscarPerfilSalvo(Activity origem, PerfilRepository perfil) {
+        AlertDialog carregando = new AlertDialog.Builder(origem)
+                .setView(R.layout.dialog_carregando_perfil)
+                .setCancelable(false)
+                .create();
+        if (carregando.getWindow() != null) {
+            carregando.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+        carregando.show();
+
+        Handler principal = new Handler(Looper.getMainLooper());
+        AtomicBoolean decidido = new AtomicBoolean(false);
+        Runnable desistir = () -> {
+            if (decidido.compareAndSet(false, true)) {
+                fechar(carregando);
+                irParaQuestionario(origem);
+            }
+        };
+        principal.postDelayed(desistir, ESPERA_PERFIL_MS);
+
+        new RestauracaoDoPerfil(origem).buscarEmSegundoPlano(daApi -> {
+            if (!decidido.compareAndSet(false, true)) {
+                return;
+            }
+            principal.removeCallbacks(desistir);
+            fechar(carregando);
+            if (daApi == null) {
+                irParaQuestionario(origem);
+                return;
+            }
+            perfil.restaurar(daApi);
+            if (!origem.isFinishing() && !origem.isDestroyed()) {
+                irParaMenu(origem);
+            }
+        });
+    }
+
+    private static void fechar(AlertDialog dialog) {
+        if (dialog.isShowing() && dialog.getWindow() != null
+                && dialog.getWindow().getDecorView().isAttachedToWindow()) {
+            dialog.dismiss();
+        }
+    }
+
+    private static void irParaQuestionario(Activity origem) {
+        if (origem.isFinishing() || origem.isDestroyed()) {
+            return;
+        }
         origem.startActivity(new Intent(origem, PesquisaInicialActivity.class));
         origem.finish();
     }

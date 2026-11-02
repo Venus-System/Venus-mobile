@@ -11,6 +11,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 
 import com.venussystem.venusmobile.R;
@@ -36,6 +37,16 @@ public final class ModalFaixaEtaria {
     }
 
     private ModalFaixaEtaria() {
+    }
+
+    @Nullable
+    public static String rotulo(Context contexto, String tag) {
+        for (int i = 0; i < TAGS.length; i++) {
+            if (TAGS[i].equals(tag)) {
+                return contexto.getString(ROTULOS[i]);
+            }
+        }
+        return null;
     }
 
     public static void mostrar(Context contexto, String tagAtual, AoSalvar aoSalvar) {

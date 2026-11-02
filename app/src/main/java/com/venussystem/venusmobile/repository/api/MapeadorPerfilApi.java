@@ -5,10 +5,15 @@ import androidx.annotation.Nullable;
 import com.venussystem.venusmobile.repository.PerfilRepository;
 import com.venussystem.venusmobile.repository.api.dto.AllergyResponse;
 import com.venussystem.venusmobile.repository.api.dto.PreferenceCatalogResponse;
+import com.venussystem.venusmobile.repository.api.dto.UserAllergyDetailResponse;
+import com.venussystem.venusmobile.repository.api.dto.UserFullProfileResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserPreferenceRequest;
+import com.venussystem.venusmobile.repository.api.dto.UserPreferenceResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserProfileRequest;
+import com.venussystem.venusmobile.repository.api.dto.UserProfileResponse;
 
 import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,6 +45,15 @@ public final class MapeadorPerfilApi {
 
     private static final Set<String> FAIXAS_ETARIAS =
             Set.of("AGE_18_24", "AGE_25_34", "AGE_35_44", "AGE_45_54", "AGE_55_PLUS");
+
+    private static final Set<String> TIPOS_PELE_NO_APP =
+            Set.of("NORMAL", "DRY", "OILY", "COMBINATION", "SENSITIVE");
+    private static final Set<String> CABELOS_NO_APP = Set.of(
+            "TYPE_1", "TYPE_2A", "TYPE_2B", "TYPE_2C",
+            "TYPE_3A", "TYPE_3B", "TYPE_3C", "TYPE_4A", "TYPE_4B", "TYPE_4C");
+    private static final Set<String> SENSIBILIDADES_NO_APP = Set.of("LOW", "MEDIUM", "HIGH");
+    private static final Set<String> FAIXAS_ETARIAS_NO_APP = Set.of(
+            "AGE_13_17", "AGE_18_24", "AGE_25_34", "AGE_35_44", "AGE_45_54", "AGE_55_PLUS");
 
     private static final String CABELO_TIPO_1_APP = "TYPE_1";
     private static final String CABELO_TIPO_1_API = "TYPE_1A";
@@ -155,6 +169,149 @@ public final class MapeadorPerfilApi {
             }
         }
         return ids;
+    }
+
+    @Nullable
+    public static PerfilDaApi daApi(@Nullable UserFullProfileResponse completo,
+                                    List<String> opcoesDePreferencia) {
+        UserProfileResponse perfil = completo == null ? null : completo.profile;
+        if (perfil == null) {
+            return null;
+        }
+
+        PerfilDaApi daApi = new PerfilDaApi();
+        guardar(daApi, PerfilRepository.GENERO, valida(perfil.gender, GENEROS));
+        guardar(daApi, PerfilRepository.TIPO_PELE, valida(perfil.skinType, TIPOS_PELE_NO_APP));
+        guardar(daApi, PerfilRepository.FOTOTIPO, valida(perfil.skinPhototype, FOTOTIPOS));
+        guardar(daApi, PerfilRepository.TIPO_CABELO,
+                valida(cabeloNoApp(perfil.hairPattern), CABELOS_NO_APP));
+        guardar(daApi, PerfilRepository.COURO_CABELUDO, valida(perfil.scalpType, COUROS));
+        guardar(daApi, PerfilRepository.SENSIBILIDADE,
+                valida(perfil.skinSensitivity, SENSIBILIDADES_NO_APP));
+        guardar(daApi, PerfilRepository.FAIXA_ETARIA,
+                valida(perfil.ageRange, FAIXAS_ETARIAS_NO_APP));
+
+        guardar(daApi, PerfilRepository.CONDICOES_PELE, marcadas(
+                "acneProne", perfil.acneProne,
+                "hasRosacea", perfil.hasRosacea,
+                "hasEczema", perfil.hasEczema,
+                "hasHyperpigmentation", perfil.hasHyperpigmentation,
+                "hasMelasma", perfil.hasMelasma));
+        if (!PerfilRepository.MASCULINO.equals(daApi.tags.get(PerfilRepository.GENERO))) {
+            guardar(daApi, PerfilRepository.GESTACAO, marcadas(
+                    "isPregnant", perfil.isPregnant,
+                    "isBreastfeeding", perfil.isBreastfeeding));
+        }
+
+        guardar(daApi, PerfilRepository.PREFERENCIAS,
+                preferenciasDaApi(completo, opcoesDePreferencia, daApi.etiquetasNaApi));
+        guardar(daApi, PerfilRepository.ALERGIAS,
+                alergiasDaApi(completo.allergies, daApi.alergiasNaApi));
+        return daApi;
+    }
+
+    private static void guardar(PerfilDaApi daApi, String chave, @Nullable String tag) {
+        if (tag != null) {
+            daApi.tags.put(chave, tag);
+        }
+    }
+
+    private static void guardar(PerfilDaApi daApi, String chave, List<String> itens) {
+        if (!itens.isEmpty()) {
+            daApi.listas.put(chave, itens);
+        }
+    }
+
+    private static List<String> marcadas(Object... paresTagValor) {
+        List<String> marcadas = new ArrayList<>();
+        boolean respondeu = false;
+        for (int i = 0; i < paresTagValor.length; i += 2) {
+            Boolean valor = (Boolean) paresTagValor[i + 1];
+            if (valor != null) {
+                respondeu = true;
+                if (valor) {
+                    marcadas.add((String) paresTagValor[i]);
+                }
+            }
+        }
+        if (respondeu && marcadas.isEmpty()) {
+            marcadas.add(PerfilRepository.NENHUMA);
+        }
+        return marcadas;
+    }
+
+    private static List<String> preferenciasDaApi(UserFullProfileResponse completo,
+                                                  List<String> opcoes,
+                                                  Set<Long> etiquetasNaApi) {
+        Set<String> escolhidas = new HashSet<>();
+        UserPreferenceResponse preferencias = completo.preferences;
+        if (preferencias != null) {
+            adicionarSeMarcou(escolhidas, preferencias.preferVegan, VEGANO);
+            adicionarSeMarcou(escolhidas, preferencias.preferCrueltyFree, CRUELTY_FREE);
+            adicionarSeMarcou(escolhidas, preferencias.preferParabenFree, SEM_PARABENOS);
+            adicionarSeMarcou(escolhidas, preferencias.preferSulfateFree, SEM_SULFATOS);
+            adicionarSeMarcou(escolhidas, preferencias.preferSiliconeFree, SEM_SILICONES);
+        }
+
+        if (completo.tags != null) {
+            for (PreferenceCatalogResponse etiqueta : completo.tags) {
+                String preferencia = preferenciaDaEtiqueta(etiqueta);
+                if (preferencia != null && etiqueta.id != null) {
+                    escolhidas.add(preferencia);
+                    etiquetasNaApi.add(etiqueta.id);
+                }
+            }
+        }
+
+        List<String> textos = new ArrayList<>();
+        for (String opcao : opcoes) {
+            if (escolhidas.contains(paraSlug(opcao))) {
+                textos.add(opcao);
+            }
+        }
+        return textos;
+    }
+
+    private static void adicionarSeMarcou(Set<String> slugs, @Nullable Boolean marcou,
+                                          String slug) {
+        if (Boolean.TRUE.equals(marcou)) {
+            slugs.add(slug);
+        }
+    }
+
+    @Nullable
+    private static String preferenciaDaEtiqueta(PreferenceCatalogResponse etiqueta) {
+        for (Map.Entry<String, List<String>> entrada : PREFERENCIAS_EM_ETIQUETA.entrySet()) {
+            Set<String> nomes = new HashSet<>(entrada.getValue());
+            if (contem(nomes, etiqueta.slug) || contem(nomes, etiqueta.name)) {
+                return entrada.getKey();
+            }
+        }
+        return null;
+    }
+
+    private static List<String> alergiasDaApi(@Nullable List<UserAllergyDetailResponse> salvas,
+                                              Set<Long> alergiasNaApi) {
+        List<String> nomes = new ArrayList<>();
+        if (salvas == null) {
+            return nomes;
+        }
+        for (UserAllergyDetailResponse salva : salvas) {
+            AllergyResponse alergia = salva == null ? null : salva.allergy;
+            if (alergia == null || alergia.id == null || alergia.allergyName == null) {
+                continue;
+            }
+            alergiasNaApi.add(alergia.id);
+            if (!nomes.contains(alergia.allergyName)) {
+                nomes.add(alergia.allergyName);
+            }
+        }
+        return nomes;
+    }
+
+    @Nullable
+    private static String cabeloNoApp(@Nullable String tag) {
+        return tag != null && tag.startsWith(CABELO_TIPO_1_APP) ? CABELO_TIPO_1_APP : tag;
     }
 
     @Nullable
