@@ -283,12 +283,6 @@
     <string name="assistente_nova_conversa_titulo">Começar uma conversa nova?</string>
     <string name="assistente_nova_conversa_texto">As mensagens de agora saem da tela. O que a Vênus já sabe sobre você continua valendo.</string>
     <string name="assistente_nova_conversa_confirmar">Começar</string>
-    <string name="assistente_sugestao_geral_um">Monte uma rotina pra mim</string>
-    <string name="assistente_sugestao_geral_dois">O que faz a niacinamida?</string>
-    <string name="assistente_sugestao_geral_tres">Como cuidar de cabelo seco?</string>
-    <string name="assistente_sugestao_produto_um">Tem álcool?</string>
-    <string name="assistente_sugestao_produto_dois">É vegano?</string>
-    <string name="assistente_sugestao_produto_tres">Combina com a minha pele?</string>
     <string name="desc_perguntar_venus">Perguntar à Vênus sobre este produto</string>
     <string name="perfil_genero">Gênero</string>
     <string name="perfil_tipo_pele">Tipo de Pele</string>
@@ -493,5 +487,92 @@
     <string name="envio_reenviado_texto_um">%1$s foi enviado para análise.</string>
     <string name="envio_reenviado_texto_varios">%1$d produtos foram enviados para análise.</string>
     <string name="envio_reenviado_nome_padrao">Seu produto</string>
+
+    <string name="avaliacoes_rotulo">Quem usou</string>
+    <string name="avaliacoes_titulo">Avaliações de usuários</string>
+    <string name="avaliacoes_explicacao">A experiência de outras pessoas com o produto. Elas não entram na nota da Venus, que vem só da fórmula.</string>
+    <plurals name="produto_ver_todos_ingredientes">
+        <item quantity="one">Ver o ingrediente</item>
+        <item quantity="other">Ver todos os %d ingredientes</item>
+    </plurals>
+    <string name="produto_ver_menos_ingredientes">Ver menos</string>
+    <string name="avaliacoes_titulo_tela">Avaliações</string>
+    <string name="avaliacoes_erro">Não foi possível carregar as avaliações.</string>
+    <string name="avaliacoes_tentar_de_novo">Tentar carregar de novo</string>
+    <string name="avaliacoes_vazio">Ninguém avaliou este produto ainda. Conte como foi a sua experiência.</string>
+    <string name="avaliacoes_escrever">Escrever avaliação</string>
+    <string name="avaliacoes_ja_avaliou">Você já avaliou este produto.</string>
+    <string name="avaliacoes_publicada">Sua avaliação foi publicada.</string>
+    <string name="avaliacoes_media_descricao">Nota média %1$s de 5</string>
+    <plurals name="avaliacoes_ver_todas">
+        <item quantity="one">Ver a avaliação</item>
+        <item quantity="other">Ver todas as %d avaliações</item>
+    </plurals>
+    <plurals name="avaliacoes_total">
+        <item quantity="one">%d avaliação</item>
+        <item quantity="other">%d avaliações</item>
+    </plurals>
+    <string name="avaliacoes_total_truncado">Mais de %d avaliações</string>
+    <plurals name="avaliacoes_barra_descricao">
+        <item quantity="one">%1$d estrelas: %2$d avaliação</item>
+        <item quantity="other">%1$d estrelas: %2$d avaliações</item>
+    </plurals>
+
+    <string name="avaliacao_autor_voce">Você</string>
+    <string name="avaliacao_autor_padrao">Usuário Venus</string>
+    <string name="avaliacao_uso_verificado">Uso verificado</string>
+    <string name="avaliacao_hoje">hoje</string>
+    <string name="avaliacao_ontem">ontem</string>
+    <plurals name="avaliacao_ha_dias">
+        <item quantity="one">há %d dia</item>
+        <item quantity="other">há %d dias</item>
+    </plurals>
+    <string name="avaliacao_nota_descricao">Nota %1$s de 5</string>
+    <string name="avaliacao_sua">Esta é a sua avaliação.</string>
+    <string name="avaliacao_foi_util">Esta avaliação foi útil?</string>
+    <string name="avaliacao_sim">Sim (%1$d)</string>
+    <string name="avaliacao_nao">Não</string>
+    <string name="avaliacao_denunciar">Denunciar</string>
+    <string name="avaliacao_denunciar_descricao">Denunciar a avaliação de %1$s</string>
+    <string name="avaliacao_voto_nao_lido">Não conseguimos ver o seu voto.</string>
+    <string name="avaliacao_voto_erro">Não foi possível registrar o voto.</string>
+    <string name="avaliacao_sem_conta">Entre na sua conta para avaliar, votar ou denunciar.</string>
+    <string name="avaliacao_tentar">Tentar de novo</string>
+
+    <string name="escrever_titulo">Escrever avaliação</string>
+    <string name="escrever_nota">Sua nota</string>
+    <string name="escrever_nota_dica">Escolha de 1 a 5 estrelas</string>
+    <string name="escrever_label_titulo">Título</string>
+    <string name="escrever_hint_titulo">Resuma sua experiência em uma frase</string>
+    <string name="escrever_label_comentario">Comentário</string>
+    <string name="escrever_hint_comentario">Conte o que funcionou, o que não funcionou e por quanto tempo você usou o produto.</string>
+    <string name="escrever_contador">%1$d/%2$d</string>
+    <string name="escrever_usou">Já usei este produto</string>
+    <string name="escrever_usou_dica">Avaliações com uso confirmado recebem o selo Uso verificado.</string>
+    <string name="escrever_publicar">Publicar avaliação</string>
+    <string name="escrever_publicando">Publicando…</string>
+    <string name="escrever_cancelar">Cancelar</string>
+    <string name="escrever_erro_nota">Escolha uma nota de 1 a 5 estrelas.</string>
+    <string name="escrever_erro_titulo">Escreva um título para a sua avaliação.</string>
+    <string name="escrever_erro_titulo_longo">O título pode ter até %1$d caracteres.</string>
+    <string name="escrever_erro_comentario">Conte como foi a sua experiência com o produto.</string>
+    <string name="escrever_erro_comentario_longo">O comentário pode ter até %1$d caracteres.</string>
+    <string name="escrever_erro_sem_versao">Este produto ainda não pode receber avaliações.</string>
+    <string name="escrever_erro_envio">Não foi possível publicar a avaliação. Tente de novo.</string>
+
+    <string name="denuncia_titulo">Denunciar avaliação</string>
+    <string name="denuncia_pergunta">Por que esta avaliação não deveria estar aqui?</string>
+    <string name="denuncia_motivo_ofensivo">Conteúdo ofensivo ou discurso de ódio</string>
+    <string name="denuncia_motivo_spam">Spam ou propaganda</string>
+    <string name="denuncia_motivo_falso">Informação falsa sobre o produto</string>
+    <string name="denuncia_motivo_sexual">Conteúdo sexual ou impróprio</string>
+    <string name="denuncia_motivo_outro">Outro motivo</string>
+    <string name="denuncia_label_detalhes">Detalhes (opcional)</string>
+    <string name="denuncia_hint_detalhes">Conte o que tem de errado nesta avaliação</string>
+    <string name="denuncia_enviar">Enviar denúncia</string>
+    <string name="denuncia_enviando">Enviando…</string>
+    <string name="denuncia_erro_motivo">Escolha um motivo.</string>
+    <string name="denuncia_erro_envio">Não foi possível enviar a denúncia. Tente de novo.</string>
+    <string name="denuncia_enviada">Denúncia enviada. Um moderador vai analisar a avaliação.</string>
 
 </resources>

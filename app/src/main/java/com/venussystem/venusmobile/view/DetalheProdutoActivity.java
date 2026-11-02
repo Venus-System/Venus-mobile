@@ -18,11 +18,14 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.widget.NestedScrollView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -34,6 +37,8 @@ import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.tabs.TabLayout;
 import com.venussystem.venusmobile.R;
+import com.venussystem.venusmobile.domain.avaliacao.ResumoDasAvaliacoes;
+import com.venussystem.venusmobile.model.Avaliacao;
 import com.venussystem.venusmobile.model.Colecao;
 import com.venussystem.venusmobile.model.IngredienteProduto;
 import com.venussystem.venusmobile.domain.match.ContaDaNota;
@@ -47,6 +52,7 @@ import com.venussystem.venusmobile.repository.api.dto.ClassificationResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
 import com.venussystem.venusmobile.repository.AcessosRecentesRepository;
 import com.venussystem.venusmobile.repository.AutenticacaoRepository;
+import com.venussystem.venusmobile.repository.AvaliacoesRepository;
 import com.venussystem.venusmobile.repository.ClassificacaoRepository;
 import com.venussystem.venusmobile.repository.ColecaoRepository;
 import com.venussystem.venusmobile.repository.CurtidosRepository;
@@ -58,7 +64,11 @@ import com.venussystem.venusmobile.repository.ProdutoRepository;
 import com.venussystem.venusmobile.repository.SincronizacaoCurtidos;
 import com.venussystem.venusmobile.repository.SincronizacaoListas;
 import com.venussystem.venusmobile.view.adapter.AlternativaAdapter;
+import com.venussystem.venusmobile.view.componente.CartaoAvaliacao;
 import com.venussystem.venusmobile.view.componente.CartaoPerfilView;
+import com.venussystem.venusmobile.view.componente.DialogoDenuncia;
+import com.venussystem.venusmobile.view.componente.ResumoAvaliacao;
+import com.venussystem.venusmobile.view.componente.VotosDasAvaliacoes;
 import com.venussystem.venusmobile.view.util.MensagemRapida;
 import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
 import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
@@ -80,6 +90,8 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     private static final int ABA_MATCH = 1;
     private static final int ABA_ALTERNATIVAS = 2;
     private static final int MAXIMO_CHIPS_MATCH = 6;
+    private static final int AVALIACOES_NO_DETALHE = 4;
+    private static final int INGREDIENTES_NO_DETALHE = 3;
 
     private final ProdutoRepository repository =
             new ProdutoRepository();
@@ -149,6 +161,38 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
     private boolean curtidosAlterados = false;
 
+    private AvaliacoesRepository avaliacoesRepository;
+    private VotosDasAvaliacoes votosDasAvaliacoes;
+    private View carregandoAvaliacoes;
+    private View blocoErroAvaliacoes;
+    private View conteudoAvaliacoes;
+    private TextView textSemAvaliacoes;
+    private LinearLayout listaAvaliacoes;
+    private TextView btnVerTodasAvaliacoes;
+    private View btnEscreverAvaliacao;
+    private View textJaAvaliou;
+    private boolean avaliacoesCarregadas = false;
+    private int pedidoAvaliacoes = 0;
+    @Nullable
+    private AvaliacoesRepository.Lidas avaliacoesNaTela;
+
+    private final ActivityResultLauncher<Intent> abrirEscrita =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                    resultado -> {
+                        if (resultado.getResultCode() != RESULT_OK) return;
+                        recarregarAvaliacoes();
+                        MensagemRapida.sucesso(conteudoAvaliacao,
+                                getString(R.string.avaliacoes_publicada)).show();
+                    });
+
+    private final ActivityResultLauncher<Intent> abrirTodas =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                    resultado -> {
+                        if (resultado.getResultCode() == RESULT_OK) {
+                            recarregarAvaliacoes();
+                        }
+                    });
+
     @Override
     protected void onCreate(
             Bundle savedInstanceState
@@ -169,6 +213,10 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         historicoCatalogoRepository =
                 new HistoricoCatalogoRepository(this);
+
+        avaliacoesRepository = new AvaliacoesRepository(this);
+        votosDasAvaliacoes = new VotosDasAvaliacoes(
+                avaliacoesRepository, this::atualizarCartaoAvaliacao);
 
         findViewById(
                 R.id.btnVoltar
@@ -320,6 +368,18 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 findViewById(
                         R.id.listaIngredientes
                 );
+
+        carregandoAvaliacoes = findViewById(R.id.carregandoAvaliacoes);
+        blocoErroAvaliacoes = findViewById(R.id.blocoErroAvaliacoes);
+        conteudoAvaliacoes = findViewById(R.id.conteudoAvaliacoes);
+        textSemAvaliacoes = findViewById(R.id.textSemAvaliacoes);
+        listaAvaliacoes = findViewById(R.id.listaAvaliacoes);
+        btnVerTodasAvaliacoes = findViewById(R.id.btnVerTodasAvaliacoes);
+        btnEscreverAvaliacao = findViewById(R.id.btnEscreverAvaliacao);
+        textJaAvaliou = findViewById(R.id.textJaAvaliou);
+        findViewById(R.id.btnRecarregarAvaliacoes).setOnClickListener(v -> recarregarAvaliacoes());
+        btnVerTodasAvaliacoes.setOnClickListener(v -> abrirTodasAvaliacoes());
+        btnEscreverAvaliacao.setOnClickListener(v -> abrirEscreverAvaliacao());
     }
 
     private void resolverProduto() {
@@ -708,6 +768,12 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                 && !ingredientesCarregados) {
 
             carregarIngredientes();
+        }
+
+        if (aba == ABA_AVALIACAO
+                && !avaliacoesCarregadas) {
+
+            carregarAvaliacoes();
         }
 
         if (aba == ABA_MATCH
@@ -1171,7 +1237,8 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         if (ingredientes != null && !ingredientes.isEmpty()) {
             listaIngredientes.removeAllViews();
             LayoutInflater inflater = LayoutInflater.from(this);
-            for (IngredienteProduto ingrediente : ingredientes) {
+            for (int i = 0; i < ingredientes.size(); i++) {
+                IngredienteProduto ingrediente = ingredientes.get(i);
                 View item = inflater.inflate(
                         R.layout.item_ingrediente_produto, listaIngredientes, false);
                 ((TextView) item.findViewById(R.id.textNomeIngrediente))
@@ -1180,9 +1247,24 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                         ingrediente.getNomeInci());
                 preencherOpcional(item.findViewById(R.id.textDescricaoIngrediente),
                         ingrediente.getDescricao());
+                item.setVisibility(i < INGREDIENTES_NO_DETALHE ? View.VISIBLE : View.GONE);
                 listaIngredientes.addView(item);
             }
             listaIngredientes.setVisibility(View.VISIBLE);
+
+            TextView verTodos = findViewById(R.id.btnVerTodosIngredientes);
+            boolean temMais = ingredientes.size() > INGREDIENTES_NO_DETALHE;
+            verTodos.setVisibility(temMais ? View.VISIBLE : View.GONE);
+            mostrarTodosIngredientes(verTodos, false);
+            verTodos.setOnClickListener(v -> {
+                boolean abrir = listaIngredientes.getChildAt(INGREDIENTES_NO_DETALHE)
+                        .getVisibility() != View.VISIBLE;
+                mostrarTodosIngredientes(verTodos, abrir);
+                if (!abrir) {
+                    ((NestedScrollView) conteudoAvaliacao).smoothScrollTo(0,
+                            Math.max(listaIngredientes.getTop() - dp(48), 0));
+                }
+            });
             return;
         }
 
@@ -1190,6 +1272,118 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         textIngredientes.setText(temTexto
                 ? textoRotulo : getString(R.string.produto_ingredientes_erro));
         textIngredientes.setVisibility(View.VISIBLE);
+    }
+
+    private void carregarAvaliacoes() {
+        avaliacoesCarregadas = true;
+        int pedido = ++pedidoAvaliacoes;
+
+        carregandoAvaliacoes.setVisibility(View.VISIBLE);
+        blocoErroAvaliacoes.setVisibility(View.GONE);
+
+        avaliacoesRepository.buscar(produto.getId(), lidas -> {
+            if (pedido != pedidoAvaliacoes || isFinishing() || isDestroyed()) return;
+            carregandoAvaliacoes.setVisibility(View.GONE);
+            if (lidas == null) {
+                avaliacoesCarregadas = false;
+                conteudoAvaliacoes.setVisibility(View.GONE);
+                blocoErroAvaliacoes.setVisibility(View.VISIBLE);
+                return;
+            }
+            votosDasAvaliacoes.esquecer();
+            mostrarAvaliacoes(lidas);
+        });
+    }
+
+    private void recarregarAvaliacoes() {
+        if (produto == null) return;
+        carregarAvaliacoes();
+    }
+
+    private void mostrarAvaliacoes(AvaliacoesRepository.Lidas lidas) {
+        avaliacoesNaTela = lidas;
+        List<Avaliacao> avaliacoes = lidas.getAvaliacoes();
+        boolean vazia = avaliacoes.isEmpty();
+
+        View resumo = findViewById(R.id.blocoResumoAvaliacoes);
+        resumo.setVisibility(vazia ? View.GONE : View.VISIBLE);
+        textSemAvaliacoes.setVisibility(vazia ? View.VISIBLE : View.GONE);
+        if (!vazia) {
+            ResumoAvaliacao.preencher(resumo, ResumoDasAvaliacoes.de(avaliacoes),
+                    lidas.isTruncada());
+        }
+
+        listaAvaliacoes.removeAllViews();
+        LayoutInflater inflater = LayoutInflater.from(this);
+        int quantas = Math.min(avaliacoes.size(), AVALIACOES_NO_DETALHE);
+        for (int i = 0; i < quantas; i++) {
+            View cartao = inflater.inflate(R.layout.item_avaliacao, listaAvaliacoes, false);
+            CartaoAvaliacao.preencher(cartao, avaliacoes.get(i), votosDasAvaliacoes,
+                    this::denunciarAvaliacao);
+            listaAvaliacoes.addView(cartao);
+        }
+
+        boolean temMais = avaliacoes.size() > AVALIACOES_NO_DETALHE;
+        btnVerTodasAvaliacoes.setVisibility(temMais ? View.VISIBLE : View.GONE);
+        btnVerTodasAvaliacoes.setText(getResources().getQuantityString(
+                R.plurals.avaliacoes_ver_todas, avaliacoes.size(), avaliacoes.size()));
+
+        boolean jaAvaliou = false;
+        for (Avaliacao avaliacao : avaliacoes) {
+            if (avaliacao.isMinha()) {
+                jaAvaliou = true;
+                break;
+            }
+        }
+        btnEscreverAvaliacao.setVisibility(jaAvaliou ? View.GONE : View.VISIBLE);
+        textJaAvaliou.setVisibility(jaAvaliou ? View.VISIBLE : View.GONE);
+
+        conteudoAvaliacoes.setVisibility(View.VISIBLE);
+    }
+
+    private void atualizarCartaoAvaliacao(long avaliacaoId) {
+        if (isFinishing() || isDestroyed()) return;
+        View cartao = listaAvaliacoes.findViewWithTag(avaliacaoId);
+        if (cartao == null) return;
+        Avaliacao avaliacao = avaliacaoNaTela(avaliacaoId);
+        if (avaliacao != null) {
+            CartaoAvaliacao.preencher(cartao, avaliacao, votosDasAvaliacoes,
+                    this::denunciarAvaliacao);
+        }
+    }
+
+    @Nullable
+    private Avaliacao avaliacaoNaTela(long avaliacaoId) {
+        AvaliacoesRepository.Lidas lidas = avaliacoesNaTela;
+        if (lidas == null) return null;
+        for (Avaliacao avaliacao : lidas.getAvaliacoes()) {
+            if (avaliacao.getId() == avaliacaoId) return avaliacao;
+        }
+        return null;
+    }
+
+    private void denunciarAvaliacao(Avaliacao avaliacao) {
+        DialogoDenuncia.mostrar(this, avaliacao, avaliacoesRepository, conteudoAvaliacao);
+    }
+
+    private void abrirEscreverAvaliacao() {
+        abrirEscrita.launch(EscreverAvaliacaoActivity.intent(this, produto.getId(),
+                produto.getName(), produto.getBrandName()));
+    }
+
+    private void abrirTodasAvaliacoes() {
+        abrirTodas.launch(TodasAvaliacoesActivity.intent(this, produto));
+    }
+
+    private void mostrarTodosIngredientes(TextView botao, boolean todos) {
+        int total = listaIngredientes.getChildCount();
+        for (int i = INGREDIENTES_NO_DETALHE; i < total; i++) {
+            listaIngredientes.getChildAt(i).setVisibility(todos ? View.VISIBLE : View.GONE);
+        }
+        botao.setText(todos
+                ? getString(R.string.produto_ver_menos_ingredientes)
+                : getResources().getQuantityString(
+                        R.plurals.produto_ver_todos_ingredientes, total, total));
     }
 
     private void preencherOpcional(TextView view, @Nullable String texto) {

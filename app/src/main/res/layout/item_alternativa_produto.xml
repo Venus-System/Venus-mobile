@@ -31,7 +31,7 @@
         android:textColor="@color/preto_texto"
         android:textSize="15sp"
         android:textStyle="bold"
-        app:layout_constraintEnd_toStartOf="@+id/textNota"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/imgProduto"
         app:layout_constraintTop_toTopOf="@+id/imgProduto"
         tools:text="Hidratante Firmador" />
@@ -49,19 +49,5 @@
         app:layout_constraintStart_toStartOf="@+id/textNome"
         app:layout_constraintTop_toBottomOf="@+id/textNome"
         tools:text="Nivea" />
-
-    <TextView
-        android:id="@+id/textNota"
-        android:layout_width="@dimen/nota_circular"
-        android:layout_height="@dimen/nota_circular"
-        android:layout_marginStart="@dimen/espaco_pequeno"
-        android:background="@drawable/bg_nota_circular"
-        android:gravity="center"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:text="90" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context=".view.TodasAvaliacoesActivity">
+
+    <ImageButton
+        android:id="@+id/btnVoltar"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/desc_voltar"
+        android:rotation="180"
+        android:scaleType="center"
+        android:src="@drawable/ic_chevron"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textTitulo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/espaco_grande"
+        android:text="@string/avaliacoes_titulo_tela"
+        android:textColor="@color/roxo_venus"
+        android:textSize="@dimen/texto_titulo_aba"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/btnVoltar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btnVoltar"
+        app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/listaTodasAvaliacoes"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:clipToPadding="false"
+        android:paddingStart="@dimen/espaco_grande"
+        android:paddingEnd="@dimen/espaco_grande"
+        android:paddingBottom="@dimen/espaco_grande"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnVoltar"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista"
+        tools:listitem="@layout/item_avaliacao"
+        tools:visibility="visible" />
+
+    <ProgressBar
+        android:id="@+id/carregando"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminateTint="@color/roxo_venus"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnVoltar" />
+
+    <LinearLayout
+        android:id="@+id/blocoErroTodas"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_secao"
+        android:layout_marginEnd="@dimen/espaco_secao"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnVoltar">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite"
+            android:gravity="center"
+            android:text="@string/avaliacoes_erro"
+            android:textColor="@color/cinza_descricao"
+            android:textSize="@dimen/texto_corpo" />
+
+        <TextView
+            android:id="@+id/btnRecarregarTodas"
+            style="@style/LinkVenus"
+            android:layout_marginTop="@dimen/espaco_pequeno"
+            android:minHeight="@dimen/area_toque_minima"
+            android:gravity="center"
+            android:text="@string/avaliacoes_tentar_de_novo"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

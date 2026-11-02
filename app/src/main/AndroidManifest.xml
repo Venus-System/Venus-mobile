@@ -58,6 +58,13 @@
             android:name=".view.ProdutosCurtidosActivity"
             android:exported="false" />
         <activity
+            android:name=".view.TodasAvaliacoesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".view.EscreverAvaliacaoActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".view.DetalheProdutoEmAnaliseActivity"
             android:exported="false" />
 

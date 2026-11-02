@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/blocoResumoAvaliacoes"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_resumo_avaliacoes"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="14dp">
+
+    <LinearLayout
+        android:id="@+id/blocoMediaAvaliacoes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:minWidth="96dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textMediaAvaliacoes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/roxo_venus"
+            android:textSize="34sp"
+            android:textStyle="bold"
+            tools:text="4,3" />
+
+        <RatingBar
+            android:id="@+id/estrelasMediaAvaliacoes"
+            style="?android:attr/ratingBarStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:importantForAccessibility="no"
+            android:isIndicator="true"
+            android:numStars="5"
+            android:progressBackgroundTint="@color/cinza_input"
+            android:progressTint="@color/rosa_scan_inicio"
+            android:stepSize="0.1"
+            tools:rating="4.3" />
+
+        <TextView
+            android:id="@+id/textTotalAvaliacoes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/cinza_descricao"
+            android:textSize="@dimen/texto_label"
+            tools:text="12 avaliações" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/listaBarrasAvaliacoes"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:layout_weight="1"
+        android:orientation="vertical" />
+
+</LinearLayout>

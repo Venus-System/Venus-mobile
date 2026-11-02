@@ -5,4 +5,10 @@
     <integer name="colunas_card_produto">2</integer>
 
     <integer name="limite_descricao_lista">500</integer>
+
+    <integer name="limite_titulo_avaliacao">100</integer>
+
+    <integer name="limite_comentario_avaliacao">500</integer>
+
+    <integer name="limite_denuncia">500</integer>
 </resources>

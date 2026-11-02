@@ -1,6 +1,5 @@
 package com.venussystem.venusmobile.view.adapter;
 
-import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,12 +7,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Produto;
-import com.venussystem.venusmobile.view.util.NotaProdutoUtil;
 import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 
 import java.util.ArrayList;
@@ -62,29 +59,17 @@ public class AlternativaAdapter extends RecyclerView.Adapter<AlternativaAdapter.
         private final ImageView imagem;
         private final TextView nome;
         private final TextView marca;
-        private final TextView nota;
 
         AlternativaViewHolder(@NonNull View item) {
             super(item);
             imagem = item.findViewById(R.id.imgProduto);
             nome = item.findViewById(R.id.textNome);
             marca = item.findViewById(R.id.textMarca);
-            nota = item.findViewById(R.id.textNota);
         }
 
         void preencher(Produto produto, AoClicar aoClicar) {
             nome.setText(produto.getName());
             marca.setText(produto.getBrandName());
-
-            Integer valor = produto.getOverallScore();
-            nota.setText(valor == null
-                    ? itemView.getContext().getString(R.string.nota_indisponivel)
-                    : String.valueOf(valor));
-            nota.setTextColor(ContextCompat.getColor(
-                    itemView.getContext(), NotaProdutoUtil.corPara(valor)));
-
-            nota.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(
-                    itemView.getContext(), NotaProdutoUtil.fundoPara(valor))));
 
             ProdutoImagemLoader.carregar(
                     itemView.getContext(), imagem, produto, R.drawable.bg_foto_historico);
