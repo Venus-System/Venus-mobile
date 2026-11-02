@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/espaco_pequeno"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:visibility="gone">
+
+    <EditText
+        android:id="@+id/campoOutro"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/altura_opcao"
+        android:layout_weight="1"
+        android:background="@drawable/bg_busca"
+        android:imeOptions="actionDone"
+        android:importantForAutofill="no"
+        android:inputType="textCapSentences"
+        android:maxLength="60"
+        android:maxLines="1"
+        android:paddingStart="@dimen/espaco_medio"
+        android:paddingEnd="@dimen/espaco_medio"
+        android:textColor="@color/preto_texto"
+        android:textColorHint="@color/cinza_hint"
+        android:textSize="@dimen/texto_corpo" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnAdicionarOutro"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/altura_opcao"
+        android:layout_marginStart="@dimen/espaco_pequeno"
+        android:background="@drawable/bg_botao_roxo"
+        android:minWidth="0dp"
+        android:paddingStart="@dimen/espaco_medio"
+        android:paddingEnd="@dimen/espaco_medio"
+        android:text="@string/acao_adicionar"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="@dimen/texto_corpo" />
+
+</LinearLayout>
