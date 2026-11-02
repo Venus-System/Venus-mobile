@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/espaco_pequeno"
+    android:background="@drawable/bg_card_lista"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/textAutor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/preto_texto"
+            android:textSize="@dimen/texto_corpo"
+            android:textStyle="bold"
+            tools:text="Felipe A." />
+
+        <TextView
+            android:id="@+id/textUsoVerificado"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_selo_uso_verificado"
+            android:paddingStart="8dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="2dp"
+            android:text="@string/avaliacao_uso_verificado"
+            android:textColor="@color/rosa_scan_fim"
+            android:textSize="@dimen/texto_ajuda"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/textData"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/espaco_pequeno"
+            android:textColor="@color/cinza_descricao"
+            android:textSize="@dimen/texto_label"
+            tools:text="há 2 dias" />
+
+    </LinearLayout>
+
+    <RatingBar
+        android:id="@+id/estrelasAvaliacao"
+        style="?android:attr/ratingBarStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:isIndicator="true"
+        android:numStars="5"
+        android:progressBackgroundTint="@color/cinza_input"
+        android:progressTint="@color/rosa_scan_inicio"
+        android:stepSize="0.5"
+        tools:rating="4" />
+
+    <TextView
+        android:id="@+id/textTituloAvaliacao"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/preto_texto"
+        android:textSize="@dimen/texto_corpo"
+        android:textStyle="bold"
+        tools:text="Amei a textura" />
+
+    <TextView
+        android:id="@+id/textComentario"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:lineSpacingExtra="2dp"
+        android:textColor="@color/texto_label"
+        android:textSize="13sp"
+        tools:text="Não deixou a pele oleosa e absorveu rápido." />
+
+    <TextView
+        android:id="@+id/textSua"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:text="@string/avaliacao_sua"
+        android:textColor="@color/roxo_venus"
+        android:textSize="@dimen/texto_label"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/rodapeVotos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/textPerguntaUtil"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/avaliacao_foi_util"
+            android:textColor="@color/cinza_descricao"
+            android:textSize="@dimen/texto_label" />
+
+        <TextView
+            android:id="@+id/btnVotoSim"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:background="@drawable/bg_botao_voto"
+            android:gravity="center"
+            android:minWidth="64dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:textColor="@color/texto_botao_voto"
+            android:textSize="@dimen/texto_label"
+            tools:text="Sim (3)" />
+
+        <TextView
+            android:id="@+id/btnVotoNao"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_botao_voto"
+            android:gravity="center"
+            android:minWidth="56dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="@string/avaliacao_nao"
+            android:textColor="@color/texto_botao_voto"
+            android:textSize="@dimen/texto_label" />
+
+        <TextView
+            android:id="@+id/btnDenunciar"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/area_toque_minima"
+            android:layout_marginStart="4dp"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center"
+            android:paddingStart="8dp"
+            android:paddingEnd="4dp"
+            android:text="@string/avaliacao_denunciar"
+            android:textColor="@color/cinza_descricao"
+            android:textSize="@dimen/texto_label" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/blocoErroVoto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/textErroVoto"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:accessibilityLiveRegion="polite"
+            android:textColor="@color/nota_ruim_texto"
+            android:textSize="@dimen/texto_label"
+            tools:text="Não conseguimos ver o seu voto." />
+
+        <TextView
+            android:id="@+id/btnTentarVoto"
+            style="@style/LinkVenus"
+            android:text="@string/avaliacao_tentar"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</LinearLayout>

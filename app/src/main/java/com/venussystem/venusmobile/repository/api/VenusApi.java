@@ -16,6 +16,11 @@ import com.venussystem.venusmobile.repository.api.dto.ProductLabelResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
 import com.venussystem.venusmobile.repository.api.dto.ProductVersionResponse;
+import com.venussystem.venusmobile.repository.api.dto.ReportRequest;
+import com.venussystem.venusmobile.repository.api.dto.ReviewRequest;
+import com.venussystem.venusmobile.repository.api.dto.ReviewResponse;
+import com.venussystem.venusmobile.repository.api.dto.ReviewVoteRequest;
+import com.venussystem.venusmobile.repository.api.dto.ReviewVoteResponse;
 import com.venussystem.venusmobile.repository.api.dto.ScanEnviadoResponse;
 import com.venussystem.venusmobile.repository.api.dto.ScoringModelResponse;
 import com.venussystem.venusmobile.repository.api.dto.ScanSessionResponse;
@@ -209,4 +214,31 @@ public interface VenusApi {
     Call<FatiaResponse<ScanEnviadoResponse>> scansDoUsuario(@Path("userId") long userId,
                                                             @Query("page") int pagina,
                                                             @Query("size") int tamanho);
+
+    @GET("api/reviews/product-version/{productVersionId}")
+    Call<FatiaResponse<ReviewResponse>> avaliacoesDaVersao(
+            @Path("productVersionId") long productVersionId,
+            @Query("page") int pagina,
+            @Query("size") int tamanho,
+            @Query("sort") String ordenacao);
+
+    @POST("api/reviews")
+    Call<ReviewResponse> publicarAvaliacao(@Body ReviewRequest avaliacao);
+
+    @GET("api/review-votes/review/{reviewId}/user/{userId}")
+    Call<ReviewVoteResponse> meuVoto(@Path("reviewId") long reviewId,
+                                     @Path("userId") long userId);
+
+    @POST("api/review-votes")
+    Call<Void> votar(@Body ReviewVoteRequest voto);
+
+    @PATCH("api/review-votes/review/{reviewId}/user/{userId}")
+    Call<Void> trocarVoto(@Path("reviewId") long reviewId, @Path("userId") long userId,
+                          @Body ReviewVoteRequest voto);
+
+    @DELETE("api/review-votes/review/{reviewId}/user/{userId}")
+    Call<Void> apagarVoto(@Path("reviewId") long reviewId, @Path("userId") long userId);
+
+    @POST("api/reports")
+    Call<Void> denunciar(@Body ReportRequest denuncia);
 }

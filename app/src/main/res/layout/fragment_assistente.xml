@@ -146,34 +146,13 @@
         android:layout_marginTop="@dimen/espaco_pequeno"
         android:layout_marginEnd="@dimen/espaco_medio"
         android:clipToPadding="false"
-        app:layout_constraintBottom_toTopOf="@+id/rolagemSugestoes"
+        app:layout_constraintBottom_toTopOf="@+id/linhaEntrada"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/veninha"
         app:layout_constraintWidth_max="@dimen/largura_max_lista"
         tools:itemCount="3"
         tools:listitem="@layout/item_mensagem_assistente" />
-
-    <HorizontalScrollView
-        android:id="@+id/rolagemSugestoes"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:paddingStart="@dimen/espaco_medio"
-        android:paddingEnd="@dimen/espaco_medio"
-        android:scrollbars="none"
-        app:layout_constraintBottom_toTopOf="@+id/linhaEntrada"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintWidth_max="@dimen/largura_max_lista">
-
-        <LinearLayout
-            android:id="@+id/linhaSugestoes"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingBottom="@dimen/espaco_pequeno" />
-
-    </HorizontalScrollView>
 
     <LinearLayout
         android:id="@+id/linhaEntrada"

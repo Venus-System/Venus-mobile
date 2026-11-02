@@ -9,7 +9,6 @@ import android.view.ViewTreeObserver;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -82,7 +81,6 @@ public class AssistenteFragment extends Fragment {
     private EditText campo;
     private View botaoEnviar;
     private View botaoNovaConversa;
-    private LinearLayout linhaSugestoes;
     private VeninhaView veninha;
     @Nullable
     private ViewTreeObserver.OnGlobalLayoutListener aoMudarLayout;
@@ -108,7 +106,6 @@ public class AssistenteFragment extends Fragment {
         lista = view.findViewById(R.id.listaMensagens);
         botaoEnviar = view.findViewById(R.id.btnEnviar);
         botaoNovaConversa = view.findViewById(R.id.btnNovaConversa);
-        linhaSugestoes = view.findViewById(R.id.linhaSugestoes);
         veninha = view.findViewById(R.id.veninha);
 
         aoMudarLayout = () -> ajustarVeninhaAoTeclado(view);
@@ -145,7 +142,6 @@ public class AssistenteFragment extends Fragment {
         }
 
         mostrarProduto(view, produto);
-        montarSugestoes(produto != null);
 
         viewModel.getMensagens().observe(getViewLifecycleOwner(), mensagens -> {
             adapter.definir(mensagens);
@@ -229,28 +225,6 @@ public class AssistenteFragment extends Fragment {
         ProdutoImagemLoader.carregar(requireContext(), imagem, produto, R.drawable.bg_foto_historico);
     }
 
-    private void montarSugestoes(boolean doProduto) {
-        int[] sugestoes = doProduto
-                ? new int[]{
-                        R.string.assistente_sugestao_produto_um,
-                        R.string.assistente_sugestao_produto_dois,
-                        R.string.assistente_sugestao_produto_tres,
-                }
-                : new int[]{
-                        R.string.assistente_sugestao_geral_um,
-                        R.string.assistente_sugestao_geral_dois,
-                        R.string.assistente_sugestao_geral_tres,
-                };
-
-        for (int sugestao : sugestoes) {
-            TextView chip = (TextView) getLayoutInflater()
-                    .inflate(R.layout.item_chip_sugestao, linhaSugestoes, false);
-            chip.setText(sugestao);
-            chip.setOnClickListener(v -> viewModel.perguntar(chip.getText().toString()));
-            linhaSugestoes.addView(chip);
-        }
-    }
-
     private void enviar() {
         if (viewModel.perguntar(campo.getText().toString())) {
             campo.setText("");
@@ -297,7 +271,7 @@ public class AssistenteFragment extends Fragment {
                 || veninha.getHeight() != veninha.getLayoutParams().height) {
             return;
         }
-        View limiteInferior = raiz.findViewById(R.id.rolagemSugestoes);
+        View limiteInferior = raiz.findViewById(R.id.linhaEntrada);
         float alvo = 0f;
         float escala = 1f;
         if (semMensagens && !tecladoAberto) {
@@ -345,10 +319,5 @@ public class AssistenteFragment extends Fragment {
         botaoEnviar.setAlpha(alfa);
         botaoNovaConversa.setEnabled(!aguardando);
         botaoNovaConversa.setAlpha(alfa);
-        for (int i = 0; i < linhaSugestoes.getChildCount(); i++) {
-            View chip = linhaSugestoes.getChildAt(i);
-            chip.setEnabled(!aguardando);
-            chip.setAlpha(alfa);
-        }
     }
 }

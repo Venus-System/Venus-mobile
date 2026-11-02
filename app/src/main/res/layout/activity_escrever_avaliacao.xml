@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:fillViewport="true"
+    tools:context=".view.EscreverAvaliacaoActivity">
+
+    <LinearLayout
+        style="@style/ColunaConteudo"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/espaco_grande"
+        android:paddingEnd="@dimen/espaco_grande"
+        android:paddingBottom="@dimen/espaco_grande">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="-12dp"
+            android:layout_marginTop="@dimen/espaco_pequeno"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnVoltar"
+                android:layout_width="@dimen/area_toque_minima"
+                android:layout_height="@dimen/area_toque_minima"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/desc_voltar"
+                android:rotation="180"
+                android:scaleType="center"
+                android:src="@drawable/ic_chevron" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:accessibilityHeading="true"
+                android:text="@string/escrever_titulo"
+                android:textColor="@color/roxo_venus"
+                android:textSize="@dimen/texto_titulo_aba"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaco_medio"
+            android:background="@drawable/bg_resumo_avaliacoes"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="12dp">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/imgProdutoAvaliado"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_foto_produto"
+                android:importantForAccessibility="no"
+                android:scaleType="centerCrop"
+                app:shapeAppearanceOverlay="@style/FotoProdutoArredondada" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/textNomeProdutoAvaliado"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:textColor="@color/preto_texto"
+                    android:textSize="@dimen/texto_corpo"
+                    android:textStyle="bold"
+                    tools:text="Sérum Vitamina C" />
+
+                <TextView
+                    android:id="@+id/textMarcaProdutoAvaliado"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/cinza_descricao"
+                    android:textSize="@dimen/texto_label"
+                    tools:text="Marca X" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/labelNota"
+            style="@style/LabelCampo"
+            android:layout_marginTop="@dimen/espaco_grande"
+            android:text="@string/escrever_nota"
+            android:textColor="@color/roxo_secao"
+            android:textStyle="bold" />
+
+        <RatingBar
+            android:id="@+id/estrelasNota"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:contentDescription="@string/escrever_nota"
+            android:numStars="5"
+            android:progressBackgroundTint="@color/cinza_input"
+            android:progressTint="@color/rosa_scan_inicio"
+            android:rating="0"
+            android:stepSize="1" />
+
+        <TextView
+            android:id="@+id/textDicaNota"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite"
+            android:text="@string/escrever_nota_dica"
+            android:textColor="@color/texto_ajuda"
+            android:textSize="@dimen/texto_label" />
+
+        <TextView
+            style="@style/LabelCampo"
+            android:layout_marginTop="@dimen/espaco_medio"
+            android:labelFor="@+id/editTituloAvaliacao"
+            android:text="@string/escrever_label_titulo"
+            android:textColor="@color/roxo_secao"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/editTituloAvaliacao"
+            style="@style/CampoVenus"
+            android:layout_width="match_parent"
+            android:layout_marginTop="6dp"
+            android:hint="@string/escrever_hint_titulo"
+            android:importantForAutofill="no"
+            android:inputType="textCapSentences"
+            android:maxLength="@integer/limite_titulo_avaliacao" />
+
+        <TextView
+            style="@style/LabelCampo"
+            android:layout_marginTop="@dimen/espaco_medio"
+            android:labelFor="@+id/editComentarioAvaliacao"
+            android:text="@string/escrever_label_comentario"
+            android:textColor="@color/roxo_secao"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/editComentarioAvaliacao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_input_borda"
+            android:gravity="top|start"
+            android:hint="@string/escrever_hint_comentario"
+            android:importantForAutofill="no"
+            android:inputType="textMultiLine|textCapSentences"
+            android:maxLength="@integer/limite_comentario_avaliacao"
+            android:minLines="5"
+            android:padding="@dimen/padding_interno_campo"
+            android:textColor="@color/preto_texto"
+            android:textColorHint="@color/cinza_hint"
+            android:textSize="@dimen/texto_campo" />
+
+        <TextView
+            android:id="@+id/textContadorComentario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="end"
+            android:textColor="@color/texto_ajuda"
+            android:textSize="@dimen/texto_label"
+            tools:text="0/500" />
+
+        <CheckBox
+            android:id="@+id/checkUsou"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="-6dp"
+            android:layout_marginTop="@dimen/espaco_pequeno"
+            android:buttonTint="@color/roxo_venus"
+            android:minHeight="@dimen/area_toque_minima"
+            android:text="@string/escrever_usou"
+            android:textColor="@color/preto_texto"
+            android:textSize="@dimen/texto_corpo" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/escrever_usou_dica"
+            android:textColor="@color/texto_ajuda"
+            android:textSize="@dimen/texto_label" />
+
+        <TextView
+            android:id="@+id/textErroEnvio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaco_medio"
+            android:accessibilityLiveRegion="assertive"
+            android:textColor="@color/nota_ruim_texto"
+            android:textSize="@dimen/texto_corpo"
+            android:visibility="gone" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnPublicarAvaliacao"
+            style="@style/BotaoGradiente"
+            android:layout_width="match_parent"
+            android:layout_marginTop="@dimen/espaco_grande"
+            android:text="@string/escrever_publicar" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnCancelarAvaliacao"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/altura_campo"
+            android:layout_marginTop="@dimen/espaco_pequeno"
+            android:background="@drawable/bg_botao_cancelar"
+            android:text="@string/escrever_cancelar"
+            android:textAllCaps="false"
+            android:textColor="@color/preto_texto"
+            android:textSize="@dimen/texto_botao" />
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

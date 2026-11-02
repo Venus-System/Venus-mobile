@@ -175,6 +175,142 @@
                 android:visibility="gone" />
 
             <TextView
+                android:id="@+id/btnVerTodosIngredientes"
+                style="@style/LinkVenus"
+                android:layout_width="match_parent"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:gravity="center"
+                android:minHeight="@dimen/area_toque_minima"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="Ver todos os 24 ingredientes"
+                tools:visibility="visible" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_grande"
+                android:text="@string/avaliacoes_rotulo"
+                android:textAllCaps="true"
+                android:textColor="@color/roxo_secao"
+                android:textSize="@dimen/texto_ajuda"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:accessibilityHeading="true"
+                android:text="@string/avaliacoes_titulo"
+                android:textColor="@color/preto_texto"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/avaliacoes_explicacao"
+                android:textColor="@color/cinza_descricao"
+                android:textSize="13sp" />
+
+            <ProgressBar
+                android:id="@+id/carregandoAvaliacoes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:layout_marginTop="@dimen/espaco_medio"
+                android:indeterminateTint="@color/roxo_venus" />
+
+            <LinearLayout
+                android:id="@+id/blocoErroAvaliacoes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:accessibilityLiveRegion="polite"
+                    android:text="@string/avaliacoes_erro"
+                    android:textColor="@color/cinza_descricao"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/btnRecarregarAvaliacoes"
+                    style="@style/LinkVenus"
+                    android:layout_marginStart="-4dp"
+                    android:minHeight="@dimen/area_toque_minima"
+                    android:gravity="center_vertical"
+                    android:text="@string/avaliacoes_tentar_de_novo"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/conteudoAvaliacoes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <include layout="@layout/include_resumo_avaliacoes" />
+
+                <TextView
+                    android:id="@+id/textSemAvaliacoes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_resumo_avaliacoes"
+                    android:padding="14dp"
+                    android:text="@string/avaliacoes_vazio"
+                    android:textColor="@color/cinza_descricao"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnEscreverAvaliacao"
+                    style="@style/BotaoGradiente"
+                    android:layout_width="match_parent"
+                    android:layout_marginTop="@dimen/espaco_pequeno"
+                    android:text="@string/avaliacoes_escrever"
+                    android:textSize="@dimen/texto_campo" />
+
+                <TextView
+                    android:id="@+id/textJaAvaliou"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_pequeno"
+                    android:gravity="center"
+                    android:text="@string/avaliacoes_ja_avaliou"
+                    android:textColor="@color/cinza_descricao"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/listaAvaliacoes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/btnVerTodasAvaliacoes"
+                    style="@style/LinkVenus"
+                    android:layout_width="match_parent"
+                    android:layout_marginTop="@dimen/espaco_pequeno"
+                    android:gravity="center"
+                    android:minHeight="@dimen/area_toque_minima"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:text="Ver todas as 12 avaliações"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+            <TextView
                 android:id="@+id/textRelatarErro"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
