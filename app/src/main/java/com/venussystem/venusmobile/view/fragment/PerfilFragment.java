@@ -364,7 +364,15 @@ public class PerfilFragment extends Fragment {
             return ModalEscolhaMultipla.rotulos(requireContext(), atributo.opcoes,
                     perfil.getLista(atributo.chave));
         }
-        return perfil.getRotulo(atributo.chave);
+        String rotulo = perfil.getRotulo(atributo.chave);
+        String tag = perfil.getTag(atributo.chave);
+        if (rotulo != null || tag == null) {
+            return rotulo;
+        }
+        return atributo.opcoes == null
+                ? ModalFaixaEtaria.rotulo(requireContext(), tag)
+                : ModalEscolhaMultipla.rotulos(requireContext(), atributo.opcoes,
+                        Collections.singletonList(tag));
     }
 
     private void mostrarValor(TextView campo, String valor) {

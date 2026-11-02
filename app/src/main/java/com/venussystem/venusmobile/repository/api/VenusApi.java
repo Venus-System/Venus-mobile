@@ -26,6 +26,7 @@ import com.venussystem.venusmobile.repository.api.dto.ScoringModelResponse;
 import com.venussystem.venusmobile.repository.api.dto.ScanSessionResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserAllergyRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserAllergyResponse;
+import com.venussystem.venusmobile.repository.api.dto.UserFullProfileResponse;
 import com.venussystem.venusmobile.repository.api.dto.UserListItemRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserLocationRequest;
 import com.venussystem.venusmobile.repository.api.dto.UserListItemResponse;
@@ -116,6 +117,9 @@ public interface VenusApi {
 
     @POST("api/users")
     Call<UserResponse> criarUsuario(@Body UserRequest usuario);
+
+    @GET("api/users/{userId}/full-profile")
+    Call<UserFullProfileResponse> perfilCompleto(@Path("userId") long userId);
 
     @PATCH("api/users/{userId}")
     Call<Void> atualizarLocalizacao(@Path("userId") long userId,
