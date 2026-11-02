@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "description": "Registro de regressão do OCR. O caso ativo usa o OCR bruto fornecido para as duas faces do Rexona Clinical Clean Men. A frente registra a captura textual golden recebida em 2026-10-22; a imagem não é armazenada no repositório.",
+  "cases": [
+    {
+      "id": "rexona-clinical-clean-men-back-reference",
+      "labelSide": "back",
+      "sourceImage": "external-attachment:codex-clipboard-5f6987d3-a228-439f-ba3d-010b2c51f110.png",
+      "productId": 109,
+      "productName": "Rexona Clinical Clean Men",
+      "ocrLines": [
+        "BRASILEIRA PRDCESSO N 25351.3757682023-24, VS, UM ANTITRANSPIRANTE SASCO",
+        "MANDHAS BRANCAS NA ROUPA INGREDIENTES: AQUA ALUMNUM SESQUICHLOROEYDRRATE STEAYE",
+        "ALOOHOL DIMETHICONE, GLYCERIN, PPG-15 STEARYL ETHER, GLYCERYL STEARATE CALCUM",
+        "CHLORIOE STEARE TH-20 GLYCNE. PARFUM, STEARETH-2, PENTAERYTHRITYL TETRA-O--8UTYL",
+        "HYDROXYHYDROCINNAMATE, GELATIN CROSSPOLYMER ALPYA-ISOMETHYL IONONE 8ENZYL",
+        "SALUCYLATE, HEXYL CINHAMAL UMONENE LINALOOL AOVERTÉNCIAS E MO00 DE USO- APLICAR"
+      ],
+      "expectedCanonicalNames": [
+        "AQUA",
+        "ALUMINUM SESQUICHLOROHYDRATE",
+        "STEARYL ALCOHOL",
+        "DIMETHICONE",
+        "GLYCERIN",
+        "GLYCERYL STEARATE",
+        "PPG-15 STEARYL ETHER",
+        "CALCIUM CHLORIDE",
+        "STEARETH-20",
+        "STEARETH-2",
+        "PENTAERYTHRITYL TETRA-DI-T-BUTYL HYDROXYHYDROCINNAMATE",
+        "GELATIN CROSSPOLYMER",
+        "ALPHA-ISOMETHYL IONONE",
+        "BENZYL SALICYLATE",
+        "HEXYL CINNAMAL",
+        "LIMONENE",
+        "LINALOOL"
+      ],
+      "allowedUnresolved": [],
+      "mustNotPromotePatterns": [
+        "FABRICADO POR",
+        "UNIVERSAL CHEMICAL",
+        "UNILEVER",
+        "ADVERT",
+        "MODO DE USO",
+        "LOTE",
+        "VALIDADE",
+        "SAC"
+      ],
+      "acceptance": {
+        "expectedIngredientCount": 17,
+        "requiresAllExpectedCanonicalNames": true,
+        "administrativeTextNeverPromoted": true,
+        "ocrLinesRemainUnchanged": true,
+        "unresolvedCandidatesRequireReview": true
+      }
+    },
+    {
+      "id": "rexona-clinical-clean-men-front-2026-10-22",
+      "labelSide": "front",
+      "sourceImage": null,
+      "sourceImageStatus": "not_attached_ocr_payload_only",
+      "productId": 109,
+      "productName": "Rexona Clinical Clean Men",
+      "ocrLines": [
+        "MEN",
+        "Rexona",
+        "clinical",
+        "3x",
+        "MÁS PROTECCIÓN* /",
+        "MAIS PROTEÇÃO*",
+        "CLEAN",
+        "96H",
+        "ANTITRANSPIRANTE",
+        "EN CREMA/EM CREME",
+        "CONT. NETO /",
+        "PESO LÍQ. 58 G"
+      ],
+      "expectedExtracted": {
+        "brand": "REXONA",
+        "productName": "REXONA MEN CLINICAL CLEAN",
+        "capacity": "58 G"
+      },
+      "expectedBrandCandidates": [
+        "REXONA"
+      ],
+      "requiredProductEvidence": [
+        "CLINICAL",
+        "CLEAN",
+        "MEN"
+      ],
+      "acceptance": {
+        "catalogProductId": 109,
+        "requiresResolvedCatalogProduct": true,
+        "ambiguousMatchMustNotOpenProduct": true,
+        "ocrLinesRemainUnchanged": true
+      }
+    }
+  ],
+  "pendingCases": []
+}

@@ -1,75 +1,891 @@
 package com.venussystem.venusmobile.repository;
 
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.venussystem.venusmobile.BuildConfig;
+import com.venussystem.venusmobile.model.IngredienteProduto;
 import com.venussystem.venusmobile.model.Produto;
+import com.venussystem.venusmobile.repository.api.ClienteApi;
+import com.venussystem.venusmobile.repository.api.VenusApi;
+import com.venussystem.venusmobile.repository.api.dto.BrandResponse;
+import com.venussystem.venusmobile.repository.api.dto.IngredientResponse;
+import com.venussystem.venusmobile.repository.api.dto.MediaAssetResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductCategoryResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductFullIngredientResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductFullResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductIngredientResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductScoreResponse;
+import com.venussystem.venusmobile.repository.api.dto.ProductVersionResponse;
+import com.venussystem.venusmobile.repository.api.dto.ScoringModelResponse;
 
+import java.io.IOException;
+import java.text.Normalizer;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * PROVISORIO: devolve uma lista fixa porque a Venus-CRUD ainda nao expoe
- * endpoints — hoje ela tem os DTOs e as entidades, mas nenhum controller.
- *
- * As fotos vem do Open Beauty Facts (banco aberto de cosmeticos), so para
- * as telas terem imagem real enquanto o Cloudinary nao esta populado.
- * As notas sao inventadas.
- *
- * Quando a API subir, so este arquivo muda: troca a lista pela chamada
- * Retrofit. A assinatura dos metodos e o model continuam iguais.
- */
+import retrofit2.Response;
+
 public class ProdutoRepository {
 
-    private static final String IMG = "https://images.openbeautyfacts.org/images/products/";
+    private static final String TAG = "VENUS_PRODUCT_DETAIL";
 
-    private static final List<Produto> CATALOGO = Arrays.asList(
-            new Produto(1L, "Nivea Creme", "Nivea", 87,
-                    IMG + "400/580/889/0590/front_en.18.400.jpg"),
-            new Produto(2L, "Nivea Soft", "Nivea", 74,
-                    IMG + "400/580/889/0576/front_en.26.400.jpg"),
-            new Produto(3L, "Body Lotion", "Nivea", 68,
-                    IMG + "400/590/036/9581/front_ar.21.400.jpg"),
-            new Produto(4L, "Pearl & Beauty", "Nivea", 55,
-                    IMG + "400/580/883/7359/front_en.26.400.jpg"),
-            new Produto(5L, "Coconut Milk", "Herbal Essences", 62,
-                    IMG + "800/109/066/2231/front_fr.11.400.jpg"),
-            new Produto(6L, "Golden Moringa Oil Shampoo", "Herbal Essences", 71,
-                    IMG + "800/109/066/1999/front_fr.8.400.jpg"),
-            new Produto(7L, "Argan Oil Shampoo", "Deliplus", 45,
-                    IMG + "848/000/044/3373/front_en.24.400.jpg"),
-            new Produto(8L, "Crema Hidratante", "Deliplus", 83,
-                    IMG + "848/000/046/8338/front_es.17.400.jpg"),
-            new Produto(9L, "Anti Dandruff Shampoo", "Dercos", 22,
-                    IMG + "333/787/133/0262/front_fr.3.400.jpg"),
-            new Produto(10L, "Shampoo", "Clear", 38,
-                    IMG + "622/115/505/8522/front_en.20.400.jpg"),
-            new Produto(11L, "Hidratante", "Deliplus", 90,
-                    IMG + "840/200/100/5558/front_en.13.400.jpg"),
-            new Produto(12L, "Johnsons", "Johnsons", 51,
-                    IMG + "622/300/065/9243/front_fr.3.400.jpg")
-    );
+    private static final ExecutorService EXECUTOR =
+            Executors.newSingleThreadExecutor();
 
-    public LiveData<List<Produto>> listar() {
-        return new MutableLiveData<>(CATALOGO);
+    private static final ExecutorService REDE = Executors.newFixedThreadPool(6);
+
+    private static final ExecutorService REDE_INGREDIENTES =
+            Executors.newFixedThreadPool(6);
+
+    private static final Handler PRINCIPAL =
+            new Handler(Looper.getMainLooper());
+
+    private static final MutableLiveData<List<Produto>> CATALOGO =
+            new MutableLiveData<>();
+
+    private static final AtomicBoolean CARREGADO =
+            new AtomicBoolean(false);
+
+    private static final MutableLiveData<Boolean> CARREGANDO =
+            new MutableLiveData<>(false);
+
+    private static final MutableLiveData<String> ERRO =
+            new MutableLiveData<>();
+
+    private static final Object CACHE_LOCK = new Object();
+    private static final Map<Long, String> IMAGENS_CACHE = new HashMap<>();
+    private static final Map<Long, Long> VERSOES_CACHE = new HashMap<>();
+    private static final Map<Long, String> COMPOSICOES_CACHE = new HashMap<>();
+    private static final Map<Long, List<AoObterImagem>> IMAGENS_EM_ANDAMENTO =
+            new HashMap<>();
+
+    private static final AtomicBoolean EM_ANDAMENTO =
+            new AtomicBoolean(false);
+
+    private final VenusApi api;
+
+    public ProdutoRepository() {
+        this(ClienteApi.get());
     }
 
-    public LiveData<List<Produto>> buscar(String termo) {
-        if (termo == null || termo.trim().isEmpty()) {
-            return listar();
-        }
-        String alvo = termo.trim().toLowerCase(Locale.getDefault());
+    @VisibleForTesting
+    public ProdutoRepository(VenusApi api) {
+        this.api = api;
+    }
 
-        List<Produto> encontrados = new ArrayList<>();
-        for (Produto p : CATALOGO) {
-            boolean bate = p.getName().toLowerCase(Locale.getDefault()).contains(alvo)
-                    || p.getBrandName().toLowerCase(Locale.getDefault()).contains(alvo);
-            if (bate) {
-                encontrados.add(p);
+    @VisibleForTesting
+    public static void resetEstadoParaTeste() {
+        aguardarExecutorOcioso();
+        CATALOGO.postValue(null);
+        CARREGADO.set(false);
+        CARREGANDO.postValue(false);
+        ERRO.postValue(null);
+        EM_ANDAMENTO.set(false);
+        synchronized (CACHE_LOCK) {
+            IMAGENS_CACHE.clear();
+            VERSOES_CACHE.clear();
+            COMPOSICOES_CACHE.clear();
+            IMAGENS_EM_ANDAMENTO.clear();
+        }
+    }
+
+    private static void aguardarExecutorOcioso() {
+        try {
+            EXECUTOR.submit(() -> null).get(20, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException | TimeoutException ignorada) {
+        }
+    }
+
+    public interface AoObterIngredientes {
+        void aoConcluir(List<IngredienteProduto> ingredientes);
+    }
+
+    public interface AoObterDetalhe {
+        void aoConcluir(@Nullable String textoRotulo, @Nullable String urlFoto);
+    }
+
+    public interface AoObterImagem {
+        void aoConcluir(@Nullable String urlFoto);
+    }
+
+    public LiveData<List<Produto>> getCatalogo() {
+        return CATALOGO;
+    }
+
+    public LiveData<Boolean> getCarregando() {
+        return CARREGANDO;
+    }
+
+    public LiveData<String> getErro() {
+        return ERRO;
+    }
+
+    public void carregar(boolean forcar) {
+
+        if (CARREGADO.get() && !forcar) {
+            return;
+        }
+
+        if (!EM_ANDAMENTO.compareAndSet(false, true)) {
+            return;
+        }
+
+        CARREGANDO.postValue(true);
+        ERRO.postValue(null);
+
+        EXECUTOR.execute(() -> {
+
+            try {
+
+                List<Produto> lista =
+                        montarCatalogo();
+
+                if (lista == null) {
+                    lista = new ArrayList<>();
+                }
+
+                CARREGADO.set(true);
+                CATALOGO.postValue(lista);
+
+            } catch (FalhaApi falha) {
+
+                CARREGADO.set(false);
+                ERRO.postValue(
+                        falha.getMessage()
+                );
+
+            } catch (IOException e) {
+
+                CARREGADO.set(false);
+                ERRO.postValue(
+                        "Nao foi possivel falar com o servidor. "
+                                + "Verifique sua conexao e tente de novo."
+                );
+
+            } finally {
+
+                CARREGANDO.postValue(false);
+                EM_ANDAMENTO.set(false);
+            }
+        });
+    }
+
+    @Nullable
+    public Produto buscarNoCache(
+            long produtoId
+    ) {
+
+        List<Produto> lista =
+                CATALOGO.getValue();
+
+        if (lista == null) {
+            return null;
+        }
+
+        for (Produto produto : lista) {
+
+            if (produto == null
+                    || produto.getId() == null) {
+                continue;
+            }
+
+            if (produto.getId().longValue()
+                    == produtoId) {
+
+                return produto;
             }
         }
-        return new MutableLiveData<>(encontrados);
+
+        return null;
+    }
+
+    public void buscarDetalheProduto(long produtoId, AoObterDetalhe callback) {
+        REDE.execute(() -> {
+            DetalheProduto detalhe = obterDetalheCompleto(produtoId);
+            guardarImagem(produtoId, detalhe.urlFoto);
+            PRINCIPAL.post(() -> callback.aoConcluir(detalhe.textoRotulo, detalhe.urlFoto));
+        });
+    }
+
+    public void buscarIngredientesDoProduto(long produtoId, AoObterIngredientes callback) {
+        REDE.execute(() -> {
+            List<IngredienteProduto> lista = obterIngredientesDoProduto(produtoId);
+            PRINCIPAL.post(() -> callback.aoConcluir(lista));
+        });
+    }
+
+    private List<IngredienteProduto> obterIngredientesDoProduto(long produtoId) {
+        List<ProductFullIngredientResponse> embutidos = ingredientesEmbutidos(produtoId);
+        if (!embutidos.isEmpty()) {
+            List<IngredienteProduto> resultado = new ArrayList<>();
+            for (ProductFullIngredientResponse embutido : embutidos) {
+                IngredienteProduto item = IngredienteProduto.de(embutido.ingredient);
+                if (item == null) {
+                    return Collections.emptyList();
+                }
+                resultado.add(item);
+            }
+            return resultado;
+        }
+
+        Long versaoId = buscarVersaoAtual(produtoId);
+        if (versaoId == null) {
+            return Collections.emptyList();
+        }
+        try {
+            Response<List<ProductIngredientResponse>> resposta =
+                    api.listarIngredientesDaVersao(versaoId).execute();
+            if (!resposta.isSuccessful() || resposta.body() == null) {
+                return Collections.emptyList();
+            }
+
+            List<ProductIngredientResponse> vinculos = new ArrayList<>();
+            for (ProductIngredientResponse v : resposta.body()) {
+                if (v != null && v.ingredientId != null && v.ingredientId > 0) {
+                    vinculos.add(v);
+                }
+            }
+            vinculos.sort((esquerda, direita) -> Integer.compare(
+                    posicaoDoIngrediente(esquerda), posicaoDoIngrediente(direita)));
+
+            List<Future<IngredientResponse>> consultas = new ArrayList<>();
+            for (ProductIngredientResponse v : vinculos) {
+                long id = v.ingredientId;
+                consultas.add(REDE_INGREDIENTES.submit(() -> obterIngrediente(id)));
+            }
+
+            List<IngredienteProduto> resultado = new ArrayList<>();
+            for (Future<IngredientResponse> consulta : consultas) {
+                IngredienteProduto item = IngredienteProduto.de(consulta.get(30, TimeUnit.SECONDS));
+                if (item == null) {
+                    return Collections.emptyList();
+                }
+                resultado.add(item);
+            }
+            return resultado;
+        } catch (IOException | ExecutionException | TimeoutException | RuntimeException e) {
+            return Collections.emptyList();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Collections.emptyList();
+        }
+    }
+
+    public void buscarImagemProduto(long produtoId, @NonNull AoObterImagem callback) {
+        if (produtoId <= 0) {
+            PRINCIPAL.post(() -> callback.aoConcluir(null));
+            return;
+        }
+
+        String imagemPronta = null;
+        boolean responderDoCache = false;
+        synchronized (CACHE_LOCK) {
+            if (IMAGENS_CACHE.containsKey(produtoId)) {
+                imagemPronta = IMAGENS_CACHE.get(produtoId);
+                responderDoCache = true;
+            } else {
+                List<AoObterImagem> callbacks = IMAGENS_EM_ANDAMENTO.get(produtoId);
+                if (callbacks != null) {
+                    callbacks.add(callback);
+                    return;
+                }
+                callbacks = new ArrayList<>();
+                callbacks.add(callback);
+                IMAGENS_EM_ANDAMENTO.put(produtoId, callbacks);
+            }
+        }
+
+        if (responderDoCache) {
+            String url = imagemPronta;
+            PRINCIPAL.post(() -> callback.aoConcluir(url));
+            return;
+        }
+
+        REDE.execute(() -> {
+            String url = obterImagemProduto(produtoId);
+            List<AoObterImagem> callbacks;
+            synchronized (CACHE_LOCK) {
+                IMAGENS_CACHE.put(produtoId, url);
+                callbacks = IMAGENS_EM_ANDAMENTO.remove(produtoId);
+            }
+            if (callbacks == null) return;
+            PRINCIPAL.post(() -> {
+                for (AoObterImagem listener : callbacks) {
+                    listener.aoConcluir(url);
+                }
+            });
+        });
+    }
+
+    private DetalheProduto obterDetalheCompleto(long produtoId) {
+        try {
+            ProductFullResponse corpo = ProdutoCompletoCache.obter(api, produtoId);
+            if (corpo == null) {
+                return new DetalheProduto(null, null);
+            }
+
+            String textoRotulo = corpo.label == null
+                    ? null
+                    : rotuloParaExibicao(corpo.label.normalizedText);
+            Long versaoId = corpo.currentVersion == null ? null : corpo.currentVersion.id;
+            String textoIngredientes = textoDosEmbutidos(corpo.ingredients);
+            if (textoIngredientes == null) {
+                if (versaoId == null) {
+                    versaoId = buscarVersaoAtual(produtoId);
+                }
+                textoIngredientes = obterTextoIngredientes(versaoId);
+            }
+            guardarVersaoAtual(produtoId, versaoId);
+            registrarDiagnostico("COMPOSITION_RESULT product=" + produtoId
+                    + " version=" + versaoId
+                    + " source=" + (textoIngredientes == null ? "LABEL_FALLBACK" : "CATALOG"));
+            String texto = textoIngredientes == null ? textoRotulo : textoIngredientes;
+            String urlFoto = primeiraFotoAtiva(corpo.photos);
+            return new DetalheProduto(texto, urlFoto);
+        } catch (IOException | RuntimeException e) {
+            return new DetalheProduto(null, null);
+        }
+    }
+
+    private List<ProductFullIngredientResponse> ingredientesEmbutidos(long produtoId) {
+        try {
+            ProductFullResponse corpo = ProdutoCompletoCache.obter(api, produtoId);
+            return corpo == null ? Collections.emptyList() : embutidosOrdenados(corpo.ingredients);
+        } catch (IOException | RuntimeException e) {
+            return Collections.emptyList();
+        }
+    }
+
+    private List<ProductFullIngredientResponse> embutidosOrdenados(
+            @Nullable List<ProductFullIngredientResponse> embutidos) {
+        List<ProductFullIngredientResponse> validos = new ArrayList<>();
+        if (embutidos == null) {
+            return validos;
+        }
+        for (ProductFullIngredientResponse embutido : embutidos) {
+            if (embutido != null && embutido.ingredient != null) {
+                validos.add(embutido);
+            }
+        }
+        validos.sort((esquerda, direita) -> Integer.compare(
+                posicaoDoEmbutido(esquerda), posicaoDoEmbutido(direita)));
+        return validos;
+    }
+
+    @Nullable
+    private String textoDosEmbutidos(@Nullable List<ProductFullIngredientResponse> embutidos) {
+        StringBuilder texto = new StringBuilder();
+        for (ProductFullIngredientResponse embutido : embutidosOrdenados(embutidos)) {
+            String nome = nomeDoIngrediente(embutido.ingredient);
+            if (nome.isEmpty()) {
+                continue;
+            }
+            if (texto.length() > 0) {
+                texto.append(", ");
+            }
+            texto.append(nome);
+        }
+        return texto.length() == 0 ? null : texto.toString();
+    }
+
+    private int posicaoDoEmbutido(ProductFullIngredientResponse embutido) {
+        return embutido.position == null ? Integer.MAX_VALUE : embutido.position;
+    }
+
+    @Nullable
+    private String obterTextoIngredientes(@Nullable Long versaoId) {
+        if (versaoId == null || versaoId <= 0) {
+            return null;
+        }
+
+        synchronized (CACHE_LOCK) {
+            if (COMPOSICOES_CACHE.containsKey(versaoId)) {
+                return COMPOSICOES_CACHE.get(versaoId);
+            }
+        }
+
+        List<ProductIngredientResponse> vinculos;
+        try {
+            Response<List<ProductIngredientResponse>> resposta =
+                    api.listarIngredientesDaVersao(versaoId).execute();
+            if (!resposta.isSuccessful() || resposta.body() == null) {
+                registrarDiagnostico("COMPOSITION_LINKS version=" + versaoId
+                        + " count=0 http=" + resposta.code());
+                return null;
+            }
+            vinculos = new ArrayList<>();
+            for (ProductIngredientResponse vinculo : resposta.body()) {
+                if (vinculo != null && vinculo.ingredientId != null
+                        && vinculo.ingredientId > 0) {
+                    vinculos.add(vinculo);
+                }
+            }
+        } catch (IOException | RuntimeException e) {
+            registrarDiagnostico("COMPOSITION_LINKS version=" + versaoId
+                    + " count=0 reason=" + e.getClass().getSimpleName());
+            return null;
+        }
+
+        registrarDiagnostico("COMPOSITION_LINKS version=" + versaoId
+                + " count=" + vinculos.size());
+
+        if (vinculos.isEmpty()) {
+            return null;
+        }
+
+        vinculos.sort((esquerda, direita) -> Integer.compare(
+                posicaoDoIngrediente(esquerda), posicaoDoIngrediente(direita)));
+
+        List<Future<IngredientResponse>> consultas = new ArrayList<>();
+        for (ProductIngredientResponse vinculo : vinculos) {
+            consultas.add(REDE_INGREDIENTES.submit(
+                    () -> obterIngrediente(vinculo.ingredientId)));
+        }
+
+        StringBuilder texto = new StringBuilder();
+        int ingredientesResolvidos = 0;
+        for (Future<IngredientResponse> consulta : consultas) {
+            try {
+                IngredientResponse ingrediente = consulta.get(30, TimeUnit.SECONDS);
+                String nome = nomeDoIngrediente(ingrediente);
+                if (nome.isEmpty()) {
+                    continue;
+                }
+                if (texto.length() > 0) {
+                    texto.append(", ");
+                }
+                texto.append(nome);
+                ingredientesResolvidos++;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (ExecutionException | TimeoutException ignored) {
+            }
+        }
+
+        registrarDiagnostico("COMPOSITION_RESOLVED version=" + versaoId
+                + " count=" + ingredientesResolvidos);
+        if (texto.length() == 0) {
+            return null;
+        }
+
+        String composicao = texto.toString();
+        synchronized (CACHE_LOCK) {
+            COMPOSICOES_CACHE.put(versaoId, composicao);
+        }
+        return composicao;
+    }
+
+    @Nullable
+    private IngredientResponse obterIngrediente(long ingredienteId) {
+        try {
+            Response<IngredientResponse> resposta =
+                    api.buscarIngrediente(ingredienteId).execute();
+            return resposta.isSuccessful() ? resposta.body() : null;
+        } catch (IOException | RuntimeException e) {
+            return null;
+        }
+    }
+
+    @Nullable
+    private Long buscarVersaoAtual(long produtoId) {
+        try {
+            Response<ProductVersionResponse> resposta = api.versaoAtual(produtoId).execute();
+            if (!resposta.isSuccessful() || resposta.body() == null) {
+                return null;
+            }
+            return resposta.body().id;
+        } catch (IOException | RuntimeException e) {
+            return null;
+        }
+    }
+
+    private void registrarDiagnostico(String mensagem) {
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, mensagem);
+        }
+    }
+
+    private int posicaoDoIngrediente(ProductIngredientResponse vinculo) {
+        return vinculo.position == null ? Integer.MAX_VALUE : vinculo.position;
+    }
+
+    private String nomeDoIngrediente(@Nullable IngredientResponse ingrediente) {
+        if (ingrediente == null) {
+            return "";
+        }
+        if (ingrediente.inciName != null && !ingrediente.inciName.trim().isEmpty()) {
+            return ingrediente.inciName.trim();
+        }
+        return ingrediente.commonName == null ? "" : ingrediente.commonName.trim();
+    }
+
+    @Nullable
+    private String rotuloParaExibicao(@Nullable String texto) {
+        if (texto == null || texto.trim().isEmpty()) {
+            return null;
+        }
+        String semAcentos = Normalizer.normalize(texto, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT);
+        if (semAcentos.contains("catalogo oficial")
+                && semAcentos.contains("composicao integral")) {
+            return null;
+        }
+        return texto.trim();
+    }
+
+    @Nullable
+    private String obterImagemProduto(long produtoId) {
+        try {
+            Long versaoId = versaoAtualEmCache(produtoId);
+            if (versaoId != null) {
+                Response<List<MediaAssetResponse>> fotos =
+                        api.listarFotosDaVersao(versaoId).execute();
+                if (fotos.isSuccessful() && fotos.body() != null) {
+                    String url = primeiraFotoAtiva(fotos.body());
+                    if (url != null) {
+                        return url;
+                    }
+                }
+            }
+
+            Response<ProductFullResponse> resposta =
+                    api.buscarProdutoCompleto(produtoId).execute();
+            if (!resposta.isSuccessful() || resposta.body() == null) {
+                return null;
+            }
+            return primeiraFotoAtiva(resposta.body().photos);
+        } catch (IOException | RuntimeException e) {
+            return null;
+        }
+    }
+
+    @Nullable
+    private Long versaoAtualEmCache(long produtoId) {
+        synchronized (CACHE_LOCK) {
+            return VERSOES_CACHE.get(produtoId);
+        }
+    }
+
+    private void guardarImagem(long produtoId, @Nullable String urlFoto) {
+        if (produtoId <= 0) return;
+        synchronized (CACHE_LOCK) {
+            if (urlFoto != null || !IMAGENS_CACHE.containsKey(produtoId)) {
+                IMAGENS_CACHE.put(produtoId, urlFoto);
+            }
+        }
+    }
+
+    @Nullable
+    private String primeiraFotoAtiva(List<MediaAssetResponse> fotos) {
+        if (fotos == null) {
+            return null;
+        }
+        MediaAssetResponse escolhida = null;
+        for (MediaAssetResponse foto : fotos) {
+            if (foto == null) {
+                continue;
+            }
+            boolean valida = "ACTIVE".equals(foto.status) && "PRODUCT_PHOTO".equals(foto.purpose);
+            if (!valida) {
+                continue;
+            }
+            if (escolhida == null || ordemDaFoto(foto) < ordemDaFoto(escolhida)) {
+                escolhida = foto;
+            }
+        }
+        return escolhida == null ? null : escolhida.url;
+    }
+
+    private int ordemDaFoto(MediaAssetResponse foto) {
+        return foto.sortOrder == null ? Integer.MAX_VALUE : foto.sortOrder;
+    }
+
+    private List<Produto> montarCatalogo() throws IOException, FalhaApi {
+        Future<List<ProductResponse>> pedidoProdutos =
+                REDE.submit(
+                        () -> exigir(
+                                api.listarProdutos().execute(),
+                                "produtos"
+                        )
+                );
+
+        Future<List<BrandResponse>> pedidoMarcas =
+                REDE.submit(
+                        () -> exigir(
+                                api.listarMarcas().execute(),
+                                "marcas"
+                        )
+                );
+
+        Future<List<ProductCategoryResponse>> pedidoCategorias =
+                REDE.submit(
+                        () -> exigir(
+                                api.listarCategorias().execute(),
+                                "categorias"
+                        )
+                );
+
+        Future<List<ProductVersionResponse>> pedidoVersoes =
+                REDE.submit(
+                        () -> exigir(
+                                api.listarVersoes().execute(),
+                                "versoes"
+                        )
+                );
+
+        Future<List<ProductScoreResponse>> pedidoNotas =
+                REDE.submit(() -> exigir(api.listarNotas().execute(), "notas"));
+        Future<Long> pedidoModeloAtivo = REDE.submit(() -> buscarModeloAtivoId(api));
+
+        List<ProductResponse> produtos = esperar(pedidoProdutos);
+        List<BrandResponse> marcas = esperar(pedidoMarcas);
+        List<ProductCategoryResponse> categorias = esperar(pedidoCategorias);
+        List<ProductVersionResponse> versoes = esperar(pedidoVersoes);
+        List<ProductScoreResponse> notas = esperar(pedidoNotas);
+        Long modeloAtivoId = esperarModeloAtivo(pedidoModeloAtivo);
+
+        Map<Long, BrandResponse> marcaPorId = new HashMap<>();
+        for (BrandResponse marca : marcas) {
+
+            if (marca != null
+                    && marca.id != null) {
+
+                marcaPorId.put(
+                        marca.id,
+                        marca
+                );
+            }
+        }
+
+        Map<Long, String> nomeDaCategoria =
+                new HashMap<>();
+
+        for (ProductCategoryResponse categoria : categorias) {
+
+            if (categoria != null
+                    && categoria.id != null) {
+
+                nomeDaCategoria.put(
+                        categoria.id,
+                        categoria.name
+                );
+            }
+        }
+
+        Map<Long, Long> versaoAtualDoProduto =
+                new HashMap<>();
+
+        for (ProductVersionResponse versao : versoes) {
+
+            if (versao != null
+                    && Boolean.TRUE.equals(
+                    versao.isCurrent
+            )
+                    && versao.productId != null
+                    && versao.id != null) {
+
+                versaoAtualDoProduto.put(
+                        versao.productId,
+                        versao.id
+                );
+            }
+        }
+
+        Map<Long, Integer> notaDaVersao =
+                new HashMap<>();
+
+        for (ProductScoreResponse nota : notas) {
+
+            if (nota != null
+                    && nota.productVersionId != null
+                    && modeloAtivoId != null
+                    && modeloAtivoId.equals(nota.scoringModelId)) {
+
+                notaDaVersao.put(
+                        nota.productVersionId,
+                        nota.overallScore
+                );
+            }
+        }
+
+        List<Produto> catalogo =
+                new ArrayList<>();
+
+        for (ProductResponse produto : produtos) {
+
+            if (produto == null
+                    || produto.id == null) {
+                continue;
+            }
+
+            if (Boolean.FALSE.equals(
+                    produto.isActive
+            )) {
+                continue;
+            }
+
+            Long versaoAtual =
+                    versaoAtualDoProduto.get(
+                            produto.id
+                    );
+
+            Integer nota =
+                    versaoAtual == null
+                            ? null
+                            : notaDaVersao.get(
+                            versaoAtual
+                    );
+
+            BrandResponse dadosDaMarca =
+                    marcaPorId.get(
+                            produto.brandId
+                    );
+
+            String marca =
+                    dadosDaMarca == null
+                            ? null
+                            : dadosDaMarca.name;
+
+            if (marca == null) {
+                marca = "";
+            }
+
+            guardarVersaoAtual(produto.id, versaoAtual);
+            catalogo.add(new Produto(produto.id, produto.name, marca, nota, null,
+                    produto.productCategoryId, nomeDaCategoria.get(produto.productCategoryId),
+                    produto.brandId, dadosDaMarca == null ? null : dadosDaMarca.isBrazilian));
+        }
+
+        return catalogo;
+    }
+
+    private void guardarVersaoAtual(long produtoId, @Nullable Long versaoId) {
+        if (produtoId <= 0 || versaoId == null || versaoId <= 0) {
+            return;
+        }
+        synchronized (CACHE_LOCK) {
+            VERSOES_CACHE.put(produtoId, versaoId);
+        }
+    }
+
+    @Nullable
+    private Long buscarModeloAtivoId(VenusApi api) {
+        try {
+            Response<ScoringModelResponse> resposta = api.modeloAtivo().execute();
+            if (!resposta.isSuccessful() || resposta.body() == null) {
+                return null;
+            }
+            return resposta.body().id;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    @Nullable
+    private Long esperarModeloAtivo(Future<Long> pedido) {
+        try {
+            return pedido.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (ExecutionException e) {
+            return null;
+        }
+    }
+
+    private <T> List<T> esperar(Future<List<T>> pedido) throws IOException, FalhaApi {
+        try {
+            return pedido.get();
+
+        } catch (InterruptedException e) {
+
+            Thread.currentThread().interrupt();
+
+            throw new IOException(
+                    "A busca foi interrompida.",
+                    e
+            );
+
+        } catch (ExecutionException e) {
+
+            Throwable causa =
+                    e.getCause();
+
+            if (causa instanceof FalhaApi) {
+                throw (FalhaApi) causa;
+            }
+
+            if (causa instanceof IOException) {
+                throw (IOException) causa;
+            }
+
+            throw new IOException(causa);
+        }
+    }
+
+    private <T> List<T> exigir(
+            Response<List<T>> resposta,
+            String oQue
+    ) throws FalhaApi {
+
+        if (!resposta.isSuccessful()) {
+
+            throw new FalhaApi(
+                    "A API respondeu "
+                            + resposta.code()
+                            + " ao buscar "
+                            + oQue
+                            + "."
+            );
+        }
+
+        List<T> corpo =
+                resposta.body();
+
+        return corpo == null
+                ? Collections.emptyList()
+                : corpo;
+    }
+
+    private static class FalhaApi
+            extends Exception {
+
+        FalhaApi(String mensagem) {
+            super(mensagem);
+        }
+    }
+
+    private static class DetalheProduto {
+        final String textoRotulo;
+        final String urlFoto;
+
+        DetalheProduto(@Nullable String textoRotulo, @Nullable String urlFoto) {
+            this.textoRotulo = textoRotulo;
+            this.urlFoto = urlFoto;
+        }
     }
 }

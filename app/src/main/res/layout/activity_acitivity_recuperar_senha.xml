@@ -15,17 +15,24 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_percent="0.42" />
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guidelineBatonsTopo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.12" />
+
     <ImageView
         android:id="@+id/imgBatons"
-        android:layout_width="593dp"
-        android:layout_height="628dp"
-        android:layout_marginBottom="-360dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:importantForAccessibility="no"
         android:scaleType="fitCenter"
         app:layout_constraintBottom_toTopOf="@+id/cardRecuperar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.51"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintDimensionRatio="W,391:286"
+        app:layout_constraintEnd_toEndOf="@+id/cardRecuperar"
+        app:layout_constraintStart_toStartOf="@+id/cardRecuperar"
+        app:layout_constraintTop_toBottomOf="@+id/guidelineBatonsTopo"
         app:srcCompat="@drawable/recuperar_senha" />
 
     <ImageButton
@@ -50,7 +57,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guidelineCardTopo">
+        app:layout_constraintTop_toTopOf="@+id/guidelineCardTopo"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/conteudoCardRecuperar"

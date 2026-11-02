@@ -2,7 +2,6 @@ package com.venussystem.venusmobile.view;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,12 +31,12 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets teclado = insets.getInsets(WindowInsetsCompat.Type.ime());
 
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
 
-            View card = findViewById(R.id.cardLogin);
-            card.setPadding(card.getPaddingLeft(), card.getPaddingTop(),
-                    card.getPaddingRight(), systemBars.bottom);
+            int folga = Math.max(teclado.bottom, systemBars.bottom);
+            findViewById(R.id.cardLogin).setPadding(0, 0, 0, folga);
             return insets;
         });
 

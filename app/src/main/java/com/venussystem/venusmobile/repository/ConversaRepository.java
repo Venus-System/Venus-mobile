@@ -1,0 +1,175 @@
+package com.venussystem.venusmobile.repository;
+
+import android.os.Handler;
+import android.os.Looper;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import androidx.annotation.WorkerThread;
+
+import com.venussystem.venusmobile.repository.api.ClienteIa;
+import com.venussystem.venusmobile.repository.api.VenusIaApi;
+import com.venussystem.venusmobile.repository.api.dto.ChatRequest;
+import com.venussystem.venusmobile.repository.api.dto.ChatResponse;
+
+import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+public class ConversaRepository {
+
+    public enum Falha {
+        NAO_CONFIGURADO,
+        SEM_CONEXAO,
+        DEMOROU,
+        SESSAO_EXPIRADA,
+        MUITAS_MENSAGENS,
+        MENSAGEM_INVALIDA,
+        FALHA_SERVIDOR
+    }
+
+    public interface AoResponder {
+        void aoResponder(String resposta, @Nullable String conversationId,
+                         @Nullable String expressao);
+
+        void aoFalhar(Falha falha);
+    }
+
+    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
+    private static final Handler PRINCIPAL = new Handler(Looper.getMainLooper());
+
+    private static final String PREFIXO_BEARER = "Bearer ";
+    private static final int NAO_AUTORIZADO = 401;
+    private static final int NAO_PROCESSAVEL = 422;
+    private static final int MUITOS_PEDIDOS = 429;
+
+    @Nullable
+    private final VenusIaApi api;
+    private final SessaoUsuario sessao;
+
+    public ConversaRepository() {
+        this(ClienteIa.get(), new SessaoFirebase());
+    }
+
+    @VisibleForTesting
+    public ConversaRepository(@Nullable VenusIaApi api, SessaoUsuario sessao) {
+        this.api = api;
+        this.sessao = sessao;
+    }
+
+    public void acordar() {
+        if (api == null) {
+            return;
+        }
+        api.acordar().enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+            }
+        });
+    }
+
+    public void enviar(String mensagem, @Nullable String conversationId, AoResponder callback) {
+        if (api == null) {
+            PRINCIPAL.post(() -> callback.aoFalhar(Falha.NAO_CONFIGURADO));
+            return;
+        }
+
+        EXECUTOR.execute(() -> {
+            Resultado resultado = conversar(api, mensagem, conversationId);
+            PRINCIPAL.post(() -> {
+                if (resultado.resposta != null) {
+                    callback.aoResponder(resultado.resposta, resultado.conversationId,
+                            resultado.expressao);
+                } else {
+                    callback.aoFalhar(resultado.falha);
+                }
+            });
+        });
+    }
+
+    @WorkerThread
+    private Resultado conversar(VenusIaApi api, String mensagem, @Nullable String conversationId) {
+        ChatRequest corpo = new ChatRequest();
+        corpo.mensagem = mensagem;
+        corpo.conversationId = conversationId;
+
+        try {
+            String token = sessao.token(false);
+            if (token == null) {
+                return Resultado.falha(Falha.SESSAO_EXPIRADA);
+            }
+            Response<ChatResponse> resposta = api.conversar(PREFIXO_BEARER + token, corpo).execute();
+
+            if (resposta.code() == NAO_AUTORIZADO) {
+                token = sessao.token(true);
+                if (token == null) {
+                    return Resultado.falha(Falha.SESSAO_EXPIRADA);
+                }
+                resposta = api.conversar(PREFIXO_BEARER + token, corpo).execute();
+            }
+
+            switch (resposta.code()) {
+                case NAO_AUTORIZADO:
+                    return Resultado.falha(Falha.SESSAO_EXPIRADA);
+                case MUITOS_PEDIDOS:
+                    return Resultado.falha(Falha.MUITAS_MENSAGENS);
+                case NAO_PROCESSAVEL:
+                    return Resultado.falha(Falha.MENSAGEM_INVALIDA);
+                default:
+                    break;
+            }
+            ChatResponse corpoResposta = resposta.body();
+            if (!resposta.isSuccessful() || corpoResposta == null
+                    || corpoResposta.resposta == null || corpoResposta.resposta.trim().isEmpty()) {
+                return Resultado.falha(Falha.FALHA_SERVIDOR);
+            }
+            String idUsado = corpoResposta.conversationId == null
+                    || corpoResposta.conversationId.trim().isEmpty()
+                    ? conversationId
+                    : corpoResposta.conversationId;
+            return Resultado.sucesso(corpoResposta.resposta.trim(), idUsado, corpoResposta.expressao);
+        } catch (SocketTimeoutException e) {
+            return Resultado.falha(Falha.DEMOROU);
+        } catch (IOException e) {
+            return Resultado.falha(Falha.SEM_CONEXAO);
+        }
+    }
+
+    private static class Resultado {
+        @Nullable
+        final String resposta;
+        @Nullable
+        final String conversationId;
+        @Nullable
+        final String expressao;
+        @Nullable
+        final Falha falha;
+
+        private Resultado(@Nullable String resposta, @Nullable String conversationId,
+                          @Nullable String expressao, @Nullable Falha falha) {
+            this.resposta = resposta;
+            this.conversationId = conversationId;
+            this.expressao = expressao;
+            this.falha = falha;
+        }
+
+        static Resultado sucesso(String resposta, @Nullable String conversationId,
+                                 @Nullable String expressao) {
+            return new Resultado(resposta, conversationId, expressao, null);
+        }
+
+        static Resultado falha(Falha falha) {
+            return new Resultado(null, null, null, falha);
+        }
+    }
+}

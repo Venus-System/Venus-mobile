@@ -86,7 +86,9 @@
                 style="@style/SecaoTipoCabelo"
                 android:text="@string/sheet_secao_liso" />
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="TYPE_1A">
 
                 <ImageView
                     style="@style/FioTipoCabelo"
@@ -100,11 +102,63 @@
 
                     <TextView
                         style="@style/TituloTipoCabelo"
-                        android:text="@string/cabelo_1" />
+                        android:text="@string/sheet_tipo_1a" />
 
                     <TextView
                         style="@style/DescricaoTipoCabelo"
-                        android:text="@string/sheet_desc_1" />
+                        android:text="@string/sheet_desc_1a" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="TYPE_1B">
+
+                <ImageView
+                    style="@style/FioTipoCabelo"
+                    android:src="@drawable/fio_1" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/espaco_medio"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TituloTipoCabelo"
+                        android:text="@string/sheet_tipo_1b" />
+
+                    <TextView
+                        style="@style/DescricaoTipoCabelo"
+                        android:text="@string/sheet_desc_1b" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="TYPE_1C">
+
+                <ImageView
+                    style="@style/FioTipoCabelo"
+                    android:src="@drawable/fio_1" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/espaco_medio"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TituloTipoCabelo"
+                        android:text="@string/sheet_tipo_1c" />
+
+                    <TextView
+                        style="@style/DescricaoTipoCabelo"
+                        android:text="@string/sheet_desc_1c" />
 
                 </LinearLayout>
 
@@ -114,7 +168,9 @@
                 style="@style/SecaoTipoCabelo"
                 android:text="@string/sheet_secao_ondulado" />
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="TYPE_2A">
 
                 <ImageView
                     style="@style/FioTipoCabelo"
@@ -138,7 +194,9 @@
 
             </LinearLayout>
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="TYPE_2B">
 
                 <ImageView
                     style="@style/FioTipoCabelo"
@@ -162,7 +220,9 @@
 
             </LinearLayout>
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="TYPE_2C">
 
                 <ImageView
                     style="@style/FioTipoCabelo"
@@ -190,7 +250,9 @@
                 style="@style/SecaoTipoCabelo"
                 android:text="@string/sheet_secao_cacheado" />
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="TYPE_3A">
 
                 <ImageView
                     style="@style/FioTipoCabelo"
@@ -214,7 +276,9 @@
 
             </LinearLayout>
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="TYPE_3B">
 
                 <ImageView
                     style="@style/FioTipoCabelo"
@@ -238,7 +302,9 @@
 
             </LinearLayout>
 
-            <LinearLayout style="@style/CardTipoCabelo">
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="TYPE_3C">
 
                 <ImageView
                     style="@style/FioTipoCabelo"

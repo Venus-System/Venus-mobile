@@ -1,0 +1,669 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context=".view.DetalheProdutoActivity">
+
+    <ImageButton
+        android:id="@+id/btnVoltar"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/desc_voltar"
+        android:rotation="180"
+        android:scaleType="center"
+        android:src="@drawable/ic_chevron"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btnSalvarNaLista"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:layout_marginEnd="12dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/desc_salvar_na_lista"
+        android:scaleType="center"
+        android:src="@drawable/ic_marcador"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
+
+    <ImageButton
+        android:id="@+id/btnCurtir"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/desc_curtir"
+        android:scaleType="center"
+        android:src="@drawable/ic_coracao"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toStartOf="@+id/btnSalvarNaLista"
+        app:layout_constraintTop_toTopOf="@+id/btnVoltar" />
+
+    <ImageButton
+        android:id="@+id/btnPerguntarVenus"
+        android:layout_width="@dimen/area_toque_minima"
+        android:layout_height="@dimen/area_toque_minima"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/desc_perguntar_venus"
+        android:scaleType="center"
+        android:src="@drawable/ic_chat"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toStartOf="@+id/btnCurtir"
+        app:layout_constraintTop_toTopOf="@+id/btnVoltar"
+        app:tint="@color/roxo_venus" />
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/imgProduto"
+        android:layout_width="@dimen/avatar_lista"
+        android:layout_height="@dimen/avatar_lista"
+        android:layout_marginTop="@dimen/espaco_pequeno"
+        android:background="@drawable/bg_foto_produto"
+        android:importantForAccessibility="no"
+        android:scaleType="fitCenter"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnVoltar"
+        app:shapeAppearanceOverlay="@style/FotoProdutoArredondada"
+        tools:src="@drawable/ic_launcher_foreground" />
+
+    <TextView
+        android:id="@+id/textNomeProduto"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_grande"
+        android:layout_marginTop="@dimen/espaco_medio"
+        android:layout_marginEnd="@dimen/espaco_grande"
+        android:textColor="@color/preto_texto"
+        android:textSize="@dimen/texto_titulo_aba"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imgProduto"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista"
+        tools:text="CeraVe Loção Facial Hidratante Noite" />
+
+    <TextView
+        android:id="@+id/textCategoriaProduto"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="@color/roxo_marca"
+        android:textSize="13sp"
+        app:layout_constraintEnd_toEndOf="@+id/textNomeProduto"
+        app:layout_constraintStart_toStartOf="@+id/textNomeProduto"
+        app:layout_constraintTop_toBottomOf="@+id/textNomeProduto"
+        tools:text="Hidratante" />
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/abasProduto"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaco_medio"
+        android:background="@color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textCategoriaProduto"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista"
+        app:tabIndicatorColor="@color/roxo_venus"
+        app:tabIndicatorHeight="3dp"
+        app:tabMode="fixed"
+        app:tabSelectedTextColor="@color/roxo_venus"
+        app:tabTextColor="@color/preto_texto" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/conteudoAvaliacao"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingStart="@dimen/espaco_grande"
+        android:paddingTop="@dimen/espaco_medio"
+        android:paddingEnd="@dimen/espaco_grande"
+        android:paddingBottom="@dimen/espaco_secao"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/abasProduto"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/produto_titulo_ingredientes"
+                android:textColor="@color/preto_texto"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <ProgressBar
+                android:id="@+id/carregandoIngredientes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:layout_marginTop="@dimen/espaco_medio"
+                android:indeterminateTint="@color/roxo_venus" />
+
+            <TextView
+                android:id="@+id/textIngredientes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:lineSpacingExtra="3dp"
+                android:textColor="@color/cinza_descricao"
+                android:textSize="13sp"
+                android:visibility="gone"
+                tools:text="Cyclopentasiloxane, Dicaprylyl Carbonate, Dimethiconol, Parfum, Tocopheryl Acetate."
+                tools:visibility="visible" />
+
+            <LinearLayout
+                android:id="@+id/listaIngredientes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:orientation="vertical"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/btnVerTodosIngredientes"
+                style="@style/LinkVenus"
+                android:layout_width="match_parent"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:gravity="center"
+                android:minHeight="@dimen/area_toque_minima"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="Ver todos os 24 ingredientes"
+                tools:visibility="visible" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_grande"
+                android:text="@string/avaliacoes_rotulo"
+                android:textAllCaps="true"
+                android:textColor="@color/roxo_secao"
+                android:textSize="@dimen/texto_ajuda"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:accessibilityHeading="true"
+                android:text="@string/avaliacoes_titulo"
+                android:textColor="@color/preto_texto"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/avaliacoes_explicacao"
+                android:textColor="@color/cinza_descricao"
+                android:textSize="13sp" />
+
+            <ProgressBar
+                android:id="@+id/carregandoAvaliacoes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:layout_marginTop="@dimen/espaco_medio"
+                android:indeterminateTint="@color/roxo_venus" />
+
+            <LinearLayout
+                android:id="@+id/blocoErroAvaliacoes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:accessibilityLiveRegion="polite"
+                    android:text="@string/avaliacoes_erro"
+                    android:textColor="@color/cinza_descricao"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/btnRecarregarAvaliacoes"
+                    style="@style/LinkVenus"
+                    android:layout_marginStart="-4dp"
+                    android:minHeight="@dimen/area_toque_minima"
+                    android:gravity="center_vertical"
+                    android:text="@string/avaliacoes_tentar_de_novo"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/conteudoAvaliacoes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <include layout="@layout/include_resumo_avaliacoes" />
+
+                <TextView
+                    android:id="@+id/textSemAvaliacoes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_resumo_avaliacoes"
+                    android:padding="14dp"
+                    android:text="@string/avaliacoes_vazio"
+                    android:textColor="@color/cinza_descricao"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnEscreverAvaliacao"
+                    style="@style/BotaoGradiente"
+                    android:layout_width="match_parent"
+                    android:layout_marginTop="@dimen/espaco_pequeno"
+                    android:text="@string/avaliacoes_escrever"
+                    android:textSize="@dimen/texto_campo" />
+
+                <TextView
+                    android:id="@+id/textJaAvaliou"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_pequeno"
+                    android:gravity="center"
+                    android:text="@string/avaliacoes_ja_avaliou"
+                    android:textColor="@color/cinza_descricao"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/listaAvaliacoes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/btnVerTodasAvaliacoes"
+                    style="@style/LinkVenus"
+                    android:layout_width="match_parent"
+                    android:layout_marginTop="@dimen/espaco_pequeno"
+                    android:gravity="center"
+                    android:minHeight="@dimen/area_toque_minima"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:text="Ver todas as 12 avaliações"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/textRelatarErro"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_grande"
+                android:background="@drawable/bg_aviso_amarelo"
+                android:padding="@dimen/espaco_medio"
+                android:text="@string/produto_relatar_erro"
+                android:textColor="@color/amarelo_aviso_texto"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/conteudoMatch"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingStart="@dimen/espaco_grande"
+        android:paddingTop="@dimen/espaco_medio"
+        android:paddingEnd="@dimen/espaco_grande"
+        android:paddingBottom="@dimen/espaco_secao"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/abasProduto"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <ProgressBar
+                android:id="@+id/carregandoMatch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/espaco_medio"
+                android:indeterminateTint="@color/roxo_venus" />
+
+            <TextView
+                android:id="@+id/textMatchMensagem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:background="@drawable/bg_lista_vazia"
+                android:gravity="center"
+                android:padding="@dimen/espaco_grande"
+                android:textColor="@color/cinza_descricao"
+                android:textSize="@dimen/texto_corpo"
+                android:visibility="gone"
+                tools:text="Responda o questionário para ver o match." />
+
+            <com.venussystem.venusmobile.view.componente.CartaoPerfilView
+                android:id="@+id/cartaoPerfilMatch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_pequeno"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/cartaoMatch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_cartao_match"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="1dp"
+                    android:background="@drawable/bg_cabecalho_match"
+                    android:orientation="vertical"
+                    android:padding="@dimen/espaco_medio">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/textMatchTitulo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/roxo_avatar_borda"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            tools:text="Para você, Rafael" />
+
+                        <TextView
+                            android:id="@+id/textMatchCruzado"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:textColor="@color/cinza_descricao"
+                            android:textSize="12sp"
+                            tools:text="Cruzado com seu perfil: pele seca, sem silicones" />
+
+                        <TextView
+                            android:id="@+id/textMatchVeredito"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/espaco_pequeno"
+                            android:background="@drawable/bg_selo_veredito"
+                            android:paddingStart="10dp"
+                            android:paddingTop="4dp"
+                            android:paddingEnd="10dp"
+                            android:paddingBottom="4dp"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            tools:text="Combina com você" />
+
+                    </LinearLayout>
+
+                    <FrameLayout
+                        android:id="@+id/anelNotaMatch"
+                        android:layout_width="84dp"
+                        android:layout_height="84dp"
+                        android:layout_marginStart="@dimen/espaco_pequeno"
+                        android:background="@drawable/bg_anel_nota">
+
+                        <com.google.android.material.progressindicator.CircularProgressIndicator
+                            android:id="@+id/progressoNotaMatch"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:importantForAccessibility="no"
+                            android:max="100"
+                            app:indicatorColor="@color/cinza_fechar"
+                            app:indicatorInset="0dp"
+                            app:indicatorSize="84dp"
+                            app:trackColor="@color/cinza_fechar"
+                            app:trackCornerRadius="3dp"
+                            app:trackThickness="6dp"
+                            tools:progress="63" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+
+                            <ProgressBar
+                                android:id="@+id/carregandoNotaMatch"
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:indeterminateTint="@color/roxo_venus"
+                                android:visibility="gone" />
+
+                            <TextView
+                                android:id="@+id/textMatchNota"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:importantForAccessibility="no"
+                                android:includeFontPadding="false"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                tools:text="63" />
+
+                            <TextView
+                                android:id="@+id/textMatchNotaRotulo"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:importantForAccessibility="no"
+                                android:includeFontPadding="false"
+                                android:maxLines="1"
+                                android:textColor="@color/cinza_descricao"
+                                android:textSize="10sp"
+                                tools:text="para você" />
+
+                        </LinearLayout>
+
+                    </FrameLayout>
+
+                </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/textMatchConta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:textColor="@color/roxo_avatar_borda"
+                        android:textSize="12sp"
+                        android:visibility="gone"
+                        tools:text="A nota soma duas partes: 25,9 de 35 pela qualidade do produto e 15,3 de 65 por combinar com o seu perfil."
+                        tools:visibility="visible" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/listaMatchPontos"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="@dimen/espaco_pequeno" />
+
+                <TextView
+                    android:id="@+id/textMatchSemEfeitos"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="@dimen/espaco_medio"
+                    android:paddingTop="@dimen/espaco_pequeno"
+                    android:paddingEnd="@dimen/espaco_medio"
+                    android:text="@string/produto_match_sem_efeitos"
+                    android:textColor="@color/cinza_descricao"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/secaoMatchDestaques"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="@dimen/espaco_medio"
+                    android:paddingTop="@dimen/espaco_pequeno"
+                    android:paddingEnd="@dimen/espaco_medio"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/produto_match_na_formula"
+                        android:textColor="@color/cinza_descricao"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/grupoMatchDestaques"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        app:chipSpacingHorizontal="6dp"
+                        app:chipSpacingVertical="6dp"
+                        app:singleLine="false" />
+
+                </LinearLayout>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/espaco_medio" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/cartaoMatchAlergias"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_medio"
+                android:background="@drawable/bg_cartao_alergia"
+                android:orientation="vertical"
+                android:padding="@dimen/espaco_medio"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:id="@+id/textMatchAlergiaTitulo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/roxo_avatar_borda"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="Sem alergia" />
+
+                <TextView
+                    android:id="@+id/textMatchAlergiaTexto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/cinza_descricao"
+                    android:textSize="13sp"
+                    tools:text="Nenhum ingrediente deste produto está nas alergias que você cadastrou." />
+
+                <TextView
+                    android:id="@+id/botaoMatchAlternativas"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_botao_outline_magenta"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:minHeight="40dp"
+                    android:paddingStart="18dp"
+                    android:paddingEnd="18dp"
+                    android:text="@string/produto_match_ver_alternativas"
+                    android:textColor="@color/magenta_venus"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/textMatchAviso"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_medio"
+                android:text="@string/produto_match_aviso"
+                android:textColor="@color/cinza_hint"
+                android:textSize="11sp"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/listaAlternativas"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="@dimen/espaco_medio"
+        android:layout_marginTop="@dimen/espaco_medio"
+        android:layout_marginEnd="@dimen/espaco_medio"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/espaco_secao"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/abasProduto"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista"
+        tools:itemCount="4"
+        tools:listitem="@layout/item_alternativa_produto"
+        tools:visibility="visible" />
+
+    <TextView
+        android:id="@+id/textSemAlternativas"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaco_secao"
+        android:layout_marginTop="@dimen/espaco_secao"
+        android:layout_marginEnd="@dimen/espaco_secao"
+        android:gravity="center"
+        android:text="@string/produto_sem_alternativas"
+        android:textColor="@color/cinza_descricao"
+        android:textSize="@dimen/texto_corpo"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/abasProduto"
+        app:layout_constraintWidth_max="@dimen/largura_max_lista" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

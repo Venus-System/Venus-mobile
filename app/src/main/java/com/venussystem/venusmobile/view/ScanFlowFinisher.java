@@ -1,0 +1,347 @@
+package com.venussystem.venusmobile.view;
+
+import android.app.Activity;
+import androidx.appcompat.app.AlertDialog;
+import android.content.Intent;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.LifecycleOwner;
+
+import com.venussystem.venusmobile.R;
+import com.venussystem.venusmobile.model.ScanSubmissionDraft;
+import com.venussystem.venusmobile.model.Usuario;
+import com.venussystem.venusmobile.repository.AutenticacaoRepository;
+import com.venussystem.venusmobile.repository.ScanDraftStore;
+import com.venussystem.venusmobile.repository.DecisoesAgenda;
+import com.venussystem.venusmobile.repository.ReenvioDeScanAgenda;
+import com.venussystem.venusmobile.repository.ScanSubmissionRepository;
+import com.venussystem.venusmobile.repository.api.ScanApiException;
+import com.venussystem.venusmobile.repository.api.ScanUploadException;
+import com.venussystem.venusmobile.repository.api.dto.ScanUploadSignaturesResponse;
+import com.venussystem.venusmobile.domain.scan.ScanPhotoQualityPolicy;
+import com.venussystem.venusmobile.view.dialog.ScanStatusDialog;
+
+public final class ScanFlowFinisher {
+    private static final long ATRASO_DO_REENVIO_MS = 60_000L;
+
+    private ScanFlowFinisher() {
+    }
+
+    public static void finalizar(@NonNull Activity activity) {
+        ScanTutorialState.markCompleted(activity);
+
+        Toast.makeText(
+                activity,
+                "Scan concluído.",
+                Toast.LENGTH_LONG
+        ).show();
+
+        abrirPrincipal(activity);
+    }
+
+    public static void finalizar(
+            @NonNull Activity activity,
+            @NonNull ScanSubmissionDraft draft
+    ) {
+        android.util.Log.d("VENUS_SCAN_PIPELINE", "FINISH_REQUEST scanId=" + draft.getScanId()
+                + " hasBack=" + (draft.getBackData() != null));
+        Usuario owner = new AutenticacaoRepository().usuarioLogado();
+        if (owner == null) {
+            Toast.makeText(activity, "Entre na conta usada no scan.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        ScanSubmissionRepository repository = new ScanSubmissionRepository(activity);
+        repository.prepareLocally(owner.getUid(), draft,
+                new ScanSubmissionRepository.Callback() {
+                    @Override public void saved(ScanDraftStore.SavedDraft saved) {
+                        if (activity.isFinishing() || activity.isDestroyed()) return;
+                        android.util.Log.d("VENUS_SCAN_PIPELINE", "DRAFT_SAVED scanId="
+                                + saved.draft.getScanId());
+                        if (ScanPhotoQualityPolicy.backgroundIsAdvisory(saved.draft.getPhotoQuality())) {
+                            Toast.makeText(activity,
+                                    "Fundo ou iluminação fora do ideal. Continuaremos.",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                        draft.setStatus(ScanSubmissionDraft.STATUS_WAITING_UPLOAD);
+                        solicitarAssinaturas(activity, repository, saved);
+                    }
+                    @Override public void failed(Exception exception) {
+                        if (activity.isFinishing() || activity.isDestroyed()) return;
+                        boolean qualityBlocked = exception instanceof IllegalArgumentException
+                                && exception.getMessage() != null
+                                && exception.getMessage().startsWith("A qualidade das fotos");
+                        new android.app.AlertDialog.Builder(activity)
+                                .setTitle("Não foi possível salvar o rascunho")
+                                .setMessage(qualityBlocked
+                                        ? "Foto desfocada ou escura. Tire outra do rótulo."
+                                        : "Nada foi enviado. Verifique a conta e o espaço.")
+                                .setPositiveButton("Tentar novamente", (dialog, which) -> finalizar(activity, draft))
+                                .setNegativeButton("Voltar", (dialog, which) -> activity.finish())
+                                .show();
+                    }
+                });
+    }
+
+    private static void solicitarAssinaturas(Activity activity, ScanSubmissionRepository repository,
+                                             ScanDraftStore.SavedDraft saved) {
+        solicitarAssinaturas(activity, repository, saved, false, false);
+    }
+
+    private static void solicitarAssinaturas(Activity activity, ScanSubmissionRepository repository,
+            ScanDraftStore.SavedDraft saved, boolean connectAccount, boolean accountAttempted) {
+        if (activity.isFinishing() || activity.isDestroyed()) return;
+        AlertDialog progress = ScanStatusDialog.create(activity,
+                "Preparando scan",
+                "Aguarde um instante.",
+                true, null, null, () -> sairDeixandoPendente(activity));
+        showWhileAlive(activity, progress);
+        ScanSubmissionRepository.SignaturesCallback callback = new ScanSubmissionRepository.SignaturesCallback() {
+                    @Override public void ready(ScanUploadSignaturesResponse signatures) {
+                        if (activity.isFinishing() || activity.isDestroyed()) return;
+                        android.util.Log.d("VENUS_SCAN_PIPELINE", "SIGNATURES_READY scanId="
+                                + saved.draft.getScanId());
+                        ScanStatusDialog.updateMessage(progress, "Preparando as fotos...");
+                        repository.uploadPhotos(saved.firebaseUid, saved.draft.getScanId(), signatures,
+                                new ScanSubmissionRepository.UploadCallback() {
+                                    @Override public void progress(String side) {
+                                        if (activity.isFinishing() || activity.isDestroyed()) return;
+                                        ScanStatusDialog.updateMessage(progress, "front".equals(side)
+                                                ? "Enviando a frente..." : "Enviando o verso...");
+                                    }
+                                    @Override public void uploaded(ScanDraftStore.SavedDraft result) {
+                                        if (activity.isFinishing() || activity.isDestroyed()) return;
+                                        android.util.Log.d("VENUS_SCAN_PIPELINE", "PHOTOS_UPLOADED_BEGIN_CATALOG scanId="
+                                                + result.draft.getScanId());
+                                        progress.dismiss();
+                                        consultarIngredientes(activity, repository, result);
+                                    }
+                                    @Override public void failed(Exception error) {
+                                        if (activity.isFinishing() || activity.isDestroyed()) return;
+                                        progress.dismiss();
+                                        AlertDialog failure = ScanStatusDialog.create(activity,
+                                                  "Foto não enviada", mensagemFalhaUpload(error),
+                                                false, "Tentar novamente", () -> solicitarAssinaturas(activity, repository, saved,
+                                                        false, accountAttempted || connectAccount),
+                                                () -> sairDeixandoPendente(activity));
+                                        showWhileAlive(activity, failure);
+                                    }
+                                });
+                    }
+                    @Override public void failed(Exception exception) {
+                        if (activity.isFinishing() || activity.isDestroyed()) return;
+                        progress.dismiss();
+                        ScanApiException failureInfo = exception instanceof ScanApiException
+                                ? (ScanApiException) exception : null;
+                        boolean forbidden = failureInfo != null && failureInfo.kind == ScanApiException.Kind.FORBIDDEN;
+                        boolean alreadyAttempted = accountAttempted || connectAccount;
+
+                        if (forbidden && !alreadyAttempted) {
+                            solicitarAssinaturas(activity, repository, saved, true, true);
+                            return;
+                        }
+
+                        String title = "Não conseguimos continuar";
+                        String message = "Tente novamente em instantes.";
+                        if (forbidden) {
+                            title = "Sua conta precisa de atenção";
+                            message = "Não foi possível habilitar o envio automaticamente. Tente novamente mais tarde.";
+                        } else if (failureInfo != null && failureInfo.kind == ScanApiException.Kind.AUTH) {
+                            title = "Entre novamente na sua conta";
+                            message = "Entre novamente com a conta deste scan.";
+                        } else if (failureInfo != null && (failureInfo.kind == ScanApiException.Kind.NETWORK
+                                || failureInfo.kind == ScanApiException.Kind.TIMEOUT)) {
+                            title = "A conexão não respondeu";
+                            message = "Verifique a internet e tente novamente.";
+                        }
+                        boolean authError = failureInfo != null && failureInfo.kind == ScanApiException.Kind.AUTH;
+                        boolean retryAccountProvisioning = connectAccount && failureInfo != null
+                                && (failureInfo.kind == ScanApiException.Kind.NETWORK
+                                || failureInfo.kind == ScanApiException.Kind.TIMEOUT
+                                || (failureInfo.kind == ScanApiException.Kind.HTTP
+                                && failureInfo.httpCode >= 500));
+                        AlertDialog failure = ScanStatusDialog.create(activity, title, message, false,
+                                "Verificar novamente",
+                                authError ? null : () -> solicitarAssinaturas(activity, repository, saved,
+                                        retryAccountProvisioning, true),
+                                () -> sairDeixandoPendente(activity));
+                        showWhileAlive(activity, failure);
+                    }
+                };
+        // Antecipates o catálogo read-only enquanto a API prepara assinaturas
+        // e as fotos são enviadas, evitando que o popup de ingredientes fique
+        // aguardando duas consultas sequenciais.
+        repository.preloadIngredientCatalog(saved.firebaseUid, saved.draft.getScanId());
+        if (connectAccount) repository.connectAccountAndRequestSignatures(saved.firebaseUid, saved.draft.getScanId(), callback);
+        else repository.requestUploadSignatures(saved.firebaseUid, saved.draft.getScanId(), callback);
+    }
+
+    private static void consultarIngredientes(Activity activity, ScanSubmissionRepository repository,
+                                               ScanDraftStore.SavedDraft saved) {
+        if (activity.isFinishing() || activity.isDestroyed()) return;
+        android.util.Log.d("VENUS_SCAN_PIPELINE", "CATALOG_REQUEST scanId=" + saved.draft.getScanId());
+        AlertDialog progress = ScanStatusDialog.create(activity, "Consultando ingredientes",
+                "Conferindo os nomes no catálogo.", true, null, null, () -> sairDeixandoPendente(activity));
+        showWhileAlive(activity, progress);
+        repository.checkIngredients(saved.firebaseUid, saved.draft.getScanId(), new ScanSubmissionRepository.Callback() {
+            @Override public void saved(ScanDraftStore.SavedDraft result) {
+                if (activity.isFinishing() || activity.isDestroyed()) return;
+                android.util.Log.d("VENUS_SCAN_PIPELINE", "CATALOG_SAVED scanId=" + result.draft.getScanId());
+                progress.dismiss();
+                enviarParaMongo(activity, repository, result, false);
+            }
+            @Override public void failed(Exception error) {
+                if (activity.isFinishing() || activity.isDestroyed()) return;
+                android.util.Log.w("VENUS_SCAN_PIPELINE", "CATALOG_FAILED scanId=" + saved.draft.getScanId()
+                        + " type=" + error.getClass().getSimpleName()
+                        + " kind=" + (error instanceof ScanApiException
+                        ? ((ScanApiException) error).kind : "LOCAL")
+                        + " http=" + (error instanceof ScanApiException
+                        ? ((ScanApiException) error).httpCode : 0));
+                progress.dismiss();
+                String message = error instanceof ScanApiException && ((ScanApiException) error).kind == ScanApiException.Kind.AUTH
+                        ? "Entre com a conta usada no scan."
+                        : "Confira a conexão e tente novamente.";
+                if (error instanceof ScanApiException && ((ScanApiException) error).kind != ScanApiException.Kind.AUTH)
+                    message = "Catálogo indisponível. Tente mais tarde.";
+                showWhileAlive(activity, ScanStatusDialog.create(activity, "Consulta não concluída", message,
+                        false, "Tentar novamente", () -> consultarIngredientes(activity, repository, saved),
+                        () -> sairDeixandoPendente(activity)));
+            }
+        });
+    }
+
+    private static void enviarParaMongo(Activity activity, ScanSubmissionRepository repository,
+                                         ScanDraftStore.SavedDraft saved, boolean retry) {
+        if (activity.isFinishing() || activity.isDestroyed()) return;
+        AlertDialog progress = ScanStatusDialog.create(activity, "Enviando para análise",
+                "Salvando fotos e dados do rótulo.", true, null, null,
+                () -> sairDeixandoPendente(activity));
+        showWhileAlive(activity, progress);
+        repository.submitToMongo(saved.firebaseUid, saved.draft.getScanId(), activity.getApplicationContext(),
+                new ScanSubmissionRepository.SubmissionCallback() {
+                    @Override public void submitted(ScanDraftStore.SavedDraft result) {
+                        if (activity.isFinishing() || activity.isDestroyed()) return;
+                        progress.dismiss();
+                        ScanTutorialState.markCompleted(activity);
+                        DecisoesAgenda.verificarAgora(activity);
+                        Toast.makeText(activity,
+                                "Scan enviado para análise administrativa.",
+                                Toast.LENGTH_LONG).show();
+                        abrirPrincipal(activity);
+                    }
+                    @Override public void failed(Exception error) {
+                        if (activity.isFinishing() || activity.isDestroyed()) return;
+                        progress.dismiss();
+                        ScanApiException apiError = error instanceof ScanApiException ? (ScanApiException) error : null;
+                        showWhileAlive(activity, ScanStatusDialog.create(activity, "Envio pausado",
+                                mensagemFalhaMongo(apiError),
+                                false, "Tentar novamente", () -> enviarParaMongo(activity, repository, saved, true),
+                                () -> sairDeixandoPendente(activity)));
+                    }
+                });
+    }
+
+    private static String mensagemFalhaUpload(Exception error) {
+        if (error instanceof ScanApiException) {
+            return mensagemFalhaMongo((ScanApiException) error);
+        }
+        if (!(error instanceof ScanUploadException)) {
+            return "Não foi possível confirmar o envio da foto. A foto continua salva para tentar novamente.";
+        }
+        ScanUploadException upload = (ScanUploadException) error;
+        switch (upload.kind) {
+            case NETWORK:
+                return "A conexão com o serviço de imagens caiu. Verifique a internet e tente novamente.";
+            case TIMEOUT:
+                return "O envio da foto demorou. Verifique a internet e tente novamente.";
+            case EXPIRED_SIGNATURE:
+                return "A autorização do envio expirou. Vamos renová-la ao tentar novamente.";
+            case HTTP:
+                return upload.httpCode > 0
+                        ? "O serviço de imagens recusou a foto (HTTP " + upload.httpCode + ")."
+                        : "O serviço de imagens recusou a foto.";
+            case LOCAL:
+                return "A foto não está mais disponível neste aparelho.";
+            case CONFIGURATION:
+                return "O serviço de imagens está indisponível no momento.";
+            case INVALID_RESPONSE:
+            default:
+                return "O serviço de imagens respondeu de forma inválida. Tente novamente.";
+        }
+    }
+
+    private static String mensagemFalhaMongo(ScanApiException error) {
+        if (error == null) {
+            return "Não foi possível confirmar o envio. Os dados continuam salvos para tentar novamente.";
+        }
+        switch (error.kind) {
+            case FORBIDDEN:
+                return "Sua conta não está habilitada para enviar este scan.";
+            case AUTH:
+                return "Sua sessão expirou. Entre novamente e tente este scan.";
+            case NETWORK:
+                return "A API está indisponível ou sem conexão. Verifique a internet e tente novamente.";
+            case TIMEOUT:
+                return "A API demorou para responder. Os dados continuam salvos para tentar novamente.";
+            case HTTP:
+                if (error.httpCode == 422) {
+                    return "A API rejeitou os dados do rótulo (HTTP 422). Revise a foto do verso e tente novamente.";
+                }
+                if (error.httpCode >= 500) {
+                    return "O servidor está temporariamente indisponível (HTTP " + error.httpCode + ").";
+                }
+                return "A API recusou o envio (HTTP " + error.httpCode + ").";
+            case INVALID_REQUEST:
+                return "Os dados do scan ficaram incompletos. Tire as fotos novamente.";
+            case INVALID_RESPONSE:
+            default:
+                return "A API respondeu de forma inválida. Os dados continuam salvos para tentar novamente.";
+        }
+    }
+
+    private static void showWhileAlive(Activity activity, AlertDialog dialog) {
+        if (activity instanceof LifecycleOwner) {
+            LifecycleOwner owner = (LifecycleOwner) activity;
+            DefaultLifecycleObserver observer = new DefaultLifecycleObserver() {
+                @Override public void onDestroy(@NonNull LifecycleOwner source) { dialog.dismiss(); }
+            };
+            owner.getLifecycle().addObserver(observer);
+            dialog.setOnDismissListener(ignored -> owner.getLifecycle().removeObserver(observer));
+        }
+        dialog.show();
+    }
+
+    private static void sairDeixandoPendente(@NonNull Activity activity) {
+        ReenvioDeScanAgenda.agendar(activity, ATRASO_DO_REENVIO_MS);
+        if (!PedidoDeAvisos.deveOferecer(activity) || activity.isFinishing() || activity.isDestroyed()) {
+            abrirPrincipal(activity);
+            return;
+        }
+        PedidoDeAvisos.marcarPerguntou(activity);
+        new AlertDialog.Builder(activity)
+                .setTitle(R.string.envio_pendente_titulo)
+                .setMessage(R.string.envio_pendente_mensagem)
+                .setCancelable(false)
+                .setPositiveButton(R.string.envio_pendente_avisar, (d, w) ->
+                        PedidoDeAvisos.pedir(activity, concedida -> abrirPrincipal(activity)))
+                .setNegativeButton(R.string.avisos_agora_nao, (d, w) -> abrirPrincipal(activity))
+                .show();
+    }
+
+    private static void abrirPrincipal(@NonNull Activity activity) {
+        Intent intent = new Intent(
+                activity,
+                PrincipalActivity.class
+        );
+
+        intent.addFlags(
+                Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | Intent.FLAG_ACTIVITY_SINGLE_TOP
+        );
+
+        activity.startActivity(intent);
+        activity.finish();
+    }
+}

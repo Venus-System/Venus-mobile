@@ -1,0 +1,233 @@
+package com.venussystem.venusmobile.view.util;
+
+import android.util.Log;
+import androidx.annotation.NonNull;
+import com.venussystem.venusmobile.domain.scan.ScanIngredientPolicy;
+import com.venussystem.venusmobile.model.ScanBackData;
+import com.venussystem.venusmobile.model.ScanBackIngredientCandidate;
+import com.venussystem.venusmobile.model.ScanOcrResult;
+import com.venussystem.venusmobile.model.ScanOcrToken;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import static com.venussystem.venusmobile.view.util.ScanBackCompany.extrairContato;
+import static com.venussystem.venusmobile.view.util.ScanBackCompany.extrairEndereco;
+import static com.venussystem.venusmobile.view.util.ScanBackCompany.extrairFabricante;
+import static com.venussystem.venusmobile.view.util.ScanBackCompany.extrairPais;
+import static com.venussystem.venusmobile.view.util.ScanBackIngredientSection.IngredientSection;
+import static com.venussystem.venusmobile.view.util.ScanBackIngredientSection.localizarSecaoIngredientes;
+import static com.venussystem.venusmobile.view.util.ScanBackIngredients.extrairIngredientes;
+import static com.venussystem.venusmobile.view.util.ScanBackIngredients.gerarAssinaturaOCR;
+import static com.venussystem.venusmobile.view.util.ScanBackLabelSections.extrairClaims;
+import static com.venussystem.venusmobile.view.util.ScanBackLabelSections.extrairOtherText;
+import static com.venussystem.venusmobile.view.util.ScanBackLabelSections.extrairSeguranca;
+import static com.venussystem.venusmobile.view.util.ScanBackLabelSections.extrairUso;
+import static com.venussystem.venusmobile.view.util.ScanBackMetadata.extrairBarcode;
+import static com.venussystem.venusmobile.view.util.ScanBackMetadata.extrairConteudo;
+import static com.venussystem.venusmobile.view.util.ScanBackMetadata.extrairLote;
+import static com.venussystem.venusmobile.view.util.ScanBackMetadata.extrairRegistro;
+import static com.venussystem.venusmobile.view.util.ScanBackRules.EMPTY;
+import static com.venussystem.venusmobile.view.util.ScanBackRules.TAG;
+import static com.venussystem.venusmobile.view.util.ScanBackText.compactarEspacos;
+import static com.venussystem.venusmobile.view.util.ScanBackText.joinLines;
+import static com.venussystem.venusmobile.view.util.ScanBackText.normalizar;
+import static com.venussystem.venusmobile.view.util.ScanBackText.normalizarLinhas;
+
+public final class ScanBackExtractor {
+
+    private ScanBackExtractor() {
+    }
+
+    @NonNull
+    public static ScanBackData extract(
+            @NonNull ScanOcrResult ocr
+    ) {
+        return extract(
+                ocr.getFullText(),
+                ocr.getLines(),
+                ocr.getTokens()
+        );
+    }
+
+    @NonNull
+    public static ScanBackData extract(
+            @NonNull List<String> ocrLines
+    ) {
+        String full =
+                joinLines(
+                        ocrLines
+                );
+        return extract(
+                full,
+                ocrLines
+        );
+    }
+
+    @NonNull
+    public static ScanBackData extract(
+            @NonNull String fullText,
+            @NonNull List<String> sourceLines
+    ) {
+        return extract(
+                fullText,
+                sourceLines,
+                Collections.emptyList()
+        );
+    }
+
+    @NonNull
+    public static ScanBackData extract(
+            @NonNull String fullText,
+            @NonNull List<String> sourceLines,
+            @NonNull List<ScanOcrToken> spatialTokens
+    ) {
+        List<String> originalLines =
+                normalizarLinhas(
+                        sourceLines
+                );
+        List<String> lines = originalLines;
+        List<ScanOcrToken> orderedTokens = new ArrayList<>();
+        List<List<ScanOcrToken>> visualRows = ScanBackSpatialLayout.rows(sourceLines, spatialTokens);
+        if (!visualRows.isEmpty()) {
+            lines = new ArrayList<>();
+            for (int rowIndex = 0; rowIndex < visualRows.size(); rowIndex++) {
+                List<ScanOcrToken> row = visualRows.get(rowIndex);
+                lines.add(ScanBackSpatialLayout.join(row));
+                for (int element = 0; element < row.size(); element++) {
+                    ScanOcrToken t = row.get(element);
+                    orderedTokens.add(new ScanOcrToken(t.getText(), t.getBoundingBox(),
+                            t.getConfidence(), t.getRotation(), t.getBlockIndex(), rowIndex, element));
+                }
+            }
+            if (orderedTokens.size() != spatialTokens.size()) {
+                Log.d(TAG, "BACK_LAYOUT_FALLBACK_REASON=TOKEN_COVERAGE_MISMATCH");
+                visualRows = Collections.emptyList();
+                lines = originalLines;
+                orderedTokens.clear();
+            }
+        }
+        Log.d(TAG, "BACK_LAYOUT=" + (visualRows.isEmpty() ? "TEXT_FALLBACK" : "GEOMETRIC_ROWS")
+                + " rows=" + lines.size());
+        String normalizedFullText =
+                compactarEspacos(
+                        normalizar(
+                                fullText
+                        )
+                );
+        if (normalizedFullText.isEmpty()) {
+            Log.d(
+                    TAG,
+                    "TEXTO COMPLETO NORMALIZADO: vazio"
+            );
+        }
+        IngredientSection section =
+                localizarSecaoIngredientes(
+                        lines
+                );
+        List<ScanBackIngredientCandidate> ingredients =
+                extrairIngredientes(
+                        section,
+                        orderedTokens
+                );
+        Log.d(
+                TAG,
+                "SPATIAL OCR: tokens="
+                        + (spatialTokens == null
+                        ? 0
+                        : spatialTokens.size())
+        );
+        String manufacturer =
+                extrairFabricante(
+                        lines
+                );
+        String address =
+                extrairEndereco(
+                        lines,
+                        manufacturer
+                );
+        String contact =
+                extrairContato(
+                        lines
+                );
+        String country =
+                extrairPais(
+                        lines,
+                        manufacturer
+                );
+        String batch =
+                extrairLote(
+                        lines
+                );
+        String registration =
+                extrairRegistro(
+                        lines
+                );
+        String netContent =
+                extrairConteudo(
+                        lines
+                );
+        String usage =
+                extrairUso(
+                        lines,
+                        section
+                );
+        String precautions =
+                extrairSeguranca(
+                        lines,
+                        false,
+                        section
+                );
+        String warnings =
+                extrairSeguranca(
+                        lines,
+                        true,
+                        section
+                );
+        List<String> claims =
+                extrairClaims(
+                        lines
+                );
+        String barcode =
+                extrairBarcode(
+                        lines
+                );
+        String otherText =
+                extrairOtherText(
+                        lines,
+                        section
+                );
+        String signature =
+                gerarAssinaturaOCR(
+                        ingredients
+                );
+        long uncertain = ingredients.stream().filter(i ->
+                !ScanIngredientPolicy.isRecognized(i.getNormalizedName())).count();
+        Log.d(TAG, "INGREDIENT_REVIEW_REQUIRED="
+                + (!section.found || ingredients.isEmpty() || uncertain > 0
+                || ScanIngredientPolicy.hasAdministrativeText(section.rawText))
+                + " uncertain=" + uncertain + " candidates=" + ingredients.size());
+        return new ScanBackData(
+                fullText == null
+                        ? EMPTY
+                        : fullText,
+                originalLines,
+                section.found,
+                section.rawText,
+                ingredients,
+                manufacturer,
+                address,
+                contact,
+                country,
+                batch,
+                registration,
+                netContent,
+                usage,
+                precautions,
+                warnings,
+                claims,
+                barcode,
+                otherText,
+                signature
+        );
+    }
+}

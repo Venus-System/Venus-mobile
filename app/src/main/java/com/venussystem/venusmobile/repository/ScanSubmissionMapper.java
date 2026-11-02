@@ -1,0 +1,182 @@
+package com.venussystem.venusmobile.repository;
+
+import com.venussystem.venusmobile.model.ScanBackData;
+import com.venussystem.venusmobile.domain.scan.ScanIngredientPolicy;
+import com.venussystem.venusmobile.model.ScanBackIngredientCandidate;
+import com.venussystem.venusmobile.model.ScanSubmissionDraft;
+import com.venussystem.venusmobile.model.ScanPhotoQuality;
+import com.venussystem.venusmobile.repository.api.dto.ScanSessionRequest;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
+public final class ScanSubmissionMapper {
+    private ScanSubmissionMapper() { }
+    private static final int EXTRACTED_FIELD_LIMIT = 2000;
+    private static final Set<String> GENERIC_FRONT_WORDS = new HashSet<>(Arrays.asList(
+            "CREME", "LOCAO", "GEL", "SPRAY", "AEROSOL", "FRESH", "ORIGINAL",
+            "PROTECAO", "ANTITRANSPIRANTE", "ANTIPERSPIRANTE", "PERFUME", "MASCULINO",
+            "FEMININO", "INFANTIL", "DESODORANTE", "HIDRATANTE", "NOVO", "NOVA",
+            "SHAMPOO", "CONDICIONADOR", "SABONETE", "LOÇÃO", "BODY", "LOTION",
+            "DEODORANT", "KIT", "PRODUTO", "CUIDADO", "CUIDADOS",
+            "CONTROLE", "INTELIGENTE", "ODOR", "ODORE", "SUOR", "INVISIBLE"
+    ));
+
+    public static ScanSessionRequest prepare(ScanSubmissionDraft draft, String uid,
+            ScanSessionRequest.Device device, ScanSessionRequest.QualityCheck quality) {
+        return prepare(draft, uid, device, quality, null);
+    }
+
+    public static ScanSessionRequest prepare(ScanSubmissionDraft draft, String uid,
+            ScanSessionRequest.Device device, ScanSessionRequest.QualityCheck quality,
+            ScanIngredientCatalog.Report ingredientCatalog) {
+        if (draft == null || draft.getBackData() == null)
+            throw new IllegalArgumentException("A leitura da frente e do verso precisa ser concluída.");
+        if (uid == null || !uid.equals(draft.getOwnerUid()))
+            throw new IllegalArgumentException("O rascunho pertence a outra conta.");
+        ScanSessionRequest request = new ScanSessionRequest();
+        request.scanId = draft.getScanId();
+        request.firebaseUid = uid;
+        request.startedAt = draft.getStartedAt();
+        request.finishedAt = draft.getFinishedAt();
+        request.device = device;
+        request.qualityCheck = quality;
+        if (request.qualityCheck == null && draft.getPhotoQuality() != null) {
+            ScanPhotoQuality q = draft.getPhotoQuality();
+            request.qualityCheck = new ScanSessionRequest.QualityCheck(q.getBlurScore(),
+                    q.getBrightness(), q.isBackgroundOk(), qualityStatusForApi(q.getStatus()));
+        } else if (request.qualityCheck != null) {
+            request.qualityCheck = new ScanSessionRequest.QualityCheck(
+                    request.qualityCheck.blurScore,
+                    request.qualityCheck.brightness,
+                    request.qualityCheck.backgroundOk,
+                    qualityStatusForApi(request.qualityCheck.status));
+        }
+        request.images = new ScanSessionRequest.Images();
+        request.ocr = new ScanSessionRequest.Ocr();
+        request.ocr.front = new ScanSessionRequest.Front();
+        request.ocr.front.fullText = draft.getFrontOcrText();
+        request.ocr.front.lines = new ArrayList<>(draft.getFrontOcrLines());
+        ScanSessionRequest.FrontExtracted front = new ScanSessionRequest.FrontExtracted();
+        front.brand = bestFrontCandidate(draft.getBrandCandidates());
+        front.productName = bestFrontCandidate(draft.getProductCandidates());
+        front.presentation = bestFrontCandidate(draft.getPresentationCandidates());
+        front.capacity = draft.getCapacity();
+        request.ocr.front.extracted = front;
+        request.ocr.back = new ScanSessionRequest.Back();
+        request.ocr.back.fullText = draft.getBackOcrText();
+        request.ocr.back.lines = new ArrayList<>(draft.getBackOcrLines());
+        ScanBackData data = draft.getBackData();
+        if (!data.isIngredientSectionFound())
+            throw new IllegalArgumentException("A composição precisa de uma nova leitura.");
+        ScanSessionRequest.BackExtracted back = new ScanSessionRequest.BackExtracted();
+        back.ingredientsText = data.getIngredientsRawText();
+        back.manufacturer = capped(data.getManufacturer());
+        back.manufacturerAddress = capped(data.getManufacturerAddress());
+        back.contact = capped(data.getContact());
+        back.country = capped(data.getCountry());
+        back.batch = capped(data.getBatch());
+        back.registrationNumber = capped(data.getRegistrationNumber());
+        back.netContent = capped(data.getNetContent());
+        back.usage = capped(data.getUsage());
+        back.precautions = capped(data.getPrecautions());
+        back.warnings = capped(data.getWarnings());
+        back.barcode = capped(data.getBarcode());
+        back.otherText = capped(data.getOtherText());
+        back.claims = new ArrayList<>(data.getClaims());
+        request.ocr.back.extracted = back;
+        request.ingredients = new ArrayList<>();
+        if (ingredientCatalog != null) {
+            ScanIngredientCatalogReportValidator.validate(
+                    ingredientCatalog,
+                    data.getIngredients()
+            );
+        }
+        for (ScanBackIngredientCandidate i : data.getIngredients()) {
+            String wireName = ingredientNameForWire(i, ingredientCatalog);
+            request.ingredients.add(new ScanSessionRequest.Ingredient(i.getPosition(), wireName));
+        }
+        ScanSubmissionValidator.validateIngredientQuality(request);
+        return request;
+    }
+
+    private static String ingredientNameForWire(ScanBackIngredientCandidate candidate,
+                                                ScanIngredientCatalog.Report report) {
+        if (report != null && report.matches != null) {
+            for (ScanIngredientCatalog.Match match : report.matches) {
+                if (match != null && match.position == candidate.getPosition()) {
+                    if (ScanIngredientCatalog.RESOLUTION_RESOLVED.equals(match.resolutionStatus)
+                            && match.inciName != null && !match.inciName.trim().isEmpty()) {
+                        return match.inciName.trim();
+                    }
+                    return candidate.getRawName();
+                }
+            }
+        }
+        String raw = candidate.getRawName();
+        String corrected = ScanIngredientPolicy.correct(raw);
+        return corrected.equals(ScanIngredientPolicy.normalize(raw)) ? raw : corrected;
+    }
+
+    private static String capped(String value) {
+        return value == null || value.length() <= EXTRACTED_FIELD_LIMIT
+                ? value : value.substring(0, EXTRACTED_FIELD_LIMIT);
+    }
+
+    private static String qualityStatusForApi(String status) {
+        return status;
+    }
+
+    static String bestFrontCandidate(List<String> values) {
+        if (values == null || values.isEmpty()) return null;
+        boolean hasInformativeCandidate = false;
+        for (String candidate : values) {
+            if (isInformativeFrontCandidate(candidate)) {
+                hasInformativeCandidate = true;
+                break;
+            }
+        }
+        String best = null;
+        int bestScore = Integer.MIN_VALUE;
+        for (int index = 0; index < values.size(); index++) {
+            String candidate = values.get(index);
+            if (candidate == null) continue;
+            String value = candidate.trim().replaceAll("\\s+", " ");
+            if (value.length() < 2 || value.length() > 80 || !value.matches(".*[A-Za-zÀ-ÿ].*")) continue;
+            String normalized = value.toUpperCase(Locale.ROOT);
+            if (hasInformativeCandidate && !isInformativeFrontCandidate(value)) {
+                continue;
+            }
+            int score = 100 - index * 3;
+            int words = normalized.split("\\s+").length;
+            score += Math.min(words, 3) * 4;
+            if (value.length() <= 40) score += 5;
+            if (normalized.matches(".*\\d.*")) score -= 12;
+            for (String token : normalized.split("\\s+")) {
+                if (GENERIC_FRONT_WORDS.contains(token)) score -= 18;
+            }
+            if (score > bestScore) {
+                best = value;
+                bestScore = score;
+            }
+        }
+        return best;
+    }
+
+    private static boolean isInformativeFrontCandidate(String candidate) {
+        if (candidate == null) return false;
+        String normalized = candidate.trim()
+                .replaceAll("\\s+", " ")
+                .toUpperCase(Locale.ROOT);
+        if (normalized.length() < 2) return false;
+        for (String token : normalized.split("\\s+")) {
+            String clean = token.replaceAll("[^A-ZÀ-ÿ]", "");
+            if (clean.isEmpty()) continue;
+            if (!GENERIC_FRONT_WORDS.contains(clean)) return true;
+        }
+        return false;
+    }
+}

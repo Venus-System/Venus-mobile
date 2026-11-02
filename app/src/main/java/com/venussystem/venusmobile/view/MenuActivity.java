@@ -5,11 +5,7 @@ import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Usuario;
@@ -22,13 +18,7 @@ public class MenuActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_menu);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        InsetsSistema.aplicar(this, R.layout.activity_menu);
 
         mostrarUsuario();
 
@@ -39,7 +29,7 @@ public class MenuActivity extends AppCompatActivity {
 
     private void reiniciarTeste() {
         new PerfilRepository(this).limpar();
-        autenticacao.sair();
+        autenticacao.sair(this);
         Toast.makeText(this, R.string.questionario_reiniciado, Toast.LENGTH_SHORT).show();
 
         Intent intent = new Intent(this, LoginActivity.class);
@@ -59,7 +49,7 @@ public class MenuActivity extends AppCompatActivity {
     }
 
     private void sair() {
-        autenticacao.sair();
+        autenticacao.sair(this);
 
         Intent intent = new Intent(this, BemVindoActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

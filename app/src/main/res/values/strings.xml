@@ -34,10 +34,16 @@
     <string name="pesquisa_subtitulo">Suas respostas vão nos ajudar a personalizar suas análises de produtos.</string>
     <string name="pesquisa_responder_depois"><u>Responder mais tarde →</u></string>
 
+    <string name="pergunta_genero">Qual é o seu gênero?</string>
+    <string name="genero_feminino">Feminino</string>
+    <string name="genero_masculino">Masculino</string>
+    <string name="genero_nao_binario">Não binário</string>
+    <string name="genero_outro">Outro</string>
+    <string name="genero_nao_identificar">Prefiro não identificar</string>
+
     <string name="pergunta_tipo_cabelo">Qual seu tipo de cabelo?</string>
     <string name="pergunta_ajuda_cabelo"><u>Qual é meu tipo de cabelo?</u></string>
 
-    <!-- Couro cabeludo -->
     <string name="pergunta_couro">Como é seu couro cabeludo?</string>
     <string name="ajuda_couro"><u>Qual é seu couro cabeludo?</u></string>
     <string name="couro_normal">Normal</string>
@@ -47,7 +53,6 @@
     <string name="couro_caspa">Com Caspa</string>
     <string name="couro_outro">Não sei/Outro</string>
 
-    <!-- Tipo de pele -->
     <string name="pergunta_tipo_pele">Qual seu tipo de pele?</string>
     <string name="ajuda_tipo_pele"><u>Qual é meu tipo de pele?</u></string>
     <string name="pele_oleoso">Oleoso</string>
@@ -56,14 +61,30 @@
     <string name="pele_normal">Normal</string>
     <string name="pele_sensivel">Sensível</string>
 
-    <!-- Sensibilidade da pele -->
     <string name="pergunta_sensibilidade">Qual a sensibilidade da sua pele?</string>
     <string name="ajuda_sensibilidade"><u>Qual é a sensibilidade da minha pele?</u></string>
     <string name="sens_baixa">Baixa</string>
     <string name="sens_media">Média</string>
     <string name="sens_alta">Alta</string>
 
-    <!-- Fototipo -->
+    <string name="pergunta_condicoes_pele">Você tem alguma condição de pele?</string>
+    <string name="condicao_acne">Tendência a acne</string>
+    <string name="condicao_rosacea">Rosácea</string>
+    <string name="condicao_eczema">Eczema</string>
+    <string name="condicao_hiperpigmentacao">Hiperpigmentação</string>
+    <string name="condicao_melasma">Melasma</string>
+    <string name="condicao_nenhuma">Nenhuma delas</string>
+
+    <string name="pergunta_gestacao">Você está grávida ou amamentando?</string>
+    <string name="gestacao_gravida">Estou grávida</string>
+    <string name="gestacao_amamentando">Estou amamentando</string>
+    <string name="gestacao_nenhuma">Nenhuma das duas</string>
+    <string name="gestacao_nao_dizer">Prefiro não dizer</string>
+    <string name="gestacao_dica">Alguns ingredientes mudam de recomendação nesse período.</string>
+
+    <string name="pergunta_pode_marcar_varias">Você pode marcar mais de uma opção.</string>
+    <string name="pergunta_escolha_ao_menos_uma">Escolha ao menos uma opção para continuar</string>
+
     <string name="pergunta_fototipo">Qual o seu fototipo de pele?</string>
     <string name="ajuda_fototipo"><u>Qual é meu fotótipo?</u></string>
     <string name="foto_i">I</string>
@@ -73,7 +94,6 @@
     <string name="foto_v">V</string>
     <string name="foto_vi">VI</string>
 
-    <!-- Faixa etaria -->
     <string name="pergunta_faixa_etaria">Qual sua faixa etária?</string>
     <string name="faixa_menos_13">Menos de 13</string>
     <string name="faixa_13_17">Entre 13 e 17</string>
@@ -82,33 +102,36 @@
     <string name="faixa_35_44">Entre 35 e 44</string>
     <string name="faixa_45_54">Entre 45 e 54</string>
     <string name="faixa_acima_55">Acima de 55</string>
+    <string name="faixa_selecione">Selecione a sua faixa etária</string>
 
-    <!-- Preferencias e alergias: busca com selecao multipla -->
     <string name="pergunta_preferencia">Você possui alguma preferência?</string>
     <string name="pergunta_alergia">Você possui alguma alergia?</string>
     <string name="hint_buscar_preferencia">Pesquisar preferência</string>
     <string name="hint_buscar_alergia">Pesquisar alergia</string>
     <string name="desc_remover">Remover</string>
 
-    <!-- Fim do questionario -->
     <string name="perfil_pronto_titulo">Seu perfil está pronto! :)</string>
-    <string name="perfil_pronto_resumo">Agora o &lt;b>Venus&lt;/b> já conhece um pouco melhor suas &lt;b>necessidades&lt;/b> e &lt;b>preferências&lt;/b>.</string>
+    <string name="perfil_pronto_resumo">Agora o <b>Venus</b> já conhece um pouco melhor suas <b>necessidades</b> e <b>preferências</b>.</string>
     <string name="perfil_pronto_detalhe">Essas informações serão usadas para personalizar suas análises de produtos e destacar o que é mais relevante para você.</string>
     <string name="perfil_pronto_acao">Começar</string>
     <string name="pergunta_escolha_uma">Escolha uma opção para continuar</string>
 
-    <string name="cabelo_1">1</string>
+    <string name="cabelo_1a">1A</string>
+    <string name="cabelo_1b">1B</string>
+    <string name="cabelo_1c">1C</string>
     <string name="cabelo_2a">2A</string>
     <string name="cabelo_2b">2B</string>
     <string name="cabelo_2c">2C</string>
     <string name="cabelo_3a">3A</string>
     <string name="cabelo_3b">3B</string>
     <string name="cabelo_3c">3C</string>
+    <string name="cabelo_4a">4A</string>
+    <string name="cabelo_4b">4B</string>
+    <string name="cabelo_4c">4C</string>
 
     <string name="desc_avancar">Avançar</string>
     <string name="acao_avancar">Avançar</string>
 
-    <!-- Sobreposicao de ajuda: tipos de cabelo -->
     <string name="sheet_cabelo_titulo">Qual é o seu tipo de cabelo?</string>
     <string name="sheet_cabelo_descricao">Compare o seu fio com os desenhos e escolha o mais parecido. Na dúvida entre dois, fique com o mais próximo.</string>
     <string name="sheet_entendi">Entendi</string>
@@ -118,6 +141,9 @@
     <string name="sheet_secao_ondulado">Ondulado</string>
     <string name="sheet_secao_cacheado">Cacheado</string>
 
+    <string name="sheet_tipo_1a">1a</string>
+    <string name="sheet_tipo_1b">1b</string>
+    <string name="sheet_tipo_1c">1c</string>
     <string name="sheet_tipo_2a">2a</string>
     <string name="sheet_tipo_2b">2b</string>
     <string name="sheet_tipo_2c">2c</string>
@@ -125,7 +151,9 @@
     <string name="sheet_tipo_3b">3b</string>
     <string name="sheet_tipo_3c">3c</string>
 
-    <string name="sheet_desc_1">Sem ondas, cai reto</string>
+    <string name="sheet_desc_1a">Liso fino e escorrido, sem volume</string>
+    <string name="sheet_desc_1b">Liso com um pouco de corpo e volume</string>
+    <string name="sheet_desc_1c">Liso grosso, com leve curva nas pontas</string>
     <string name="sheet_desc_2a">Onda leve, quase reto</string>
     <string name="sheet_desc_2b">Onda em S definida</string>
     <string name="sheet_desc_2c">Onda marcada, quase cacho</string>
@@ -154,10 +182,7 @@
     <string name="desc_entrar_google">Entrar com o Google</string>
     <string name="desc_cadastrar_google">Cadastrar com o Google</string>
 
-
-    <!-- Navegacao principal -->
-    <string name="nav_inicio">Histórico</string>
-    <string name="nav_busca">Busca</string>
+    <string name="nav_inicio">Início</string>
     <string name="nav_scan">Escanear</string>
     <string name="nav_listas">Minhas listas</string>
     <string name="nav_perfil">Perfil</string>
@@ -165,6 +190,398 @@
     <string name="em_breve">Em breve</string>
     <string name="hint_buscar_produto">Buscar produtos, ingredientes, marcas…</string>
     <string name="busca_sem_resultado">Nenhum produto encontrado</string>
+    <string name="home_sugestoes">Produtos</string>
+    <string name="home_sem_resultado_filtro">Nenhum produto com esse filtro</string>
+    <string name="busca_hint_escolher">Buscar produto para adicionar</string>
+    <string name="desc_filtro">Filtrar produtos</string>
+    <string name="filtro_titulo">Filtros</string>
+    <string name="filtro_limpar">Limpar</string>
+    <string name="filtro_aplicar">Aplicar</string>
+    <string name="filtro_grupo_nota">Nota geral</string>
+    <string name="filtro_nota_boa">Boa (70 ou mais)</string>
+    <string name="filtro_nota_media">Média (40 a 69)</string>
+    <string name="filtro_nota_ruim">Ruim (abaixo de 40)</string>
+    <string name="filtro_so_brasileiras">Só marcas brasileiras</string>
+    <string name="filtro_grupo_categoria">Categoria</string>
+    <string name="filtro_grupo_marca">Marca</string>
     <string name="nota_indisponivel">—</string>
-    <string name="acao_reiniciar_teste">reiniciar teste</string>
+
+    <string name="sheet_couro_titulo">Como é o seu couro cabeludo?</string>
+    <string name="sheet_couro_descricao">Olhe para a raiz, não para o comprimento do fio. O jeito mais fácil é lembrar como ele fica no segundo dia depois de lavar.</string>
+    <string name="sheet_couro_desc_normal">Confortável. Sem coceira, sem oleosidade demais e sem descamação.</string>
+    <string name="sheet_couro_desc_seco">Repuxa e pode coçar. Raiz áspera, sem brilho, com fios quebradiços.</string>
+    <string name="sheet_couro_desc_sensivel">Arde, coça ou fica vermelho fácil, mesmo com shampoo comum.</string>
+    <string name="sheet_couro_desc_oleoso">Fica pesado e brilhoso em um dia. A raiz gruda mesmo lavando sempre.</string>
+    <string name="sheet_couro_desc_caspa">Descamação visível, em flocos brancos ou amarelados, com coceira.</string>
+
+    <string name="sheet_pele_titulo">Qual é o seu tipo de pele?</string>
+    <string name="sheet_pele_descricao">Pense em como a sua pele fica algumas horas depois da limpeza, sem nenhum produto. É esse estado natural que define o tipo.</string>
+    <string name="sheet_pele_desc_normal">Equilibrada. Sem brilho e sem repuxo.</string>
+    <string name="sheet_pele_desc_seca">Repuxa, descama e pede hidratação.</string>
+    <string name="sheet_pele_desc_misto">Zona T oleosa, bochechas normais.</string>
+    <string name="sheet_pele_desc_oleoso">Brilho o dia todo e poros abertos.</string>
+    <string name="sheet_pele_desc_sensivel">Reage fácil, com ardência ou vermelhidão.</string>
+
+    <string name="sheet_fototipo_titulo">Qual é o seu fototipo de pele?</string>
+    <string name="sheet_fototipo_descricao">O fototipo descreve como a sua pele reage ao sol, e não a cor dela. Pense no que acontece depois de meia hora de sol forte, sem protetor.</string>
+    <string name="sheet_fototipo_desc_1">Sempre queima, nunca bronzeia</string>
+    <string name="sheet_fototipo_desc_2">Quase sempre queima, bronzeia pouco</string>
+    <string name="sheet_fototipo_desc_3">Às vezes queima, bronzeia aos poucos</string>
+    <string name="sheet_fototipo_desc_4">Raramente queima, bronzeia bem</string>
+    <string name="sheet_fototipo_desc_5">Quase nunca queima, bronzeia bastante</string>
+    <string name="sheet_fototipo_desc_6">Nunca queima, bronzeia sempre</string>
+
+    <string name="sheet_sens_titulo">Qual é a sensibilidade da sua pele?</string>
+    <string name="sheet_sens_descricao">Sensibilidade não é o mesmo que tipo de pele. Aqui a pergunta é o quanto ela se irrita com produto novo, perfume, sol ou calor.</string>
+    <string name="sheet_sens_desc_baixa">Tolera quase tudo. Raramente arde, coça ou fica vermelha quando você testa um produto novo.</string>
+    <string name="sheet_sens_desc_media">Reage de vez em quando. Ácido, perfume, sol ou calor podem causar ardência ou vermelhidão leve, que passa rápido.</string>
+    <string name="sheet_sens_desc_alta">Reage com facilidade. Ardência, coceira, vermelhidão ou descamação aparecem com frequência, até com produtos suaves.</string>
+
+    <string name="lista_nova">Nova lista</string>
+
+    <string name="lista_label_nome">Nome Da Lista</string>
+    <string name="lista_hint_nome">Coloque seus produtos em ordem</string>
+    <string name="lista_label_descricao">Descrição (Opcional)</string>
+    <string name="lista_hint_descricao">Adicione notas sobre o propósito dessa lista</string>
+    <string name="lista_salvar">Salvar</string>
+    <string name="lista_cancelar">Cancelar</string>
+    <string name="lista_escolher_capa">Escolher capa</string>
+    <string name="lista_adicionar_produto">Adicionar produto</string>
+    <string name="lista_capa_tirar_foto">Tirar foto</string>
+    <string name="lista_capa_galeria">Escolher da galeria</string>
+    <string name="lista_capa_erro">Não foi possível carregar a imagem. Tente de novo.</string>
+    <string name="lista_erro_nome">Dê um nome para a lista</string>
+    <string name="lista_erro_nome_repetido">Você já tem uma lista com esse nome</string>
+    <string name="acao_tentar_de_novo">Tentar de novo</string>
+    <string name="erro_sem_conexao">Não foi possível falar com o servidor. Verifique sua conexão e tente de novo.</string>
+    <string name="historico_titulo">Histórico</string>
+    <string name="historico_hoje">Hoje</string>
+    <string name="historico_vazio">Você ainda não acessou nem escaneou nenhum produto.</string>
+    <string name="historico_em_analise">Em análise</string>
+    <string name="historico_aprovado">Aprovado</string>
+    <string name="historico_recusado">Precisa de revisão</string>
+    <string name="historico_aguardando_sincronizacao">Aguardando sincronização</string>
+    <string name="busca_acordando">Acordando o servidor…\nA primeira busca pode levar até um minuto.</string>
+    <string name="perfil_secao_pele">Pele &amp; cabelo</string>
+    <string name="perfil_secao_pele_sub">A base de toda análise personalizada.</string>
+    <string name="perfil_secao_alergias">Alergias</string>
+    <string name="perfil_secao_alergias_sub">Pelo bem da sua segurança.</string>
+    <string name="perfil_secao_valores">Valores</string>
+    <string name="perfil_secao_valores_sub">O que você não abre mão nas suas escolhas.</string>
+    <string name="perfil_pendente">Aviso: Pendente</string>
+    <string name="perfil_editar">Editar</string>
+    <string name="perfil_ajuda">Ver explicação</string>
+    <string name="perfil_hint_alergia">Pesquisar alergia</string>
+    <string name="perfil_hint_preferencia">Pesquisar preferência</string>
+    <string name="perfil_sem_nome">Perfil Venus</string>
+    <string name="assistente_titulo">Assistente</string>
+    <string name="assistente_hint">Pergunte à Vênus…</string>
+    <string name="assistente_enviar">Enviar</string>
+    <string name="assistente_offline">Esta versão do app foi gerada sem o endereço do servidor de conversas, então não consigo responder de verdade.</string>
+    <string name="assistente_digitando">Digitando…</string>
+    <string name="assistente_digitando_sem_pontos">Digitando</string>
+    <string name="assistente_erro_conexao">Não consegui falar com o servidor. Confira sua internet e tente de novo.</string>
+    <string name="assistente_erro_demora">Demorei demais pra responder e acabei desistindo. Pode perguntar de novo?</string>
+    <string name="assistente_erro_sessao">Sua sessão expirou. Saia e entre de novo na sua conta pra continuar a conversa.</string>
+    <string name="assistente_erro_servidor">Tive um problema pra responder agora. Tenta de novo em instantes?</string>
+    <string name="assistente_erro_limite">Foram muitas mensagens em pouco tempo. Espera um pouquinho e tenta de novo?</string>
+    <string name="assistente_erro_mensagem">Não consegui ler essa mensagem. Tenta escrever de um jeito mais curto?</string>
+    <string name="assistente_nova_conversa">Nova conversa</string>
+    <string name="assistente_nova_conversa_titulo">Começar uma conversa nova?</string>
+    <string name="assistente_nova_conversa_texto">As mensagens de agora saem da tela. O que a Vênus já sabe sobre você continua valendo.</string>
+    <string name="assistente_nova_conversa_confirmar">Começar</string>
+    <string name="desc_perguntar_venus">Perguntar à Vênus sobre este produto</string>
+    <string name="perfil_genero">Gênero</string>
+    <string name="perfil_tipo_pele">Tipo de Pele</string>
+    <string name="perfil_fototipo">Fototipo de Pele</string>
+    <string name="perfil_sensibilidade">Sensibilidade de Pele</string>
+    <string name="perfil_condicoes_pele">Condições de Pele</string>
+    <string name="perfil_tipo_cabelo">Tipo de Cabelo</string>
+    <string name="perfil_couro">Couro Cabeludo</string>
+    <string name="perfil_faixa_etaria">Faixa Etária</string>
+    <string name="perfil_gestacao">Gestação e Amamentação</string>
+    <string name="modal_atual">Atual: %1$s</string>
+    <string name="lista_titulo">Lista</string>
+    <string name="lista_vazia">Sua lista está vazia</string>
+    <string name="lista_criada_por">Criado por %1$s</string>
+    <string name="desc_mais_opcoes">Mais opções</string>
+    <string name="perfil_voltar_ao_login">Voltar ao login</string>
+    <string name="perfil_trocar_foto">Alterar foto de perfil</string>
+
+    <string name="analise_titulo">Produtos em análise</string>
+    <string name="analise_detalhe_titulo">Detalhes do envio</string>
+    <string name="analise_vazio_titulo">Nenhum produto enviado</string>
+    <string name="analise_vazio">Quando você escanear um produto que ainda não está no Venus e mandar para a gente, ele aparece aqui até ser analisado.</string>
+    <string name="analise_sem_nome">Produto sem nome</string>
+    <string name="analise_enviado_em">Enviado em %1$s</string>
+    <string name="analise_aprovado_em">Aprovado em %1$s</string>
+    <string name="analise_recusado_em">Recusado em %1$s</string>
+    <string name="analise_frente">Frente</string>
+    <string name="analise_verso">Verso</string>
+    <string name="analise_motivo_recusa">Motivo da recusa</string>
+    <string name="analise_ver_produto">Ver produto</string>
+    <string name="desc_foto_frente_enviada">Foto da frente do produto enviado</string>
+    <string name="desc_foto_verso_enviada">Foto do verso do produto enviado</string>
+    <string name="situacao_aguardando">Aguardando análise</string>
+    <string name="situacao_em_analise">Em análise</string>
+    <string name="situacao_aprovado">Aprovado</string>
+    <string name="situacao_recusado">Recusado</string>
+    <string name="situacao_aguardando_explicacao">Recebemos o seu envio. Ele está na fila para a nossa equipe conferir.</string>
+    <string name="situacao_em_analise_explicacao">Nossa equipe está conferindo as fotos e os dados do produto.</string>
+    <string name="situacao_aprovado_explicacao">Pronto! O produto já está no catálogo do Venus.</string>
+    <string name="situacao_aprovado_aguardando_catalogo_explicacao">Aprovado! Em breve o produto aparece no catálogo do Venus.</string>
+    <string name="situacao_recusado_explicacao">Não conseguimos adicionar este produto ao catálogo.</string>
+    <string name="foto_perfil_tirar">Tirar foto</string>
+    <string name="foto_perfil_galeria">Escolher da galeria</string>
+    <string name="foto_perfil_erro">Não foi possível usar essa imagem. Tente outra.</string>
+    <string name="desc_foto_perfil">Foto de perfil</string>
+    <string name="lista_editar_nome">Editar nome</string>
+    <string name="lista_editar_descricao">Editar descrição</string>
+    <string name="lista_excluir">Excluir lista</string>
+    <string name="lista_excluir_titulo">Excluir esta lista?</string>
+    <string name="lista_excluir_mensagem">Os produtos adicionados nela também serão removidos. Essa ação não pode ser desfeita.</string>
+    <string name="acao_excluir">Excluir</string>
+    <string name="produto_aba_avaliacao">Avaliação</string>
+    <string name="produto_aba_match">Match com você</string>
+    <string name="produto_aba_alternativas">Alternativas</string>
+    <string name="desc_salvar_na_lista">Salvar em uma lista</string>
+    <string name="produto_salvo_na_lista">Salvo em %1$s</string>
+    <string name="produto_removido_da_lista">Removido de %1$s</string>
+
+    <string name="desc_curtir">Curtir produto</string>
+    <string name="desc_descurtir">Descurtir produto</string>
+    <string name="produto_curtido">Adicionado aos curtidos</string>
+    <string name="produto_descurtido">Removido dos curtidos</string>
+    <string name="curtidos_titulo">Produtos curtidos</string>
+    <string name="curtidos_vazio_titulo">Nenhum produto curtido</string>
+    <string name="curtidos_vazio">Toque no coração na tela de um produto para guardar aqui os que você gostou.</string>
+
+    <string name="listas_secao_fixas">Listas fixas</string>
+    <string name="listas_secao_criadas">Listas criadas</string>
+    <string name="produto_nova_lista">+ Nova lista</string>
+    <string name="listas_vazio">Você ainda não tem listas. Toque no + para criar a primeira e guardar os produtos que quiser.</string>
+    <string name="produto_titulo_ingredientes">Ingredientes</string>
+    <string name="produto_ingredientes_erro">Não foi possível carregar os ingredientes agora.</string>
+    <string name="produto_relatar_erro">Encontrou algo errado no cadastro deste produto? Clique aqui e informe a gente. Obrigado.</string>
+    <string name="produto_match_indisponivel">Não foi possível calcular o match deste produto agora. Tente de novo em instantes.</string>
+    <string name="produto_match_sem_perfil">Responda o questionário do seu perfil para ver como este produto combina com você.</string>
+    <string name="produto_match_para_voce">Para você, %1$s</string>
+    <string name="produto_match_para_voce_sem_nome">Para você</string>
+    <string name="produto_match_cruzado">Cruzado com seu perfil: %1$s</string>
+    <string name="produto_match_perfil_sem_etiquetas">Seu perfil ainda não tem pontos no catálogo da Venus</string>
+    <string name="produto_match_rotulo_para_voce">para você</string>
+    <string name="produto_match_rotulo_nota_geral">nota geral</string>
+    <string name="produto_match_nota_pessoal_descricao">Nota para você: %1$d de 100</string>
+    <string name="produto_match_calculando_descricao">Calculando a sua nota</string>
+    <string name="produto_match_conta">A nota soma duas partes: %1$s de 35 pela qualidade do produto e %2$s de 65 por combinar com o seu perfil.</string>
+    <string name="produto_match_conta_limitada">A nota soma duas partes: %1$s de 35 pela qualidade do produto e %2$s de 65 por combinar com o seu perfil. Um alerta do seu perfil baixou a nota.</string>
+    <string name="produto_match_erro_perfil">Complete o seu perfil pra ver a nota feita pra você.</string>
+    <string name="produto_match_erro_produto">Não achamos esse produto.</string>
+    <string name="produto_match_erro_em_revisao">Esse produto ainda está em revisão. A nota sai assim que terminar.</string>
+    <string name="produto_match_erro_sem_ingredientes">Esse produto ainda não tem a lista de ingredientes, então não dá pra dar a nota.</string>
+    <string name="produto_match_erro_calculo">Não deu pra calcular a nota agora. Tenta de novo mais tarde.</string>
+    <string name="produto_match_faixa_ideal">Ideal para você</string>
+    <string name="produto_match_faixa_recomendado">Recomendado para você</string>
+    <string name="produto_match_faixa_aceitavel">Aceitável para você</string>
+    <string name="produto_match_faixa_contraindicado">Contraindicado para você</string>
+    <string name="produto_match_nota_descricao">Nota geral do produto: %1$d de 100</string>
+    <string name="produto_match_veredito_sem_alertas">Nenhum ponto de atenção</string>
+    <string name="produto_match_veredito_nao_recomendado">Não recomendado para você</string>
+    <string name="produto_match_veredito_atencao">Atenção para o seu perfil</string>
+    <string name="produto_match_veredito_combina">Combina com você</string>
+    <string name="produto_match_na_formula">Na fórmula:</string>
+    <string name="produto_match_sem_efeitos">Os ingredientes ainda não têm efeitos no catálogo da Venus.</string>
+    <string name="produto_match_sem_alergenos">Sem alergia</string>
+    <string name="produto_match_sem_alergenos_texto">Nenhum ingrediente deste produto está nas alergias que você cadastrou.</string>
+    <string name="produto_match_contem_alergeno">Contém alérgeno seu</string>
+    <string name="produto_match_sem_alergias_marcadas">Nenhuma alergia marcada</string>
+    <string name="produto_match_marque_alergias">Marque suas alergias no perfil para conferirmos.</string>
+    <string name="produto_match_ver_alternativas">Ver alternativas</string>
+    <string name="produto_match_aviso">Indicativo, com base no catálogo da Venus. Não substitui orientação médica.</string>
+    <string name="match_titulo_contem_silicone">Contém silicone</string>
+    <string name="match_titulo_contem_sulfato">Contém sulfato</string>
+    <string name="match_titulo_contem_parabeno">Contém parabeno</string>
+    <string name="match_titulo_cautela_gestacao">Use com cautela na gestação</string>
+    <string name="match_titulo_cautela_amamentacao">Use com cautela na amamentação</string>
+    <string name="match_titulo_atencao_reativa">Atenção para pele reativa</string>
+    <string name="match_titulo_contraindicado_gestacao">Contraindicado na gestação</string>
+    <string name="match_titulo_ajuda_pele_seca">Ajuda na pele seca</string>
+    <string name="match_titulo_ajuda_frizz">Ajuda a controlar o frizz</string>
+    <string name="match_titulo_ajuda_caspa">Ajuda no controle da caspa</string>
+    <string name="match_titulo_bom_para">Bom para %1$s</string>
+    <string name="match_titulo_atencao_para">Atenção para %1$s</string>
+    <string name="match_titulo_nada_contra">Nada contra %1$s</string>
+    <string name="match_titulo_sem_silicones">Sem silicones</string>
+    <string name="match_titulo_sem_sulfatos">Sem sulfatos</string>
+    <string name="match_titulo_sem_parabenos">Sem parabenos</string>
+    <string name="match_titulo_sem_contraindicado_gestacao">Sem ingredientes contraindicados na gestação</string>
+    <string name="match_titulo_sem_cautela_amamentacao">Sem ingredientes de cautela na amamentação</string>
+    <string name="match_titulo_sem_atencao_reativa">Sem pontos de atenção para pele reativa</string>
+    <string name="match_linha_evitar_silicones">Você marcou evitar silicones e a fórmula tem %1$s.</string>
+    <string name="match_linha_evitar_sulfatos">Você marcou evitar sulfatos e a fórmula tem %1$s.</string>
+    <string name="match_linha_evitar_parabenos">Você marcou evitar parabenos e a fórmula tem %1$s.</string>
+    <string name="match_linha_encontrado">Encontramos %1$s na fórmula.</string>
+    <string name="match_linha_beneficio">Graças a %1$s.</string>
+    <string name="match_ingredientes_dois">%1$s e %2$s</string>
+    <string name="match_ingredientes_mais">%1$s e mais %2$d</string>
+    <string name="match_chip_hidratacao">Hidratação</string>
+    <string name="match_chip_barreira">Barreira da pele</string>
+    <string name="match_chip_protecao_uv">Proteção UV</string>
+    <string name="match_chip_antioxidante">Antioxidante</string>
+    <string name="match_chip_antifrizz">Antifrizz</string>
+    <string name="match_chip_coloracao">Coloração</string>
+    <string name="match_chip_anticaspa">Anticaspa</string>
+    <string name="match_chip_origem_vegetal">Origem vegetal</string>
+    <string name="match_chip_aditivo_biologico">Aditivo biológico</string>
+    <string name="match_chip_suor_odor">Controle de suor e odor</string>
+    <string name="match_chip_silicone">Silicone</string>
+    <string name="match_chip_sulfato">Sulfato</string>
+    <string name="match_chip_parabeno">Parabeno</string>
+    <string name="match_chip_gestacao">Evitar na gestação</string>
+    <string name="match_chip_amamentacao">Cautela na amamentação</string>
+    <string name="match_chip_pele_reativa">Atenção p/ pele reativa</string>
+    <string name="produto_sem_alternativas">Não encontramos outros produtos desta categoria ainda.</string>
+    <string name="scan_passo_1_titulo">Passo 1:</string>
+    <string name="scan_passo_1_descricao"><b>Fotografe</b> a frente.</string>
+    <string name="scan_passo_1_ajuda">Mostre a embalagem inteira em um fundo neutro.</string>
+
+    <string name="scan_foto_1_instrucao">Aproxime um pouco mais ;)</string>
+    <string name="scan_foto_1_sucesso">Perfeito! :D</string>
+
+    <string name="scan_passo_2_titulo">Passo 2:</string>
+    <string name="scan_passo_2_descricao"><b>Fotografe</b> o verso.</string>
+    <string name="scan_passo_2_ajuda">Deixe os ingredientes visíveis no verso.</string>
+
+    <string name="scan_foto_2_instrucao">Encontre um lugar mais claro!</string>
+    <string name="scan_foto_2_sucesso">Ótimo! :)</string>
+
+    <string name="scan_passo_3_titulo">Passo 3:</string>
+    <string name="scan_passo_3_descricao"><b>Aguarde</b> a análise.</string>
+    <string name="scan_passo_3_ajuda">Conferimos os dados e avisamos quando estiver pronto.</string>
+    <string name="scan_produto_nao_cadastrado_titulo">Produto não encontrado</string>
+    <string name="scan_produto_nao_cadastrado_descricao">Ainda não está no nosso catálogo.</string>
+    <string name="scan_produto_nao_cadastrado_ajuda">Fotografe o verso com os ingredientes visíveis.</string>
+
+    <string name="carregando_perfil">Carregando o seu perfil…</string>
+
+    <string name="localizacao_titulo">Usar sua localização?</string>
+    <string name="localizacao_mensagem">Usamos sua localização aproximada (cidade e estado) para entender melhor as necessidades da sua região e melhorar as análises. Você pode negar e continuar usando o app normalmente.</string>
+    <string name="localizacao_permitir">Permitir</string>
+    <string name="localizacao_agora_nao">Agora não</string>
+
+    <string name="canal_envio_produtos">Envio de produtos</string>
+    <string name="cartao_perfil_titulo">Seu perfil Venus</string>
+    <string name="cartao_perfil_sub_sem_questionario">Você precisa responder as perguntas de análise.</string>
+    <string name="cartao_perfil_sub_incompleto">Faltam %1$d%% para completar as perguntas de análise.</string>
+    <string name="cartao_perfil_responder">Responder agora</string>
+    <string name="cartao_perfil_completar">Completar agora</string>
+    <string name="cartao_perfil_progresso_desc">Perfil %1$d%% completo</string>
+
+    <string name="canal_lembretes">Lembretes</string>
+    <string name="canal_lembretes_descricao">Lembrete para terminar o questionário e liberar o Match com você.</string>
+    <string name="lembrete_questionario_notif_titulo">Falta pouco para o seu Match</string>
+    <string name="lembrete_questionario_notif_texto">Responda o questionário e veja o Match com você nos produtos.</string>
+
+    <string name="canal_analise_produtos">Análise de produtos</string>
+    <string name="canal_analise_produtos_descricao">Avisa quando a equipe aprova ou recusa um produto que você enviou.</string>
+    <string name="canal_envio_produtos_descricao">Avisa quando um produto que ficou sem enviar é enviado para análise.</string>
+
+    <string name="avisos_agora_nao">Agora não</string>
+
+
+    <string name="envio_pendente_titulo">Vamos tentar de novo</string>
+    <string name="envio_pendente_mensagem">Quando a internet voltar, enviamos o produto sozinhos. Quer ser avisado quando isso acontecer?</string>
+    <string name="envio_pendente_avisar">Me avisar</string>
+    <string name="envio_reenviado_titulo">Produto enviado</string>
+    <string name="envio_reenviado_texto_um">%1$s foi enviado para análise.</string>
+    <string name="envio_reenviado_texto_varios">%1$d produtos foram enviados para análise.</string>
+    <string name="envio_reenviado_nome_padrao">Seu produto</string>
+
+    <string name="avaliacoes_rotulo">Quem usou</string>
+    <string name="avaliacoes_titulo">Avaliações de usuários</string>
+    <string name="avaliacoes_explicacao">A experiência de outras pessoas com o produto. Elas não entram na nota da Venus, que vem só da fórmula.</string>
+    <plurals name="produto_ver_todos_ingredientes">
+        <item quantity="one">Ver o ingrediente</item>
+        <item quantity="other">Ver todos os %d ingredientes</item>
+    </plurals>
+    <string name="produto_ver_menos_ingredientes">Ver menos</string>
+    <string name="avaliacoes_titulo_tela">Avaliações</string>
+    <string name="avaliacoes_erro">Não foi possível carregar as avaliações.</string>
+    <string name="avaliacoes_tentar_de_novo">Tentar carregar de novo</string>
+    <string name="avaliacoes_vazio">Ninguém avaliou este produto ainda. Conte como foi a sua experiência.</string>
+    <string name="avaliacoes_escrever">Escrever avaliação</string>
+    <string name="avaliacoes_ja_avaliou">Você já avaliou este produto.</string>
+    <string name="avaliacoes_publicada">Sua avaliação foi publicada.</string>
+    <string name="avaliacoes_media_descricao">Nota média %1$s de 5</string>
+    <plurals name="avaliacoes_ver_todas">
+        <item quantity="one">Ver a avaliação</item>
+        <item quantity="other">Ver todas as %d avaliações</item>
+    </plurals>
+    <plurals name="avaliacoes_total">
+        <item quantity="one">%d avaliação</item>
+        <item quantity="other">%d avaliações</item>
+    </plurals>
+    <string name="avaliacoes_total_truncado">Mais de %d avaliações</string>
+    <plurals name="avaliacoes_barra_descricao">
+        <item quantity="one">%1$d estrelas: %2$d avaliação</item>
+        <item quantity="other">%1$d estrelas: %2$d avaliações</item>
+    </plurals>
+
+    <string name="avaliacao_autor_voce">Você</string>
+    <string name="avaliacao_autor_padrao">Usuário Venus</string>
+    <string name="avaliacao_uso_verificado">Uso verificado</string>
+    <string name="avaliacao_hoje">hoje</string>
+    <string name="avaliacao_ontem">ontem</string>
+    <plurals name="avaliacao_ha_dias">
+        <item quantity="one">há %d dia</item>
+        <item quantity="other">há %d dias</item>
+    </plurals>
+    <string name="avaliacao_nota_descricao">Nota %1$s de 5</string>
+    <string name="avaliacao_sua">Esta é a sua avaliação.</string>
+    <string name="avaliacao_foi_util">Esta avaliação foi útil?</string>
+    <string name="avaliacao_sim">Sim (%1$d)</string>
+    <string name="avaliacao_nao">Não</string>
+    <string name="avaliacao_denunciar">Denunciar</string>
+    <string name="avaliacao_denunciar_descricao">Denunciar a avaliação de %1$s</string>
+    <string name="avaliacao_voto_nao_lido">Não conseguimos ver o seu voto.</string>
+    <string name="avaliacao_voto_erro">Não foi possível registrar o voto.</string>
+    <string name="avaliacao_sem_conta">Entre na sua conta para avaliar, votar ou denunciar.</string>
+    <string name="avaliacao_tentar">Tentar de novo</string>
+
+    <string name="escrever_titulo">Escrever avaliação</string>
+    <string name="escrever_nota">Sua nota</string>
+    <string name="escrever_nota_dica">Escolha de 1 a 5 estrelas</string>
+    <string name="escrever_label_titulo">Título</string>
+    <string name="escrever_hint_titulo">Resuma sua experiência em uma frase</string>
+    <string name="escrever_label_comentario">Comentário</string>
+    <string name="escrever_hint_comentario">Conte o que funcionou, o que não funcionou e por quanto tempo você usou o produto.</string>
+    <string name="escrever_contador">%1$d/%2$d</string>
+    <string name="escrever_usou">Já usei este produto</string>
+    <string name="escrever_usou_dica">Avaliações com uso confirmado recebem o selo Uso verificado.</string>
+    <string name="escrever_publicar">Publicar avaliação</string>
+    <string name="escrever_publicando">Publicando…</string>
+    <string name="escrever_cancelar">Cancelar</string>
+    <string name="escrever_erro_nota">Escolha uma nota de 1 a 5 estrelas.</string>
+    <string name="escrever_erro_titulo">Escreva um título para a sua avaliação.</string>
+    <string name="escrever_erro_titulo_longo">O título pode ter até %1$d caracteres.</string>
+    <string name="escrever_erro_comentario">Conte como foi a sua experiência com o produto.</string>
+    <string name="escrever_erro_comentario_longo">O comentário pode ter até %1$d caracteres.</string>
+    <string name="escrever_erro_sem_versao">Este produto ainda não pode receber avaliações.</string>
+    <string name="escrever_erro_envio">Não foi possível publicar a avaliação. Tente de novo.</string>
+
+    <string name="denuncia_titulo">Denunciar avaliação</string>
+    <string name="denuncia_pergunta">Por que esta avaliação não deveria estar aqui?</string>
+    <string name="denuncia_motivo_ofensivo">Conteúdo ofensivo ou discurso de ódio</string>
+    <string name="denuncia_motivo_spam">Spam ou propaganda</string>
+    <string name="denuncia_motivo_falso">Informação falsa sobre o produto</string>
+    <string name="denuncia_motivo_sexual">Conteúdo sexual ou impróprio</string>
+    <string name="denuncia_motivo_outro">Outro motivo</string>
+    <string name="denuncia_label_detalhes">Detalhes (opcional)</string>
+    <string name="denuncia_hint_detalhes">Conte o que tem de errado nesta avaliação</string>
+    <string name="denuncia_enviar">Enviar denúncia</string>
+    <string name="denuncia_enviando">Enviando…</string>
+    <string name="denuncia_erro_motivo">Escolha um motivo.</string>
+    <string name="denuncia_erro_envio">Não foi possível enviar a denúncia. Tente de novo.</string>
+    <string name="denuncia_enviada">Denúncia enviada. Um moderador vai analisar a avaliação.</string>
+
 </resources>

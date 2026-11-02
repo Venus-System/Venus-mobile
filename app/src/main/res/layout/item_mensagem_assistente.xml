@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    android:orientation="horizontal"
+    android:paddingEnd="@dimen/espaco_secao">
+
+    <TextView
+        android:id="@+id/textMensagem"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_bolha_assistente"
+        android:lineSpacingExtra="2dp"
+        android:paddingStart="@dimen/espaco_medio"
+        android:paddingTop="12dp"
+        android:paddingEnd="@dimen/espaco_medio"
+        android:paddingBottom="12dp"
+        android:textColor="@color/preto_texto"
+        android:textSize="@dimen/texto_corpo"
+        tools:text="Oi! Sou a Vênus. Posso explicar os ingredientes e a nota deste produto pra você." />
+
+</LinearLayout>

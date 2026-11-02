@@ -1,12 +1,9 @@
-# Normaliza quebras de linha: LF no repositorio, nativo no disco de cada um
 * text=auto
 
-# Scripts que quebram se a quebra de linha estiver errada
 *.bat text eol=crlf
 *.cmd text eol=crlf
 gradlew text eol=lf
 
-# Binarios: nao converter nem tentar gerar diff
 *.png binary
 *.jpg binary
 *.jpeg binary

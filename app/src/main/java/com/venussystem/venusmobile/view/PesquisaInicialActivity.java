@@ -3,35 +3,33 @@ package com.venussystem.venusmobile.view;
 import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.venussystem.venusmobile.R;
+import com.venussystem.venusmobile.lembrete.Lembretes;
 
 public class PesquisaInicialActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_pesquisa_inicial);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
-
-        findViewById(R.id.btnVoltar).setOnClickListener(v -> finish());
+        InsetsSistema.aplicar(this, R.layout.activity_pesquisa_inicial);
 
         findViewById(R.id.btnAvancar).setOnClickListener(v ->
-                startActivity(new Intent(this, PerguntaCabeloActivity.class)));
+                startActivity(new Intent(this, PerguntaGeneroActivity.class)));
 
-        findViewById(R.id.textResponderDepois).setOnClickListener(v -> irParaMenu());
+        findViewById(R.id.textResponderDepois).setOnClickListener(v -> responderDepois());
+    }
+
+    private void responderDepois() {
+        PedidoDeAvisos.pedir(this, concedida -> {
+            if (concedida) {
+                Lembretes.ativarQuestionario(this);
+            }
+            irParaMenu();
+        });
     }
 
     private void irParaMenu() {
-        finish();
+        NavegacaoPosLogin.irParaMenu(this);
     }
 }

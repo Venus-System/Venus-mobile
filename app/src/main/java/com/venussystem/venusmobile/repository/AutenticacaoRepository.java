@@ -1,5 +1,7 @@
 package com.venussystem.venusmobile.repository;
 
+import android.content.Context;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -14,7 +16,9 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.auth.UserProfileChangeRequest;
 import com.venussystem.venusmobile.model.ResultadoAuth;
+import com.venussystem.venusmobile.lembrete.Lembretes;
 import com.venussystem.venusmobile.model.Usuario;
+import com.venussystem.venusmobile.view.Notificador;
 
 public class AutenticacaoRepository {
     private final FirebaseAuth auth = FirebaseAuth.getInstance();
@@ -87,7 +91,12 @@ public class AutenticacaoRepository {
         return resultado;
     }
 
-    public void sair() {
+    public void sair(Context context) {
+        new ConversaSalvaRepository(context).apagar();
+        new AnaliseDoPostRepository(context).apagar();
+        Lembretes.cancelarDaContaAtual(context);
+        DecisoesAgenda.cancelar(context);
+        Notificador.cancelarTodas(context);
         auth.signOut();
     }
 

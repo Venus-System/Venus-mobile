@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/textData"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="@dimen/espaco_medio"
+    android:paddingBottom="6dp"
+    android:textColor="@color/roxo_venus"
+    android:textSize="13sp"
+    android:textStyle="bold"
+    tools:text="25/07/2026" />

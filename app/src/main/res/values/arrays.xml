@@ -4,7 +4,6 @@
     <string-array name="preferencias">
         <item>Vegano</item>
         <item>Cruelty free</item>
-        <item>Sem fragrância</item>
         <item>Sem parabenos</item>
         <item>Sem sulfatos</item>
         <item>Sem silicones</item>
@@ -21,17 +20,12 @@
     <string-array name="alergias">
         <item>Lanolina</item>
         <item>Óleo de amêndoas</item>
-        <item>Níquel</item>
         <item>Parabenos</item>
-        <item>Fragrância</item>
         <item>Formaldeído</item>
         <item>Propilenoglicol</item>
         <item>Ácido salicílico</item>
         <item>Látex</item>
-        <item>Glúten</item>
         <item>Soja</item>
-        <item>Castanhas</item>
-        <item>Corantes</item>
         <item>Sulfatos</item>
         <item>Álcool</item>
     </string-array>

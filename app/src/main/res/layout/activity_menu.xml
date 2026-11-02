@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:text="@string/menu_provisorio"
         android:textColor="@color/white"
-        android:textSize="28sp"
+        android:textSize="@dimen/texto_titulo_destaque"
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/textUsuario"
         app:layout_constraintEnd_toEndOf="parent"
@@ -35,7 +35,8 @@
         app:layout_constraintBottom_toTopOf="@+id/btnSair"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textMenuTitulo" />
+        app:layout_constraintTop_toBottomOf="@+id/textMenuTitulo"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnSair"
@@ -47,7 +48,8 @@
         app:layout_constraintBottom_toTopOf="@+id/btnRefazerQuestionario"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textUsuario" />
+        app:layout_constraintTop_toBottomOf="@+id/textUsuario"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
     <Button
         android:id="@+id/btnRefazerQuestionario"
@@ -61,6 +63,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnSair" />
+        app:layout_constraintTop_toBottomOf="@+id/btnSair"
+        app:layout_constraintWidth_max="@dimen/largura_max_conteudo" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

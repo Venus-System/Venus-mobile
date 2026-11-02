@@ -1,7 +1,32 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.google.services)
 }
+
+// Hostname estável da FastAPI. Use VENUS_IA_URL/local.properties apenas para
+// apontar para outro ambiente durante o desenvolvimento.
+val urlVenusIaPadrao = "https://venus-ai.duckdns.org/"
+val propriedadesLocais = Properties().apply {
+    val arquivo = rootProject.file("local.properties")
+    if (arquivo.exists()) {
+        arquivo.inputStream().use { load(it) }
+    }
+}
+val urlVenusIa: String = (findProperty("VENUS_IA_URL") as String?)
+    ?: propriedadesLocais.getProperty("VENUS_IA_URL")
+    ?: urlVenusIaPadrao
+
+val urlVenusClassificacaoPadrao = "https://34-192-194-32.sslip.io/classificacao/"
+val urlVenusClassificacao: String = (findProperty("VENUS_CLASSIFICACAO_URL") as String?)
+    ?: propriedadesLocais.getProperty("VENUS_CLASSIFICACAO_URL")
+    ?: urlVenusClassificacaoPadrao
+
+val urlVenusApiPadrao = "https://34-192-194-32.sslip.io/"
+val urlVenusApi: String = (findProperty("VENUS_API_URL") as String?)
+    ?: propriedadesLocais.getProperty("VENUS_API_URL")
+    ?: urlVenusApiPadrao
 
 android {
     namespace = "com.venussystem.venusmobile"
@@ -17,6 +42,18 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "VENUS_IA_URL", "\"$urlVenusIa\"")
+        buildConfigField("String", "VENUS_CLASSIFICACAO_URL", "\"$urlVenusClassificacao\"")
+        buildConfigField("String", "VENUS_API_URL", "\"$urlVenusApi\"")
+
+        // O Room grava o formato de cada versao do banco em app/schemas. Esse
+        // historico e o que permite escrever a migracao quando uma tabela mudar.
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments["room.schemaLocation"] = "$projectDir/schemas"
+            }
+        }
     }
 
     buildTypes {
@@ -26,11 +63,22 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
     }
 }
 
@@ -42,22 +90,38 @@ dependencies {
     implementation(libs.lifecycle.viewmodel)
     implementation(libs.lifecycle.livedata)
 
-    // A BoM define as versoes de todas as libs do Firebase: nao coloque
-    // versao nas linhas de firebase-* abaixo, ela vem daqui.
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
 
-    // Login com Google. O GoogleSignInClient antigo esta descontinuado;
-    // o caminho atual e o Credential Manager.
     implementation(libs.credentials)
     implementation(libs.credentials.play.services)
     implementation(libs.googleid)
 
     implementation(libs.fragment)
     implementation(libs.recyclerview)
-    // Carrega imagem de URL: o ImageView sozinho nao busca da rede.
     implementation(libs.coil)
+
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp.logging)
+    implementation(libs.camera.core)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
+    implementation(libs.mlkit.text.recognition)
+    implementation(libs.play.services.location)
+    implementation(libs.work.runtime)
+    // Banco SQLite do aparelho (repository/banco): conversa com a Venus e
+    // produtos curtidos. O app e Java, entao o Room gera o codigo pelo
+    // annotationProcessor (sem kapt nem ksp).
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.arch.core.testing)
+    testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.work.testing)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 }
