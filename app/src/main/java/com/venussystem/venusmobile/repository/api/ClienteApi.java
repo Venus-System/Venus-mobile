@@ -13,7 +13,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public final class ClienteApi {
 
-    public static final String URL_BASE = "https://34-192-194-32.sslip.io/";
+    public static final String URL_BASE = ClienteIa.normalizar(BuildConfig.VENUS_API_URL);
 
     private static final long LIMITE_CONEXAO = 30L;
     private static final long LIMITE_LEITURA = 180L;

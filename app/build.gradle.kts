@@ -23,6 +23,11 @@ val urlVenusClassificacao: String = (findProperty("VENUS_CLASSIFICACAO_URL") as 
     ?: propriedadesLocais.getProperty("VENUS_CLASSIFICACAO_URL")
     ?: urlVenusClassificacaoPadrao
 
+val urlVenusApiPadrao = "https://34-192-194-32.sslip.io/"
+val urlVenusApi: String = (findProperty("VENUS_API_URL") as String?)
+    ?: propriedadesLocais.getProperty("VENUS_API_URL")
+    ?: urlVenusApiPadrao
+
 android {
     namespace = "com.venussystem.venusmobile"
     compileSdk {
@@ -40,6 +45,7 @@ android {
 
         buildConfigField("String", "VENUS_IA_URL", "\"$urlVenusIa\"")
         buildConfigField("String", "VENUS_CLASSIFICACAO_URL", "\"$urlVenusClassificacao\"")
+        buildConfigField("String", "VENUS_API_URL", "\"$urlVenusApi\"")
 
         // O Room grava o formato de cada versao do banco em app/schemas. Esse
         // historico e o que permite escrever a migracao quando uma tabela mudar.
