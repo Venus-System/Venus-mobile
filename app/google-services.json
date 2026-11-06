@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "202778983120-6aoiu2o1og8qrnj72db9nc1rkurbfh1o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.venussystem.venusmobile",
+            "certificate_hash": "0f48ba63aaa102c7273cebdf61481fafe521a0a7"
+          }
+        },
+        {
           "client_id": "202778983120-qfsov73tgoe5cr2mr11decbpn7j657bh.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
