@@ -5,6 +5,7 @@ import androidx.annotation.StringRes;
 
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.domain.match.EtiquetasDoPerfil;
+import com.venussystem.venusmobile.domain.match.RespostasDaNota;
 import com.venussystem.venusmobile.domain.match.ResultadoMatch;
 
 import java.math.RoundingMode;
@@ -32,8 +33,29 @@ public final class TextosMatch {
     private static final Map<String, Integer> LINHA_EVITAR = new HashMap<>();
     private static final Map<String, Integer> CHIP = new HashMap<>();
     private static final Map<String, Integer> ERRO_DA_NOTA = new HashMap<>();
+    private static final Map<String, Integer> RESPOSTA = new HashMap<>();
 
     static {
+        RESPOSTA.put("controle-de-oleosidade", R.string.match_resposta_pele_oleosa);
+        RESPOSTA.put("muito-seca", R.string.match_resposta_pele_seca);
+        RESPOSTA.put("hidratacao", R.string.match_resposta_pele_seca);
+        RESPOSTA.put("reativa", R.string.match_resposta_pele_sensivel);
+        RESPOSTA.put("pele-acneica", R.string.match_resposta_acne);
+        RESPOSTA.put("rosacea", R.string.match_resposta_rosacea);
+        RESPOSTA.put("eczema", R.string.match_resposta_eczema);
+        RESPOSTA.put("hiperpigmentacao", R.string.match_resposta_hiperpigmentacao);
+        RESPOSTA.put("melasma", R.string.match_resposta_melasma);
+        RESPOSTA.put("caspa", R.string.match_resposta_caspa);
+        RESPOSTA.put("couro-cabeludo-seco", R.string.match_resposta_couro_seco);
+        RESPOSTA.put("couro-cabeludo-oleoso", R.string.match_resposta_couro_oleoso);
+        RESPOSTA.put("couro-cabeludo-sensivel", R.string.match_resposta_couro_sensivel);
+        RESPOSTA.put("gravidez", R.string.match_resposta_gravidez);
+        RESPOSTA.put("amamentacao", R.string.match_resposta_amamentacao);
+        RESPOSTA.put("sem-parabenos", R.string.match_resposta_sem_parabenos);
+        RESPOSTA.put("sem-sulfato", R.string.match_resposta_sem_sulfatos);
+        RESPOSTA.put("sem-silicone", R.string.match_resposta_sem_silicones);
+        RESPOSTA.put("sem-fragrancia", R.string.match_resposta_sem_fragrancia);
+
         ERRO_DA_NOTA.put("PROFILE_NOT_FOUND", R.string.produto_match_erro_perfil);
         ERRO_DA_NOTA.put("PRODUCT_NOT_FOUND", R.string.produto_match_erro_produto);
         ERRO_DA_NOTA.put("VERSION_NOT_FOUND", R.string.produto_match_erro_produto);
@@ -116,6 +138,39 @@ public final class TextosMatch {
         return evitar != null
                 ? r.texto(evitar, ingredientes)
                 : r.texto(R.string.match_linha_encontrado, ingredientes);
+    }
+
+    public static String tituloDaResposta(Recursos r, String slug) {
+        Integer id = RESPOSTA.get(slug);
+        if (id != null) return r.texto(id);
+        String rotulo = EtiquetasDoPerfil.rotulos(Collections.singleton(slug),
+                Collections.emptySet()).get(0);
+        return r.texto(R.string.match_resposta_generica, rotulo);
+    }
+
+    public static String linhaDaResposta(Recursos r, RespostasDaNota.Resposta resposta) {
+        boolean semIngrediente = resposta.ingredientes.isEmpty();
+        String ingredientes = ingredientes(r, resposta.ingredientes);
+        switch (resposta.efeito) {
+            case BLOQUEOU:
+                return semIngrediente
+                        ? r.texto(R.string.match_resposta_bloqueou_sem_ingrediente)
+                        : r.texto(R.string.match_resposta_bloqueou, ingredientes);
+            case TIROU:
+                return semIngrediente
+                        ? r.texto(R.string.match_resposta_tirou_sem_ingrediente)
+                        : r.texto(R.string.match_resposta_tirou, ingredientes);
+            case COMBINOU_POUCO:
+                return semIngrediente
+                        ? r.texto(R.string.match_resposta_pouco_sem_ingrediente, resposta.porcento)
+                        : r.texto(R.string.match_resposta_pouco, resposta.porcento, ingredientes);
+            default:
+                return semIngrediente
+                        ? r.texto(R.string.match_resposta_combinou_sem_ingrediente,
+                        resposta.porcento)
+                        : r.texto(R.string.match_resposta_combinou, resposta.porcento,
+                        ingredientes);
+        }
     }
 
     public static List<String> chips(Recursos r, List<ResultadoMatch.Destaque> destaques,

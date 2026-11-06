@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import com.venussystem.venusmobile.R;
+import com.venussystem.venusmobile.domain.match.RespostasDaNota;
 import com.venussystem.venusmobile.domain.match.ResultadoMatch;
 
 import org.junit.Test;
@@ -27,6 +28,18 @@ public class TextosMatchTest {
         TEXTOS.put(R.string.match_chip_hidratacao, "Hidratação");
         TEXTOS.put(R.string.match_titulo_bom_para, "Bom para %1$s");
         TEXTOS.put(R.string.match_titulo_atencao_para, "Atenção para %1$s");
+        TEXTOS.put(R.string.match_resposta_pele_oleosa, "Pele oleosa");
+        TEXTOS.put(R.string.match_resposta_pele_seca, "Pele seca");
+        TEXTOS.put(R.string.match_resposta_generica, "Você marcou %1$s");
+        TEXTOS.put(R.string.match_resposta_tirou,
+                "Tirou pontos por causa de %1$s. Puxou a nota para baixo.");
+        TEXTOS.put(R.string.match_resposta_tirou_sem_ingrediente,
+                "Tirou pontos. Puxou a nota para baixo.");
+        TEXTOS.put(R.string.match_resposta_pouco,
+                "Combinou só %1$d%%, com %2$s. Puxou a nota para baixo.");
+        TEXTOS.put(R.string.match_resposta_combinou, "Combinou %1$d%% graças a %2$s.");
+        TEXTOS.put(R.string.match_resposta_bloqueou,
+                "Por causa de %1$s, este produto não é indicado para você.");
     }
 
     @Test
@@ -129,6 +142,49 @@ public class TextosMatchTest {
                 TextosMatch.erroDaNota("SCORING_MODEL_NOT_FOUND"));
         assertEquals(Integer.valueOf(R.string.produto_match_erro_calculo),
                 TextosMatch.erroDaNota("NO_ACTIVE_SCORING_MODEL"));
+    }
+
+    private static RespostasDaNota.Resposta resposta(String slug, Double impacto, boolean aviso,
+                                                     String... ingredientes) {
+        List<RespostasDaNota.Motivo> motivos = new java.util.ArrayList<>();
+        for (String i : ingredientes) {
+            motivos.add(new RespostasDaNota.Motivo(slug, i, impacto, aviso));
+        }
+        if (ingredientes.length == 0) {
+            motivos.add(new RespostasDaNota.Motivo(slug, null, impacto, aviso));
+        }
+        return RespostasDaNota.de(motivos).get(0);
+    }
+
+    @Test
+    public void respostaDaClassificacaoViraONomeDaPergunta() {
+        assertEquals("Pele oleosa",
+                TextosMatch.tituloDaResposta(RECURSOS, "controle-de-oleosidade"));
+        assertEquals("Pele seca", TextosMatch.tituloDaResposta(RECURSOS, "muito-seca"));
+        assertEquals("Você marcou vegano", TextosMatch.tituloDaResposta(RECURSOS, "vegano"));
+    }
+
+    @Test
+    public void respostaQueTirouDizPorCausaDeQuais() {
+        assertEquals("Tirou pontos por causa de Alcohol e Paraffinum. Puxou a nota para baixo.",
+                TextosMatch.linhaDaResposta(RECURSOS,
+                        resposta("controle-de-oleosidade", -3.0, true, "ALCOHOL", "PARAFFINUM")));
+    }
+
+    @Test
+    public void respostaQueCombinouPoucoMostraAPorcentagem() {
+        assertEquals("Combinou só 25%, com Panthenol. Puxou a nota para baixo.",
+                TextosMatch.linhaDaResposta(RECURSOS, resposta("eczema", 5.0, false, "PANTHENOL")));
+    }
+
+    @Test
+    public void respostaQueCombinouOuBloqueouTemFrasePropria() {
+        assertEquals("Combinou 80% graças a Glycerin.", TextosMatch.linhaDaResposta(RECURSOS,
+                resposta("muito-seca", 16.0, false, "GLYCERIN")));
+        assertEquals("Por causa de Retinol, este produto não é indicado para você.",
+                TextosMatch.linhaDaResposta(RECURSOS, resposta("gravidez", 0.0, true, "RETINOL")));
+        assertEquals("Tirou pontos. Puxou a nota para baixo.",
+                TextosMatch.linhaDaResposta(RECURSOS, resposta("reativa", -1.0, true)));
     }
 
     @Test

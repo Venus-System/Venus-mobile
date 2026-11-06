@@ -503,6 +503,58 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/secaoMatchRespostas"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="@dimen/espaco_medio"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="@dimen/espaco_medio"
+                        android:paddingEnd="@dimen/espaco_medio"
+                        android:text="@string/produto_match_respostas_titulo"
+                        android:textColor="@color/roxo_avatar_borda"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/textMatchPerfilCombinou"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:paddingStart="@dimen/espaco_medio"
+                        android:paddingEnd="@dimen/espaco_medio"
+                        android:textColor="@color/cinza_descricao"
+                        android:textSize="12sp"
+                        android:visibility="gone"
+                        tools:text="Seu perfil combinou 25% com este produto. Quanto menos cada resposta combina, mais a nota cai."
+                        tools:visibility="visible" />
+
+                    <LinearLayout
+                        android:id="@+id/listaMatchRespostas"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <TextView
+                        android:id="@+id/textMatchNenhumaContra"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="@dimen/espaco_medio"
+                        android:paddingTop="@dimen/espaco_pequeno"
+                        android:paddingEnd="@dimen/espaco_medio"
+                        android:text="@string/match_resposta_nenhuma_contra"
+                        android:textColor="@color/nota_boa_texto"
+                        android:textSize="13sp"
+                        android:visibility="gone" />
+
+                </LinearLayout>
+
+                <LinearLayout
                     android:id="@+id/listaMatchPontos"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
