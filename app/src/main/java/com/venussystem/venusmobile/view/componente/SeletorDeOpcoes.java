@@ -1,6 +1,7 @@
 package com.venussystem.venusmobile.view.componente;
 
 import android.content.Context;
+import android.view.Gravity;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -45,6 +46,14 @@ public class SeletorDeOpcoes {
         popup.setAnchorView(campo);
         popup.setAdapter(adapter);
         popup.setModal(true);
+        popup.setInputMethodMode(ListPopupWindow.INPUT_METHOD_NOT_NEEDED);
+        popup.setDropDownGravity(Gravity.START);
+        int larguraDisponivel = context.getResources().getDisplayMetrics().widthPixels
+                - 2 * context.getResources().getDimensionPixelSize(R.dimen.espaco_medio);
+        int larguraMaxima = context.getResources().getDimensionPixelSize(
+                R.dimen.largura_max_dialogo);
+        popup.setWidth(Math.min(larguraDisponivel, larguraMaxima));
+        popup.setVerticalOffset(0);
         popup.setOnItemClickListener((pai, v, posicao, id) -> {
             popup.dismiss();
             escolher(posicao);
@@ -65,10 +74,18 @@ public class SeletorDeOpcoes {
 
     public void trocarOpcoes(List<String> opcoes) {
         itens.clear();
-        itens.add(context.getString(R.string.opcao_nenhuma));
-        itens.addAll(opcoes);
-        itens.add(context.getString(R.string.opcao_outro));
+        itens.addAll(opcoesComExtras(context, opcoes));
         adapter.notifyDataSetChanged();
+    }
+
+    public static List<String> opcoesComExtras(Context context, List<String> opcoes) {
+        List<String> completas = new ArrayList<>();
+        completas.add(context.getString(R.string.opcao_nenhuma));
+        if (opcoes != null) {
+            completas.addAll(opcoes);
+        }
+        completas.add(context.getString(R.string.opcao_outro));
+        return completas;
     }
 
     private void abrir() {

@@ -1,7 +1,10 @@
 package com.venussystem.venusmobile.view;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -9,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -295,6 +299,10 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
     private void prepararReferenciasDeTela() {
         imgProduto = findViewById(R.id.imgProduto);
+        imgProduto.setClickable(true);
+        imgProduto.setFocusable(true);
+        imgProduto.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        imgProduto.setOnClickListener(v -> mostrarImagemAmpliada());
 
         btnSalvarNaLista =
                 findViewById(
@@ -648,6 +656,34 @@ public class DetalheProdutoActivity extends AppCompatActivity {
 
         ProdutoImagemLoader.carregar(
                 this, imgProduto, produto, R.drawable.bg_foto_produto);
+        imgProduto.setContentDescription(getString(
+                R.string.desc_imagem_produto, produto.getName()));
+    }
+
+    private void mostrarImagemAmpliada() {
+        Drawable imagem = imgProduto.getDrawable();
+        if (imagem == null) {
+            return;
+        }
+
+        Dialog dialogo = new Dialog(this);
+        View conteudo = getLayoutInflater().inflate(R.layout.dialog_imagem_produto, null, false);
+        ImageView imagemAmpliada = conteudo.findViewById(R.id.imgProdutoAmpliada);
+        imagemAmpliada.setImageDrawable(imagem);
+        imagemAmpliada.setContentDescription(imgProduto.getContentDescription());
+        conteudo.setOnClickListener(v -> dialogo.dismiss());
+        conteudo.findViewById(R.id.btnFecharImagemAmpliada)
+                .setOnClickListener(v -> dialogo.dismiss());
+
+        dialogo.setContentView(conteudo);
+        dialogo.setCanceledOnTouchOutside(true);
+        dialogo.show();
+        Window janela = dialogo.getWindow();
+        if (janela != null) {
+            janela.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+            janela.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT);
+        }
     }
 
     private void carregarImagem(String url) {

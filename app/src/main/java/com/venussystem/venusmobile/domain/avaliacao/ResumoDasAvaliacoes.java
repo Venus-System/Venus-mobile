@@ -24,16 +24,26 @@ public final class ResumoDasAvaliacoes {
         int[] porEstrela = new int[ESTRELAS];
         double soma = 0;
         for (Avaliacao avaliacao : avaliacoes) {
+            if (avaliacao == null || !notaValida(avaliacao.getNota())) {
+                continue;
+            }
             porEstrela[estrelas(avaliacao.getNota()) - 1]++;
             soma += avaliacao.getNota();
         }
-        int total = avaliacoes.size();
+        int total = 0;
+        for (int quantidade : porEstrela) {
+            total += quantidade;
+        }
         Double media = total == 0 ? null : Math.round(soma / total * 10) / 10.0;
         return new ResumoDasAvaliacoes(media, total, porEstrela);
     }
 
     public static int estrelas(double nota) {
         return (int) Math.min(Math.max(Math.round(nota), 1), ESTRELAS);
+    }
+
+    private static boolean notaValida(double nota) {
+        return !Double.isNaN(nota) && !Double.isInfinite(nota) && nota >= 1d && nota <= 5d;
     }
 
     @Nullable

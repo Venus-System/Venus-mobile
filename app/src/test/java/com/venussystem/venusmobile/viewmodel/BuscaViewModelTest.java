@@ -8,6 +8,7 @@ import androidx.test.core.app.ApplicationProvider;
 import com.venussystem.venusmobile.model.FaixaNota;
 import com.venussystem.venusmobile.model.FiltroProdutos;
 import com.venussystem.venusmobile.model.Produto;
+import com.venussystem.venusmobile.model.ProdutoSecao;
 import com.venussystem.venusmobile.repository.FiltroRepository;
 import com.venussystem.venusmobile.repository.ProdutoRepository;
 import com.venussystem.venusmobile.testutil.CatalogoApi;
@@ -209,6 +210,72 @@ public class BuscaViewModelTest {
         viewModel.buscar("Balm");
 
         assertEquals(6, viewModel.getSugestoes().getValue().size());
+    }
+
+    @Test
+    public void sugestoesDaHome_agrupamPorCategoriaEOrdenamPelaQuantidade() {
+        BuscaViewModel viewModel = criarViewModel(CatalogoApi.novo()
+                .marca(10L, "Marca", false)
+                .categoria(100L, "Hidratante")
+                .categoria(200L, "Shampoo")
+                .produto(1L, 10L, 100L, "Zeta", 90)
+                .produto(2L, 10L, 100L, "Alfa", 90)
+                .produto(3L, 10L, 100L, "Beta", 20)
+                .produto(4L, 10L, 200L, "Shampoo", 80)
+                .produto(5L, 10L, null, "Sem categoria", 100)
+                .dispatcher());
+
+        List<ProdutoSecao> secoes = viewModel.getSugestoesPorCategoria().getValue();
+
+        assertEquals(Arrays.asList("Hidratante", "Shampoo", "Sem categoria"), nomesSecoes(secoes));
+        assertEquals(Arrays.asList("Alfa", "Zeta", "Beta"),
+                nomes(secoes.get(0).getProdutos()));
+        assertEquals(Collections.singletonList("Sem categoria"),
+                nomes(secoes.get(2).getProdutos()));
+    }
+
+    @Test
+    public void sugestoesDaHome_naoDuplicamIdsEOrdenamSecoes() {
+        List<Produto> produtos = Arrays.asList(
+                new Produto(1L, "A", "M", 50, null, 100L, "A"),
+                new Produto(1L, "A repetido", "M", 100, null, 200L, "B"),
+                new Produto(2L, "B", "M", 80, null, 200L, "B"),
+                new Produto(3L, "C", "M", 70, null, 200L, "B"));
+
+        List<ProdutoSecao> secoes = BuscaViewModel.agruparPorCategoria(produtos);
+
+        assertEquals(Arrays.asList("B", "A"), nomesSecoes(secoes));
+        assertEquals(Arrays.asList("B", "C"), nomes(secoes.get(0).getProdutos()));
+    }
+
+    @Test
+    public void sugestoesDaHome_preservamNomeLongoDaCategoriaSemAlterarAgrupamento() {
+        String categoria = "Gel de limpeza facial para pele sensível";
+        List<ProdutoSecao> secoes = BuscaViewModel.agruparPorCategoria(Collections.singletonList(
+                new Produto(8L, "Produto", "Marca", 80, null, 300L, categoria)));
+
+        assertEquals(Collections.singletonList(categoria), nomesSecoes(secoes));
+        assertEquals(Collections.singletonList("Produto"), nomes(secoes.get(0).getProdutos()));
+    }
+
+    @Test
+    public void sugestoesDaHome_aplicamFiltroAntesDeAgrupar() {
+        BuscaViewModel viewModel = criarViewModel(catalogoPadrao());
+
+        filtros.aplicar(filtro().comCategoria(200L, true));
+
+        List<ProdutoSecao> secoes = viewModel.getSugestoesPorCategoria().getValue();
+        assertEquals(1, secoes.size());
+        assertEquals("Shampoo", secoes.get(0).getNome());
+        assertEquals(Arrays.asList(4L, 5L), ids(secoes.get(0).getProdutos()));
+    }
+
+    private static List<String> nomesSecoes(List<ProdutoSecao> secoes) {
+        List<String> nomes = new ArrayList<>();
+        for (ProdutoSecao secao : secoes) {
+            nomes.add(secao.getNome());
+        }
+        return nomes;
     }
 
     @Test

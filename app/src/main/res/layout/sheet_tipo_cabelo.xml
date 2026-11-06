@@ -328,6 +328,94 @@
 
             </LinearLayout>
 
+            <TextView
+                style="@style/SecaoTipoCabelo"
+                android:text="@string/sheet_secao_crespo" />
+
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="TYPE_4A"
+                android:contentDescription="@string/sheet_tipo_4a">
+
+                <ImageView
+                    style="@style/FioTipoCabelo"
+                    android:contentDescription="@string/sheet_desc_4a"
+                    android:src="@drawable/fio_4a" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/espaco_medio"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TituloTipoCabelo"
+                        android:text="@string/sheet_tipo_4a" />
+
+                    <TextView
+                        style="@style/DescricaoTipoCabelo"
+                        android:text="@string/sheet_desc_4a" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="TYPE_4B"
+                android:contentDescription="@string/sheet_tipo_4b">
+
+                <ImageView
+                    style="@style/FioTipoCabelo"
+                    android:contentDescription="@string/sheet_desc_4b"
+                    android:src="@drawable/fio_4b" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/espaco_medio"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TituloTipoCabelo"
+                        android:text="@string/sheet_tipo_4b" />
+
+                    <TextView
+                        style="@style/DescricaoTipoCabelo"
+                        android:text="@string/sheet_desc_4b" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/CardTipoCabelo"
+                android:tag="TYPE_4C"
+                android:contentDescription="@string/sheet_tipo_4c">
+
+                <ImageView
+                    style="@style/FioTipoCabelo"
+                    android:contentDescription="@string/sheet_desc_4c"
+                    android:src="@drawable/fio_4c" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/espaco_medio"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TituloTipoCabelo"
+                        android:text="@string/sheet_tipo_4c" />
+
+                    <TextView
+                        style="@style/DescricaoTipoCabelo"
+                        android:text="@string/sheet_desc_4c" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>

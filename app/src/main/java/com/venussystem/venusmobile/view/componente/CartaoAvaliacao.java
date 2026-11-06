@@ -44,10 +44,11 @@ public final class CartaoAvaliacao {
         data.setText(quando);
         data.setVisibility(quando == null ? View.GONE : View.VISIBLE);
 
+        double valorNota = notaValida(avaliacao.getNota()) ? avaliacao.getNota() : 0d;
         RatingBar estrelas = item.findViewById(R.id.estrelasAvaliacao);
-        estrelas.setRating((float) avaliacao.getNota());
+        estrelas.setRating((float) valorNota);
         estrelas.setContentDescription(contexto.getString(
-                R.string.avaliacao_nota_descricao, nota(avaliacao.getNota())));
+                R.string.avaliacao_nota_descricao, nota(valorNota)));
 
         ((TextView) item.findViewById(R.id.textTituloAvaliacao)).setText(avaliacao.getTitulo());
         TextView comentario = item.findViewById(R.id.textComentario);
@@ -100,6 +101,10 @@ public final class CartaoAvaliacao {
 
     public static String nota(double valor) {
         return String.format(new Locale("pt", "BR"), "%.1f", valor);
+    }
+
+    private static boolean notaValida(double valor) {
+        return !Double.isNaN(valor) && !Double.isInfinite(valor) && valor >= 1d && valor <= 5d;
     }
 
     private static void prepararVoto(TextView botao, boolean escolhido, boolean ocupado,

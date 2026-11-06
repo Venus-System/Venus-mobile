@@ -24,6 +24,7 @@ public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
     private LinearLayout lista;
     private PerfilRepository perfil;
     private SeletorDeOpcoes seletor;
+    private boolean avancando;
 
     @LayoutRes
     protected abstract int getLayout();
@@ -50,7 +51,14 @@ public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
         desenharChips();
 
         findViewById(R.id.btnVoltar).setOnClickListener(v -> finish());
-        findViewById(R.id.btnAvancar).setOnClickListener(v -> avancar());
+        findViewById(R.id.btnAvancar).setOnClickListener(v -> {
+            if (avancando) {
+                return;
+            }
+            avancando = true;
+            v.setEnabled(false);
+            avancar();
+        });
 
         seletor = new SeletorDeOpcoes(findViewById(R.id.campoBusca),
                 findViewById(R.id.blocoOutro), getHintOutro(), getOpcoes(), this::adicionar);
@@ -64,6 +72,7 @@ public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
         List<String> novos = SeletorDeOpcoes.aplicar(selecionados, item);
         selecionados.clear();
         selecionados.addAll(novos);
+        perfil.salvarLista(getChave(), selecionados);
         desenharChips();
     }
 
@@ -75,6 +84,7 @@ public abstract class PerguntaBuscaBaseActivity extends AppCompatActivity {
                     .setText(SeletorDeOpcoes.rotulo(this, item));
             chip.findViewById(R.id.btnRemoverChip).setOnClickListener(v -> {
                 selecionados.remove(item);
+                perfil.salvarLista(getChave(), selecionados);
                 desenharChips();
             });
             lista.addView(chip);

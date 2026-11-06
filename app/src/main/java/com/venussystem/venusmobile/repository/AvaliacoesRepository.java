@@ -23,8 +23,10 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -176,6 +178,7 @@ public class AvaliacoesRepository {
         }
         Long userId = usuarios.obterIdSincrono();
         List<Avaliacao> avaliacoes = new ArrayList<>();
+        Set<Long> idsLidos = new HashSet<>();
         try {
             for (int pagina = 0; pagina < LIMITE_DE_PAGINAS; pagina++) {
                 Response<FatiaResponse<ReviewResponse>> resposta = api.avaliacoesDaVersao(
@@ -187,8 +190,8 @@ public class AvaliacoesRepository {
                 List<ReviewResponse> daPagina = fatia == null || fatia.content == null
                         ? Collections.emptyList() : fatia.content;
                 for (ReviewResponse avaliacao : daPagina) {
-                    Avaliacao convertida = converter(avaliacao, userId);
-                    if (convertida != null) {
+                    Avaliacao convertida = converter(avaliacao, userId, versaoId);
+                    if (convertida != null && idsLidos.add(convertida.getId())) {
                         avaliacoes.add(convertida);
                     }
                 }
@@ -206,6 +209,9 @@ public class AvaliacoesRepository {
     @WorkerThread
     Envio publicarAgora(long produtoId, int nota, String titulo, String comentario,
                         boolean usou) {
+        if (nota < 1 || nota > 5 || titulo == null || comentario == null) {
+            return Envio.FALHA;
+        }
         Long userId = usuarios.obterIdSincrono();
         if (userId == null) {
             return Envio.SEM_CONTA;
@@ -297,10 +303,17 @@ public class AvaliacoesRepository {
     }
 
     @Nullable
-    private static Avaliacao converter(ReviewResponse avaliacao, @Nullable Long userId) {
-        if (avaliacao == null || avaliacao.id == null || avaliacao.rating == null) {
+    private static Avaliacao converter(ReviewResponse avaliacao, @Nullable Long userId,
+                                       long versaoId) {
+        if (avaliacao == null || avaliacao.id == null || avaliacao.rating == null
+                || avaliacao.rating.isNaN() || avaliacao.rating.isInfinite()
+                || avaliacao.rating < 1d || avaliacao.rating > 5d
+                || (avaliacao.productVersionId != null
+                && avaliacao.productVersionId != versaoId)) {
             return null;
         }
+        long votosUteis = avaliacao.usefulVotes == null
+                ? 0L : Math.max(0L, avaliacao.usefulVotes);
         return new Avaliacao(
                 avaliacao.id,
                 texto(avaliacao.authorName),
@@ -309,7 +322,7 @@ public class AvaliacoesRepository {
                 avaliacao.title == null ? "" : avaliacao.title.trim(),
                 avaliacao.comment == null ? "" : avaliacao.comment.trim(),
                 Boolean.TRUE.equals(avaliacao.verifiedUse),
-                avaliacao.usefulVotes == null ? 0L : avaliacao.usefulVotes,
+                votosUteis,
                 dataHora(avaliacao.createdAt));
     }
 

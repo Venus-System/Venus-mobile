@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
+import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Mensagem;
+import com.venussystem.venusmobile.view.util.MarkdownRenderer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -102,8 +104,18 @@ public class ConversaAdapter extends RecyclerView.Adapter<ConversaAdapter.Mensag
                 pontos = proximos;
                 texto.postDelayed(proximos, INTERVALO_PONTOS_MS);
             } else {
-                texto.setContentDescription(null);
-                texto.setText(mensagem.getTexto());
+                if (mensagem.getAutor() == Mensagem.DO_ASSISTENTE) {
+                    texto.setText(MarkdownRenderer.render(mensagem.getTexto()));
+                    texto.setMovementMethod(LinkMovementMethod.getInstance());
+                    texto.setLinksClickable(true);
+                    texto.setContentDescription(MarkdownRenderer.textoAcessivel(
+                            mensagem.getTexto()));
+                } else {
+                    texto.setMovementMethod(null);
+                    texto.setLinksClickable(false);
+                    texto.setContentDescription(mensagem.getTexto());
+                    texto.setText(mensagem.getTexto());
+                }
             }
         }
 
@@ -115,6 +127,8 @@ public class ConversaAdapter extends RecyclerView.Adapter<ConversaAdapter.Mensag
         }
 
         private void mostrarPontos() {
+            texto.setMovementMethod(null);
+            texto.setLinksClickable(false);
             String base = texto.getContext().getString(R.string.assistente_digitando_sem_pontos);
             SpannableString frase = new SpannableString(base + PONTOS);
             int inicioEscondido = base.length() + pontosVisiveis(passo);

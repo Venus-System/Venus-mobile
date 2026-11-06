@@ -8,6 +8,8 @@ import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.repository.PerfilRepository;
 
 public class PerfilProntoActivity extends AppCompatActivity {
+    private boolean avancando;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -16,6 +18,11 @@ public class PerfilProntoActivity extends AppCompatActivity {
         findViewById(R.id.btnVoltar).setOnClickListener(v -> finish());
 
         findViewById(R.id.btnAvancar).setOnClickListener(v -> {
+            if (avancando) {
+                return;
+            }
+            avancando = true;
+            v.setEnabled(false);
             new PerfilRepository(this).marcarQuestionarioRespondido();
             NavegacaoPosLogin.irParaMenu(this);
         });

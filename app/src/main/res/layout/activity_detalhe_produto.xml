@@ -310,17 +310,6 @@
 
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/textRelatarErro"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/espaco_grande"
-                android:background="@drawable/bg_aviso_amarelo"
-                android:padding="@dimen/espaco_medio"
-                android:text="@string/produto_relatar_erro"
-                android:textColor="@color/amarelo_aviso_texto"
-                android:textSize="12sp" />
-
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>

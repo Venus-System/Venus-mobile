@@ -141,10 +141,13 @@
     <string name="sheet_cabelo_descricao">Compare o seu fio com os desenhos e escolha o mais parecido. Na dúvida entre dois, fique com o mais próximo.</string>
     <string name="sheet_entendi">Entendi</string>
     <string name="desc_fechar">Fechar</string>
+    <string name="desc_imagem_produto">Ampliar imagem de %1$s</string>
+    <string name="desc_imagem_produto_ampliada">Imagem ampliada do produto</string>
 
     <string name="sheet_secao_liso">Liso</string>
     <string name="sheet_secao_ondulado">Ondulado</string>
     <string name="sheet_secao_cacheado">Cacheado</string>
+    <string name="sheet_secao_crespo">Crespo</string>
 
     <string name="sheet_tipo_1a">1a</string>
     <string name="sheet_tipo_1b">1b</string>
@@ -155,6 +158,9 @@
     <string name="sheet_tipo_3a">3a</string>
     <string name="sheet_tipo_3b">3b</string>
     <string name="sheet_tipo_3c">3c</string>
+    <string name="sheet_tipo_4a">4a</string>
+    <string name="sheet_tipo_4b">4b</string>
+    <string name="sheet_tipo_4c">4c</string>
 
     <string name="sheet_desc_1a">Liso fino e escorrido, sem volume</string>
     <string name="sheet_desc_1b">Liso com um pouco de corpo e volume</string>
@@ -165,6 +171,9 @@
     <string name="sheet_desc_3a">Cacho largo e solto</string>
     <string name="sheet_desc_3b">Cacho médio, bem definido</string>
     <string name="sheet_desc_3c">Cacho fechado e volumoso</string>
+    <string name="sheet_desc_4a">Fio crespo com espirais pequenas e definição suave</string>
+    <string name="sheet_desc_4b">Fio crespo com padrão em Z e bastante volume</string>
+    <string name="sheet_desc_4c">Fio crespo muito fechado, denso e volumoso</string>
 
     <string name="menu_provisorio">Menu</string>
     <string name="menu_logado_como">Logado como %1$s\n%2$s</string>
@@ -202,7 +211,7 @@
     <string name="filtro_titulo">Filtros</string>
     <string name="filtro_limpar">Limpar</string>
     <string name="filtro_aplicar">Aplicar</string>
-    <string name="filtro_grupo_nota">Nota geral</string>
+    <string name="filtro_grupo_nota">Match</string>
     <string name="filtro_nota_boa">Boa (70 ou mais)</string>
     <string name="filtro_nota_media">Média (40 a 69)</string>
     <string name="filtro_nota_ruim">Ruim (abaixo de 40)</string>
@@ -365,7 +374,6 @@
     <string name="listas_vazio">Você ainda não tem listas. Toque no + para criar a primeira e guardar os produtos que quiser.</string>
     <string name="produto_titulo_ingredientes">Ingredientes</string>
     <string name="produto_ingredientes_erro">Não foi possível carregar os ingredientes agora.</string>
-    <string name="produto_relatar_erro">Encontrou algo errado no cadastro deste produto? Clique aqui e informe a gente. Obrigado.</string>
     <string name="produto_match_indisponivel">Não foi possível calcular o match deste produto agora. Tente de novo em instantes.</string>
     <string name="produto_match_sem_perfil">Responda o questionário do seu perfil para ver como este produto combina com você.</string>
     <string name="produto_match_para_voce">Para você, %1$s</string>

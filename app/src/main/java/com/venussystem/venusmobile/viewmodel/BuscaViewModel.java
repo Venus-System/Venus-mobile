@@ -11,14 +11,19 @@ import androidx.lifecycle.Observer;
 
 import com.venussystem.venusmobile.model.FiltroProdutos;
 import com.venussystem.venusmobile.model.Produto;
+import com.venussystem.venusmobile.model.ProdutoSecao;
 import com.venussystem.venusmobile.repository.FiltroRepository;
 import com.venussystem.venusmobile.repository.ProdutoRepository;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 public class BuscaViewModel extends AndroidViewModel {
 
@@ -26,6 +31,7 @@ public class BuscaViewModel extends AndroidViewModel {
     private final FiltroRepository filtros;
 
     private final MutableLiveData<List<Produto>> sugestoes = new MutableLiveData<>();
+    private final MutableLiveData<List<ProdutoSecao>> sugestoesPorCategoria = new MutableLiveData<>();
     private final MutableLiveData<List<Produto>> resultados = new MutableLiveData<>();
 
     private final Observer<List<Produto>> aoMudarCatalogo = catalogo -> recalcular();
@@ -57,6 +63,10 @@ public class BuscaViewModel extends AndroidViewModel {
 
     public LiveData<List<Produto>> getSugestoes() {
         return sugestoes;
+    }
+
+    public LiveData<List<ProdutoSecao>> getSugestoesPorCategoria() {
+        return sugestoesPorCategoria;
     }
 
     public LiveData<List<Produto>> getResultados() {
@@ -110,10 +120,9 @@ public class BuscaViewModel extends AndroidViewModel {
             }
         }
 
-        List<Produto> porNota = new ArrayList<>(filtrados);
-        porNota.sort(Comparator.comparing(Produto::getOverallScore,
-                Comparator.nullsLast(Comparator.<Integer>reverseOrder())));
+        List<Produto> porNota = ordenarProdutosSemDuplicatas(filtrados);
         sugestoes.setValue(porNota);
+        sugestoesPorCategoria.setValue(agruparPorCategoria(filtrados));
 
         if (isMostrandoHistorico()) {
             resultados.setValue(Collections.<Produto>emptyList());
@@ -132,5 +141,98 @@ public class BuscaViewModel extends AndroidViewModel {
 
     private boolean contem(String texto, String alvo) {
         return texto != null && texto.toLowerCase(Locale.getDefault()).contains(alvo);
+    }
+
+    /**
+     * Agrupa somente depois do filtro e remove repetições do catálogo pelo ID do produto.
+     * A lista resultante mantém uma ordenação determinística dentro de cada seção.
+     */
+    @VisibleForTesting
+    static List<ProdutoSecao> agruparPorCategoria(List<Produto> produtos) {
+        Map<String, Grupo> grupos = new LinkedHashMap<>();
+        Set<Long> idsVistos = new LinkedHashSet<>();
+        Set<Produto> semIdVistos = Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
+        for (Produto produto : produtos) {
+            if (produto == null) {
+                continue;
+            }
+            Long id = produto.getId();
+            if (id != null ? !idsVistos.add(id) : !semIdVistos.add(produto)) {
+                continue;
+            }
+
+            String nome = nomeDaCategoria(produto);
+            String chave = chaveDaCategoria(produto, nome);
+            Grupo grupo = grupos.get(chave);
+            if (grupo == null) {
+                grupo = new Grupo(nome, semCategoria(produto));
+                grupos.put(chave, grupo);
+            }
+            grupo.produtos.add(produto);
+        }
+
+        List<Grupo> ordenados = new ArrayList<>(grupos.values());
+        ordenados.sort(Comparator
+                .comparing((Grupo grupo) -> grupo.semCategoria ? 1 : 0)
+                .thenComparing((Grupo grupo) -> grupo.produtos.size(), Comparator.reverseOrder())
+                .thenComparing(grupo -> grupo.nome, String.CASE_INSENSITIVE_ORDER));
+
+        List<ProdutoSecao> secoes = new ArrayList<>();
+        for (Grupo grupo : ordenados) {
+            grupo.produtos.sort(comparadorDeProduto());
+            secoes.add(new ProdutoSecao(grupo.nome, grupo.produtos));
+        }
+        return secoes;
+    }
+
+    private static List<Produto> ordenarProdutosSemDuplicatas(List<Produto> produtos) {
+        List<Produto> unicos = new ArrayList<>();
+        Set<Long> ids = new LinkedHashSet<>();
+        for (Produto produto : produtos) {
+            if (produto == null || (produto.getId() != null && !ids.add(produto.getId()))) {
+                continue;
+            }
+            unicos.add(produto);
+        }
+        unicos.sort(Comparator.comparing(Produto::getOverallScore,
+                Comparator.nullsLast(Comparator.<Integer>reverseOrder())));
+        return unicos;
+    }
+
+    private static Comparator<Produto> comparadorDeProduto() {
+        return Comparator.comparing(Produto::getOverallScore,
+                        Comparator.nullsLast(Comparator.<Integer>reverseOrder()))
+                .thenComparing(Produto::getName,
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+    }
+
+    private static String nomeDaCategoria(Produto produto) {
+        String nome = produto.getCategoryName();
+        return nome == null || nome.trim().isEmpty() ? "Sem categoria" : nome.trim();
+    }
+
+    private static String chaveDaCategoria(Produto produto, String nome) {
+        if (produto.getCategoryId() != null) {
+            return "id:" + produto.getCategoryId();
+        }
+        return "nome:" + nome.toLowerCase(Locale.ROOT);
+    }
+
+    private static final class Grupo {
+        final String nome;
+        final boolean semCategoria;
+        final List<Produto> produtos = new ArrayList<>();
+
+        Grupo(String nome, boolean semCategoria) {
+            this.nome = nome;
+            this.semCategoria = semCategoria;
+        }
+    }
+
+    private static boolean semCategoria(Produto produto) {
+        return produto.getCategoryId() == null
+                && (produto.getCategoryName() == null
+                || produto.getCategoryName().trim().isEmpty());
     }
 }

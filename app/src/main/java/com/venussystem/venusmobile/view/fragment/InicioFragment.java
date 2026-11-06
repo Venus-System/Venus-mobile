@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,6 +14,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.venussystem.venusmobile.R;
@@ -32,6 +34,10 @@ public class InicioFragment extends Fragment {
     private EstadoCatalogo estado;
     private ImageButton btnFiltro;
     private CartaoPerfilView cartaoPerfil;
+    private RecyclerView listaSugestoes;
+    private TextView tituloSugestoes;
+    private String tituloHomeAtual;
+    private int versaoAnimacaoTitulo;
 
     @Nullable
     @Override
@@ -55,11 +61,29 @@ public class InicioFragment extends Fragment {
             startActivity(intent);
         });
 
-        RecyclerView lista = view.findViewById(R.id.listaSugestoes);
-        lista.setLayoutManager(new GridLayoutManager(
-                requireContext(), getResources().getInteger(R.integer.colunas_card_produto)));
+        listaSugestoes = view.findViewById(R.id.listaSugestoes);
+        tituloSugestoes = view.findViewById(R.id.textTituloSugestoes);
+        RecyclerView lista = listaSugestoes;
+        int colunas = getResources().getInteger(R.integer.colunas_card_produto);
+        GridLayoutManager layoutManager = new GridLayoutManager(requireContext(), colunas);
+        layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                return adapter.isCabecalho(position) ? colunas : 1;
+            }
+        });
+        lista.setLayoutManager(layoutManager);
         lista.setAdapter(adapter);
         lista.setItemAnimator(null);
+        lista.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                atualizarTituloDaCategoria(recyclerView, tituloSugestoes);
+            }
+        });
+        tituloHomeAtual = getString(R.string.home_sugestoes);
+        tituloSugestoes.setText(tituloHomeAtual);
+        tituloSugestoes.setAlpha(1f);
 
         estado = new EstadoCatalogo(
                 view.findViewById(R.id.painelEstado), lista, () -> viewModel.recarregar());
@@ -73,8 +97,9 @@ public class InicioFragment extends Fragment {
     }
 
     private void observarViewModel() {
-        viewModel.getSugestoes().observe(getViewLifecycleOwner(), produtos -> {
-            adapter.atualizar(produtos);
+        viewModel.getSugestoesPorCategoria().observe(getViewLifecycleOwner(), secoes -> {
+            adapter.atualizarSecoes(secoes);
+            listaSugestoes.post(() -> atualizarTituloDaCategoria(listaSugestoes, tituloSugestoes));
             atualizarEstado();
         });
 
@@ -96,6 +121,43 @@ public class InicioFragment extends Fragment {
             estado.definirErro(mensagem);
             atualizarEstado();
         });
+    }
+
+    private void atualizarTituloDaCategoria(RecyclerView lista, TextView titulo) {
+        String novoTitulo = getString(R.string.home_sugestoes);
+        if (lista.canScrollVertically(-1)
+                && lista.getLayoutManager() instanceof LinearLayoutManager) {
+            LinearLayoutManager layoutManager = (LinearLayoutManager) lista.getLayoutManager();
+            int primeiro = layoutManager.findFirstVisibleItemPosition();
+            int posicaoCabecalho = primeiro;
+            while (posicaoCabecalho >= 0 && !adapter.isCabecalho(posicaoCabecalho)) {
+                posicaoCabecalho--;
+            }
+            String categoria = adapter.getTituloCabecalho(posicaoCabecalho);
+            if (categoria != null) {
+                novoTitulo = categoria;
+            }
+        }
+
+        if (novoTitulo.equals(tituloHomeAtual)) {
+            return;
+        }
+
+        tituloHomeAtual = novoTitulo;
+        String tituloAnimado = novoTitulo;
+        int animacaoAtual = ++versaoAnimacaoTitulo;
+        titulo.animate().cancel();
+        titulo.animate()
+                .alpha(0f)
+                .setDuration(90)
+                .withEndAction(() -> {
+                    if (animacaoAtual != versaoAnimacaoTitulo) {
+                        return;
+                    }
+                    titulo.setText(tituloAnimado);
+                    titulo.animate().alpha(1f).setDuration(120).start();
+                })
+                .start();
     }
 
     private void atualizarEstado() {
