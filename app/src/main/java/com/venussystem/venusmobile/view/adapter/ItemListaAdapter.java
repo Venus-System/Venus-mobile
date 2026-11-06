@@ -7,7 +7,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.venussystem.venusmobile.R;
@@ -65,7 +64,6 @@ public class ItemListaAdapter extends RecyclerView.Adapter<ItemListaAdapter.Item
         private final ImageView imagem;
         private final TextView marca;
         private final TextView nome;
-        private final TextView verNota;
         private final View btnRemover;
 
         ItemViewHolder(@NonNull View item) {
@@ -73,41 +71,18 @@ public class ItemListaAdapter extends RecyclerView.Adapter<ItemListaAdapter.Item
             imagem = item.findViewById(R.id.imgProduto);
             marca = item.findViewById(R.id.textMarca);
             nome = item.findViewById(R.id.textNome);
-            verNota = item.findViewById(R.id.btnVerNota);
             btnRemover = item.findViewById(R.id.btnRemoverProduto);
         }
 
         void preencher(Produto produto, AoClicar aoClicar, AoRemover aoRemover) {
             marca.setText(produto.getBrandName());
             nome.setText(produto.getName());
-            mostrarNota(produto.getOverallScore());
 
             ProdutoImagemLoader.carregar(
                     itemView.getContext(), imagem, produto, R.drawable.bg_card_produto);
 
             itemView.setOnClickListener(v -> aoClicar.noProduto(produto));
             btnRemover.setOnClickListener(v -> aoRemover.doProduto(produto));
-        }
-
-        private void mostrarNota(Integer valor) {
-            if (valor == null) {
-                verNota.setText(R.string.nota_indisponivel);
-                verNota.setTextColor(ContextCompat.getColor(
-                        itemView.getContext(), R.color.cinza_descricao));
-                return;
-            }
-
-            int cor;
-            if (valor >= 70) {
-                cor = R.color.nota_boa;
-            } else if (valor >= 40) {
-                cor = R.color.nota_media;
-            } else {
-                cor = R.color.nota_ruim;
-            }
-
-            verNota.setText(String.valueOf(valor));
-            verNota.setTextColor(ContextCompat.getColor(itemView.getContext(), cor));
         }
     }
 }

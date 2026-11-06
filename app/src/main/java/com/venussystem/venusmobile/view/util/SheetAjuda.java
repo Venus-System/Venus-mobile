@@ -3,6 +3,7 @@ package com.venussystem.venusmobile.view.util;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
+import androidx.core.widget.NestedScrollView;
 
 import androidx.annotation.LayoutRes;
 import androidx.annotation.Nullable;
@@ -31,6 +32,14 @@ public final class SheetAjuda {
             aoMontar.montou(conteudo, sheet);
         }
 
+        NestedScrollView rolagem = conteudo.findViewById(R.id.scrollTipos);
+        if (rolagem != null) {
+            sheet.setOnShowListener(ignored -> rolagem.scrollTo(0, 0));
+        }
+
         sheet.show();
+        if (rolagem != null) {
+            rolagem.post(() -> rolagem.scrollTo(0, 0));
+        }
     }
 }

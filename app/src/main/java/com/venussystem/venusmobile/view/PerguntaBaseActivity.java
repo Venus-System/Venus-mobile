@@ -10,6 +10,7 @@ import android.widget.Toast;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.widget.NestedScrollView;
 
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.repository.PerfilRepository;
@@ -20,6 +21,7 @@ public abstract class PerguntaBaseActivity extends AppCompatActivity {
     private String respostaSelecionada;
     private String rotuloSelecionado;
     private PerfilRepository perfil;
+    private boolean avancando;
 
     @LayoutRes
     protected abstract int getLayout();
@@ -42,7 +44,18 @@ public abstract class PerguntaBaseActivity extends AppCompatActivity {
         perfil = new PerfilRepository(this);
 
         findViewById(R.id.btnVoltar).setOnClickListener(v -> finish());
-        findViewById(R.id.btnAvancar).setOnClickListener(v -> avancar());
+        findViewById(R.id.btnAvancar).setOnClickListener(v -> {
+            if (avancando) {
+                return;
+            }
+            if (respostaSelecionada == null) {
+                avancar();
+                return;
+            }
+            avancando = true;
+            v.setEnabled(false);
+            avancar();
+        });
 
         prepararOpcoes();
         prepararAjuda();
@@ -54,6 +67,12 @@ public abstract class PerguntaBaseActivity extends AppCompatActivity {
             return;
         }
         link.setOnClickListener(v -> SheetAjuda.mostrar(this, getLayoutAjuda(), (conteudo, sheet) -> {
+            NestedScrollView scrollOpcoes = findViewById(R.id.scrollOpcoes);
+            sheet.setOnDismissListener(ignored -> {
+                if (scrollOpcoes != null) {
+                    scrollOpcoes.post(() -> scrollOpcoes.scrollTo(0, 0));
+                }
+            });
             LinearLayout lista = findViewById(R.id.listaOpcoes);
             for (int i = 0; i < lista.getChildCount(); i++) {
                 View opcao = lista.getChildAt(i);

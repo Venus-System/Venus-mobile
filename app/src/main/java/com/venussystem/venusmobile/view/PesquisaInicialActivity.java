@@ -9,13 +9,21 @@ import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.lembrete.Lembretes;
 
 public class PesquisaInicialActivity extends AppCompatActivity {
+    private boolean avancando;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         InsetsSistema.aplicar(this, R.layout.activity_pesquisa_inicial);
 
-        findViewById(R.id.btnAvancar).setOnClickListener(v ->
-                startActivity(new Intent(this, PerguntaGeneroActivity.class)));
+        findViewById(R.id.btnAvancar).setOnClickListener(v -> {
+            if (avancando) {
+                return;
+            }
+            avancando = true;
+            v.setEnabled(false);
+            startActivity(new Intent(this, PerguntaGeneroActivity.class));
+        });
 
         findViewById(R.id.textResponderDepois).setOnClickListener(v -> responderDepois());
     }

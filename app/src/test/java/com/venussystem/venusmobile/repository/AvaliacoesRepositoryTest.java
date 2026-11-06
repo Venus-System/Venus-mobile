@@ -107,6 +107,19 @@ public class AvaliacoesRepositoryTest {
     }
 
     @Test
+    public void ignoraNotaForaDoIntervaloENormalizaVotosNegativos() {
+        String valida = avaliacao(1, 9, 4.0).replace("\"usefulVotes\":3", "\"usefulVotes\":-2");
+        String invalida = avaliacao(2, 9, 6.0);
+        api.em(PAGINA_0, 200, "{\"content\":[" + valida + "," + invalida + "],\"last\":true}");
+
+        AtomicReference<AvaliacoesRepository.Lidas> lidas = new AtomicReference<>();
+        repositorio.buscar(7, lidas::set);
+
+        assertEquals(1, lidas.get().getAvaliacoes().size());
+        assertEquals(0L, lidas.get().getAvaliacoes().get(0).getVotosUteis());
+    }
+
+    @Test
     public void segueParaAProximaPaginaQuandoAAtualVemCheia() {
         StringBuilder cheia = new StringBuilder("{\"content\":[");
         for (int i = 0; i < 50; i++) {

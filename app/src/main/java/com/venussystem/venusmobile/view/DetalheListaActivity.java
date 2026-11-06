@@ -125,12 +125,6 @@ public class DetalheListaActivity extends AppCompatActivity {
         findViewById(R.id.btnAdicionarProduto).setOnClickListener(v ->
                 escolherProdutoLauncher.launch(BuscaActivity.paraEscolherProduto(this)));
 
-        findViewById(R.id.btnEscanearVazio).setOnClickListener(v -> {
-            boolean onboardingCompleto = ScanTutorialState.isCompleted(this);
-            startActivity(new Intent(this,
-                    onboardingCompleto ? ScanCameraFrontActivity.class : ScanTutorial1Activity.class));
-        });
-
         preencherCabecalho();
     }
 
@@ -289,7 +283,6 @@ public class DetalheListaActivity extends AppCompatActivity {
         adapter.atualizar(produtos);
         boolean vazio = produtos.isEmpty();
         blocoVazio.setVisibility(vazio ? View.VISIBLE : View.GONE);
-        findViewById(R.id.btnEscanearVazio).setVisibility(vazio ? View.VISIBLE : View.GONE);
         listaProdutos.setVisibility(vazio ? View.GONE : View.VISIBLE);
     }
 

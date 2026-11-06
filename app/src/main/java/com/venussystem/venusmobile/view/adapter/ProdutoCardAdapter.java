@@ -7,22 +7,27 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.venussystem.venusmobile.R;
 import com.venussystem.venusmobile.model.Produto;
+import com.venussystem.venusmobile.model.ProdutoSecao;
 import com.venussystem.venusmobile.view.util.ProdutoImagemLoader;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProdutoCardAdapter extends RecyclerView.Adapter<ProdutoCardAdapter.CardViewHolder> {
+public class ProdutoCardAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private static final int TIPO_PRODUTO = 0;
+    private static final int TIPO_CABECALHO = 1;
 
     public interface AoClicar {
         void noProduto(Produto produto);
     }
 
     private final List<Produto> produtos = new ArrayList<>();
+    private final List<Object> itens = new ArrayList<>();
     private final AoClicar aoClicar;
 
     public ProdutoCardAdapter(AoClicar aoClicar) {
@@ -31,28 +36,77 @@ public class ProdutoCardAdapter extends RecyclerView.Adapter<ProdutoCardAdapter.
 
     public void atualizar(List<Produto> novos) {
         produtos.clear();
+        itens.clear();
         if (novos != null) {
             produtos.addAll(novos);
+            itens.addAll(novos);
         }
         notifyDataSetChanged();
     }
 
+    public void atualizarSecoes(List<ProdutoSecao> secoes) {
+        produtos.clear();
+        itens.clear();
+        if (secoes != null) {
+            for (ProdutoSecao secao : secoes) {
+                itens.add(secao);
+                itens.addAll(secao.getProdutos());
+                produtos.addAll(secao.getProdutos());
+            }
+        }
+        notifyDataSetChanged();
+    }
+
+    public boolean isCabecalho(int position) {
+        return position >= 0 && position < itens.size() && itens.get(position) instanceof ProdutoSecao;
+    }
+
+    @Nullable
+    public String getTituloCabecalho(int position) {
+        if (!isCabecalho(position)) {
+            return null;
+        }
+        return ((ProdutoSecao) itens.get(position)).getNome();
+    }
+
     @NonNull
     @Override
-    public CardViewHolder onCreateViewHolder(@NonNull ViewGroup pai, int tipo) {
-        View item = LayoutInflater.from(pai.getContext())
-                .inflate(R.layout.item_produto_card, pai, false);
-        return new CardViewHolder(item);
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup pai, int tipo) {
+        LayoutInflater inflater = LayoutInflater.from(pai.getContext());
+        if (tipo == TIPO_CABECALHO) {
+            return new SectionViewHolder(inflater.inflate(R.layout.item_secao_produto, pai, false));
+        }
+        return new CardViewHolder(inflater.inflate(R.layout.item_produto_card, pai, false));
     }
 
     @Override
-    public void onBindViewHolder(@NonNull CardViewHolder holder, int posicao) {
-        holder.preencher(produtos.get(posicao), aoClicar);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int posicao) {
+        Object item = itens.get(posicao);
+        if (item instanceof ProdutoSecao) {
+            ((SectionViewHolder) holder).preencher((ProdutoSecao) item);
+        } else {
+            ((CardViewHolder) holder).preencher((Produto) item, aoClicar);
+        }
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return isCabecalho(position) ? TIPO_CABECALHO : TIPO_PRODUTO;
     }
 
     @Override
     public int getItemCount() {
-        return produtos.size();
+        return itens.size();
+    }
+
+    static class SectionViewHolder extends RecyclerView.ViewHolder {
+        SectionViewHolder(@NonNull View item) {
+            super(item);
+        }
+
+        void preencher(ProdutoSecao secao) {
+            ((TextView) itemView).setText(secao.getNome());
+        }
     }
 
     static class CardViewHolder extends RecyclerView.ViewHolder {
