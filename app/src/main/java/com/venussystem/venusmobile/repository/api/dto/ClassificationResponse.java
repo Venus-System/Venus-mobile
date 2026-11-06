@@ -30,6 +30,7 @@ public class ClassificationResponse {
         public String source;
         public String text;
         public Boolean warning;
+        public Double impact;
         public String ingredientName;
         public List<String> ingredientNames;
         public String profileTagSlug;

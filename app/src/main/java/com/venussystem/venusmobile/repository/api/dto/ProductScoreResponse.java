@@ -9,6 +9,5 @@ public class ProductScoreResponse {
     public Integer environmentalScore;
     public Integer ethicalScore;
     public Integer performanceScore;
-    public Integer transparencyScore;
     public Integer confidenceScore;
 }

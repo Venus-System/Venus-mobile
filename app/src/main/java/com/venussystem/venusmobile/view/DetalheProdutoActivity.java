@@ -48,6 +48,7 @@ import com.venussystem.venusmobile.model.IngredienteProduto;
 import com.venussystem.venusmobile.domain.match.ContaDaNota;
 import com.venussystem.venusmobile.domain.match.EtiquetasDoPerfil;
 import com.venussystem.venusmobile.domain.match.PontosDaClassificacao;
+import com.venussystem.venusmobile.domain.match.RespostasDaNota;
 import com.venussystem.venusmobile.domain.match.ResultadoMatch;
 import com.venussystem.venusmobile.domain.perfil.ProgressoPerfil;
 import com.venussystem.venusmobile.model.Produto;
@@ -115,6 +116,10 @@ public class DetalheProdutoActivity extends AppCompatActivity {
     private TextView textMatchNota;
     private TextView textMatchNotaRotulo;
     private TextView textMatchConta;
+    private View secaoMatchRespostas;
+    private TextView textMatchPerfilCombinou;
+    private LinearLayout listaMatchRespostas;
+    private TextView textMatchNenhumaContra;
     private LinearLayout listaMatchPontos;
     private TextView textMatchSemEfeitos;
     private View secaoMatchDestaques;
@@ -357,6 +362,10 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         textMatchNota = findViewById(R.id.textMatchNota);
         textMatchNotaRotulo = findViewById(R.id.textMatchNotaRotulo);
         textMatchConta = findViewById(R.id.textMatchConta);
+        secaoMatchRespostas = findViewById(R.id.secaoMatchRespostas);
+        textMatchPerfilCombinou = findViewById(R.id.textMatchPerfilCombinou);
+        listaMatchRespostas = findViewById(R.id.listaMatchRespostas);
+        textMatchNenhumaContra = findViewById(R.id.textMatchNenhumaContra);
         listaMatchPontos = findViewById(R.id.listaMatchPontos);
         textMatchSemEfeitos = findViewById(R.id.textMatchSemEfeitos);
         secaoMatchDestaques = findViewById(R.id.secaoMatchDestaques);
@@ -954,7 +963,11 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         FaixaPessoal faixa = pessoal == null ? null : FaixaPessoal.de(pessoal.recommendationLevel);
         if (pessoal != null && pessoal.finalScore != null && faixa != null) {
             mostrarConta(pessoal);
-            mostrarPontos(PontosDaClassificacao.mesclar(resultadoMatch.pontos, motivosDe(pessoal)));
+            List<RespostasDaNota.Resposta> respostas = RespostasDaNota.de(respostasDe(pessoal));
+            mostrarRespostas(respostas, pessoal.compatibilityPercentage);
+            mostrarPontos(RespostasDaNota.semRepetir(
+                    PontosDaClassificacao.mesclar(resultadoMatch.pontos, motivosDe(pessoal)),
+                    respostas));
             mostrarSelo(faixa.texto, faixa.corTexto, faixa.fundo);
             mostrarAnel(pessoal.finalScore, faixa.corAnel, faixa.fundo, faixa.corTexto,
                     R.string.produto_match_rotulo_para_voce,
@@ -963,6 +976,7 @@ public class DetalheProdutoActivity extends AppCompatActivity {
         }
 
         textMatchConta.setVisibility(View.GONE);
+        secaoMatchRespostas.setVisibility(View.GONE);
         mostrarPontos(resultadoMatch.pontos);
         mostrarSeloLocal(resultadoMatch.veredito);
         if (!classificacaoRespondeu) {
@@ -1027,6 +1041,79 @@ public class DetalheProdutoActivity extends AppCompatActivity {
                     Boolean.TRUE.equals(r.warning)));
         }
         return motivos;
+    }
+
+    private static List<RespostasDaNota.Motivo> respostasDe(ClassificationResponse c) {
+        List<RespostasDaNota.Motivo> motivos = new ArrayList<>();
+        if (c.reasons == null) return motivos;
+        for (ClassificationResponse.Reason r : c.reasons) {
+            if (r == null || !"INGREDIENT_RULE".equals(r.source) || r.profileTagSlug == null) {
+                continue;
+            }
+            motivos.add(new RespostasDaNota.Motivo(r.profileTagSlug, r.ingredientName, r.impact,
+                    Boolean.TRUE.equals(r.warning)));
+        }
+        return motivos;
+    }
+
+    private void mostrarRespostas(List<RespostasDaNota.Resposta> respostas,
+                                  @Nullable Double compatibilidade) {
+        listaMatchRespostas.removeAllViews();
+        if (compatibilidade != null) {
+            textMatchPerfilCombinou.setText(getString(R.string.produto_match_perfil_combinou,
+                    (int) Math.round(compatibilidade)));
+            textMatchPerfilCombinou.setVisibility(View.VISIBLE);
+        } else {
+            textMatchPerfilCombinou.setVisibility(View.GONE);
+        }
+        if (respostas.isEmpty()) {
+            if (compatibilidade == null) {
+                textMatchNenhumaContra.setText(R.string.match_resposta_nenhuma_na_conta);
+                textMatchNenhumaContra.setTextColor(
+                        ContextCompat.getColor(this, R.color.cinza_descricao));
+                textMatchNenhumaContra.setVisibility(View.VISIBLE);
+                secaoMatchRespostas.setVisibility(View.VISIBLE);
+            } else {
+                secaoMatchRespostas.setVisibility(View.GONE);
+            }
+            return;
+        }
+        textMatchNenhumaContra.setText(R.string.match_resposta_nenhuma_contra);
+        textMatchNenhumaContra.setTextColor(ContextCompat.getColor(this, R.color.nota_boa_texto));
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        TextosMatch.Recursos recursos = this::getString;
+        for (RespostasDaNota.Resposta resposta : respostas) {
+            View item = inflater.inflate(R.layout.item_ponto_match, listaMatchRespostas, false);
+            TextView titulo = item.findViewById(R.id.textPontoTitulo);
+            TextView linha = item.findViewById(R.id.textPontoLinha);
+            titulo.setText(TextosMatch.tituloDaResposta(recursos, resposta.slug));
+            linha.setText(TextosMatch.linhaDaResposta(recursos, resposta));
+
+            int bolinha;
+            int cor;
+            switch (resposta.efeito) {
+                case BLOQUEOU:
+                case TIROU:
+                    bolinha = R.drawable.bg_ponto_grave;
+                    cor = R.color.nota_ruim_texto;
+                    break;
+                case COMBINOU_POUCO:
+                    bolinha = R.drawable.bg_ponto_alerta;
+                    cor = R.color.nota_media_texto;
+                    break;
+                default:
+                    bolinha = R.drawable.bg_ponto_positivo;
+                    cor = R.color.nota_boa_texto;
+                    break;
+            }
+            item.findViewById(R.id.pontoMatch).setBackgroundResource(bolinha);
+            titulo.setTextColor(ContextCompat.getColor(this, cor));
+            listaMatchRespostas.addView(item);
+        }
+        textMatchNenhumaContra.setVisibility(
+                RespostasDaNota.algumaPuxouParaBaixo(respostas) ? View.GONE : View.VISIBLE);
+        secaoMatchRespostas.setVisibility(View.VISIBLE);
     }
 
     private void mostrarSeloLocal(ResultadoMatch.Veredito veredito) {
